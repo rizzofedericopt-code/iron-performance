@@ -132,11 +132,14 @@ tbody tr:hover .cAth{background:var(--surface2)}
 .mcl:hover{color:var(--text)}
 label.fl{display:block;font-size:11px;color:var(--muted);font-weight:600;margin:14px 0 6px;
   text-transform:uppercase;letter-spacing:0.4px}
-input,select{width:100%;background:var(--surface2);border:1px solid var(--line2);color:var(--text);
+input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--line2);color:var(--text);
   font-family:var(--sans);font-size:15px;padding:11px 12px;border-radius:10px;outline:none}
-input:focus,select:focus{border-color:var(--accent)}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{min-height:62px;resize:vertical;line-height:1.45}
 input.mono{font-family:var(--mono)}
 .row2{display:flex;gap:9px}.row2>*{flex:1}
+.psec{font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:20px 0 4px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.medflag{color:var(--down);font-weight:700}
 .hist{margin-top:6px;border:1px solid var(--line);border-radius:11px;overflow:hidden}
 .hrow{display:flex;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px}
 .hrow:last-child{border-bottom:none}
@@ -266,14 +269,14 @@ input.mono{font-family:var(--mono)}
       <circle cx="41" cy="25" r="3.4" fill="#E63946"/>
     </svg>
     <div class="login-name">IRON <b>PERFORMANCE</b></div>
-    <div class="login-sub">Accedi per vedere i tuoi dati</div>
+    <div class="login-sub">Accedi con la tua email e password</div>
     <label class="fl">Email</label>
     <input id="logEmail" type="email" inputmode="email" autocomplete="username" placeholder="la-tua@email.it">
     <label class="fl">Password</label>
     <input id="logPass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <div id="logErr" class="login-err"></div>
     <button class="btn primary" id="logBtn" style="width:100%;margin-top:14px" onclick="doLogin()">Entra</button>
-    <div class="login-note">I dati sono protetti dalla password e salvati solo nel tuo spazio privato.</div>
+    <div class="login-note">Primo accesso? Scegli email e password: verrà creato il tuo spazio privato. I dati sono protetti e cifrati.</div>
   </div>
 </div>
 
@@ -311,6 +314,7 @@ input.mono{font-family:var(--mono)}
   <button onclick="loadDemo()">✨ Carica dati di esempio</button>
   <button class="danger" onclick="wipe()">🗑 Svuota tutto</button>
   <div class="sep"></div>
+  <button onclick="changePassword()">🔑 Cambia password</button>
   <button onclick="doLogout()">🔒 Esci (logout)</button>
 </div>
 
@@ -348,7 +352,7 @@ const TESTS=[
   {id:"cmj",  name:"CMJ",      full:"Countermovement Jump",     unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
   {id:"sj",   name:"SJ",       full:"Squat Jump",               unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","forza"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
   {id:"dj",   name:"Drop Jump",full:"Drop Jump — RSI",          unit:"RSI",      dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica"], lv:{m:[0.8,1.2,1.6,2.0],f:[0.6,1.0,1.4,1.7]}},
-  {id:"eur",  name:"EUR",      full:"Elastic Index (CMJ ÷ SJ)", unit:"ratio",    dir:1, cat:"Potenza", sports:["pallavolo","basket"]},
+  {id:"eur",  name:"EUR",      full:"Elastic Index (CMJ ÷ SJ)", unit:"ratio",    dir:1, cat:"Potenza", sports:["pallavolo","basket"], derived:{from:["cmj","sj"], fn:(c,s)=> s? c/s : null}},
   // ─ VELOCITÀ / AGILITÀ ─
   {id:"spr10",name:"Sprint 10m",full:"Sprint 10 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo","atletica"]},
   {id:"spr30",name:"Sprint 30m",full:"Sprint 30 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","atletica"]},
@@ -440,6 +444,35 @@ function doLogout(){
   document.getElementById("menu").classList.remove("on");
   showLogin();
 }
+function changePassword(){
+  document.getElementById("menu").classList.remove("on");
+  modal('<div class="mh"><div><div class="mt">Cambia password</div>'+
+    '<div class="ms">Account: '+(AUTH?esc(AUTH.email):'')+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<label class="fl">Password attuale</label>'+
+    '<input id="cpOld" type="password" autocomplete="current-password">'+
+    '<label class="fl">Nuova password</label>'+
+    '<input id="cpNew" type="password" autocomplete="new-password" placeholder="almeno 4 caratteri">'+
+    '<div id="cpErr" class="login-err"></div>'+
+    '<div style="height:14px"></div>'+
+    '<button class="btn primary" id="cpBtn" style="width:100%" onclick="doChangePass()">Aggiorna password</button>');
+}
+function doChangePass(){
+  const oldp=document.getElementById("cpOld").value, neu=document.getElementById("cpNew").value;
+  const err=document.getElementById("cpErr"), btn=document.getElementById("cpBtn");
+  if(!oldp||!neu){ err.textContent="Compila entrambi i campi"; return; }
+  if(neu.length<4){ err.textContent="La nuova password è troppo corta (min 4)"; return; }
+  err.textContent=""; btn.disabled=true; btn.textContent="Aggiorno…";
+  AUTH.password=oldp;
+  apiCall("changepass",{newPassword:neu}).then(()=>{
+    AUTH.password=neu;
+    try{ localStorage.setItem(AUTHKEY, JSON.stringify(AUTH)); }catch(e){}
+    closeM(); toast("Password aggiornata");
+  }).catch(e=>{
+    btn.disabled=false; btn.textContent="Aggiorna password";
+    err.textContent = e.status===401 ? "Password attuale errata" : ("Errore: "+e.message);
+  });
+}
 function autoLogin(){
   try{ const r=localStorage.getItem(AUTHKEY); if(r) AUTH=JSON.parse(r); }catch(e){}
   if(!AUTH||!AUTH.email){ showLogin(); return; }
@@ -457,7 +490,18 @@ function todayISO(){ return new Date().toISOString().slice(0,10); }
 function fmtDate(d){ const p=d.split("-"); return p[2]+"/"+p[1]+"/"+p[0].slice(2); }
 
 /* ═══════════════ HELPER TREND ═══════════════ */
-function series(aid,tid){ return (S.data[aid]&&S.data[aid][tid])||[]; }
+function series(aid,tid){
+  const t=TMAP[tid];
+  if(t && t.derived) return derivedSeries(aid,t);
+  return (S.data[aid]&&S.data[aid][tid])||[];
+}
+function derivedSeries(aid,t){
+  const maps=t.derived.from.map(id=>{ const m={}; ((S.data[aid]&&S.data[aid][id])||[]).forEach(e=>m[e.d]=e.v); return m; });
+  const dates=Object.keys(maps[0]).filter(d=>maps.every(m=>m[d]!=null)).sort();
+  const out=[];
+  dates.forEach(d=>{ const v=t.derived.fn.apply(null, maps.map(m=>m[d])); if(v!=null && isFinite(v)) out.push({d, v:Math.round(v*1000)/1000}); });
+  return out;
+}
 function fmtNum(v){ return Number.isInteger(v)? String(v) : (Math.round(v*100)/100).toString(); }
 
 function deltaInfo(arr,dir){
@@ -543,7 +587,8 @@ function renderMatrix(){
   rows.forEach(a=>{
     const team=S.teams.find(t=>t.id===a.team);
     const tl=(S.activeTeam==="all"&&team)?esc(team.name)+" · ":"";
-    h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+esc(a.name)+
+    const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
+    h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+esc(a.name)+
        '<span class="sx">'+(a.sex||"M")+'</span>'+
        '<span class="del" onclick="event.stopPropagation();delAthlete(\''+a.id+'\')">✕</span></div>';
     const tot=tests.reduce((s,t)=>s+series(a.id,t.id).length,0);
@@ -777,12 +822,55 @@ function saveAthlete(){
   S.athletes.push({id:uid(), name:n, sex:document.getElementById("aS").value, team:document.getElementById("aT").value});
   save(); closeM(); render(); toast("Atleta aggiunto");
 }
+const PROFILE=[
+  {sec:"Anagrafica & fisico"},
+  {k:"birth",   l:"Data di nascita", t:"date", half:true},
+  {k:"dominant",l:"Lato dominante",  t:"select", o:["","Destro","Sinistro","Ambidestro"], half:true},
+  {k:"height",  l:"Altezza (cm)",    t:"number", half:true},
+  {k:"weight",  l:"Peso (kg)",       t:"number", half:true},
+  {k:"role",    l:"Ruolo / posizione", t:"text"},
+  {sec:"Programmazione"},
+  {k:"experience", l:"Esperienza di allenamento", t:"select", o:["","Principiante (<1 anno)","Intermedio (1-3 anni)","Avanzato (3-5 anni)","Esperto (5+ anni)"]},
+  {k:"daysWeek",   l:"Giorni/settimana disponibili", t:"number", half:true},
+  {k:"seasonPhase",l:"Fase di stagione", t:"select", o:["","Off-season","Pre-season","In-season","Transizione"], half:true},
+  {k:"goal",       l:"Obiettivo principale", t:"text"},
+  {k:"equipment",  l:"Attrezzatura disponibile", t:"text"},
+  {sec:"Anamnesi & salute"},
+  {k:"injuriesCurrent", l:"Infortuni / dolori attuali", t:"area"},
+  {k:"injuriesPast",    l:"Infortuni e operazioni passate", t:"area"},
+  {k:"conditions",      l:"Patologie / condizioni croniche", t:"area"},
+  {k:"painAreas",       l:"Limitazioni di mobilità / zone critiche", t:"area"},
+  {k:"meds",            l:"Farmaci / integratori rilevanti", t:"area"},
+  {k:"medical",         l:"Idoneità medica agonistica", t:"select", o:["","Idoneo","In attesa","Non idoneo"], half:true},
+  {k:"medicalExpiry",   l:"Scadenza certificato", t:"date", half:true},
+  {k:"notes",           l:"Note libere", t:"area"}
+];
+
+function profileField(f, p){
+  const v = (p && p[f.k]!=null) ? p[f.k] : "";
+  const ev = String(v).replace(/"/g,"&quot;");
+  if(f.t==="area") return '<textarea id="p_'+f.k+'" placeholder="—">'+esc(String(v))+'</textarea>';
+  if(f.t==="select"){
+    let o=f.o.map(opt=>'<option value="'+opt+'"'+(v===opt?" selected":"")+'>'+(opt||"—")+'</option>').join("");
+    return '<select id="p_'+f.k+'">'+o+'</select>';
+  }
+  const type=f.t==="number"?'number':f.t==="date"?'date':'text';
+  return '<input id="p_'+f.k+'" type="'+type+'"'+(f.t==="number"?' inputmode="decimal" step="any"':'')+' value="'+ev+'">';
+}
+function ageFrom(birth){
+  if(!birth) return null; const b=new Date(birth); if(isNaN(b)) return null;
+  const n=new Date(); let a=n.getFullYear()-b.getFullYear();
+  if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate())) a--;
+  return a;
+}
 function openAthlete(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
+  const p=a.profile||{};
   let topt=S.teams.map(t=>'<option value="'+t.id+'"'+(a.team===t.id?" selected":"")+'>'+esc(t.name)+'</option>').join("");
   topt+='<option value=""'+(!a.team?" selected":"")+'>Senza squadra</option>';
-  modal('<div class="mh"><div><div class="mt">Modifica atleta</div>'+
-    '<div class="ms">Nome, squadra, sesso</div></div>'+
+  const age=ageFrom(p.birth);
+  let h='<div class="mh"><div><div class="mt">Scheda atleta</div>'+
+    '<div class="ms">'+esc(a.name)+(age!=null?' · '+age+' anni':'')+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>'+
     '<label class="fl">Nome e cognome</label>'+
     '<input id="eN" value="'+esc(a.name)+'">'+
@@ -790,17 +878,36 @@ function openAthlete(id){
     '<select id="eT">'+topt+'</select></div>'+
     '<div><label class="fl">Sesso</label>'+
     '<select id="eS"><option value="M"'+(a.sex!=="F"?" selected":"")+'>Maschile</option>'+
-    '<option value="F"'+(a.sex==="F"?" selected":"")+'>Femminile</option></select></div></div>'+
-    '<div style="height:16px"></div>'+
-    '<button class="btn primary" style="width:100%" onclick="saveAthleteEdit(\''+id+'\')">Salva modifiche</button>'+
+    '<option value="F"'+(a.sex==="F"?" selected":"")+'>Femminile</option></select></div></div>';
+  // sezioni profilo
+  let i=0;
+  while(i<PROFILE.length){
+    const f=PROFILE[i];
+    if(f.sec){ h+='<div class="psec">'+f.sec+'</div>'; i++; continue; }
+    // accoppia due campi "half" consecutivi
+    const next=PROFILE[i+1];
+    if(f.half && next && next.half && !next.sec){
+      h+='<div class="row2"><div><label class="fl">'+f.l+'</label>'+profileField(f,p)+'</div>'+
+         '<div><label class="fl">'+next.l+'</label>'+profileField(next,p)+'</div></div>';
+      i+=2;
+    } else {
+      h+='<label class="fl">'+f.l+'</label>'+profileField(f,p); i++;
+    }
+  }
+  h+='<div style="height:18px"></div>'+
+    '<button class="btn primary" style="width:100%" onclick="saveAthleteEdit(\''+id+'\')">Salva scheda</button>'+
     '<div class="dz"><span style="color:var(--muted);font-size:12px">Elimina atleta e dati</span>'+
-    '<button class="danger" onclick="delAthlete(\''+id+'\')">Elimina</button></div>');
+    '<button class="danger" onclick="delAthlete(\''+id+'\')">Elimina</button></div>';
+  modal(h);
 }
 function saveAthleteEdit(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   const n=document.getElementById("eN").value.trim(); if(!n){ toast("Inserisci un nome"); return; }
   a.name=n; a.team=document.getElementById("eT").value||null; a.sex=document.getElementById("eS").value;
-  save(); closeM(); render(); toast("Atleta aggiornato");
+  const p={};
+  PROFILE.forEach(f=>{ if(f.sec) return; const el=document.getElementById("p_"+f.k); if(el){ const v=el.value.trim(); if(v) p[f.k]=v; } });
+  a.profile=p;
+  save(); closeM(); render(); toast("Scheda salvata");
 }
 function delAthlete(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
@@ -833,12 +940,18 @@ function drawCell(){
     h+='</div>';
   }
 
-  // inserimento
-  h+='<label class="fl">Nuova misurazione</label><div class="row2">'+
-    '<input id="mV" class="mono" type="number" inputmode="decimal" step="any" placeholder="valore '+t.unit+'">'+
-    '<input id="mD" type="date" value="'+todayISO()+'"></div>'+
-    '<div style="height:10px"></div>'+
-    '<button class="btn primary" style="width:100%" onclick="addMeasure()">Salva misurazione</button>';
+  // inserimento (o avviso calcolo automatico per i test derivati)
+  if(t.derived){
+    const fromNames=t.derived.from.map(id=>TMAP[id].name).join(" e ");
+    h+='<div class="alert info"><span class="ai">⚙️</span><span>Valore <b>calcolato in automatico</b> da '+fromNames+
+       '. Non si inserisce a mano: aggiorna '+fromNames+' e l\'EUR si ricalcola da solo.</span></div>';
+  } else {
+    h+='<label class="fl">Nuova misurazione</label><div class="row2">'+
+      '<input id="mV" class="mono" type="number" inputmode="decimal" step="any" placeholder="valore '+t.unit+'">'+
+      '<input id="mD" type="date" value="'+todayISO()+'"></div>'+
+      '<div style="height:10px"></div>'+
+      '<button class="btn primary" style="width:100%" onclick="addMeasure()">Salva misurazione</button>';
+  }
 
   // storico
   if(arr.length){
@@ -850,11 +963,13 @@ function drawCell(){
         dl='<span class="delta '+c+'" style="margin:0 8px 0 0">'+(raw>0?"▲":raw<0?"▼":"=")+' '+(raw>0?"+":"")+fmtNum(raw)+'</span>'; }
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
          '<span class="hv">'+fmtNum(e.v)+' <span style="color:var(--muted2);font-size:10px">'+t.unit+'</span></span>'+
-         dl+'<span class="hdl" onclick="delMeasure('+i+')">🗑</span></div>';
+         dl+(t.derived?'':'<span class="hdl" onclick="delMeasure('+i+')">🗑</span>')+'</div>';
     }
     h+='</div>';
   } else {
-    h+='<p class="hint">Nessuna misurazione ancora. La prima crea il punto di partenza; dalla seconda in poi vedrai la variazione colorata.</p>';
+    h+='<p class="hint">'+(t.derived
+      ? 'Nessun valore ancora: serve almeno una data in cui siano presenti entrambi i test sorgente.'
+      : 'Nessuna misurazione ancora. La prima crea il punto di partenza; dalla seconda in poi vedrai la variazione colorata.')+'</p>';
   }
   document.getElementById("modal").innerHTML=h;
   setTimeout(()=>{ const v=document.getElementById("mV"); if(v) v.focus(); },60);
@@ -883,8 +998,8 @@ function delMeasure(i){
 let SESS={t:null};
 function openSession(){
   if(teamAthletes().length===0){ addAthlete(); return; }
-  const tests=visibleTests();
-  SESS.t=tests[0].id;
+  const tests=visibleTests().filter(t=>!t.derived);
+  SESS.t=tests.length?tests[0].id:null;
   const tm=S.teams.find(x=>x.id===S.activeTeam);
   const sub = tm ? ("Squadra: "+esc(tm.name)) : (S.activeTeam==="none"?"Atleti senza squadra":"Tutte le squadre");
   let opt=tests.map(t=>'<option value="'+t.id+'">'+t.name+' ('+t.unit+')</option>').join("");

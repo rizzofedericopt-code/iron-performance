@@ -140,6 +140,9 @@ input.mono{font-family:var(--mono)}
 .row2{display:flex;gap:9px}.row2>*{flex:1}
 .psec{font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:20px 0 4px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .medflag{color:var(--down);font-weight:700}
+.pcheck{display:flex;align-items:flex-start;gap:11px;padding:10px 0;cursor:pointer;font-size:13.5px;line-height:1.4;border-bottom:1px solid var(--line)}
+.pcheck input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--accent);margin-top:0;cursor:pointer}
+.pcheck span{color:var(--text);padding-top:1px}
 .hist{margin-top:6px;border:1px solid var(--line);border-radius:11px;overflow:hidden}
 .hrow{display:flex;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px}
 .hrow:last-child{border-bottom:none}
@@ -185,6 +188,9 @@ input.mono{font-family:var(--mono)}
 .glist .gsub{color:var(--muted2);font-size:11px;font-family:var(--mono);margin-top:1px}
 .glist .gar{margin-left:auto;color:var(--muted2);font-size:18px}
 .gcat{font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 9px}
+ul.kb{margin:2px 0 0;padding-left:18px}
+ul.kb li{font-size:13px;line-height:1.55;color:var(--text);margin-bottom:7px}
+ul.kb li b{color:#fff;font-weight:600}
 /* vista andamento */
 .seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex:0 0 auto}
 .seg button{background:transparent;border:none;color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;padding:6px 15px;cursor:pointer;transition:.1s}
@@ -850,23 +856,66 @@ const PROFILE=[
   {k:"height",  l:"Altezza (cm)",    t:"number", half:true},
   {k:"weight",  l:"Peso (kg)",       t:"number", half:true},
   {k:"role",    l:"Ruolo / posizione", t:"text"},
+
   {sec:"Programmazione"},
   {k:"experience", l:"Esperienza di allenamento", t:"select", o:["","Principiante (<1 anno)","Intermedio (1-3 anni)","Avanzato (3-5 anni)","Esperto (5+ anni)"]},
   {k:"daysWeek",   l:"Giorni/settimana disponibili", t:"number", half:true},
   {k:"seasonPhase",l:"Fase di stagione", t:"select", o:["","Off-season","Pre-season","In-season","Transizione"], half:true},
+  {k:"sportYears", l:"Anni di pratica dello sport", t:"number", half:true},
+  {k:"prevSports", l:"Sport praticati in passato", t:"text", half:true},
   {k:"goal",       l:"Obiettivo principale", t:"text"},
   {k:"equipment",  l:"Attrezzatura disponibile", t:"text"},
-  {sec:"Anamnesi & salute"},
-  {k:"injuriesCurrent", l:"Infortuni / dolori attuali", t:"area"},
-  {k:"injuriesPast",    l:"Infortuni e operazioni passate", t:"area"},
-  {k:"conditions",      l:"Patologie / condizioni croniche", t:"area"},
-  {k:"painAreas",       l:"Limitazioni di mobilità / zone critiche", t:"area"},
-  {k:"meds",            l:"Farmaci / integratori rilevanti", t:"area"},
-  {k:"medical",         l:"Idoneità medica agonistica", t:"select", o:["","Idoneo","In attesa","Non idoneo"], half:true},
-  {k:"medicalExpiry",   l:"Scadenza certificato", t:"date", half:true},
-  {k:"notes",           l:"Note libere", t:"area"}
-];
 
+  {sec:"Stile di vita (anamnesi fisiologica)"},
+  {k:"job",         l:"Lavoro / studio (sedentario o fisico)", t:"text"},
+  {k:"sleepHours",  l:"Ore di sonno medie", t:"number", half:true},
+  {k:"sleepQuality",l:"Qualità del sonno", t:"select", o:["","Buona","Discreta","Scarsa"], half:true},
+  {k:"smoke",       l:"Fumo", t:"select", o:["","No","Ex fumatore","Sì"], half:true},
+  {k:"alcohol",     l:"Alcol", t:"select", o:["","No / raro","Moderato","Frequente"], half:true},
+  {k:"stressLife",  l:"Stress di vita percepito", t:"select", o:["","Basso","Medio","Alto"], half:true},
+  {k:"cycle",       l:"Ciclo mestruale (atlete)", t:"select", o:["","Regolare","Irregolare","Assente / amenorrea","N/A"], half:true},
+  {k:"nutrition",   l:"Alimentazione / note dietetiche", t:"area"},
+
+  {sec:"Anamnesi patologica"},
+  {k:"conditions",   l:"Patologie / condizioni croniche (cardio, respiratorie, metaboliche, tiroide…)", t:"area"},
+  {k:"surgeries",    l:"Interventi chirurgici / ospedalizzazioni", t:"area"},
+  {k:"familyHistory",l:"Familiarità (cardiovascolare, metabolica…)", t:"area"},
+
+  {sec:"Anamnesi muscolo-scheletrica & infortuni"},
+  {k:"injuriesCurrent", l:"Infortuni / dolori ATTUALI (zona, da quando)", t:"area"},
+  {k:"painLevel",       l:"Dolore attuale (0-10)", t:"number", half:true},
+  {k:"painContext",     l:"Il dolore compare", t:"select", o:["","A riposo","Sotto carico","Dopo l'attività","N/A"], half:true},
+  {k:"injuriesPast",    l:"Infortuni e operazioni passate (zona, tipo, anno, esiti)", t:"area"},
+  {k:"recurrent",       l:"Zone fragili / recidive note", t:"area"},
+  {k:"painAreas",       l:"Limitazioni di mobilità / ROM", t:"area"},
+  {k:"orthoNotes",      l:"Note ortopediche / prehab (es. pre-operatorio)", t:"area"},
+
+  {sec:"Screening rapido — segna ciò che è positivo"},
+  {k:"scHeart",    l:"Diagnosi o sospetto di problemi cardiaci", t:"check"},
+  {k:"scChest",    l:"Dolore al petto sotto sforzo", t:"check"},
+  {k:"scDizzy",    l:"Vertigini o svenimenti", t:"check"},
+  {k:"scBreath",   l:"Affanno anomalo a riposo o sforzo lieve", t:"check"},
+  {k:"scJoint",    l:"Problema osseo/articolare aggravato dall'attività", t:"check"},
+  {k:"scFamily",   l:"Familiarità per eventi cardiaci precoci", t:"check"},
+  {k:"scMedsHeart",l:"Assume farmaci per cuore o pressione", t:"check"},
+
+  {sec:"Farmaci & allergie"},
+  {k:"meds",        l:"Farmaci in uso", t:"area"},
+  {k:"supplements", l:"Integratori", t:"area"},
+  {k:"allergies",   l:"Allergie / intolleranze", t:"area"},
+
+  {sec:"Idoneità & consenso"},
+  {k:"medical",      l:"Idoneità medica agonistica", t:"select", o:["","Idoneo","In attesa","Non idoneo"], half:true},
+  {k:"medicalExpiry",l:"Scadenza certificato", t:"date", half:true},
+  {k:"consent",      l:"Consenso al trattamento dei dati (genitori se minore)", t:"check"},
+  {k:"notes",        l:"Note libere del preparatore", t:"area"}
+];
+const SCREEN_KEYS=["scHeart","scChest","scDizzy","scBreath","scJoint","scFamily","scMedsHeart"];
+
+function checkField(f,p){
+  const on=!!(p&&p[f.k]);
+  return '<label class="pcheck"><input type="checkbox" id="p_'+f.k+'"'+(on?' checked':'')+'><span>'+f.l+'</span></label>';
+}
 function profileField(f, p){
   const v = (p && p[f.k]!=null) ? p[f.k] : "";
   const ev = String(v).replace(/"/g,"&quot;");
@@ -900,7 +949,14 @@ function openAthlete(id){
     '<div><label class="fl">Sesso</label>'+
     '<select id="eS"><option value="M"'+(a.sex!=="F"?" selected":"")+'>Maschile</option>'+
     '<option value="F"'+(a.sex==="F"?" selected":"")+'>Femminile</option></select></div></div>';
-  // sezioni profilo
+  const _team=S.teams.find(t=>t.id===a.team);
+  const _sport=(_team&&_team.sport)||"generale";
+  const kb=SPORTKB[_sport]||SPORTKB.generale;
+  const _flags=SCREEN_KEYS.filter(k=>p[k]).length;
+  if(_flags) h+='<div class="alert danger" style="margin-top:10px"><span class="ai">⚠️</span><span>'+
+    '<b>Screening: '+_flags+' voce/i positive.</b> Consigliata una verifica medica prima di proporre carichi intensi.</span></div>';
+  // sezioni profilo (wrapper per aggiornare la guida dal vivo)
+  h+='<div oninput="updateBrief(\''+id+'\')" onchange="updateBrief(\''+id+'\')">';
   let i=0;
   while(i<PROFILE.length){
     const f=PROFILE[i];
@@ -911,10 +967,16 @@ function openAthlete(id){
       h+='<div class="row2"><div><label class="fl">'+f.l+'</label>'+profileField(f,p)+'</div>'+
          '<div><label class="fl">'+next.l+'</label>'+profileField(next,p)+'</div></div>';
       i+=2;
+    } else if(f.t==="check"){
+      h+=checkField(f,p); i++;
     } else {
-      h+='<label class="fl">'+f.l+'</label>'+profileField(f,p); i++;
+      h+='<label class="fl">'+f.l+'</label>'+(f.k==="role"?roleInput(p,kb,id):profileField(f,p)); i++;
     }
   }
+  h+='</div>';
+  // GUIDA inline in fondo
+  h+='<div class="psec" style="color:var(--accent);border-color:var(--line2);margin-top:24px">📋 Guida preparazione & percorso — '+kb.label+'</div>'+
+     '<div id="briefBox">'+briefBody(kb, p.role||"", p)+'</div>';
   h+='<div style="height:18px"></div>'+
     '<button class="btn primary" style="width:100%" onclick="saveAthleteEdit(\''+id+'\')">Salva scheda</button>'+
     '<div class="dz"><span style="color:var(--muted);font-size:12px">Elimina atleta e dati</span>'+
@@ -926,7 +988,10 @@ function saveAthleteEdit(id){
   const n=document.getElementById("eN").value.trim(); if(!n){ toast("Inserisci un nome"); return; }
   a.name=n; a.team=document.getElementById("eT").value||null; a.sex=document.getElementById("eS").value;
   const p={};
-  PROFILE.forEach(f=>{ if(f.sec) return; const el=document.getElementById("p_"+f.k); if(el){ const v=el.value.trim(); if(v) p[f.k]=v; } });
+  PROFILE.forEach(f=>{ if(f.sec) return; const el=document.getElementById("p_"+f.k); if(!el) return;
+    if(f.t==="check"){ if(el.checked) p[f.k]=true; }
+    else { const v=el.value.trim(); if(v) p[f.k]=v; }
+  });
   a.profile=p;
   save(); closeM(); render(); toast("Scheda salvata");
 }
@@ -935,6 +1000,243 @@ function delAthlete(id){
   if(!confirm("Eliminare "+a.name+" e tutti i suoi dati?")) return;
   S.athletes=S.athletes.filter(x=>x.id!==id); delete S.data[id];
   save(); closeM(); render(); toast("Atleta eliminato");
+}
+
+/* ═══════════════ KNOWLEDGE BASE SPORT + RUOLO ═══════════════ */
+const SPORTKB={
+  pallavolo:{label:"Pallavolo", roleList:["Palleggiatore","Schiacciatore","Centrale","Opposto","Libero"],
+    demands:[
+      "Sport intermittente di <b>potenza</b>: azioni esplosive brevi (2-8 s) alternate a recuperi; gara 1-2,5 h.",
+      "Qualità chiave: forza esplosiva arti inferiori, <b>capacità di salto ripetuto</b>, potenza della spalla, agilità su spazi brevi, core.",
+      "Sistema energetico anaerobico alattacido con base aerobica a supporto del recupero.",
+      "<b>Standing reach</b> (altezza raggiunta da fermo) è un dato chiave: misuralo per contestualizzare il salto."],
+    gesture:[
+      "Salto verticale ripetuto con rincorsa: stacco a uno/due piedi (attacco e muro) — ciclo stiramento-accorciamento veloce.",
+      "<b>Atterraggi numerosi e ad alta forza d'impatto</b>: è qui che si accumula il sovraccarico.",
+      "Gesto overhead esplosivo della spalla (schiacciata/battuta): catena gambe → tronco → spalla.",
+      "Spostamenti laterali rapidi e cambi di direzione (difesa, muro)."],
+    training:[
+      "<b>Forza massimale</b> arti inferiori (squat, hip hinge) come base della potenza di salto.",
+      "Pliometria mirata e <b>dosata</b> (CMJ, drop jump, salti reattivi): qualità &gt; quantità, atterraggi controllati.",
+      "Potenza e salute della spalla: cuffia dei rotatori e lavoro di tirata per l'equilibrio scapolare.",
+      "Core anti-rotazione/anti-estensione; mobilità di caviglia, anca e tratto toracico.",
+      "Periodizza: <b>riduci i salti in palestra</b> quando il volume tecnico di salti in campo è alto."],
+    prevention:[
+      "<b>Tendine rotuleo (jumper's knee)</b>: l'infortunio simbolo. Prevenzione con carico isometrico ed eccentrico pesante e lento (HSR) e gestione del volume di atterraggi.",
+      "Spalla/cuffia: rinforzo extrarotatori e controllo scapolare per chi attacca/batte molto.",
+      "Caviglia: distorsioni frequenti a rete → propriocezione e forza dei peronei.",
+      "Cura la <b>meccanica di atterraggio</b> (ginocchia non valghe, ammortizzazione anca-ginocchio-caviglia)."],
+    monitoring:[
+      "<b>Conta i salti (jump count)</b>: è il carico meccanico principale. A mano o con sensori inerziali (es. VERT).",
+      "Indicativo per seduta nei picchi: <b>centrali e schiacciatori i più sollecitati (100-200+ salti)</b>, opposto simile, palleggiatore alto numero ma intensità media, libero il più basso.",
+      "In stagione un attaccante può superare <b>1000-1500 salti/settimana</b> nei picchi: monitora il totale settimanale.",
+      "Applica la logica <b>acuto/cronico (ACWR)</b> anche al jump count; tieni gli incrementi settimanali contenuti (~10-15%).",
+      "Usa il <b>CMJ come spia</b>: un calo vs baseline = fatica neuromuscolare → riduci salti/intensità (vedi vista Fatica)."],
+    roles:{
+      "Palleggiatore":["Tanti contatti e spostamenti; salti frequenti ma per lo più di alzata (intensità media).","Priorità: rapidità di piedi, agilità, ripetibilità dei salti, stabilità di spalla e polso."],
+      "Schiacciatore":["Alto volume di attacco e ricezione, salto con rincorsa.","Priorità: potenza di salto, spalla, capacità di salto ripetuto, gestione del tendine rotuleo."],
+      "Centrale":["Salti più numerosi e ravvicinati (muro + primo tempo).","Priorità: salto reattivo (SSC veloce), spostamenti laterali esplosivi, <b>massima cura del carico di atterraggi</b>."],
+      "Opposto":["Massimo carico offensivo, salti potenti e ripetuti.","Priorità: potenza, gestione spalla e tendine rotuleo, recupero."],
+      "Libero":["Niente salti d'attacco, tanti spostamenti bassi e tuffi.","Priorità: agilità, reattività, core e robustezza articolare; rischio tendine rotuleo ridotto."]}},
+
+  calcio:{label:"Calcio", roleList:["Portiere","Difensore","Centrocampista","Esterno","Attaccante"],
+    demands:[
+      "Sport intermittente ad alta intensità: ~10-12 km a partita, ma a decidere sono <b>sprint ripetuti e cambi di direzione</b>.",
+      "Qualità: base aerobica + <b>capacità di sprint ripetuti (RSA)</b>, accelerazione/decelerazione, forza arti inferiori, robustezza degli hamstring.",
+      "Sistemi energetici misti: ampia base aerobica con picchi anaerobici."],
+    gesture:[
+      "Corsa a varie velocità con sprint massimali e <b>frenate</b>; cambi di direzione e contrasti.",
+      "Gesto del calciare: catena cinetica e asimmetrie dell'arto dominante.",
+      "Salti di testa (meno frequenti ma presenti)."],
+    training:[
+      "Base aerobica e <b>RSA</b>; intervalli ad alta intensità prescritti in %MAS.",
+      "Forza e potenza arti inferiori; <b>accelerazione e decelerazione</b> (la frenata conta quanto lo sprint).",
+      "<b>Nordic hamstring</b>: lavoro eccentrico per i flessori, con forte evidenza di riduzione infortuni.",
+      "Meccanica di cambio di direzione e di frenata."],
+    prevention:[
+      "<b>Hamstring</b>: infortunio n.1 → Nordic hamstring curl come misura preventiva di riferimento.",
+      "Adduttori/pube: forza adduttori (Copenhagen) per la pubalgia.",
+      "Ginocchio (LCA): controllo neuromuscolare di atterraggi e cambi di direzione.",
+      "Caviglia: propriocezione."],
+    monitoring:[
+      "Carico esterno (con GPS): distanza totale, distanza ad alta velocità, n. sprint, accel/decel.",
+      "Carico interno: <b>sRPE × durata</b>; usa l'ACWR per i picchi.",
+      "Test utili nell'app: <b>Yo-Yo IR1, MAS, sprint 10/30 m, RSA</b>."],
+    roles:{
+      "Portiere":["Azioni esplosive brevi, tuffi, poca corsa continua.","Priorità: potenza, reattività, mobilità anca/spalla, forza eccentrica per gli atterraggi."],
+      "Difensore":["Salti di testa, contrasti, sprint difensivi.","Priorità: forza, potenza aerea, accel/decel."],
+      "Centrocampista":["Volumi di corsa più alti del reparto.","Priorità: capacità aerobica e RSA, ripetibilità."],
+      "Esterno":["Sprint massimali ripetuti sulla fascia.","Priorità: velocità, accelerazione, hamstring robusti."],
+      "Attaccante":["Scatti brevi e sprint decisivi, duelli.","Priorità: velocità, potenza, reattività."]}},
+
+  basket:{label:"Basket", roleList:["Playmaker","Guardia","Ala","Ala grande","Centro"],
+    demands:[
+      "Intermittente di potenza su campo ridotto: <b>salti, sprint brevi e cambi di direzione continui</b>.",
+      "Qualità: salto ripetuto, accelerazione/decelerazione, agilità, forza arti inferiori, core.",
+      "Tante <b>decelerazioni</b> e arresti: carico eccentrico elevato."],
+    gesture:[
+      "Salto a uno/due piedi (rimbalzo, tiro, schiacciata) con <b>atterraggi numerosi</b>.",
+      "Cambi di direzione e arresti rapidi; sprint brevi avanti e indietro."],
+    training:[
+      "Forza e potenza arti inferiori; pliometria reattiva dosata.",
+      "Accel/decel e cambi di direzione; capacità aerobica di supporto.",
+      "Core e <b>caviglia robusta</b>."],
+    prevention:[
+      "<b>Caviglia</b>: distorsione è l'infortunio più frequente → propriocezione, forza, eventuale bracing se storia.",
+      "Ginocchio (LCA + tendine rotuleo): meccanica di atterraggio e gestione del volume di salti.",
+      "Gestione degli atterraggi simile alla pallavolo."],
+    monitoring:[
+      "<b>Jump count</b> e carichi di accel/decel; sRPE × durata; ACWR.",
+      "Test utili: <b>CMJ, Drop Jump (RSI), RSA, sprint, Yo-Yo</b>."],
+    roles:{
+      "Playmaker":["Tanti spostamenti, sprint e cambi di direzione.","Priorità: agilità, RSA, accel/decel."],
+      "Guardia":["Mix di tiro in salto, sprint e tagli.","Priorità: potenza, reattività, ripetibilità."],
+      "Ala":["Mix di salto e corsa, gioco su entrambe le metà campo.","Priorità: potenza e capacità aerobica."],
+      "Ala grande":["Molti salti e contatti vicino a canestro.","Priorità: forza, potenza di salto, gestione atterraggi."],
+      "Centro":["Massimo carico di salti e contatti sotto canestro.","Priorità: forza, potenza di salto, tendine rotuleo e atterraggi."]}},
+
+  atletica:{label:"Atletica", roleList:["Velocità","Mezzofondo/Fondo","Salti","Lanci"],
+    demands:[
+      "Richieste molto diverse per specialità: <b>velocità</b> (potenza/forza), <b>mezzofondo-fondo</b> (capacità aerobica), <b>salti</b> (potenza reattiva), <b>lanci</b> (forza-potenza balistica).",
+      "Tecnica del gesto altamente specifica e determinante."],
+    gesture:[
+      "Sprint: produzione di forza orizzontale, frequenza/ampiezza del passo.",
+      "Salti: stacco esplosivo con SSC; lanci: catena cinetica balistica.",
+      "Fondo: economia di corsa e gestione del volume."],
+    training:[
+      "Velocisti/saltatori: forza massimale e <b>potenza-RFD</b>, pliometria, sprint tecnico.",
+      "Fondisti: <b>capacità aerobica</b> e soglia, lavoro in %MAS, gestione del volume.",
+      "Lanci: forza generale e gesti balistici, mobilità specifica."],
+    prevention:[
+      "Velocisti/saltatori: <b>hamstring</b> e <b>tendine d'Achille</b> → eccentrici e gestione dei picchi di velocità.",
+      "Fondisti: sovraccarico da volume (tibia, Achille, ginocchio) → progressione graduale del chilometraggio."],
+    monitoring:[
+      "Velocisti/saltatori: <b>sprint, CMJ, Drop Jump (RSI)</b>.",
+      "Fondisti: <b>MAS, VO₂max</b>; carico interno sRPE e ACWR sul volume."],
+    roles:{
+      "Velocità":["Massima espressione di forza-potenza e RFD.","Priorità: sprint tecnico, pliometria, forza, cura di hamstring/Achille."],
+      "Mezzofondo/Fondo":["Capacità aerobica ed economia di corsa.","Priorità: %MAS, soglia, gestione del volume."],
+      "Salti":["Potenza reattiva e stacco esplosivo.","Priorità: SSC veloce, forza, tecnica di stacco e atterraggio."],
+      "Lanci":["Forza-potenza balistica e catena cinetica.","Priorità: forza massimale, gesti balistici, mobilità."]}},
+
+  forza:{label:"Forza / Palestra", roleList:[],
+    demands:[
+      "Espressione di <b>forza massimale</b> e/o ipertrofia; il recupero è una variabile centrale.",
+      "Tecnica come prerequisito, non come optional."],
+    gesture:[
+      "Alzate fondamentali: <b>squat, panca, stacco, military press</b> e varianti.",
+      "Pattern multi-articolari come nucleo del programma."],
+    training:[
+      "<b>Progressione del carico</b> come driver primario; gestione di volume e intensità.",
+      "Distingui stimoli neurali, meccanici e metabolici secondo l'obiettivo.",
+      "Tecniche di intensità (drop set, rest-pause, cluster) usate con criterio, non di default."],
+    prevention:[
+      "Schiena lombare e spalle: tecnica prima del carico, gestione del volume.",
+      "Evita salti di carico bruschi: monitora il tonnellaggio settimanale."],
+    monitoring:[
+      "Test utili: <b>1RM/3-5RM, xRM→1RM, VBT, forza relativa</b>.",
+      "ACWR applicato al tonnellaggio per i picchi di carico."]},
+
+  generale:{label:"Generale / Fitness", roleList:[],
+    demands:[
+      "Obiettivi di salute, composizione corporea e condizione generale.",
+      "Qualità trasversali: forza, condizionamento, mobilità."],
+    gesture:["Pattern fondamentali: squat, hinge, spinta, tirata, trasporto (carry)."],
+    training:[
+      "Forza full-body + condizionamento, con <b>progressione graduale</b>.",
+      "Tecnica e costanza prima di volume e intensità elevati."],
+    prevention:["Progressione e tecnica corrette; mobilità di anca, spalla e colonna."],
+    monitoring:["Test utili: <b>VO₂max, CMJ, 1RM, peso/composizione</b>."]}
+};
+
+function roleInput(p,kb,id){
+  const v=(p&&p.role)||""; const ev=String(v).replace(/"/g,"&quot;");
+  const opts=((kb&&kb.roleList)||[]).map(r=>'<option value="'+r+'">').join("");
+  const ph=(kb&&kb.roleList&&kb.roleList[0])||"ruolo";
+  return '<input id="p_role" list="roleDL" value="'+ev+'" placeholder="es. '+ph+'" oninput="updateBrief(\''+id+'\')"><datalist id="roleDL">'+opts+'</datalist>';
+}
+function kbSection(title, arr){
+  if(!arr||!arr.length) return "";
+  let h='<div class="gsec">'+title+'</div><ul class="kb">';
+  arr.forEach(x=>h+='<li>'+x+'</li>');
+  return h+'</ul>';
+}
+function matchRole(kb, role){
+  if(!kb.roles) return null;
+  const r=role.toLowerCase().trim();
+  for(const k in kb.roles){ if(k.toLowerCase()===r) return kb.roles[k]; }
+  for(const k in kb.roles){ if(r.indexOf(k.toLowerCase())>=0 || k.toLowerCase().indexOf(r)>=0) return kb.roles[k]; }
+  return null;
+}
+function pathSuggestion(p, kb){
+  const out=[];
+  const phase=p.seasonPhase, goal=p.goal, exp=p.experience;
+  const map={
+    "Off-season":"<b>Off-season</b>: costruisci la base — forza massimale ed eventuale ipertrofia, volume alto con recuperi pieni.",
+    "Pre-season":"<b>Pre-season</b>: converti la forza in potenza (pliometria, velocità) e porta su la condizione specifica dello sport.",
+    "In-season":"<b>In-season</b>: mantieni forza e potenza con volumi bassi; priorità a freschezza e gestione della fatica (vedi vista Fatica).",
+    "Transizione":"<b>Transizione</b>: scarico e recupero attivo, con uno stimolo minimo per non perdere gli adattamenti."
+  };
+  if(phase && map[phase]) out.push(map[phase]);
+  if(exp){ if(exp.indexOf("Principiante")>=0) out.push("Principiante: priorità a tecnica e progressione lineare semplice prima di complicare.");
+    else if(exp.indexOf("Avanzato")>=0||exp.indexOf("Esperto")>=0) out.push("Atleta evoluto: serve periodizzazione strutturata e varietà di stimoli per continuare a progredire."); }
+  if(goal) out.push("Obiettivo dichiarato: <b>"+esc(goal)+"</b> — allinea selezione esercizi e volumi a questo.");
+  if(!out.length) out.push("Compila fase di stagione, obiettivo ed esperienza per un indirizzo personalizzato.");
+  return out;
+}
+function briefBody(kb, role, p){
+  p=p||{};
+  let h=kbSection("Percorso consigliato", pathSuggestion(p, kb));
+  h+=kbSection("Richieste dello sport", kb.demands);
+  h+=kbSection("Gesto specifico", kb.gesture);
+  h+=kbSection("Direttive di allenamento", kb.training);
+  h+=kbSection("Prevenzione infortuni", kb.prevention);
+  h+=kbSection("Monitoraggio &amp; carichi", kb.monitoring);
+  if(kb.roles && Object.keys(kb.roles).length){
+    if(role){ const rk=matchRole(kb, role);
+      if(rk) h+=kbSection("Ruolo: "+esc(role), rk);
+      else h+='<div class="gnote">Nessuna scheda specifica per «'+esc(role)+'»: valgono le indicazioni generali dello sport.</div>';
+    } else h+='<div class="gnote">Scrivi il <b>ruolo</b> nel campo qui sopra per le indicazioni specifiche.</div>';
+  }
+  return h;
+}
+function updateBrief(id){
+  const a=S.athletes.find(x=>x.id===id); if(!a) return;
+  const team=S.teams.find(t=>t.id===a.team); const sport=(team&&team.sport)||"generale";
+  const kb=SPORTKB[sport]||SPORTKB.generale;
+  const g=k=>{ const e=document.getElementById("p_"+k); return e?e.value.trim():""; };
+  const live={role:g("role"), seasonPhase:g("seasonPhase"), goal:g("goal"), experience:g("experience")};
+  const box=document.getElementById("briefBox"); if(box) box.innerHTML=briefBody(kb, live.role, live);
+}
+function openCoachBrief(id){
+  const a=S.athletes.find(x=>x.id===id); if(!a) return;
+  const team=S.teams.find(t=>t.id===a.team);
+  const sport=(team&&team.sport)||"generale";
+  const kb=SPORTKB[sport]||SPORTKB.generale;
+  let role=""; const rin=document.getElementById("p_role");
+  if(rin) role=rin.value.trim(); else role=(a.profile&&a.profile.role)||"";
+  const sp=SPORTS.find(s=>s.id===sport);
+  let h='<button class="gback" onclick="openAthlete(\''+id+'\')">‹ Scheda atleta</button>'+
+    '<div class="mh"><div><div class="eyebrow">Preparazione fisica</div>'+
+    '<div class="mt">'+(sp?sp.icon+' ':'')+kb.label+'</div>'+
+    '<div class="ms">'+esc(a.name)+(role?' · '+esc(role):'')+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  h+=kbSection("Richieste dello sport", kb.demands);
+  h+=kbSection("Gesto specifico", kb.gesture);
+  h+=kbSection("Direttive di allenamento", kb.training);
+  h+=kbSection("Prevenzione infortuni", kb.prevention);
+  h+=kbSection("Monitoraggio &amp; carichi", kb.monitoring);
+  if(kb.roles && Object.keys(kb.roles).length){
+    if(role){
+      const rk=matchRole(kb, role);
+      if(rk) h+=kbSection("Ruolo: "+esc(role), rk);
+      else h+='<div class="gnote">Nessuna scheda specifica per il ruolo «'+esc(role)+'»: mostrate le indicazioni generali dello sport.</div>';
+    } else {
+      h+='<div class="gnote">Imposta il <b>ruolo</b> nella scheda atleta per vedere le indicazioni specifiche di ruolo.</div>';
+    }
+  }
+  h+='<div class="gnote">Indicazioni generali a scopo di preparazione fisica: adattale sempre al singolo atleta e alla sua anamnesi.</div>';
+  modal(h);
 }
 
 /* ═══════════════ FATICA / READINESS ═══════════════ */

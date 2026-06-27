@@ -206,6 +206,49 @@ ul.kb li b{color:#fff;font-weight:600}
 .bsess-test{margin-bottom:16px}
 .bsess-th{font-weight:700;font-size:13px;color:var(--text);padding:8px 0 7px;border-bottom:1px solid var(--line);margin-bottom:5px}
 .bsess-th span{color:var(--muted2);font-family:var(--mono);font-size:11px;font-weight:400}
+/* ---- Export PDF / stampa scheda atleta ---- */
+#printArea{display:none}
+.pdoc{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;color:#111;background:#fff;font-size:12px;line-height:1.5;max-width:760px;margin:0 auto;padding:18px}
+.pdoc h1{font-size:21px;margin:2px 0 0}
+.pdoc .pbrand{font-family:ui-monospace,'SF Mono',monospace;color:#E63946;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700}
+.pdoc .pmeta{color:#555;font-size:11px;margin-top:3px}
+.pdoc .psc{font-weight:800;font-size:12px;margin:16px 0 6px;border-bottom:1px solid #ccc;padding-bottom:3px;color:#111;text-transform:uppercase;letter-spacing:.5px}
+.pdoc .pf{margin:3px 0;color:#222}
+.pdoc .pf b{color:#000}
+.pdoc table{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}
+.pdoc th,.pdoc td{border:1px solid #ccc;padding:4px 7px;text-align:left}
+.pdoc th{background:#f2f2f2;font-weight:700}
+.pdoc .palert{border:1px solid #E63946;background:#fde8ea;color:#7a1722;padding:8px 11px;border-radius:6px;margin:12px 0;font-size:11.5px}
+.pdoc .pfoot{margin-top:20px;color:#999;font-size:10px;border-top:1px solid #ddd;padding-top:7px}
+.pdoc .pbrief .gsec{font-weight:700;font-size:12px;margin:11px 0 3px;color:#111}
+.pdoc .pbrief ul.kb{margin:3px 0 7px 18px;padding:0;list-style:disc}
+.pdoc .pbrief ul.kb li{margin:2px 0;color:#222;font-size:11.5px}
+.pdoc .pbrief .gnote{color:#555;background:#f5f5f5;border:1px solid #e0e0e0;padding:6px 9px;border-radius:5px;font-size:11px;margin:4px 0}
+.pdoc .pbrief b{color:#000}
+@media print{
+  body.printing > *{display:none !important}
+  body.printing > #printArea{display:block !important}
+  @page{margin:14mm}
+}
+/* ---- Vista Oggi (cruscotto) ---- */
+.tstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px}
+.tstat{background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:11px 6px;text-align:center}
+.tsv{font-size:22px;font-weight:800;color:var(--text);font-family:var(--sans);line-height:1}
+.tsv.up{color:var(--up)} .tsv.down{color:var(--accent)}
+.tsl{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.3px}
+.tsec{font-weight:700;font-size:13px;color:var(--text);margin:18px 0 9px}
+.tcard{display:flex;flex-direction:column;gap:8px;background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:11px;padding:11px 13px;margin-bottom:8px;cursor:pointer}
+.tcard:active{opacity:.8}
+.tname{font-weight:700;font-size:14px;color:var(--text)}
+.tflags{display:flex;flex-wrap:wrap;gap:6px}
+.tflag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:14px;border:1px solid}
+.tflag.down{color:#ff7a82;border-color:rgba(230,57,70,.4);background:rgba(230,57,70,.08)}
+.tflag.amber{color:#FFB340;border-color:rgba(255,159,10,.4);background:rgba(255,159,10,.08)}
+.tempty{background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:18px;text-align:center;color:var(--up);font-weight:600}
+.treadywrap{display:flex;flex-wrap:wrap;gap:7px}
+.tready{font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:6px 11px;cursor:pointer}
+.tready b{color:var(--up)}
+.tactions{display:flex;gap:8px;margin-top:20px}
 /* vista andamento */
 .seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex:0 0 auto}
 .seg button{background:transparent;border:none;color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;padding:6px 15px;cursor:pointer;transition:.1s}
@@ -432,10 +475,11 @@ function load(){
 }
 function normalize(){
   if(!S.sport) S.sport="pallavolo";
-  if(!S.view) S.view="matrix";
+  if(!S.view) S.view="today";
   if(!S.athletes) S.athletes=[]; if(!S.data) S.data={};
   if(!S.teams) S.teams=[];
   if(!S.readiness) S.readiness={};
+  if(!S.load) S.load={};
   if(!S.activeTeam) S.activeTeam="all";
   // migrazione: atleti senza squadra → crea una squadra di default
   if(S.athletes.length && S.teams.length===0){
@@ -623,6 +667,7 @@ function render(){
       '<button class="btn sm" onclick="loadDemo()">✨ oppure carica dati di esempio</button></div>';
     return;
   }
+  if(S.view==="today"){ renderToday(); return; }
   if(S.view==="trend"){ renderTrend(); return; }
   if(S.view==="readiness"){ renderReadiness(); return; }
   renderMatrix();
@@ -681,8 +726,10 @@ let HIDDEN={};
 function renderBar(){
   const bar=document.getElementById("bar");
   const mk=(v,l)=>'<button class="'+(S.view===v?"on":"")+'" onclick="setView(\''+v+'\')">'+l+'</button>';
-  let h='<div class="seg">'+mk('matrix','Matrice')+mk('trend','Andamento')+mk('readiness','Fatica')+'</div>';
-  if(S.view==="trend"){
+  let h='<div class="seg">'+mk('today','Oggi')+mk('matrix','Matrice')+mk('trend','Andamento')+mk('readiness','Fatica')+'</div>';
+  if(S.view==="today"){
+    h+='<div class="barhint">chi gestire oggi, prima di decidere la seduta</div>';
+  } else if(S.view==="trend"){
     h+='<div class="barhint">una linea per atleta nel tempo</div>';
   } else if(S.view==="readiness"){
     h+='<div class="barhint">readiness + fatica neuromuscolare</div>';
@@ -973,7 +1020,9 @@ function openAthlete(id){
   const age=ageFrom(p.birth);
   let h='<div class="mh"><div><div class="mt">Scheda atleta</div>'+
     '<div class="ms">'+esc(a.name)+(age!=null?' · '+age+' anni':'')+'</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div style="display:flex;gap:6px;align-items:center">'+
+    '<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Esporta / stampa in PDF">🖨 PDF</button>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div></div>'+
     '<label class="fl">Nome e cognome</label>'+
     '<input id="eN" value="'+esc(a.name)+'">'+
     '<div class="row2"><div><label class="fl">Squadra</label>'+
@@ -1232,6 +1281,62 @@ function briefBody(kb, role, p){
   }
   return h;
 }
+function printAthlete(id){
+  const a=S.athletes.find(x=>x.id===id); if(!a) return;
+  const p=a.profile||{};
+  const team=S.teams.find(t=>t.id===a.team); const sport=(team&&team.sport)||"generale";
+  const kb=SPORTKB[sport]||SPORTKB.generale; const age=ageFrom(p.birth);
+  const L=["Base","Discreto","Buono","Ottimo","Elite"];
+  let h='<div class="pdoc">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:9px">'+
+     '<div><div class="pbrand">Iron Performance</div><h1>'+esc(a.name)+'</h1>'+
+     '<div class="pmeta">'+(a.sex==="F"?"Femminile":"Maschile")+(age!=null?' · '+age+' anni':'')+
+     ' · '+(team?esc(team.name):'Senza squadra')+' · '+sportMeta(sport).label+'</div></div>'+
+     '<div class="pmeta">Generato il '+fmtDate(todayISO())+'</div></div>';
+  const flagLab={scHeart:"Problemi cardiaci",scChest:"Dolore al petto sotto sforzo",scDizzy:"Vertigini/svenimenti",scBreath:"Affanno anomalo",scJoint:"Problema osteo-articolare aggravato dall'attività",scFamily:"Familiarità eventi cardiaci precoci",scMedsHeart:"Farmaci cuore/pressione"};
+  const flags=SCREEN_KEYS.filter(k=>p[k]);
+  if(flags.length) h+='<div class="palert"><b>⚠ Screening: '+flags.length+' voce/i positive.</b> '+flags.map(k=>flagLab[k]).join(" · ")+'. Verifica medica consigliata prima di carichi intensi.</div>';
+  // profilo (solo campi compilati)
+  let secName="", buf="", body="";
+  function flush(){ if(secName && buf) body+='<div class="psc">'+secName+'</div>'+buf; buf=""; }
+  PROFILE.forEach(f=>{
+    if(f.sec){ flush(); secName=f.sec; return; }
+    if(f.t==="check") return;
+    const val=p[f.k]; if(val==null || (""+val).trim()==="") return;
+    buf+='<div class="pf"><b>'+f.l+':</b> '+esc(""+val)+'</div>';
+  });
+  flush(); h+=body;
+  // quadro test
+  const withData=TESTS.filter(t=>series(a.id,t.id).length);
+  if(withData.length){
+    h+='<div class="psc">Quadro test</div><table><thead><tr><th>Test</th><th>Ultimo</th><th>Livello</th><th>Δ prec.</th><th>Data</th></tr></thead><tbody>';
+    withData.forEach(t=>{ const arr=series(a.id,t.id); const last=arr[arr.length-1];
+      const li=levelIdx(t,a.sex,last.v); const di=deltaInfo(arr,t.dir);
+      h+='<tr><td>'+t.name+' <span style="color:#888">('+t.unit+')</span></td><td>'+fmtNum(last.v)+'</td><td>'+(li>=0?L[li]:"—")+'</td><td>'+(di?(di.arrow+" "+di.txt):"—")+'</td><td>'+fmtDate(last.d)+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  // stato attuale
+  const rarr=(S.readiness&&S.readiness[a.id])||[]; const rlast=rarr[rarr.length-1];
+  const ac=(typeof acwr==="function")?acwr(a.id):null;
+  if(rlast||ac){ h+='<div class="psc">Stato attuale</div>';
+    if(rlast) h+='<div class="pf"><b>Readiness:</b> '+readinessScore(rlast)+'/100 · check-in '+fmtDate(rlast.d)+'</div>';
+    if(ac) h+='<div class="pf"><b>ACWR (carico acuto:cronico):</b> '+fmtNum(Math.round(ac.acwr*100)/100)+'</div>';
+  }
+  // guida
+  h+='<div class="psc">Guida preparazione &amp; percorso — '+kb.label+'</div><div class="pbrief">'+briefBody(kb, p.role||"", p)+'</div>';
+  h+='<div class="pfoot">Iron Performance · documento riservato'+((AUTH&&AUTH.email)?' · '+esc(AUTH.email):'')+'</div></div>';
+
+  let pa=document.getElementById("printArea");
+  if(!pa){ pa=document.createElement("div"); pa.id="printArea"; document.body.appendChild(pa); }
+  pa.innerHTML=h;
+  function done(){ document.body.classList.remove("printing"); window.removeEventListener("afterprint",done); window.removeEventListener("focus",done); }
+  window.addEventListener("afterprint",done);
+  window.addEventListener("focus",done);
+  document.body.classList.add("printing");
+  setTimeout(()=>{ window.print(); }, 80);
+}
+
 function updateBrief(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   const team=S.teams.find(t=>t.id===a.team); const sport=(team&&team.sport)||"generale";
@@ -1287,12 +1392,67 @@ function cmjFatigue(aid){
   const pct=(latest-base)/base*100;
   return {pct, fatigued: pct<=-5};
 }
+function tstat(v,l,cls){ return '<div class="tstat"><div class="tsv '+(cls||"")+'">'+v+'</div><div class="tsl">'+l+'</div></div>'; }
+function renderToday(){
+  const grid=document.getElementById("grid");
+  const ath=teamAthletes();
+  if(!ath.length){ grid.innerHTML=emptyTeam(); return; }
+  const today=todayISO();
+  const items=ath.map(a=>{
+    const p=a.profile||{}; const flags=[]; let sev=0;
+    const pain=parseFloat(p.painLevel);
+    if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()){ flags.push({t:"⚠ Infortunio/dolore",c:"down"}); sev+=5; }
+    else if(!isNaN(pain) && pain>=4){ flags.push({t:"⚠ Dolore "+pain+"/10",c:"down"}); sev+=4; }
+    const sc=SCREEN_KEYS.filter(k=>p[k]).length;
+    if(sc){ flags.push({t:"🚩 Screening "+sc,c:"down"}); sev+=5; }
+    const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1]; let rToday=false;
+    if(rl){ const pc=readinessScore(rl); rToday=(rl.d===today);
+      if(pc<50){ flags.push({t:"🔋 Readiness "+pc,c:"down"}); sev+=4; }
+      else if(pc<65){ flags.push({t:"🔋 Readiness "+pc,c:"amber"}); sev+=2; } }
+    const ac=acwr(a.id);
+    if(ac){ const r=ac.acwr;
+      if(r>1.5||r<0.5){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"down"}); sev+=3; }
+      else if(r>1.3||r<0.8){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"amber"}); sev+=1; } }
+    const cf=cmjFatigue(a.id);
+    if(cf&&cf.fatigued){ flags.push({t:"⬇️ CMJ "+fmtNum(Math.round(cf.pct*10)/10)+"%",c:"down"}); sev+=2; }
+    return {a, flags, sev, rl, rToday};
+  });
+  const manage=items.filter(x=>x.flags.length).sort((x,y)=>y.sev-x.sev);
+  const ready=items.filter(x=>!x.flags.length);
+  const checkinToday=items.filter(x=>x.rToday).length;
+  let h='<div class="today"><div class="tstats">'+
+     tstat(ath.length,"Atleti")+
+     tstat(checkinToday+"/"+ath.length,"Check-in oggi")+
+     tstat(manage.length,"Da gestire", manage.length?"down":"up")+
+     tstat(ready.length,"Pronti","up")+'</div>';
+  h+='<div class="tsec">Da gestire'+(manage.length?' ('+manage.length+')':'')+'</div>';
+  if(manage.length){
+    manage.forEach(x=>{
+      h+='<div class="tcard" onclick="openAthlete(\''+x.a.id+'\')">'+
+         '<div class="tname">'+esc(x.a.name)+'<span class="sx">'+(x.a.sex||"M")+'</span></div>'+
+         '<div class="tflags">'+x.flags.map(f=>'<span class="tflag '+f.c+'">'+f.t+'</span>').join("")+'</div></div>';
+    });
+  } else {
+    h+='<div class="tempty">Nessun segnale critico. Squadra pronta ✅</div>';
+  }
+  if(ready.length){
+    h+='<div class="tsec">Pronti ('+ready.length+')</div><div class="treadywrap">';
+    ready.forEach(x=>{ const pc=x.rl?readinessScore(x.rl):null;
+      h+='<span class="tready" onclick="openAthlete(\''+x.a.id+'\')">'+esc(x.a.name)+(pc!=null?' <b>'+pc+'</b>':'')+'</span>'; });
+    h+='</div>';
+  }
+  h+='<div class="tactions"><button class="btn primary sm" onclick="openCheckin()">+ Check-in di oggi</button>'+
+     '<button class="btn sm" onclick="openLoad()">+ Carico seduta</button></div></div>';
+  grid.innerHTML=h;
+}
 function renderReadiness(){
   const grid=document.getElementById("grid");
   const rows=teamAthletes();
   if(rows.length===0){ grid.innerHTML=emptyTeam(); return; }
-  let h='<div class="rd-top"><button class="btn primary sm" onclick="openCheckin()">+ Check-in di oggi</button>'+
-    '<span class="rd-legend">Readiness 0-100 · i più scarichi in alto · ⚠ = fatica (CMJ)</span></div>';
+  let h='<div class="rd-top"><div style="display:flex;gap:8px">'+
+    '<button class="btn primary sm" onclick="openCheckin()">+ Check-in</button>'+
+    '<button class="btn sm" onclick="openLoad()">+ Carico seduta</button></div>'+
+    '<span class="rd-legend">i più scarichi in alto · ACWR carico · ⚠ fatica CMJ</span></div>';
   const scored=rows.map(a=>{ const arr=(S.readiness&&S.readiness[a.id])||[]; const last=arr[arr.length-1];
     return {a, pc: last?readinessScore(last):null}; });
   scored.sort((x,y)=>{ if(x.pc==null&&y.pc==null) return 0; if(x.pc==null) return 1; if(y.pc==null) return -1; return x.pc-y.pc; });
@@ -1316,8 +1476,10 @@ function renderReadiness(){
     const cf=cmjFatigue(a.id); let cmjHtml="";
     if(cf){ const cls=cf.pct<=-5?"down":cf.pct>=2?"up":"flat";
       cmjHtml='<span class="rd-cmj '+cls+'">CMJ '+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%'+(cf.fatigued?' ⚠':'')+'</span>'; }
+    const ac=acwr(a.id); let acHtml="";
+    if(ac){ const cls=acwrColor(ac.acwr); acHtml='<span class="rd-cmj '+cls+'">ACWR '+fmtNum(Math.round(ac.acwr*100)/100)+(cls==="down"?' ⚠':'')+'</span>'; }
     h+='<div class="rd-row" onclick="openReadinessHistory(\''+a.id+'\')">'+scoreHtml+
-       '<div class="rd-main"><div class="rd-name">'+flag+esc(a.name)+' '+cmjHtml+'</div>'+sub+'</div></div>';
+       '<div class="rd-main"><div class="rd-name">'+flag+esc(a.name)+' '+cmjHtml+' '+acHtml+'</div>'+sub+'</div></div>';
   });
   grid.innerHTML=h;
 }
@@ -1369,9 +1531,91 @@ function openReadinessHistory(aid){
     }
     h+='</div>';
   } else h+='<p class="hint">Nessun check-in ancora. Usa "+ Check-in di oggi".</p>';
+  // ── carico interno + ACWR ──
+  const ac=acwr(aid), ws=weekStats(aid), larr=(S.load&&S.load[aid])||[];
+  h+='<div class="psec" style="color:var(--accent)">Carico interno & ACWR</div>';
+  if(ac){
+    const cls=acwrColor(ac.acwr);
+    h+='<div class="bgrp"><div style="display:flex;justify-content:space-between;align-items:center">'+
+       '<div><div class="bt">ACWR <span class="rd-cmj '+cls+'" style="font-size:15px">'+fmtNum(Math.round(ac.acwr*100)/100)+'</span></div>'+
+       '<div class="bw">acuto '+ac.acute+' · cronico '+ac.chronic+' AU/sett</div></div></div>'+
+       '<div class="rd-sub" style="margin-top:8px"><span class="rd-chip">Carico 7gg: '+ws.weekly+' AU</span>'+
+       '<span class="rd-chip">Monotonia: '+fmtNum(Math.round(ws.monotony*100)/100)+'</span>'+
+       '<span class="rd-chip">Strain: '+ws.strain+'</span></div></div>';
+    h+='<div class="gnote">Zona di comfort ~0.8-1.3; sopra ~1.5 carico acuto elevato; sotto ~0.8 possibile detraining. La <b>monotonia</b> alta (poco variata) aumenta il rischio.</div>';
+    h+='<div class="gnote">⚠️ Un ACWR alto <b>non è automaticamente pericoloso</b>: in un sovraccarico pianificato (block periodization) è atteso. Leggi il dato nel contesto del tuo programma, non come allarme assoluto.</div>';
+  } else {
+    h+='<p class="hint">Servono almeno ~1-4 settimane di carichi per un ACWR sensato. Usa "+ Carico seduta".</p>';
+  }
+  if(larr.length){
+    h+='<label class="fl">Sedute ('+larr.length+')</label><div class="hist">';
+    for(let i=larr.length-1;i>=0 && i>=larr.length-8;i--){ const e=larr[i];
+      h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
+         '<span class="hv">'+dayLoad(e)+' AU <span style="color:var(--muted2);font-size:10px;font-family:var(--mono)">RPE '+e.rpe+' × '+e.min+'′</span></span>'+
+         '<span class="hdl" onclick="delLoad(\''+aid+'\','+i+')">🗑</span></div>';
+    }
+    h+='</div>';
+  }
   modal(h);
 }
 function delCheckin(aid,i){ const arr=S.readiness[aid]; arr.splice(i,1); if(!arr.length) delete S.readiness[aid]; save(); openReadinessHistory(aid); render(); }
+
+/* ── Carico interno (sRPE) + ACWR ── */
+function dayLoad(e){ return (e.rpe||0)*(e.min||0); }
+function acwr(aid){
+  const arr=(S.load&&S.load[aid])||[]; if(!arr.length) return null;
+  const now=new Date(todayISO()); let acute=0, chronic=0;
+  arr.forEach(e=>{ const days=(now-new Date(e.d))/86400000; const L=dayLoad(e);
+    if(days>=0&&days<7) acute+=L;
+    if(days>=0&&days<28) chronic+=L; });
+  chronic=chronic/4;                       // media settimanale sulle 4 settimane
+  if(chronic<=0) return null;
+  return {acwr:acute/chronic, acute:Math.round(acute), chronic:Math.round(chronic)};
+}
+function acwrColor(r){ if(r==null) return "flat"; if(r>=0.8&&r<=1.3) return "up"; if(r>1.5||r<0.5) return "down"; return "amber"; }
+function weekStats(aid){
+  const arr=(S.load&&S.load[aid])||[]; const now=new Date(todayISO()); const daily={};
+  for(let i=0;i<7;i++){ const d=new Date(now); d.setDate(d.getDate()-i); daily[d.toISOString().slice(0,10)]=0; }
+  arr.forEach(e=>{ if(daily.hasOwnProperty(e.d)) daily[e.d]+=dayLoad(e); });
+  const vals=Object.keys(daily).map(k=>daily[k]); const sum=vals.reduce((a,b)=>a+b,0); const mean=sum/7;
+  const sd=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)*(b-mean),0)/7);
+  const monotony=sd>0?mean/sd:0;
+  return {weekly:Math.round(sum), monotony:monotony, strain:Math.round(sum*monotony)};
+}
+function openLoad(){
+  const ath=teamAthletes(); if(!ath.length){ addAthlete(); return; }
+  const rpeSel=(def)=>{ let o=""; for(let i=0;i<=10;i++) o+='<option value="'+i+'"'+(i===def?" selected":"")+'>'+i+'</option>'; return '<select data-k="rpe">'+o+'</select>'; };
+  let rows="";
+  ath.forEach(a=>{ const arr=(S.load&&S.load[a.id])||[]; const l=arr[arr.length-1]||{};
+    rows+='<div class="ci-row" data-a="'+a.id+'"><span class="ci-n">'+esc(a.name)+'</span>'+rpeSel(l.rpe!=null?l.rpe:5)+'</div>'; });
+  modal('<div class="mh"><div><div class="mt">Carico seduta</div>'+
+    '<div class="ms">sRPE = RPE × durata (metodo Foster)</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="row2"><div><label class="fl">Data</label><input id="ldD" type="date" value="'+todayISO()+'"></div>'+
+    '<div><label class="fl">Durata (min)</label><input id="ldMin" class="mono" type="number" inputmode="numeric" placeholder="es. 60" value="60"></div></div>'+
+    '<div class="alert info" style="margin-top:10px"><span class="ai">ℹ️</span><span>'+
+    '<b>RPE 0-10</b> (Borg CR10): 0 riposo · 3-4 leggero · 5-6 moderato · 7-8 intenso · 9-10 massimale. La durata è uguale per tutta la squadra.</span></div>'+
+    '<div class="ci-head"><span class="ci-n">Atleta</span><span style="flex:0 0 64px;text-align:center">RPE</span></div>'+
+    '<div class="sess-list">'+rows+'</div>'+
+    '<div style="height:14px"></div>'+
+    '<button class="btn primary" style="width:100%" onclick="saveLoad()">Salva carico</button>');
+}
+function saveLoad(){
+  const d=document.getElementById("ldD").value||todayISO();
+  const min=parseInt(document.getElementById("ldMin").value,10);
+  if(isNaN(min)||min<=0){ toast("Inserisci la durata in minuti"); return; }
+  let n=0;
+  document.querySelectorAll(".ci-row").forEach(row=>{
+    const aid=row.getAttribute("data-a"); const sel=row.querySelector("select"); const rpe=parseInt(sel.value,10);
+    if(isNaN(rpe)) return;
+    if(!S.load) S.load={}; if(!S.load[aid]) S.load[aid]=[];
+    const arr=S.load[aid]; const ex=arr.find(x=>x.d===d);
+    if(ex){ ex.rpe=rpe; ex.min=min; } else arr.push({d, rpe, min});
+    arr.sort((x,y)=>x.d<y.d?-1:1); n++;
+  });
+  save(); closeM(); render(); toast("Carico salvato ("+n+")");
+}
+function delLoad(aid,i){ const arr=S.load[aid]; arr.splice(i,1); if(!arr.length) delete S.load[aid]; save(); openReadinessHistory(aid); render(); }
 
 /* ═══════════════ CELLA: STORICO + INSERIMENTO ═══════════════ */
 let CUR={a:null,t:null};

@@ -191,6 +191,21 @@ input.mono{font-family:var(--mono)}
 ul.kb{margin:2px 0 0;padding-left:18px}
 ul.kb li{font-size:13px;line-height:1.55;color:var(--text);margin-bottom:7px}
 ul.kb li b{color:#fff;font-weight:600}
+.star{color:#FFB340;margin-right:3px}
+.bsports{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:6px;scrollbar-width:none}
+.bsports::-webkit-scrollbar{display:none}
+.bsports button{flex:0 0 auto;border:1px solid var(--line2);background:var(--surface2);color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer}
+.bsports button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.bgrp{border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin-bottom:11px;background:var(--surface2)}
+.bgrp .bt{font-weight:700;font-size:14px;color:var(--text)}
+.bgrp .bw{font-family:var(--mono);font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
+.bgrp .by{font-size:12px;color:var(--muted);margin:7px 0 10px;line-height:1.45}
+.btests{display:flex;flex-wrap:wrap;gap:6px}
+.btchip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surface);border-radius:16px;padding:6px 11px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer}
+.btchip:hover{border-color:var(--accent)}
+.bsess-test{margin-bottom:16px}
+.bsess-th{font-weight:700;font-size:13px;color:var(--text);padding:8px 0 7px;border-bottom:1px solid var(--line);margin-bottom:5px}
+.bsess-th span{color:var(--muted2);font-family:var(--mono);font-size:11px;font-weight:400}
 /* vista andamento */
 .seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex:0 0 auto}
 .seg button{background:transparent;border:none;color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;padding:6px 15px;cursor:pointer;transition:.1s}
@@ -329,6 +344,7 @@ ul.kb li b{color:#fff;font-weight:600}
 
 <div class="menu" id="menu">
   <button onclick="guideIndex()">📖 Guida ai test</button>
+  <button onclick="openBattery()">🎯 Batteria consigliata</button>
   <button onclick="manageTeams()">👥 Gestisci squadre</button>
   <div class="sep"></div>
   <button onclick="exportJSON()">⬇️ Esporta backup (JSON)</button>
@@ -387,6 +403,21 @@ const TESTS=[
   {id:"mas",  name:"MAS",      full:"Velocità Aerobica Massimale",unit:"km/h",   dir:1, cat:"Aerobico", sports:["calcio","atletica"]},
   {id:"yoyo1",name:"Yo-Yo IR1",full:"Yo-Yo Intermittent Recovery 1",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio","basket","pallavolo"]},
   {id:"yoyo2",name:"Yo-Yo IR2",full:"Yo-Yo Intermittent Recovery 2",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio"]},
+  // ─ PROFILO F-V ─
+  {id:"fvdef", name:"Deficit F-V", full:"Squilibrio Forza-Velocità",   unit:"%",  dir:-1, cat:"Potenza", sports:["forza","atletica","calcio","basket","pallavolo"]},
+  // ─ CAMBIO DIREZIONE ─
+  {id:"cod505",name:"505",        full:"505 — cambio direzione 180°",  unit:"s",  dir:-1, cat:"Cambio direzione", sports:["calcio","basket","pallavolo"]},
+  {id:"ttest", name:"T-test",     full:"T-test — agilità",             unit:"s",  dir:-1, cat:"Cambio direzione", sports:["calcio","basket","pallavolo"]},
+  // ─ ASIMMETRIA & FUNZIONALE ─
+  {id:"cmjAsym",  name:"Asimm. CMJ", full:"Asimmetria inter-arto al CMJ", unit:"%", dir:-1, cat:"Asimmetria & funzionale", sports:["pallavolo","basket","calcio","atletica"]},
+  {id:"ybtLow",   name:"YBT inf.",   full:"Y-Balance arto inferiore (composite)", unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","pallavolo","atletica"]},
+  {id:"hopLSI",   name:"Hop LSI",    full:"Single-leg hop — LSI",       unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","pallavolo","atletica"]},
+  {id:"tripleHop",name:"Triple hop", full:"Triple hop — LSI",           unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","atletica"]},
+  // ─ MOBILITÀ & STABILITÀ ─
+  {id:"shIR",  name:"Spalla IR",  full:"Rotazione interna gleno-omerale (GIRD)", unit:"°", dir:1, cat:"Mobilità & stabilità", sports:["pallavolo"]},
+  {id:"shMob", name:"Spalla mob.",full:"Mobilità spalla (mani dietro schiena)",  unit:"cm",dir:-1,cat:"Mobilità & stabilità", sports:["pallavolo","basket"]},
+  {id:"shStab",name:"Spalla stab.",full:"Stabilità spalla (Y-Balance Upper Quarter)",unit:"%",dir:1,cat:"Mobilità & stabilità", sports:["pallavolo"]},
+  {id:"ankleDF",name:"Caviglia DF",full:"Dorsiflessione caviglia (knee-to-wall)", unit:"cm",dir:1, cat:"Mobilità & stabilità", sports:["calcio","basket","pallavolo","atletica","forza","generale"]},
 ];
 const TMAP={}; TESTS.forEach(t=>TMAP[t.id]=t);
 
@@ -603,7 +634,7 @@ function renderMatrix(){
   if(rows.length===0){ grid.innerHTML=emptyTeam(); return; }
   let h='<table><thead><tr><th class="cAth">Atleta</th>';
   tests.forEach(t=>{
-    h+='<th class="th-test"><div class="cat">'+t.cat+'</div><div class="tn">'+t.name+'</div>'+
+    h+='<th class="th-test"><div class="cat">'+t.cat+'</div><div class="tn">'+(isCore(t.id)?'<span class="star">★</span>':'')+t.name+'</div>'+
        '<div class="tu">'+t.unit+'</div>'+
        '<div class="dir">'+(t.dir<0?"↓ meglio":"↑ meglio")+'</div>'+
        '<div class="thi" onclick="openGuide(\''+t.id+'\')">ⓘ guida</div></th>';
@@ -1522,7 +1553,9 @@ function loadDemo(){
 
 /* ═══════════════ GUIDA AI TEST (protocolli) ═══════════════ */
 const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆️",sj:"🔽",dj:"⬇️",eur:"🔁",
-  spr10:"⏱️",spr30:"🏁",rsa:"🔄",sdec:"📉",vo2:"🫁",mas:"🏃",yoyo1:"🪀",yoyo2:"🪀"};
+  spr10:"⏱️",spr30:"🏁",rsa:"🔄",sdec:"📉",vo2:"🫁",mas:"🏃",yoyo1:"🪀",yoyo2:"🪀",
+  fvdef:"📈",cod505:"🔀",ttest:"✖️",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
+  shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶"};
 
 const PROTO={
   rm1:{eyebrow:"Forza massimale — Gold standard",
@@ -1669,8 +1702,145 @@ const PROTO={
       {t:"Warm-up specifico",d:"Qualche navetta per familiarizzare col ritmo più alto."},
       {t:"Segui i beep (IR2)",d:"Partenza più veloce, recupero 10 s. La difficoltà cresce in fretta."},
       {t:"Fino al cedimento",d:"Registra la distanza totale (m)."}],
-    note:"Bangsbo. Su atleti meno allenati termina troppo presto: in quel caso usa l'IR1."}
+    note:"Bangsbo. Su atleti meno allenati termina troppo presto: in quel caso usa l'IR1.",
+    interpret:["Capacità di esercizio intermittente ad alta intensità: molto specifica per gli sport di squadra.","Versione IR2 più anaerobica, adatta ad atleti già condizionati."],
+    advice:["Migliora con interval training specifico; sensibile agli adattamenti di stagione.","Su atleti meno allenati usa l'IR1: l'IR2 termina troppo presto per essere informativo."]},
+
+  fvdef:{eyebrow:"Profilo Forza-Velocità",
+    what:"Stima lo <b>squilibrio tra forza e velocità</b> nel profilo dell'atleta (metodo Samozino, da salti caricati o sprint con split). Dice <i>dove</i> è carente, per indirizzare l'allenamento.",
+    steps:[{t:"Raccogli i dati",d:"Salti a carichi crescenti (verticale) o sprint con tempi parziali (orizzontale)."},
+      {t:"Calcola F0, V0, Pmax",d:"Con app/foglio Samozino: forza teorica, velocità teorica, potenza massima."},
+      {t:"Confronta col profilo ottimale",d:"Lo scarto % dal profilo ottimale è il deficit: registra qui il valore assoluto."}],
+    interpret:["Deficit verso la <b>forza</b>: l'atleta è veloce ma poco forte → manca forza massimale.","Deficit verso la <b>velocità</b>: forte ma lento → manca velocità/RFD.","Più il valore è vicino a 0 (profilo bilanciato), meglio è."],
+    advice:["Deficit di forza → forza massimale pesante, alta intensità.","Deficit di velocità → pliometria, salti/sprint balistici, carichi leggeri ad alta velocità."],
+    note:"Strumento di performance, non di infortunio. Richiede dati di salto caricato o sprint."},
+
+  cod505:{eyebrow:"Cambio di direzione 180°",
+    what:"Tempo per percorrere 5 m, ruotare di <b>180°</b> e tornare 5 m. Misura la capacità di <b>decelerare e riaccelerare</b>; il COD deficit isola il cambio direzione dalla velocità lineare.",
+    steps:[{t:"Setup",d:"Fotocellule a 5 m dalla linea di virata; rincorsa di ~10 m per lanciarsi."},
+      {t:"Esecuzione",d:"Sprint, vira a 180° sulla linea, torna a tutta velocità."},
+      {t:"Entrambi i lati",d:"Vira col piede dx e col sx e confronta i due lati."}],
+    interpret:["Tempi più bassi = meglio. Confronta <b>lato dx vs sx</b>: asimmetrie marcate sono un campanello.","COD deficit = tempo 505 − tempo su sprint lineare equivalente: isola la pura abilità di cambio direzione."],
+    advice:["Migliora con forza eccentrica (decelerazione), tecnica di frenata e forza monopodalica.","Allena il lato più lento con cambi di direzione mirati."],
+    note:"Esiste la variante modificata senza rincorsa lunga."},
+
+  ttest:{eyebrow:"Agilità multidirezionale",
+    what:"Percorso a <b>T</b>: sprint avanti, spostamenti laterali a dx e sx, corsa indietro. Valuta l'agilità con cambi di direzione su più piani.",
+    steps:[{t:"Setup a T",d:"Coni: 10 m avanti, 5 m a dx e a sx, ritorno."},
+      {t:"Esecuzione",d:"Avanti → laterale (passo accostato, tocca i coni) → indietro fino al via."},
+      {t:"Cronometra",d:"Penalità se incrocia i piedi o non tocca i coni."}],
+    interpret:["Tempo più basso = meglio; combina velocità, spostamenti laterali e backpedal.","Utile come confronto nel tempo e tra atleti dello stesso ruolo."],
+    advice:["Allena spostamenti laterali, forza di adduttori/abduttori e tecnica di cambio direzione."],
+    note:"Standardizza calzature e superficie per confronti validi."},
+
+  cmjAsym:{eyebrow:"Asimmetria inter-arto",
+    what:"Differenza % di forza/impulso tra arto <b>dx e sx</b> durante il CMJ (richiede pedana con doppia cella o due pedane). Spia di squilibri e di recupero post-infortunio.",
+    steps:[{t:"CMJ su doppia pedana",d:"Esegui i CMJ standard registrando i due arti separatamente."},
+      {t:"Calcola l'asimmetria",d:"(arto forte − arto debole) / arto forte × 100."},
+      {t:"Media di più salti",d:"Usa 3-5 salti validi per ridurre il rumore."}],
+    interpret:["Sotto ~10% è generalmente fisiologico; <b>oltre 10-15%</b> merita attenzione.","Un'asimmetria <b>nuova</b> è più informativa di una stabile: leggila con la storia infortuni."],
+    advice:["Asimmetria alta → lavoro <b>unilaterale</b> mirato sull'arto debole (split squat, step-up, hop monopodalici).","Rivaluta ogni 4-6 settimane; riduci gli squilibri marcati, non inseguire lo 0%."],
+    note:"Serve una pedana con misura per-arto; senza, usa gli hop test come proxy."},
+
+  ybtLow:{eyebrow:"Stabilità dinamica monopodalica",
+    what:"Quanto lontano l'atleta <b>raggiunge</b> in 3 direzioni stando in equilibrio su una gamba. Indice di controllo neuromuscolare e stabilità.",
+    steps:[{t:"Familiarizzazione",d:"Alcuni tentativi di pratica per direzione (riduce l'effetto apprendimento)."},
+      {t:"3 direzioni per gamba",d:"Anteriore, postero-mediale, postero-laterale; massimo reach, tallone a terra."},
+      {t:"Calcola il composite",d:"(somma 3 direzioni) / (3 × lunghezza arto) × 100."}],
+    interpret:["Confronta dx vs sx: <b>differenza &gt;4 cm in anteriore</b> è associata a maggior rischio.","Composite più basso = peggior controllo; ottimo come confronto tra lati e nel tempo."],
+    advice:["Asimmetrie → propriocezione, forza monopodalica, controllo del ginocchio.","Spesso la dorsiflessione di caviglia limita il reach anteriore: integra la mobilità (knee-to-wall)."],
+    note:"Test economico: bastano nastro/metro o kit Y-Balance."},
+
+  hopLSI:{eyebrow:"Return-to-sport · simmetria",
+    what:"<b>Salto in lungo monopodalico</b>: distanza con ciascuna gamba e Limb Symmetry Index (LSI) = arto in esame/riferimento × 100.",
+    steps:[{t:"Riscaldamento + pratica",d:"Alcuni salti di prova per gamba."},
+      {t:"Max distanza per gamba",d:"Salto e atterraggio stabile (mantieni la posizione ~2 s)."},
+      {t:"Calcola LSI",d:"(arto in esame / arto di riferimento) × 100."}],
+    interpret:["Soglia storica di RTS: <b>LSI ≥ 90%</b>. Ma non fidarti solo di questo: il lato 'sano' si deconditiona e gonfia il rapporto.","Leggi sempre anche i <b>valori assoluti</b> e gli altri test della batteria."],
+    advice:["Sotto il 90% → forza monopodalica e pliometria progressiva sull'arto debole.","In fase RTS usa criteri multipli (single + triple + crossover + forza), non solo l'LSI."],
+    note:"Batteria classica: single hop, triple hop, crossover hop, 6 m timed hop."},
+
+  tripleHop:{eyebrow:"Return-to-sport · potenza monopodalica",
+    what:"<b>Tre salti consecutivi</b> sulla stessa gamba: distanza totale e LSI tra arti. Più impegnativo del single hop, sensibile alla potenza.",
+    steps:[{t:"Pratica",d:"1-2 prove per gamba."},
+      {t:"3 salti consecutivi",d:"Massima distanza totale, atterraggio finale controllato."},
+      {t:"Calcola LSI",d:"(arto in esame / arto di riferimento) × 100."}],
+    interpret:["Stessa logica del single hop: <b>≥90%</b> indicativo, da leggere con i valori assoluti."],
+    advice:["Allena potenza monopodalica e capacità di assorbimento (atterraggi) sull'arto debole."],
+    note:"Parte della batteria hop test per il return-to-sport."},
+
+  shIR:{eyebrow:"Spalla overhead — mobilità",
+    what:"ROM di <b>rotazione interna</b> gleno-omerale a 90° di abduzione. Nei gesti overhead (schiacciata, battuta) il lato dominante può sviluppare un deficit di rotazione interna (<b>GIRD</b>).",
+    steps:[{t:"Posizione",d:"Supino, spalla a 90° di abduzione, gomito a 90°; stabilizza la scapola."},
+      {t:"Misura IR ed ER",d:"Con inclinometro/goniometro misura rotazione interna ed esterna su entrambe le spalle."},
+      {t:"Confronta i lati",d:"Calcola IR dominante vs non dominante e la rotazione totale (IR+ER)."}],
+    interpret:["<b>GIRD</b> = perdita di IR sul lato dominante; preoccupa soprattutto se la <b>rotazione totale</b> è ridotta &gt;~5° rispetto all'altro lato.","Un certo shift (più ER, meno IR) è adattivo nell'overhead: conta lo squilibrio eccessivo, non la semplice differenza."],
+    advice:["GIRD con perdita di rotazione totale → mobilità capsulare posteriore (sleeper / cross-body stretch) e controllo scapolare.","Abbina rinforzo di extrarotatori e gran dentato per la stabilità."],
+    note:"Test chiave per la pallavolo e gli altri sport overhead (tennis, baseball)."},
+
+  shMob:{eyebrow:"Spalla — mobilità globale",
+    what:"Screening rapido di mobilità combinata della spalla (back-scratch): si misura la <b>distanza tra le mani</b> dietro la schiena. Veloce, non sostituisce la misura goniometrica.",
+    steps:[{t:"Una mano sopra la spalla",d:"L'altra risale dal basso dietro la schiena."},
+      {t:"Misura la distanza",d:"Spazio (o sovrapposizione) tra le dita, in cm. Ripeti invertendo le mani."},
+      {t:"Confronta i lati",d:"Annota dx e sx separatamente."}],
+    interpret:["Meno distanza (o sovrapposizione delle dita) = miglior mobilità. Confronta i due lati per le asimmetrie."],
+    advice:["Limitazioni → mobilità di rotazione e del cingolo scapolare; evita stretch aggressivi su spalle instabili."],
+    note:"Screening grossolano: per decisioni cliniche usa la misura ROM (shIR/ER)."},
+
+  shStab:{eyebrow:"Spalla — stabilità dinamica",
+    what:"<b>Y-Balance Upper Quarter</b>: in posizione di plank una mano raggiunge in 3 direzioni mantenendo la stabilità sull'altra. Misura stabilità e controllo del cingolo scapolo-omerale.",
+    steps:[{t:"Posizione di push-up",d:"Mano di appoggio sotto la spalla; corpo allineato."},
+      {t:"3 direzioni",d:"Reach mediale, supero-laterale, infero-laterale con la mano libera."},
+      {t:"Composite",d:"(somma reach) / (3 × lunghezza arto) × 100; confronta i lati."}],
+    interpret:["Composite più alto = miglior stabilità. Le <b>asimmetrie dx/sx</b> sono il dato più utile nell'overhead."],
+    advice:["Bassa stabilità → controllo scapolare, gran dentato, cuffia dei rotatori, anti-estensione del core."],
+    note:"Complementare alla mobilità: mobilità (shIR/shMob) + stabilità insieme danno il quadro della spalla."},
+
+  ankleDF:{eyebrow:"Caviglia — dorsiflessione",
+    what:"<b>Knee-to-wall</b>: distanza massima dal muro a cui il ginocchio lo tocca tenendo il tallone a terra. Misura la dorsiflessione, chiave per squat, atterraggi e cambi di direzione.",
+    steps:[{t:"Piede perpendicolare al muro",d:"Allontana progressivamente il piede."},
+      {t:"Ginocchio tocca il muro",d:"Tallone a terra; trova la distanza massima utile (cm)."},
+      {t:"Confronta i lati",d:"Misura dx e sx."}],
+    interpret:["Riferimento pratico: <b>~10 cm</b> = buona mobilità. Valori bassi o asimmetrie limitano squat e atterraggi."],
+    advice:["Limitazioni → mobilità di caviglia (soleo/gastrocnemio + articolare), poi rinforzo nel nuovo ROM."],
+    note:"Una dorsiflessione scarsa sposta il carico su ginocchio e schiena."}
 };
+
+const PROTO_EXTRA={
+  rm1:{interpret:["Confronta nel tempo e in <b>forza relativa</b> (1RM/peso): per lo sport conta questa, non il valore assoluto.","Salti grossi nei già allenati di solito = miglior tecnica/apprendimento, non solo più forza."],
+    advice:["Programma le percentuali di lavoro sul 1RM; ricontrollalo ogni 6-10 settimane, non più spesso.","Se stalla: agisci su tecnica, gestione fatica o varia lo stimolo prima di forzare il carico."]},
+  rm35:{interpret:["Usa la stessa formula ogni volta: conta la <b>tendenza</b>, non il valore assoluto.","Stima entro ±5%: trattalo come indicazione, non come 1RM reale."],
+    advice:["Ottima alternativa quando il massimale puro è rischioso o non necessario.","Mantieni costanti rep e formula per confronti validi."]},
+  pred:{interpret:["Affidabile solo sotto le ~10 ripetizioni; oltre, l'errore cresce."],
+    advice:["Comodo come check periodico a basso rischio; calibra ogni tanto con un 1RM o 3-5RM."]},
+  vbt:{interpret:["A parità di carico, <b>velocità più alta = più freschezza/forza</b>; un calo segnala fatica.","Le soglie di velocità per zona sono individuali: costruisci il <b>tuo</b> profilo, non tabelle generiche."],
+    advice:["Regola l'intensità giorno per giorno sulla velocità e ferma il set al velocity loss prefissato.","Velocity loss ~10-20% per forza/potenza; più tollerabile per ipertrofia."]},
+  imtp:{interpret:["Esprimila in <b>N/kg</b> (relativa al peso); se hai la pedana guarda anche la forza nei primi 100-250 ms (RFD).","Cali marcati = possibile fatica centrale o sotto-recupero."],
+    advice:["Test isometrico sicuro e poco affaticante: utile per monitorare la forza anche in stagione."]},
+  cmj:{interpret:["Oltre all'altezza, guarda <b>RSI-mod, tempi e asimmetrie</b>: dicono <i>come</i> salta, non solo quanto.","Un calo &gt;~5% vs baseline individuale = fatica neuromuscolare (errore tipico ~2-5%)."],
+    advice:["Usalo come monitor di readiness (vista Fatica): se cala, riduci salti/intensità.","Per migliorarlo: forza arti inferiori + pliometria; controlla anche la strategia di contromovimento."]},
+  sj:{interpret:["Salto da fermo senza contromovimento: isola la <b>forza concentrica</b> pura.","Il confronto CMJ−SJ misura la capacità elastica (vedi EUR)."],
+    advice:["SJ basso ma CMJ buono → manca forza concentrica dal basso: lavora forza/potenza.","Cura la posizione di partenza (~90° di ginocchio) per la ripetibilità."]},
+  dj:{interpret:["RSI = altezza / tempo di contatto: misura <b>stiffness e reattività</b> del ciclo allungamento-accorciamento veloce.","Contatti lunghi con buona altezza = strategia di forza; contatti brevi = strategia reattiva."],
+    advice:["Allena con pliometria a basso tempo di contatto (rimbalzi, hops), progredendo l'altezza di caduta.","Scegli il drop height che massimizza l'RSI individuale, non il più alto."]},
+  eur:{interpret:["Sopra ~1.0 indica buon uso della componente elastica; valori bassi = poca capacità elastica."],
+    advice:["EUR basso → enfasi su pliometria/reattività; EUR alto con salti bassi → manca forza di base (SJ/forza).","Si calcola da solo: aggiorna CMJ e SJ nella stessa data."]},
+  spr10:{interpret:["Misura l'<b>accelerazione</b> pura (le prime falcate): determinante negli sport di squadra."],
+    advice:["Allena partenze, spinta orizzontale (sled push, sprint resistito) e forza degli estensori d'anca.","Cura l'angolo del corpo in partenza e l'applicazione di forza orizzontale."]},
+  spr30:{interpret:["Combina accelerazione e transizione verso la <b>velocità massima</b>; lo split 10-30 m mostra la fase di lancio."],
+    advice:["Per la top-speed servono distanze 30 m+: lavora tecnica di corsa e forza-potenza.","Se l'accelerazione è ok ma il 30 m no, manca velocità massima."]},
+  rsa:{interpret:["Il <b>miglior sprint</b> del set indica la velocità di picco anche in fatica."],
+    advice:["Migliora base aerobica e potenza di sprint singola: alzano sia il best sia la ripetibilità."]},
+  sdec:{interpret:["% di decremento = capacità di <b>ripetere</b> gli sprint: più basso, meglio mantieni la velocità."],
+    advice:["Per ridurlo: base aerobica e capacità di recupero tra gli scatti (interval training)."]},
+  vo2:{interpret:["Capacità aerobica massimale: rilevante per l'endurance e per il recupero negli sport intermittenti."],
+    advice:["Migliora con intervalli ad alta intensità + volume aerobico; esprimila relativa al peso."]},
+  mas:{interpret:["Velocità alla soglia aerobica massimale: base per prescrivere gli intervalli (in %MAS)."],
+    advice:["Dosa gli intervalli sulla MAS (es. 100-120%); ricontrollala dopo un blocco aerobico."]},
+  yoyo1:{interpret:["Capacità di esercizio intermittente ad alta intensità con recupero: molto specifica per gli sport di squadra."],
+    advice:["Migliora con interval training specifico; molto sensibile agli adattamenti di stagione."]}
+};
+Object.keys(PROTO_EXTRA).forEach(k=>{ if(PROTO[k]) Object.assign(PROTO[k], PROTO_EXTRA[k]); });
 
 function lvTable(t){
   const labels=["Base","Discreto","Buono","Ottimo","Elite"];
@@ -1680,11 +1850,134 @@ function lvTable(t){
          '<div style="font-size:10px;color:var(--muted2);font-family:var(--mono);margin:9px 0 4px">Femminile ('+t.unit+')</div>'+bar("f");
 }
 
+const BATTERY={
+  pallavolo:{
+    note:"Pallavolo: salti e gesto overhead. Cuore del monitoraggio: CMJ continuo + cura di spalla e atterraggi.",
+    core:["cmj","sj","dj","shIR"],
+    groups:[
+      {t:"Monitoraggio continuo", w:"Ogni microciclo", y:"Readiness e fatica neuromuscolare dal salto.", tests:["cmj","cmjAsym"]},
+      {t:"Potenza & reattività", w:"Baseline · metà · fine stagione", y:"Salto, capacità elastica e forza esplosiva.", tests:["sj","dj","eur","imtp"]},
+      {t:"Spalla & articolare", w:"Pre-season + se sintomi", y:"Prevenzione overhead (GIRD) e qualità degli atterraggi.", tests:["shIR","shMob","shStab","ankleDF"]},
+      {t:"Velocità & cambio direzione", w:"Periodico", y:"Spostamenti brevi, muro e difesa.", tests:["spr10","cod505"]},
+      {t:"Funzionale / RTS", w:"Solo con storia infortuni", y:"Asimmetrie e ritorno allo sport.", tests:["ybtLow","hopLSI"]},
+      {t:"Condizionale", w:"Periodico", y:"Capacità intermittente.", tests:["yoyo1"]}
+    ]},
+  calcio:{
+    note:"Calcio: base aerobica + sprint ripetuti e cambi di direzione. Hamstring sotto osservazione.",
+    core:["cmj","yoyo1","spr30"],
+    groups:[
+      {t:"Monitoraggio continuo", w:"Ogni microciclo", y:"Readiness neuromuscolare.", tests:["cmj"]},
+      {t:"Condizionale", w:"Baseline · metà · fine", y:"Capacità intermittente e soglia aerobica.", tests:["yoyo1","mas"]},
+      {t:"Velocità & RSA", w:"Periodico", y:"Accelerazione, velocità e ripetibilità degli sprint.", tests:["spr10","spr30","rsa","sdec"]},
+      {t:"Cambio direzione", w:"Periodico", y:"Decelerazione e agilità.", tests:["cod505","ttest"]},
+      {t:"Forza / potenza", w:"Baseline · metà", y:"Base di forza ed esplosività.", tests:["imtp","cmj"]},
+      {t:"Funzionale / RTS", w:"Storia infortuni (hamstring)", y:"Asimmetrie e return-to-sport.", tests:["hopLSI","ybtLow","cmjAsym"]}
+    ]},
+  basket:{
+    note:"Basket: salti, cambi di direzione e caviglia. Caviglia e atterraggi al centro della prevenzione.",
+    core:["cmj","cmjAsym","cod505","ankleDF"],
+    groups:[
+      {t:"Monitoraggio continuo", w:"Ogni microciclo", y:"Readiness e asimmetria dal salto.", tests:["cmj","cmjAsym"]},
+      {t:"Potenza & reattività", w:"Baseline · metà · fine", y:"Salto e capacità elastica.", tests:["sj","dj","eur"]},
+      {t:"Velocità & agilità", w:"Periodico", y:"Sprint brevi e cambi di direzione.", tests:["spr10","cod505","ttest"]},
+      {t:"Articolare & funzionale", w:"Pre-season + sintomi", y:"Caviglia (chiave) e controllo monopodalico.", tests:["ankleDF","ybtLow","hopLSI"]},
+      {t:"Condizionale", w:"Periodico", y:"Capacità intermittente.", tests:["yoyo1","rsa"]}
+    ]},
+  atletica:{
+    note:"Atletica: dipende dalla specialità. Velocità e salti = potenza; fondo = capacità aerobica.",
+    core:["cmj","spr30","mas"],
+    groups:[
+      {t:"Velocità & salti", w:"Baseline · periodico", y:"Esplosività, reattività e profilo F-V.", tests:["spr10","spr30","cmj","sj","dj","fvdef"]},
+      {t:"Mezzofondo & fondo", w:"Baseline · metà · fine", y:"Capacità aerobica e soglia.", tests:["mas","vo2"]},
+      {t:"Prevenzione & funzionale", w:"Pre-season + sintomi", y:"Caviglia e simmetria monopodalica.", tests:["ankleDF","hopLSI"]}
+    ]},
+  forza:{
+    note:"Forza / palestra: la progressione del carico è il driver. Monitora la velocità in sala.",
+    core:["rm1","imtp"],
+    groups:[
+      {t:"Forza", w:"Ogni 6-10 settimane", y:"Riferimento per programmare le percentuali.", tests:["rm1","rm35","pred","imtp"]},
+      {t:"Monitoraggio in sala", w:"Ogni allenamento", y:"Freschezza e progressione sulla velocità.", tests:["vbt"]},
+      {t:"Potenza (opzionale)", w:"Periodico", y:"Espressione esplosiva.", tests:["cmj","sj"]},
+      {t:"Profilo", w:"Periodico", y:"Capire se manca forza o velocità.", tests:["fvdef"]}
+    ]},
+  generale:{
+    note:"Fitness generale: forza di base, condizione e mobilità, con progressione graduale.",
+    core:["cmj","vo2"],
+    groups:[
+      {t:"Forza", w:"Ogni 6-10 settimane", y:"Base di forza in sicurezza.", tests:["rm35","pred"]},
+      {t:"Condizione", w:"Baseline · periodico", y:"Capacità aerobica.", tests:["vo2","yoyo1"]},
+      {t:"Potenza / funzionale", w:"Periodico", y:"Esplosività e controllo.", tests:["cmj"]},
+      {t:"Mobilità", w:"Pre / se sintomi", y:"Dorsiflessione di caviglia.", tests:["ankleDF"]}
+    ]}
+};
+function sportMeta(id){ return SPORTS.find(s=>s.id===id)||{icon:"",label:id}; }
+function isCore(tid){ if(S.sport==="all") return false; const b=BATTERY[S.sport]; return !!(b&&b.core&&b.core.indexOf(tid)>=0); }
+function openBattery(sp){
+  let sport=sp;
+  if(!sport){ if(S.sport!=="all") sport=S.sport; else { const tm=S.teams.find(t=>t.id===S.activeTeam); sport=(tm&&tm.sport)||"pallavolo"; } }
+  document.getElementById("menu").classList.remove("on");
+  const b=BATTERY[sport]||BATTERY.generale; const sm=sportMeta(sport);
+  let h='<div class="mh"><div><div class="eyebrow">Batteria consigliata</div>'+
+    '<div class="mt">'+sm.icon+' '+sm.label+'</div>'+
+    '<div class="ms">Quali test usare e quando</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="bsports">'+SPORTS.filter(s=>s.id!=="all").map(s=>'<button class="'+(s.id===sport?"on":"")+'" onclick="openBattery(\''+s.id+'\')">'+s.label+'</button>').join("")+'</div>';
+  if(b.note) h+='<div class="gnote" style="margin:0 0 12px">'+b.note+'</div>';
+  b.groups.forEach(function(g,gi){
+    h+='<div class="bgrp"><div class="bt">'+g.t+'</div><div class="bw">⏱ '+g.w+'</div><div class="by">'+g.y+'</div><div class="btests">';
+    g.tests.forEach(id=>{ const t=TMAP[id]; if(!t) return;
+      h+='<span class="btchip" onclick="openGuide(\''+id+'\')">'+(ICON[id]||"🔬")+' '+t.name+'</span>'; });
+    h+='</div>';
+    const enterable=g.tests.map(id=>TMAP[id]).filter(t=>t&&!t.derived).length;
+    if(enterable) h+='<button class="btn sm" style="margin-top:11px" onclick="openBatterySession(\''+sport+'\','+gi+')">+ Crea sessione con questi test</button>';
+    h+='</div>';
+  });
+  modal(h);
+}
+
+function openBatterySession(sport, gi){
+  const ath=teamAthletes(); if(ath.length===0){ addAthlete(); return; }
+  const b=BATTERY[sport]; if(!b) return; const g=b.groups[gi]; if(!g) return;
+  const tests=g.tests.map(id=>TMAP[id]).filter(t=>t && !t.derived);
+  let body="";
+  tests.forEach(t=>{
+    body+='<div class="bsess-test"><div class="bsess-th">'+(ICON[t.id]||"")+' '+t.full+' <span>('+t.unit+')</span></div>';
+    ath.forEach(a=>{
+      const arr=series(a.id,t.id); const last=arr.length?fmtNum(arr[arr.length-1].v):"";
+      body+='<div class="sess-row"><div><div class="sn">'+esc(a.name)+'</div>'+
+        (last!==""?'<div class="sp">ultimo: '+last+' '+t.unit+'</div>':'<div class="sp">—</div>')+'</div>'+
+        '<input class="mono" type="number" inputmode="decimal" step="any" placeholder="'+(last||t.unit)+'" data-a="'+a.id+'" data-t="'+t.id+'"></div>';
+    });
+    body+='</div>';
+  });
+  modal('<div class="mh"><div><div class="mt">Sessione · '+g.t+'</div>'+
+    '<div class="ms">'+sportMeta(sport).label+' · '+tests.length+' test · '+ath.length+' atleti</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<label class="fl">Data</label><input id="bsD" type="date" value="'+todayISO()+'">'+
+    '<div style="height:8px"></div>'+body+
+    '<div style="height:10px"></div>'+
+    '<button class="btn primary" style="width:100%" onclick="saveBatterySession()">Salva sessione</button>');
+}
+function saveBatterySession(){
+  const d=document.getElementById("bsD").value||todayISO(); let n=0;
+  document.querySelectorAll("#modal input[data-t]").forEach(inp=>{
+    const v=parseFloat(inp.value); if(isNaN(v)) return;
+    const aid=inp.getAttribute("data-a"), tid=inp.getAttribute("data-t");
+    if(!S.data[aid]) S.data[aid]={}; if(!S.data[aid][tid]) S.data[aid][tid]=[];
+    const arr=S.data[aid][tid]; const ex=arr.find(e=>e.d===d);
+    if(ex) ex.v=v; else arr.push({d,v});
+    arr.sort((x,y)=>x.d<y.d?-1:1); n++;
+  });
+  save(); closeM(); render(); toast(n+" valori salvati");
+}
+
 function guideIndex(){
-  const cats=["Forza","Potenza","Velocità","Aerobico"];
+  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Asimmetria & funzionale","Mobilità & stabilità"];
   let h='<div class="mh"><div><div class="mt">Guida ai test</div>'+
     '<div class="ms">Come si eseguono · cosa misurano · a cosa servono</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div><div class="glist">';
+  h+='<div class="grow" onclick="openBattery()" style="border:1px solid var(--accent);background:rgba(230,57,70,.06)"><span class="gic">🎯</span>'+
+     '<div><div class="gnm">Batteria consigliata per sport</div><div class="gsub">Quali test usare e quando, già pronti</div></div>'+
+     '<span class="gar">›</span></div>';
   cats.forEach(c=>{
     h+='<div class="gcat">'+c+'</div>';
     TESTS.filter(t=>t.cat===c).forEach(t=>{
@@ -1708,6 +2001,8 @@ function openGuide(tid){
   if(p.steps){ h+='<div class="gsec">Come si esegue</div><div class="steps">';
     p.steps.forEach((s,i)=>{ h+='<div class="step"><div class="snum">'+(i+1)+'</div><div class="sbody"><div class="stt">'+s.t+'</div><div class="sds">'+s.d+'</div></div></div>'; });
     h+='</div>'; }
+  if(p.interpret){ h+='<div class="gsec">Come interpretare</div><ul class="kb">'+p.interpret.map(x=>'<li>'+x+'</li>').join('')+'</ul>'; }
+  if(p.advice){ h+='<div class="gsec">Consigli pratici per l\'allenamento</div><ul class="kb">'+p.advice.map(x=>'<li>'+x+'</li>').join('')+'</ul>'; }
   if(t.lv) h+='<div class="gsec">Valori di riferimento</div>'+lvTable(t);
   if(p.note) h+='<div class="gnote">'+p.note+'</div>';
   modal(h);

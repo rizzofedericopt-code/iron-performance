@@ -394,14 +394,14 @@ const TESTS=[
   {id:"dj",   name:"Drop Jump",full:"Drop Jump — RSI",          unit:"RSI",      dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica"], lv:{m:[0.8,1.2,1.6,2.0],f:[0.6,1.0,1.4,1.7]}},
   {id:"eur",  name:"EUR",      full:"Elastic Index (CMJ ÷ SJ)", unit:"ratio",    dir:1, cat:"Potenza", sports:["pallavolo","basket"], derived:{from:["cmj","sj"], fn:(c,s)=> s? c/s : null}},
   // ─ VELOCITÀ / AGILITÀ ─
-  {id:"spr10",name:"Sprint 10m",full:"Sprint 10 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo","atletica"]},
-  {id:"spr30",name:"Sprint 30m",full:"Sprint 30 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","atletica"]},
+  {id:"spr10",name:"Sprint 10m",full:"Sprint 10 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo","atletica"], lv:{m:[2.10,1.95,1.85,1.75],f:[2.30,2.15,2.05,1.95]}},
+  {id:"spr30",name:"Sprint 30m",full:"Sprint 30 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","atletica"], lv:{m:[4.80,4.50,4.25,4.00],f:[5.20,4.90,4.60,4.35]}},
   {id:"rsa",  name:"RSA best", full:"RSA — miglior sprint",     unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo"]},
   {id:"sdec", name:"RSA Sdec", full:"RSA — % decremento",       unit:"%",        dir:-1,cat:"Velocità", sports:["calcio","basket"]},
   // ─ AEROBICO ─
-  {id:"vo2",  name:"VO₂max",   full:"VO₂max",                   unit:"ml/kg/min",dir:1, cat:"Aerobico", sports:["calcio","atletica","generale"]},
-  {id:"mas",  name:"MAS",      full:"Velocità Aerobica Massimale",unit:"km/h",   dir:1, cat:"Aerobico", sports:["calcio","atletica"]},
-  {id:"yoyo1",name:"Yo-Yo IR1",full:"Yo-Yo Intermittent Recovery 1",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio","basket","pallavolo"]},
+  {id:"vo2",  name:"VO₂max",   full:"VO₂max",                   unit:"ml/kg/min",dir:1, cat:"Aerobico", sports:["calcio","atletica","generale"], lv:{m:[40,48,55,62],f:[35,42,49,56]}},
+  {id:"mas",  name:"MAS",      full:"Velocità Aerobica Massimale",unit:"km/h",   dir:1, cat:"Aerobico", sports:["calcio","atletica"], lv:{m:[14,16,17.5,19],f:[12.5,14.5,16,17.5]}},
+  {id:"yoyo1",name:"Yo-Yo IR1",full:"Yo-Yo Intermittent Recovery 1",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio","basket","pallavolo"], lv:{m:[800,1400,2000,2600],f:[600,1100,1600,2200]}},
   {id:"yoyo2",name:"Yo-Yo IR2",full:"Yo-Yo Intermittent Recovery 2",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio"]},
   // ─ PROFILO F-V ─
   {id:"fvdef", name:"Deficit F-V", full:"Squilibrio Forza-Velocità",   unit:"%",  dir:-1, cat:"Potenza", sports:["forza","atletica","calcio","basket","pallavolo"]},
@@ -417,7 +417,7 @@ const TESTS=[
   {id:"shIR",  name:"Spalla IR",  full:"Rotazione interna gleno-omerale (GIRD)", unit:"°", dir:1, cat:"Mobilità & stabilità", sports:["pallavolo"]},
   {id:"shMob", name:"Spalla mob.",full:"Mobilità spalla (mani dietro schiena)",  unit:"cm",dir:-1,cat:"Mobilità & stabilità", sports:["pallavolo","basket"]},
   {id:"shStab",name:"Spalla stab.",full:"Stabilità spalla (Y-Balance Upper Quarter)",unit:"%",dir:1,cat:"Mobilità & stabilità", sports:["pallavolo"]},
-  {id:"ankleDF",name:"Caviglia DF",full:"Dorsiflessione caviglia (knee-to-wall)", unit:"cm",dir:1, cat:"Mobilità & stabilità", sports:["calcio","basket","pallavolo","atletica","forza","generale"]},
+  {id:"ankleDF",name:"Caviglia DF",full:"Dorsiflessione caviglia (knee-to-wall)", unit:"cm",dir:1, cat:"Mobilità & stabilità", sports:["calcio","basket","pallavolo","atletica","forza","generale"], lv:{m:[7,10,12,14],f:[7,10,12,14]}},
 ];
 const TMAP={}; TESTS.forEach(t=>TMAP[t.id]=t);
 
@@ -573,11 +573,12 @@ function deltaInfo(arr,dir){
 /* livello rispetto ai riferimenti (m/f): 0..4 */
 function levelIdx(test,sex,v){
   if(!test.lv) return -1;
-  const th=test.lv[sex==="F"?"f":"m"]; let i=0;
-  for(let k=0;k<th.length;k++){ if(v>=th[k]) i=k+1; }
+  const th=test.lv[sex==="F"?"f":"m"]; if(!th) return -1; let i=0;
+  if(test.dir<0){ for(let k=0;k<th.length;k++){ if(v<=th[k]) i=k+1; } }
+  else          { for(let k=0;k<th.length;k++){ if(v>=th[k]) i=k+1; } }
   return i; // 0=sotto base ... 4=elite
 }
-const LVCOL=["#6C757D","#E63946","#FF9F0A","#FFD60A","#34C759"];
+const LVCOL=["#6C757D","#FF9F0A","#FFD60A","#9BE65A","#34C759"];
 
 function sparkline(arr,dir){
   if(arr.length<2) return "";
@@ -657,7 +658,7 @@ function renderMatrix(){
       else{
         const last=arr[arr.length-1], di=deltaInfo(arr,t.dir);
         const li=levelIdx(t,a.sex,last.v);
-        if(li>=0) h+='<span class="lvdot" style="background:'+LVCOL[li]+'"></span>';
+        if(li>=0) h+='<span class="lvdot" title="'+["Base","Discreto","Buono","Ottimo","Elite"][li]+'" style="background:'+LVCOL[li]+'"></span>';
         h+='<div class="val">'+fmtNum(last.v)+'</div>';
         if(di) h+='<div class="delta '+di.cls+'">'+di.arrow+' '+di.txt+'</div>';
         else   h+='<div class="delta flat" style="opacity:.5">— prima</div>';
@@ -1291,8 +1292,11 @@ function renderReadiness(){
   const rows=teamAthletes();
   if(rows.length===0){ grid.innerHTML=emptyTeam(); return; }
   let h='<div class="rd-top"><button class="btn primary sm" onclick="openCheckin()">+ Check-in di oggi</button>'+
-    '<span class="rd-legend">Readiness 0-100 · ⚠ = fatica neuromuscolare (CMJ)</span></div>';
-  rows.forEach(a=>{
+    '<span class="rd-legend">Readiness 0-100 · i più scarichi in alto · ⚠ = fatica (CMJ)</span></div>';
+  const scored=rows.map(a=>{ const arr=(S.readiness&&S.readiness[a.id])||[]; const last=arr[arr.length-1];
+    return {a, pc: last?readinessScore(last):null}; });
+  scored.sort((x,y)=>{ if(x.pc==null&&y.pc==null) return 0; if(x.pc==null) return 1; if(y.pc==null) return -1; return x.pc-y.pc; });
+  scored.forEach(function(o){ const a=o.a;
     const arr=(S.readiness&&S.readiness[a.id])||[];
     const last=arr[arr.length-1];
     const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag">⚠ </span>':"";
@@ -1408,14 +1412,16 @@ function drawCell(){
 
   // storico
   if(arr.length){
+    const best = t.dir<0 ? Math.min.apply(null,arr.map(e=>e.v)) : Math.max.apply(null,arr.map(e=>e.v));
     h+='<label class="fl">Storico ('+arr.length+')</label><div class="hist">';
     for(let i=arr.length-1;i>=0;i--){
       const e=arr[i]; let dl="";
       if(i>0){ const raw=e.v-arr[i-1].v, imp=raw*t.dir;
         const c=imp>0?"up":imp<0?"down":"flat";
         dl='<span class="delta '+c+'" style="margin:0 8px 0 0">'+(raw>0?"▲":raw<0?"▼":"=")+' '+(raw>0?"+":"")+fmtNum(raw)+'</span>'; }
+      const pr=(arr.length>1 && e.v===best)?'<span class="star" title="Record personale">★</span> ':'';
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
-         '<span class="hv">'+fmtNum(e.v)+' <span style="color:var(--muted2);font-size:10px">'+t.unit+'</span></span>'+
+         '<span class="hv">'+pr+fmtNum(e.v)+' <span style="color:var(--muted2);font-size:10px">'+t.unit+'</span></span>'+
          dl+(t.derived?'':'<span class="hdl" onclick="delMeasure('+i+')">🗑</span>')+'</div>';
     }
     h+='</div>';
@@ -1843,11 +1849,11 @@ const PROTO_EXTRA={
 Object.keys(PROTO_EXTRA).forEach(k=>{ if(PROTO[k]) Object.assign(PROTO[k], PROTO_EXTRA[k]); });
 
 function lvTable(t){
-  const labels=["Base","Discreto","Buono","Ottimo","Elite"];
+  const labels=["Base","Discreto","Buono","Ottimo","Elite"]; const op=t.dir<0?"≤":"≥";
   function bar(sex){ const th=t.lv[sex]; let r='<div class="lvbar">';
-    labels.forEach((lb,i)=>{ r+='<div class="lvseg">'+lb+(i>0?'<br>≥'+th[i-1]:"")+'</div>'; }); return r+'</div>'; }
-  return '<div style="font-size:10px;color:var(--muted2);font-family:var(--mono);margin:2px 0 4px">Maschile ('+t.unit+')</div>'+bar("m")+
-         '<div style="font-size:10px;color:var(--muted2);font-family:var(--mono);margin:9px 0 4px">Femminile ('+t.unit+')</div>'+bar("f");
+    labels.forEach((lb,i)=>{ r+='<div class="lvseg">'+lb+(i>0?'<br>'+op+th[i-1]:"")+'</div>'; }); return r+'</div>'; }
+  return '<div style="font-size:10px;color:var(--muted2);font-family:var(--mono);margin:2px 0 4px">Maschile ('+t.unit+') · indicativi</div>'+bar("m")+
+         '<div style="font-size:10px;color:var(--muted2);font-family:var(--mono);margin:9px 0 4px">Femminile ('+t.unit+') · indicativi</div>'+bar("f");
 }
 
 const BATTERY={

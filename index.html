@@ -249,6 +249,19 @@ ul.kb li b{color:#fff;font-weight:600}
 .tready{font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:6px 11px;cursor:pointer}
 .tready b{color:var(--up)}
 .tactions{display:flex;gap:8px;margin-top:20px}
+.tsugg{font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--line2);border-radius:9px;padding:7px 10px;line-height:1.4}
+.bar-tests{margin-left:8px}
+.chq{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 6px}
+.tchk{display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.tchk input{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto}
+.tchk span{font-size:13px;color:var(--text)}
+.tchk span i{color:var(--muted2);font-family:var(--mono);font-size:11px;font-style:normal}
+.tchk span em{color:var(--accent);font-style:normal;font-size:10px;font-family:var(--mono);text-transform:uppercase}
+.thr{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.thr label{flex:1;font-size:13px;color:var(--text)}
+.thr input{flex:0 0 78px;text-align:right}
+.thr .thrh{flex:0 0 100%;font-size:11px;color:var(--muted2)}
+.thr-act{display:flex;gap:8px;justify-content:space-between;margin-top:18px}
 /* vista andamento */
 .seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;flex:0 0 auto}
 .seg button{background:transparent;border:none;color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;padding:6px 15px;cursor:pointer;transition:.1s}
@@ -388,6 +401,8 @@ ul.kb li b{color:#fff;font-weight:600}
 <div class="menu" id="menu">
   <button onclick="guideIndex()">📖 Guida ai test</button>
   <button onclick="openBattery()">🎯 Batteria consigliata</button>
+  <button onclick="chooseTests()">🎚 Scegli test da monitorare</button>
+  <button onclick="openThresholds()">⚙️ Soglie di monitoraggio</button>
   <button onclick="manageTeams()">👥 Gestisci squadre</button>
   <div class="sep"></div>
   <button onclick="exportJSON()">⬇️ Esporta backup (JSON)</button>
@@ -461,6 +476,16 @@ const TESTS=[
   {id:"shMob", name:"Spalla mob.",full:"Mobilità spalla (mani dietro schiena)",  unit:"cm",dir:-1,cat:"Mobilità & stabilità", sports:["pallavolo","basket"]},
   {id:"shStab",name:"Spalla stab.",full:"Stabilità spalla (Y-Balance Upper Quarter)",unit:"%",dir:1,cat:"Mobilità & stabilità", sports:["pallavolo"]},
   {id:"ankleDF",name:"Caviglia DF",full:"Dorsiflessione caviglia (knee-to-wall)", unit:"cm",dir:1, cat:"Mobilità & stabilità", sports:["calcio","basket","pallavolo","atletica","forza","generale"], lv:{m:[7,10,12,14],f:[7,10,12,14]}},
+  // ─ FUNCTIONAL MOVEMENT SCREEN ─
+  {id:"fmsSquat",   name:"FMS Squat",   full:"FMS · Deep Squat",              unit:"/3", dir:1, cat:"Functional Movement Screen", sports:["generale","forza"]},
+  {id:"fmsHurdle",  name:"FMS Hurdle",  full:"FMS · Hurdle Step",             unit:"/3", dir:1, cat:"Functional Movement Screen", sports:["generale","forza"]},
+  {id:"fmsLunge",   name:"FMS Lunge",   full:"FMS · In-Line Lunge",           unit:"/3", dir:1, cat:"Functional Movement Screen", sports:["generale","forza"]},
+  {id:"fmsShoulder",name:"FMS Spalla",  full:"FMS · Shoulder Mobility",       unit:"/3", dir:1, cat:"Functional Movement Screen", sports:["generale","forza"]},
+  {id:"fmsASLR",    name:"FMS ASLR",    full:"FMS · Active Straight-Leg Raise",unit:"/3",dir:1, cat:"Functional Movement Screen", sports:["generale","forza"]},
+  {id:"fmsPushup",  name:"FMS Push-up", full:"FMS · Trunk Stability Push-Up", unit:"/3", dir:1, cat:"Functional Movement Screen", sports:["generale","forza"]},
+  {id:"fmsRotary",  name:"FMS Rotary",  full:"FMS · Rotary Stability",        unit:"/3", dir:1, cat:"Functional Movement Screen", sports:["generale","forza"]},
+  {id:"fmsTotal",   name:"FMS Totale",  full:"FMS · Punteggio totale",        unit:"/21",dir:1, cat:"Functional Movement Screen", sports:["generale","forza"],
+     derived:{from:["fmsSquat","fmsHurdle","fmsLunge","fmsShoulder","fmsASLR","fmsPushup","fmsRotary"], fn:function(){ return Array.prototype.reduce.call(arguments,(a,b)=>a+b,0); }}},
 ];
 const TMAP={}; TESTS.forEach(t=>TMAP[t.id]=t);
 
@@ -473,6 +498,7 @@ function load(){
   try{ const r=localStorage.getItem(KEY); if(r) S=JSON.parse(r); }catch(e){}
   normalize();
 }
+const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acwrCritLow:0.5, acwrCritHigh:1.5, cmjDrop:5, painCut:4};
 function normalize(){
   if(!S.sport) S.sport="pallavolo";
   if(!S.view) S.view="today";
@@ -480,6 +506,8 @@ function normalize(){
   if(!S.teams) S.teams=[];
   if(!S.readiness) S.readiness={};
   if(!S.load) S.load={};
+  if(!S.cfg) S.cfg={};
+  Object.keys(CFG_DEF).forEach(k=>{ if(typeof S.cfg[k]!=="number"||isNaN(S.cfg[k])) S.cfg[k]=CFG_DEF[k]; });
   if(!S.activeTeam) S.activeTeam="all";
   // migrazione: atleti senza squadra → crea una squadra di default
   if(S.athletes.length && S.teams.length===0){
@@ -544,6 +572,43 @@ function doLogout(){
   document.getElementById("menu").classList.remove("on");
   showLogin();
 }
+function openThresholds(){
+  document.getElementById("menu").classList.remove("on");
+  const c=S.cfg;
+  const f=(k,lbl,step,hint)=>'<div class="thr"><label>'+lbl+'</label><input type="number" step="'+(step||1)+'" id="cfg_'+k+'" value="'+c[k]+'">'+(hint?'<div class="thrh">'+hint+'</div>':'')+'</div>';
+  let h='<div class="mh"><div><div class="mt">Soglie di monitoraggio</div>'+
+    '<div class="ms">Tarale sul tuo standard</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="gnote" style="margin-top:0">Cambiano i colori e i segnali in <b>Fatica</b> e nel cruscotto <b>Oggi</b>. Non toccano i dati.</div>';
+  h+='<div class="psec">Readiness (0-100)</div>'+
+     f("rdGreen","Verde (pronto) se ≥",1)+
+     f("rdAmber","Ambra se ≥ · sotto = rosso",1)+
+     f("rdCrit","Critica nel cruscotto se <",1);
+  h+='<div class="psec">ACWR (carico acuto:cronico)</div>'+
+     f("acwrLow","Zona ok — minimo",0.05)+
+     f("acwrHigh","Zona ok — massimo",0.05)+
+     f("acwrCritLow","Critico (basso) se <",0.05)+
+     f("acwrCritHigh","Critico (alto) se >",0.05);
+  h+='<div class="psec">CMJ & dolore</div>'+
+     f("cmjDrop","Calo CMJ % = fatica (es. 5)",0.5)+
+     f("painCut","Dolore segnalato se ≥ (0-10)",1);
+  h+='<div class="thr-act"><button class="btn sm" onclick="resetThresholds()">Ripristina default</button>'+
+     '<button class="btn primary" onclick="saveThresholds()">Salva soglie</button></div>';
+  modal(h);
+}
+function saveThresholds(){
+  Object.keys(CFG_DEF).forEach(k=>{ const el=document.getElementById("cfg_"+k); if(!el) return; const v=parseFloat(el.value); if(!isNaN(v)) S.cfg[k]=v; });
+  // coerenza minima
+  if(S.cfg.rdAmber>S.cfg.rdGreen) S.cfg.rdAmber=S.cfg.rdGreen;
+  if(S.cfg.rdCrit>S.cfg.rdAmber) S.cfg.rdCrit=S.cfg.rdAmber;
+  if(S.cfg.acwrLow>S.cfg.acwrHigh){ const t=S.cfg.acwrLow; S.cfg.acwrLow=S.cfg.acwrHigh; S.cfg.acwrHigh=t; }
+  if(S.cfg.acwrCritLow>S.cfg.acwrLow) S.cfg.acwrCritLow=S.cfg.acwrLow;
+  if(S.cfg.acwrCritHigh<S.cfg.acwrHigh) S.cfg.acwrCritHigh=S.cfg.acwrHigh;
+  if(S.cfg.cmjDrop<0) S.cfg.cmjDrop=Math.abs(S.cfg.cmjDrop);
+  save(); closeM(); render(); toast("Soglie aggiornate");
+}
+function resetThresholds(){ Object.keys(CFG_DEF).forEach(k=>S.cfg[k]=CFG_DEF[k]); save(); render(); openThresholds(); toast("Default ripristinati"); }
+
 function changePassword(){
   document.getElementById("menu").classList.remove("on");
   modal('<div class="mh"><div><div class="mt">Cambia password</div>'+
@@ -638,6 +703,10 @@ function sparkline(arr,dir){
 
 /* ═══════════════ RENDER GRIGLIA ═══════════════ */
 function visibleTests(){
+  if(S.activeTeam && S.activeTeam!=="all" && S.activeTeam!=="none"){
+    const t=S.teams.find(x=>x.id===S.activeTeam);
+    if(t && t.tests && t.tests.length){ return TESTS.filter(x=>t.tests.indexOf(x.id)>=0); }
+  }
   return S.sport==="all" ? TESTS : TESTS.filter(t=>t.sports.includes(S.sport));
 }
 
@@ -727,6 +796,8 @@ function renderBar(){
   const bar=document.getElementById("bar");
   const mk=(v,l)=>'<button class="'+(S.view===v?"on":"")+'" onclick="setView(\''+v+'\')">'+l+'</button>';
   let h='<div class="seg">'+mk('today','Oggi')+mk('matrix','Matrice')+mk('trend','Andamento')+mk('readiness','Fatica')+'</div>';
+  if(S.activeTeam && S.activeTeam!=="all" && S.activeTeam!=="none")
+    h+='<button class="btn sm bar-tests" onclick="chooseTests()" title="Scegli i test da monitorare per questa squadra">🎚 Test</button>';
   if(S.view==="today"){
     h+='<div class="barhint">chi gestire oggi, prima di decidere la seduta</div>';
   } else if(S.view==="trend"){
@@ -1382,7 +1453,7 @@ function readinessScore(e){
   const g = (e.sl||0) + (6-(e.so||0)) + (6-(e.fa||0)) + (6-(e.st||0));
   return Math.round((g-4)/16*100);
 }
-function readinessColor(pc){ return pc>=80?"up":pc>=65?"amber":"down"; }
+function readinessColor(pc){ const c=S.cfg; return pc>=c.rdGreen?"up":pc>=c.rdAmber?"amber":"down"; }
 function cmjFatigue(aid){
   const arr=series(aid,"cmj"); if(arr.length<2) return null;
   const latest=arr[arr.length-1].v;
@@ -1390,7 +1461,7 @@ function cmjFatigue(aid){
   const base=prev.reduce((s,e)=>s+e.v,0)/prev.length;
   if(!base) return null;
   const pct=(latest-base)/base*100;
-  return {pct, fatigued: pct<=-5};
+  return {pct, fatigued: pct<=-(S.cfg.cmjDrop)};
 }
 function tstat(v,l,cls){ return '<div class="tstat"><div class="tsv '+(cls||"")+'">'+v+'</div><div class="tsl">'+l+'</div></div>'; }
 function renderToday(){
@@ -1402,20 +1473,29 @@ function renderToday(){
     const p=a.profile||{}; const flags=[]; let sev=0;
     const pain=parseFloat(p.painLevel);
     if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()){ flags.push({t:"⚠ Infortunio/dolore",c:"down"}); sev+=5; }
-    else if(!isNaN(pain) && pain>=4){ flags.push({t:"⚠ Dolore "+pain+"/10",c:"down"}); sev+=4; }
+    else if(!isNaN(pain) && pain>=S.cfg.painCut){ flags.push({t:"⚠ Dolore "+pain+"/10",c:"down"}); sev+=4; }
     const sc=SCREEN_KEYS.filter(k=>p[k]).length;
     if(sc){ flags.push({t:"🚩 Screening "+sc,c:"down"}); sev+=5; }
     const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1]; let rToday=false;
     if(rl){ const pc=readinessScore(rl); rToday=(rl.d===today);
-      if(pc<50){ flags.push({t:"🔋 Readiness "+pc,c:"down"}); sev+=4; }
-      else if(pc<65){ flags.push({t:"🔋 Readiness "+pc,c:"amber"}); sev+=2; } }
+      if(pc<S.cfg.rdCrit){ flags.push({t:"🔋 Readiness "+pc,c:"down"}); sev+=4; }
+      else if(pc<S.cfg.rdAmber){ flags.push({t:"🔋 Readiness "+pc,c:"amber"}); sev+=2; } }
     const ac=acwr(a.id);
     if(ac){ const r=ac.acwr;
-      if(r>1.5||r<0.5){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"down"}); sev+=3; }
-      else if(r>1.3||r<0.8){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"amber"}); sev+=1; } }
+      if(r>S.cfg.acwrCritHigh||r<S.cfg.acwrCritLow){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"down"}); sev+=3; }
+      else if(r>S.cfg.acwrHigh||r<S.cfg.acwrLow){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"amber"}); sev+=1; } }
     const cf=cmjFatigue(a.id);
     if(cf&&cf.fatigued){ flags.push({t:"⬇️ CMJ "+fmtNum(Math.round(cf.pct*10)/10)+"%",c:"down"}); sev+=2; }
-    return {a, flags, sev, rl, rToday};
+    let sug=""; const rpc=rl?readinessScore(rl):null;
+    if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
+    else if(!isNaN(pain) && pain>=S.cfg.painCut) sug="Dolore presente: resta sotto soglia, non peggiorare nelle 24h.";
+    else if(sc) sug="Verifica medica prima di proporre carichi intensi.";
+    else if(rpc!=null && rpc<S.cfg.rdCrit) sug="Priorità recupero: riduci volume e intensità oggi.";
+    else if(ac && (ac.acwr>S.cfg.acwrCritHigh||ac.acwr<S.cfg.acwrCritLow)) sug=(ac.acwr>S.cfg.acwrCritHigh?"Carico acuto alto: attenua — o conferma che è un picco pianificato.":"Carico molto basso: reintroduci gradualmente (rischio detraining).");
+    else if(rpc!=null && rpc<S.cfg.rdAmber) sug="Modula il volume, evita massimali; cura il recupero.";
+    else if(ac && (ac.acwr>S.cfg.acwrHigh||ac.acwr<S.cfg.acwrLow)) sug="ACWR in zona di attenzione: monitora il carico.";
+    else if(cf&&cf.fatigued) sug="Riduci pliometria/alta intensità; monitora il CMJ.";
+    return {a, flags, sev, rl, rToday, sug};
   });
   const manage=items.filter(x=>x.flags.length).sort((x,y)=>y.sev-x.sev);
   const ready=items.filter(x=>!x.flags.length);
@@ -1430,7 +1510,8 @@ function renderToday(){
     manage.forEach(x=>{
       h+='<div class="tcard" onclick="openAthlete(\''+x.a.id+'\')">'+
          '<div class="tname">'+esc(x.a.name)+'<span class="sx">'+(x.a.sex||"M")+'</span></div>'+
-         '<div class="tflags">'+x.flags.map(f=>'<span class="tflag '+f.c+'">'+f.t+'</span>').join("")+'</div></div>';
+         '<div class="tflags">'+x.flags.map(f=>'<span class="tflag '+f.c+'">'+f.t+'</span>').join("")+'</div>'+
+         (x.sug?'<div class="tsugg">💡 '+x.sug+'</div>':'')+'</div>';
     });
   } else {
     h+='<div class="tempty">Nessun segnale critico. Squadra pronta ✅</div>';
@@ -1474,7 +1555,7 @@ function renderReadiness(){
       sub='<div class="rd-sub"><span class="rd-chip">nessun check-in</span></div>';
     }
     const cf=cmjFatigue(a.id); let cmjHtml="";
-    if(cf){ const cls=cf.pct<=-5?"down":cf.pct>=2?"up":"flat";
+    if(cf){ const cls=cf.pct<=-(S.cfg.cmjDrop)?"down":cf.pct>=2?"up":"flat";
       cmjHtml='<span class="rd-cmj '+cls+'">CMJ '+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%'+(cf.fatigued?' ⚠':'')+'</span>'; }
     const ac=acwr(a.id); let acHtml="";
     if(ac){ const cls=acwrColor(ac.acwr); acHtml='<span class="rd-cmj '+cls+'">ACWR '+fmtNum(Math.round(ac.acwr*100)/100)+(cls==="down"?' ⚠':'')+'</span>'; }
@@ -1572,7 +1653,7 @@ function acwr(aid){
   if(chronic<=0) return null;
   return {acwr:acute/chronic, acute:Math.round(acute), chronic:Math.round(chronic)};
 }
-function acwrColor(r){ if(r==null) return "flat"; if(r>=0.8&&r<=1.3) return "up"; if(r>1.5||r<0.5) return "down"; return "amber"; }
+function acwrColor(r){ if(r==null) return "flat"; const c=S.cfg; if(r>=c.acwrLow&&r<=c.acwrHigh) return "up"; if(r>c.acwrCritHigh||r<c.acwrCritLow) return "down"; return "amber"; }
 function weekStats(aid){
   const arr=(S.load&&S.load[aid])||[]; const now=new Date(todayISO()); const daily={};
   for(let i=0;i<7;i++){ const d=new Date(now); d.setDate(d.getDate()-i); daily[d.toISOString().slice(0,10)]=0; }
@@ -1805,7 +1886,8 @@ function loadDemo(){
 const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆️",sj:"🔽",dj:"⬇️",eur:"🔁",
   spr10:"⏱️",spr30:"🏁",rsa:"🔄",sdec:"📉",vo2:"🫁",mas:"🏃",yoyo1:"🪀",yoyo2:"🪀",
   fvdef:"📈",cod505:"🔀",ttest:"✖️",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
-  shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶"};
+  shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶",
+  fmsSquat:"🏋️",fmsHurdle:"🚧",fmsLunge:"🤺",fmsShoulder:"🙆",fmsASLR:"🦵",fmsPushup:"🛟",fmsRotary:"🔁",fmsTotal:"🧮"};
 
 const PROTO={
   rm1:{eyebrow:"Forza massimale — Gold standard",
@@ -2053,7 +2135,78 @@ const PROTO={
       {t:"Confronta i lati",d:"Misura dx e sx."}],
     interpret:["Riferimento pratico: <b>~10 cm</b> = buona mobilità. Valori bassi o asimmetrie limitano squat e atterraggi."],
     advice:["Limitazioni → mobilità di caviglia (soleo/gastrocnemio + articolare), poi rinforzo nel nuovo ROM."],
-    note:"Una dorsiflessione scarsa sposta il carico su ginocchio e schiena."}
+    note:"Una dorsiflessione scarsa sposta il carico su ginocchio e schiena."},
+
+  fmsSquat:{eyebrow:"FMS · pattern fondamentale",
+    what:"<b>Deep Squat</b>: squat profondo a corpo libero con un bastone tenuto overhead a braccia tese. Valuta in un solo movimento mobilità e simmetria di caviglie, anche, colonna e spalle.",
+    steps:[{t:"Posizione",d:"Piedi a larghezza spalle, bastone overhead con gomiti tesi sopra la testa."},
+      {t:"Discesa",d:"Scendi più in basso possibile, talloni a terra, bastone fermo sopra la testa."},
+      {t:"Punteggio 0-3",d:"3: criteri puliti; 2: con talloni rialzati su una tavoletta; 1: non riesce; 0: dolore."}],
+    interpret:["Punteggio basso = limite di mobilità (spesso caviglia/anca) o controllo. Il <b>dolore = 0</b> e va indagato.","È un pattern globale: non dice <i>quale</i> segmento limita, ma che qualcosa limita."],
+    advice:["Lavora dorsiflessione di caviglia, mobilità d'anca e estensione toracica, poi rieduca il pattern.","Usa varianti assistite (goblet, talloni rialzati) mentre migliori la mobilità."],
+    note:"Punteggio 0-3. Test di screening, non di performance."},
+
+  fmsHurdle:{eyebrow:"FMS · pattern monopodalico",
+    what:"<b>Hurdle Step</b>: passo sopra un ostacolo (altezza tibia) mantenendo l'equilibrio su una gamba. Valuta stabilità monopodalica e mobilità/coordinazione d'anca.",
+    steps:[{t:"Setup",d:"Ostacolo all'altezza della tuberosità tibiale; bastone sulle spalle."},
+      {t:"Esecuzione",d:"Passa sopra l'ostacolo, tocca il tallone a terra e torna, senza perdere l'allineamento."},
+      {t:"Entrambi i lati",d:"Registra il lato peggiore (convenzione FMS). 3/2/1, 0 se dolore."}],
+    interpret:["Asimmetrie dx/sx sono il dato più utile: un lato nettamente peggiore merita attenzione.","Compensi di tronco/anca indicano scarso controllo monopodalico."],
+    advice:["Rinforzo e controllo monopodalico (step-up, hip airplane), mobilità d'anca."],
+    note:"Punteggio 0-3; si registra il lato peggiore."},
+
+  fmsLunge:{eyebrow:"FMS · pattern in linea",
+    what:"<b>In-Line Lunge</b>: affondo con i piedi su una linea e un bastone lungo la schiena (3 punti di contatto). Sfida stabilità, mobilità d'anca e controllo del tronco in una base stretta.",
+    steps:[{t:"Setup",d:"Piedi in linea su una tavola; bastone dietro la schiena a contatto con nuca, dorso e sacro."},
+      {t:"Affondo",d:"Scendi finché il ginocchio posteriore sfiora terra, mantenendo i 3 contatti e l'equilibrio."},
+      {t:"Entrambi i lati",d:"Registra il lato peggiore. 3/2/1, 0 se dolore."}],
+    interpret:["Perdita di equilibrio o dei contatti del bastone = deficit di stabilità/mobilità.","Confronta i lati: l'asimmetria conta più del voto assoluto."],
+    advice:["Mobilità d'anca (flessori, adduttori), controllo del core e affondi progressivi."],
+    note:"Punteggio 0-3; si registra il lato peggiore."},
+
+  fmsShoulder:{eyebrow:"FMS · mobilità cingolo scapolare",
+    what:"<b>Shoulder Mobility</b>: pugni chiusi che si avvicinano dietro la schiena (uno dall'alto, uno dal basso). Valuta la mobilità combinata della spalla. Include il <b>clearing test</b> per impingement.",
+    steps:[{t:"Misura",d:"Distanza tra i due pugni dietro la schiena; rapportata alla lunghezza della mano."},
+      {t:"Entrambi i lati",d:"Registra il lato peggiore. 3/2/1."},
+      {t:"Clearing test",d:"Mano sulla spalla opposta e spingi il gomito in alto: se compare dolore → punteggio 0."}],
+    interpret:["Dolore al clearing test azzera il punteggio e impone cautela/valutazione.","Negli sport overhead leggilo insieme alla rotazione gleno-omerale (GIRD)."],
+    advice:["Mobilità di rotazione e del torace, controllo scapolare; evita stretch aggressivi su spalle instabili."],
+    note:"Punteggio 0-3 + clearing test (dolore = 0)."},
+
+  fmsASLR:{eyebrow:"FMS · catena posteriore & core",
+    what:"<b>Active Straight-Leg Raise</b>: da supino sollevi una gamba tesa mantenendo l'altra a terra. Valuta la mobilità attiva della catena posteriore e la stabilità del bacino.",
+    steps:[{t:"Posizione",d:"Supino, gambe distese; solleva una gamba tesa il più possibile."},
+      {t:"Riferimento",d:"Si valuta dove arriva la caviglia rispetto alla coscia dell'altra gamba."},
+      {t:"Entrambi i lati",d:"Registra il lato peggiore. 3/2/1, 0 se dolore."}],
+    interpret:["Limite = ischiocrurali/anca poco estensibili o scarso controllo del bacino.","Asimmetrie marcate sono il segnale più utile."],
+    advice:["Mobilità attiva di anca e ischiocrurali, controllo anti-estensione del core."],
+    note:"Punteggio 0-3; si registra il lato peggiore."},
+
+  fmsPushup:{eyebrow:"FMS · stabilità del tronco",
+    what:"<b>Trunk Stability Push-Up</b>: un push-up partendo con le mani a un'altezza prescritta. Valuta la capacità di stabilizzare il tronco (anti-estensione) mentre gli arti spingono. Include il clearing test in estensione.",
+    steps:[{t:"Setup",d:"Prono, mani all'altezza richiesta (più alta per i livelli superiori)."},
+      {t:"Esecuzione",d:"Spingi in un unico blocco, senza che la schiena ceda in estensione (no 'lag' lombare)."},
+      {t:"Clearing test",d:"Press-up in estensione: se dolore → punteggio 0."}],
+    interpret:["Il bacino/lombare che cede per primo = scarsa stabilità anti-estensione.","Dolore in estensione azzera il punteggio."],
+    advice:["Anti-estensione (plank, dead bug, fallout) e forza di spinta con tronco rigido."],
+    note:"Punteggio 0-3 + clearing test (dolore = 0)."},
+
+  fmsRotary:{eyebrow:"FMS · stabilità multiplanare",
+    what:"<b>Rotary Stability</b>: in quadrupedia, estendi contemporaneamente braccio e gamba dello stesso lato, poi avvicina gomito e ginocchio. Valuta il controllo multiplanare del tronco. Include il clearing test in flessione.",
+    steps:[{t:"Posizione",d:"Quadrupedia; braccio e gamba dello stesso lato si estendono e poi si toccano sotto il corpo."},
+      {t:"Esecuzione",d:"Mantieni l'equilibrio e l'allineamento; movimento controllato."},
+      {t:"Clearing test",d:"Flessione (seduta sui talloni, mani avanti): se dolore → punteggio 0."}],
+    interpret:["Perdita di equilibrio/allineamento = scarso controllo rotazionale del core.","Confronta i lati; dolore in flessione azzera il punteggio."],
+    advice:["Esercizi anti-rotazione (Pallof press, bird-dog) e controllo del core in quadrupedia."],
+    note:"Punteggio 0-3 + clearing test (dolore = 0)."},
+
+  fmsTotal:{eyebrow:"FMS · sintesi",
+    what:"Somma dei 7 test FMS (<b>0-21</b>). Si calcola da sola quando hai inserito tutti e 7 i punteggi nella stessa data.",
+    steps:[{t:"Compila i 7 test",d:"Inserisci ciascun pattern (0-3) con la stessa data."},
+      {t:"Lettura",d:"Il totale è indicativo; le <b>asimmetrie</b> tra lati e i <b>dolori</b> (0) pesano più del numero."}],
+    interpret:["La soglia storica 14/21 ha <b>valore predittivo limitato</b>, ancora più basso negli atleti: usalo come baseline di qualità del movimento, non come test di rischio infortuni.","Un singolo 0 (dolore) o asimmetrie marcate sono più informativi del totale.","Per gli atleti, strumenti come CMJ/RSI, profilo F-V e batterie funzionali mirate sono più sensibili."],
+    advice:["Usa il FMS come screening iniziale e come linguaggio comune col cliente, poi indirizza il lavoro sui pattern più carenti.","Rivaluta dopo un blocco di mobilità/controllo per vedere se i pattern migliorano."],
+    note:"Punteggio totale 0-21 (derivato). Screening di movimento, non misura di performance né predittore forte di infortunio."}
 };
 
 const PROTO_EXTRA={
@@ -2148,7 +2301,8 @@ const BATTERY={
       {t:"Forza", w:"Ogni 6-10 settimane", y:"Riferimento per programmare le percentuali.", tests:["rm1","rm35","pred","imtp"]},
       {t:"Monitoraggio in sala", w:"Ogni allenamento", y:"Freschezza e progressione sulla velocità.", tests:["vbt"]},
       {t:"Potenza (opzionale)", w:"Periodico", y:"Espressione esplosiva.", tests:["cmj","sj"]},
-      {t:"Profilo", w:"Periodico", y:"Capire se manca forza o velocità.", tests:["fvdef"]}
+      {t:"Profilo", w:"Periodico", y:"Capire se manca forza o velocità.", tests:["fvdef"]},
+      {t:"Functional Movement Screen (FMS)", w:"Baseline / periodico", y:"Screen della qualità del movimento e delle asimmetrie.", tests:["fmsSquat","fmsHurdle","fmsLunge","fmsShoulder","fmsASLR","fmsPushup","fmsRotary"]}
     ]},
   generale:{
     note:"Fitness generale: forza di base, condizione e mobilità, con progressione graduale.",
@@ -2157,7 +2311,8 @@ const BATTERY={
       {t:"Forza", w:"Ogni 6-10 settimane", y:"Base di forza in sicurezza.", tests:["rm35","pred"]},
       {t:"Condizione", w:"Baseline · periodico", y:"Capacità aerobica.", tests:["vo2","yoyo1"]},
       {t:"Potenza / funzionale", w:"Periodico", y:"Esplosività e controllo.", tests:["cmj"]},
-      {t:"Mobilità", w:"Pre / se sintomi", y:"Dorsiflessione di caviglia.", tests:["ankleDF"]}
+      {t:"Mobilità", w:"Pre / se sintomi", y:"Dorsiflessione di caviglia.", tests:["ankleDF"]},
+      {t:"Functional Movement Screen (FMS)", w:"Baseline / periodico", y:"Qualità del movimento e asimmetrie: screen di base e linguaggio comune col cliente.", tests:["fmsSquat","fmsHurdle","fmsLunge","fmsShoulder","fmsASLR","fmsPushup","fmsRotary"]}
     ]}
 };
 function sportMeta(id){ return SPORTS.find(s=>s.id===id)||{icon:"",label:id}; }
@@ -2182,6 +2337,46 @@ function openBattery(sp){
     h+='</div>';
   });
   modal(h);
+}
+
+function chooseTests(){
+  const tid=S.activeTeam;
+  if(!tid || tid==="all" || tid==="none"){ toast("Seleziona prima una squadra dalla barra"); return; }
+  const team=S.teams.find(t=>t.id===tid); if(!team){ toast("Seleziona una squadra"); return; }
+  document.getElementById("menu").classList.remove("on");
+  const sel={}; const base=(team.tests&&team.tests.length)?team.tests:TESTS.filter(t=>t.sports.includes(team.sport||"generale")).map(t=>t.id);
+  base.forEach(id=>sel[id]=true);
+  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Asimmetria & funzionale","Mobilità & stabilità","Functional Movement Screen"];
+  let h='<div class="mh"><div><div class="mt">Test monitorati</div>'+
+    '<div class="ms">'+esc(team.name)+' · '+sportMeta(team.sport||"generale").label+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="gnote" style="margin-top:0">Scegli quali test vedere nella matrice e nell\'andamento per questa squadra. Quelli non spuntati restano nascosti (non vengono cancellati i dati).</div>';
+  h+='<div class="chq"><button class="btn sm" onclick="chooserSet(\'battery\')">🎯 Batteria consigliata</button>'+
+     '<button class="btn sm" onclick="chooserSet(\'all\')">Tutti</button>'+
+     '<button class="btn sm" onclick="chooserSet(\'none\')">Nessuno</button></div>';
+  cats.forEach(c=>{ const ts=TESTS.filter(t=>t.cat===c); if(!ts.length) return;
+    h+='<div class="psec">'+c+'</div>';
+    ts.forEach(t=>{
+      h+='<label class="tchk"><input type="checkbox" data-t="'+t.id+'"'+(sel[t.id]?" checked":"")+(t.derived?' data-d="1"':'')+'>'+
+         '<span>'+(ICON[t.id]||"🔬")+' '+t.name+' <i>'+t.unit+'</i>'+(t.derived?' <em>auto</em>':'')+'</span></label>';
+    });
+  });
+  h+='<div style="height:14px"></div><button class="btn primary" style="width:100%" onclick="saveChosenTests()">Salva selezione</button>';
+  modal(h);
+}
+function chooserSet(mode){
+  const team=S.teams.find(t=>t.id===S.activeTeam); const sport=team?(team.sport||"generale"):"generale";
+  const boxes=document.querySelectorAll('#modal input[data-t]');
+  if(mode==="all"){ boxes.forEach(b=>b.checked=true); }
+  else if(mode==="none"){ boxes.forEach(b=>b.checked=false); }
+  else if(mode==="battery"){ const b=BATTERY[sport]; const set={}; if(b) b.groups.forEach(g=>g.tests.forEach(id=>set[id]=true));
+    boxes.forEach(x=>{ x.checked=!!set[x.getAttribute("data-t")]; }); }
+}
+function saveChosenTests(){
+  const team=S.teams.find(t=>t.id===S.activeTeam); if(!team) return;
+  const ids=Array.prototype.map.call(document.querySelectorAll('#modal input[data-t]:checked'), i=>i.getAttribute("data-t"));
+  if(ids.length) team.tests=ids; else delete team.tests;
+  save(); closeM(); render(); toast(ids.length?("Monitori "+ids.length+" test"):"Filtro azzerato (mostro per sport)");
 }
 
 function openBatterySession(sport, gi){
@@ -2221,7 +2416,7 @@ function saveBatterySession(){
 }
 
 function guideIndex(){
-  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Asimmetria & funzionale","Mobilità & stabilità"];
+  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Asimmetria & funzionale","Mobilità & stabilità","Functional Movement Screen"];
   let h='<div class="mh"><div><div class="mt">Guida ai test</div>'+
     '<div class="ms">Come si eseguono · cosa misurano · a cosa servono</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div><div class="glist">';

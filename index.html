@@ -37,6 +37,8 @@ body{min-height:100vh;font-size:14px;line-height:1.4}
 .login-sub{color:var(--muted2);font-size:12.5px;margin:4px 0 18px}
 .login-card .fl{text-align:left}
 .login-err{color:var(--down);font-size:12px;margin-top:10px;min-height:14px;text-align:left}
+.login-forgot{text-align:center;margin-top:12px;font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline}
+.login-forgot:hover{color:var(--accent)}
 .login-note{color:var(--muted2);font-size:10.5px;line-height:1.5;margin-top:14px}
 .brand b{font-size:17px;font-weight:700;letter-spacing:-0.3px}
 .brand b span{color:var(--accent)}
@@ -196,6 +198,8 @@ ul.kb li b{color:#fff;font-weight:600}
 .bsports::-webkit-scrollbar{display:none}
 .bsports button{flex:0 0 auto;border:1px solid var(--line2);background:var(--surface2);color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer}
 .bsports button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.bvars button{border-style:dashed}
+.bvars button.on{border-style:solid}
 .bgrp{border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin-bottom:11px;background:var(--surface2)}
 .bgrp .bt{font-weight:700;font-size:14px;color:var(--text)}
 .bgrp .bw{font-family:var(--mono);font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
@@ -355,7 +359,7 @@ ul.kb li b{color:#fff;font-weight:600}
 <body>
 
 <div id="login" class="login">
-  <div class="login-card">
+  <div class="login-card" id="logCard">
     <svg viewBox="0 0 64 64" width="62" height="62" style="margin:0 auto 6px;display:block">
       <rect width="64" height="64" rx="14" fill="#0A0A0A" stroke="#2c2c30" stroke-width="1.5"/>
       <path d="M32 13 L49 23 L49 41 L32 51 L15 41 L15 23 Z" fill="#141416" stroke="#2c2c30" stroke-width="1.5"/>
@@ -371,7 +375,23 @@ ul.kb li b{color:#fff;font-weight:600}
     <input id="logPass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <div id="logErr" class="login-err"></div>
     <button class="btn primary" id="logBtn" style="width:100%;margin-top:14px" onclick="doLogin()">Entra</button>
+    <div class="login-forgot" onclick="openRecover()">Password dimenticata?</div>
     <div class="login-note">Primo accesso? Scegli email e password: verrà creato il tuo spazio privato. I dati sono protetti e cifrati.</div>
+  </div>
+
+  <div class="login-card" id="recCard" style="display:none">
+    <div class="login-name">RECUPERO <b>PASSWORD</b></div>
+    <div class="login-sub">Serve la tua chiave di recupero</div>
+    <label class="fl">Email dell'account</label>
+    <input id="recEmail" type="email" inputmode="email" placeholder="la-tua@email.it">
+    <label class="fl">Chiave di recupero</label>
+    <input id="recKey" type="password" placeholder="la chiave salvata su Vercel">
+    <label class="fl">Nuova password</label>
+    <input id="recNew" type="password" placeholder="min. 4 caratteri" onkeydown="if(event.key==='Enter')doRecover()">
+    <div id="recErr" class="login-err"></div>
+    <button class="btn primary" id="recBtn" style="width:100%;margin-top:14px" onclick="doRecover()">Reimposta password</button>
+    <div class="login-forgot" onclick="closeRecover()">← Torna all'accesso</div>
+    <div class="login-note">I tuoi <b>dati non vengono toccati</b>: sono legati all'email, non alla password.</div>
   </div>
 </div>
 
@@ -436,38 +456,39 @@ const SPORTS=[
   {id:"basket",  label:"Basket",         icon:"🏀"},
   {id:"forza",   label:"Forza / Palestra",icon:"🏋️"},
   {id:"atletica",label:"Atletica",       icon:"🏃"},
+  {id:"combattimento",label:"Sport da combattimento", icon:"🥊"},
   {id:"generale",label:"Generale",       icon:"⭐"},
 ];
 
 const TESTS=[
   // ─ FORZA ─
-  {id:"rm1",  name:"1RM",      full:"Massimale 1RM",            unit:"kg",       dir:1, cat:"Forza", sports:["forza","pallavolo","calcio","basket","generale"]},
-  {id:"rm35", name:"3-5RM",    full:"Test 3-5RM",               unit:"kg",       dir:1, cat:"Forza", sports:["forza","generale"]},
+  {id:"rm1",  name:"1RM",      full:"Massimale 1RM",            unit:"kg",       dir:1, cat:"Forza", sports:["forza","pallavolo","calcio","basket","generale","combattimento"]},
+  {id:"rm35", name:"3-5RM",    full:"Test 3-5RM",               unit:"kg",       dir:1, cat:"Forza", sports:["forza","generale","combattimento"]},
   {id:"pred", name:"xRM→1RM",  full:"1RM stimato (submassimale)",unit:"kg",      dir:1, cat:"Forza", sports:["forza","generale"]},
-  {id:"vbt",  name:"VBT",      full:"Velocità bilanciere (load-velocity)",unit:"m/s",dir:1,cat:"Forza",sports:["forza"]},
-  {id:"imtp", name:"IMTP",     full:"Forza isometrica mid-thigh",unit:"N/kg",    dir:1, cat:"Forza", sports:["forza","pallavolo","basket"], lv:{m:[22,28,34,40],f:[18,24,30,36]}},
+  {id:"vbt",  name:"VBT",      full:"Velocità bilanciere (load-velocity)",unit:"m/s",dir:1,cat:"Forza",sports:["forza","combattimento"]},
+  {id:"imtp", name:"IMTP",     full:"Forza isometrica mid-thigh",unit:"N/kg",    dir:1, cat:"Forza", sports:["forza","pallavolo","basket","combattimento"], lv:{m:[22,28,34,40],f:[18,24,30,36]}},
   // ─ POTENZA / SALTO ─
-  {id:"cmj",  name:"CMJ",      full:"Countermovement Jump",     unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
-  {id:"sj",   name:"SJ",       full:"Squat Jump",               unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","forza"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
-  {id:"dj",   name:"Drop Jump",full:"Drop Jump — RSI",          unit:"RSI",      dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica"], lv:{m:[0.8,1.2,1.6,2.0],f:[0.6,1.0,1.4,1.7]}},
+  {id:"cmj",  name:"CMJ",      full:"Countermovement Jump",     unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
+  {id:"sj",   name:"SJ",       full:"Squat Jump",               unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","forza","combattimento"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
+  {id:"dj",   name:"Drop Jump",full:"Drop Jump — RSI",          unit:"RSI",      dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","combattimento"], lv:{m:[0.8,1.2,1.6,2.0],f:[0.6,1.0,1.4,1.7]}},
   {id:"eur",  name:"EUR",      full:"Elastic Index (CMJ ÷ SJ)", unit:"ratio",    dir:1, cat:"Potenza", sports:["pallavolo","basket"], derived:{from:["cmj","sj"], fn:(c,s)=> s? c/s : null}},
   // ─ VELOCITÀ / AGILITÀ ─
-  {id:"spr10",name:"Sprint 10m",full:"Sprint 10 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo","atletica"], lv:{m:[2.10,1.95,1.85,1.75],f:[2.30,2.15,2.05,1.95]}},
+  {id:"spr10",name:"Sprint 10m",full:"Sprint 10 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo","atletica","combattimento"], lv:{m:[2.10,1.95,1.85,1.75],f:[2.30,2.15,2.05,1.95]}},
   {id:"spr30",name:"Sprint 30m",full:"Sprint 30 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","atletica"], lv:{m:[4.80,4.50,4.25,4.00],f:[5.20,4.90,4.60,4.35]}},
   {id:"rsa",  name:"RSA best", full:"RSA — miglior sprint",     unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo"]},
   {id:"sdec", name:"RSA Sdec", full:"RSA — % decremento",       unit:"%",        dir:-1,cat:"Velocità", sports:["calcio","basket"]},
   // ─ AEROBICO ─
-  {id:"vo2",  name:"VO₂max",   full:"VO₂max",                   unit:"ml/kg/min",dir:1, cat:"Aerobico", sports:["calcio","atletica","generale"], lv:{m:[40,48,55,62],f:[35,42,49,56]}},
-  {id:"mas",  name:"MAS",      full:"Velocità Aerobica Massimale",unit:"km/h",   dir:1, cat:"Aerobico", sports:["calcio","atletica"], lv:{m:[14,16,17.5,19],f:[12.5,14.5,16,17.5]}},
-  {id:"yoyo1",name:"Yo-Yo IR1",full:"Yo-Yo Intermittent Recovery 1",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio","basket","pallavolo"], lv:{m:[800,1400,2000,2600],f:[600,1100,1600,2200]}},
+  {id:"vo2",  name:"VO₂max",   full:"VO₂max",                   unit:"ml/kg/min",dir:1, cat:"Aerobico", sports:["calcio","atletica","generale","combattimento"], lv:{m:[40,48,55,62],f:[35,42,49,56]}},
+  {id:"mas",  name:"MAS",      full:"Velocità Aerobica Massimale",unit:"km/h",   dir:1, cat:"Aerobico", sports:["calcio","atletica","combattimento"], lv:{m:[14,16,17.5,19],f:[12.5,14.5,16,17.5]}},
+  {id:"yoyo1",name:"Yo-Yo IR1",full:"Yo-Yo Intermittent Recovery 1",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio","basket","pallavolo","combattimento"], lv:{m:[800,1400,2000,2600],f:[600,1100,1600,2200]}},
   {id:"yoyo2",name:"Yo-Yo IR2",full:"Yo-Yo Intermittent Recovery 2",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio"]},
   // ─ PROFILO F-V ─
-  {id:"fvdef", name:"Deficit F-V", full:"Squilibrio Forza-Velocità",   unit:"%",  dir:-1, cat:"Potenza", sports:["forza","atletica","calcio","basket","pallavolo"]},
+  {id:"fvdef", name:"Deficit F-V", full:"Squilibrio Forza-Velocità",   unit:"%",  dir:-1, cat:"Potenza", sports:["forza","atletica","calcio","basket","pallavolo","combattimento"]},
   // ─ CAMBIO DIREZIONE ─
-  {id:"cod505",name:"505",        full:"505 — cambio direzione 180°",  unit:"s",  dir:-1, cat:"Cambio direzione", sports:["calcio","basket","pallavolo"]},
+  {id:"cod505",name:"505",        full:"505 — cambio direzione 180°",  unit:"s",  dir:-1, cat:"Cambio direzione", sports:["calcio","basket","pallavolo","combattimento"]},
   {id:"ttest", name:"T-test",     full:"T-test — agilità",             unit:"s",  dir:-1, cat:"Cambio direzione", sports:["calcio","basket","pallavolo"]},
   // ─ ASIMMETRIA & FUNZIONALE ─
-  {id:"cmjAsym",  name:"Asimm. CMJ", full:"Asimmetria inter-arto al CMJ", unit:"%", dir:-1, cat:"Asimmetria & funzionale", sports:["pallavolo","basket","calcio","atletica"]},
+  {id:"cmjAsym",  name:"Asimm. CMJ", full:"Asimmetria inter-arto al CMJ", unit:"%", dir:-1, cat:"Asimmetria & funzionale", sports:["pallavolo","basket","calcio","atletica","combattimento"]},
   {id:"ybtLow",   name:"YBT inf.",   full:"Y-Balance arto inferiore (composite)", unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","pallavolo","atletica"]},
   {id:"hopLSI",   name:"Hop LSI",    full:"Single-leg hop — LSI",       unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","pallavolo","atletica"]},
   {id:"tripleHop",name:"Triple hop", full:"Triple hop — LSI",           unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","atletica"]},
@@ -475,7 +496,7 @@ const TESTS=[
   {id:"shIR",  name:"Spalla IR",  full:"Rotazione interna gleno-omerale (GIRD)", unit:"°", dir:1, cat:"Mobilità & stabilità", sports:["pallavolo"]},
   {id:"shMob", name:"Spalla mob.",full:"Mobilità spalla (mani dietro schiena)",  unit:"cm",dir:-1,cat:"Mobilità & stabilità", sports:["pallavolo","basket"]},
   {id:"shStab",name:"Spalla stab.",full:"Stabilità spalla (Y-Balance Upper Quarter)",unit:"%",dir:1,cat:"Mobilità & stabilità", sports:["pallavolo"]},
-  {id:"ankleDF",name:"Caviglia DF",full:"Dorsiflessione caviglia (knee-to-wall)", unit:"cm",dir:1, cat:"Mobilità & stabilità", sports:["calcio","basket","pallavolo","atletica","forza","generale"], lv:{m:[7,10,12,14],f:[7,10,12,14]}},
+  {id:"ankleDF",name:"Caviglia DF",full:"Dorsiflessione caviglia (knee-to-wall)", unit:"cm",dir:1, cat:"Mobilità & stabilità", sports:["calcio","basket","pallavolo","atletica","forza","generale","combattimento"], lv:{m:[7,10,12,14],f:[7,10,12,14]}},
   // ─ FUNCTIONAL MOVEMENT SCREEN ─
   {id:"fmsSquat",   name:"FMS Squat",   full:"FMS · Deep Squat",              unit:"/3", dir:1, cat:"Functional Movement Screen", sports:["generale","forza"]},
   {id:"fmsHurdle",  name:"FMS Hurdle",  full:"FMS · Hurdle Step",             unit:"/3", dir:1, cat:"Functional Movement Screen", sports:["generale","forza"]},
@@ -486,6 +507,32 @@ const TESTS=[
   {id:"fmsRotary",  name:"FMS Rotary",  full:"FMS · Rotary Stability",        unit:"/3", dir:1, cat:"Functional Movement Screen", sports:["generale","forza"]},
   {id:"fmsTotal",   name:"FMS Totale",  full:"FMS · Punteggio totale",        unit:"/21",dir:1, cat:"Functional Movement Screen", sports:["generale","forza"],
      derived:{from:["fmsSquat","fmsHurdle","fmsLunge","fmsShoulder","fmsASLR","fmsPushup","fmsRotary"], fn:function(){ return Array.prototype.reduce.call(arguments,(a,b)=>a+b,0); }}},
+  // ─ ANAEROBICO (chiave negli sport da combattimento) ─
+  {id:"shuttle300",name:"Shuttle 300m", full:"300 m shuttle (12 × 25 m) — miglior ripetizione", unit:"s", dir:-1, cat:"Anaerobico", sports:["combattimento","basket"]},
+  {id:"shuttleFat",name:"Fatica 300m",  full:"300 m shuttle — % di decremento tra le due prove", unit:"%", dir:-1, cat:"Anaerobico", sports:["combattimento","basket"]},
+  {id:"wingPeak",  name:"Picco anaer.", full:"Potenza anaerobica di picco (Wingate)",  unit:"W/kg", dir:1, cat:"Anaerobico", sports:["combattimento","atletica"], lv:{m:[6,7.5,9,10.5],f:[5,6,7.5,8.5]}},
+  {id:"wingMean",  name:"Media anaer.", full:"Potenza anaerobica media (Wingate) — capacità", unit:"W/kg", dir:1, cat:"Anaerobico", sports:["combattimento","atletica"], lv:{m:[4.5,5.5,6.5,7.5],f:[3.5,4.5,5.5,6.5]}},
+  // ─ FORZA / PRESA / RESISTENZA ─
+  {id:"gripStr",   name:"Presa",        full:"Forza di presa (dinamometro, mano dominante)", unit:"kg", dir:1, cat:"Forza", sports:["combattimento"], lv:{m:[40,48,55,62],f:[24,30,36,42]}},
+  {id:"pullMax",   name:"Trazioni max", full:"Trazioni massime (resistenza di forza arti superiori)", unit:"rip", dir:1, cat:"Forza", sports:["combattimento","forza","generale"], lv:{m:[5,10,15,20],f:[1,4,8,12]}},
+  {id:"rmSquat",   name:"1RM Squat",   full:"Massimale 1RM — Squat",        unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
+  {id:"rmBench",   name:"1RM Panca",   full:"Massimale 1RM — Panca piana",  unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
+  {id:"rmDead",    name:"1RM Stacco",  full:"Massimale 1RM — Stacco da terra", unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
+  {id:"pushMax",   name:"Push-up max", full:"Push-up massimi (resistenza di forza di spinta)", unit:"rip", dir:1, cat:"Forza", sports:["combattimento","forza","generale"], lv:{m:[20,30,40,50],f:[10,18,25,35]}},
+  {id:"trmInc",    name:"Tapis increm.",full:"Test incrementale al tapis roulant — velocità finale", unit:"km/h", dir:1, cat:"Aerobico", sports:["combattimento","atletica","generale"], lv:{m:[13,15,16.5,18],f:[11.5,13.5,15,16.5]}},
+  {id:"airBike",   name:"Air bike",    full:"Air bike — test incrementale (potenza finale)", unit:"W", dir:1, cat:"Aerobico", sports:["combattimento","forza","generale"]},
+  // ─ POTENZA SPECIFICA ─
+  {id:"punchPow",  name:"Potenza colpo",full:"Potenza/forza del colpo (punch meter)", unit:"AU", dir:1, cat:"Potenza", sports:["combattimento"]},
+  // ─ COMPOSIZIONE CORPOREA (categorie di peso) ─
+  {id:"bodyFat",   name:"Massa grassa", full:"Percentuale di massa grassa",  unit:"%",  dir:-1, cat:"Composizione corporea", sports:["combattimento","forza","generale"]},
+  // ─ MASSIMALI SPECIFICI ─
+  {id:"rmSquat",  name:"1RM Squat",   full:"Massimale 1RM — Squat",          unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
+  {id:"rmBench",  name:"1RM Panca",   full:"Massimale 1RM — Panca piana",    unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
+  {id:"rmDead",   name:"1RM Stacco",  full:"Massimale 1RM — Stacco da terra",unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
+  {id:"pushMax",  name:"Push-up max", full:"Push-up massimi (resistenza di forza)", unit:"rip", dir:1, cat:"Forza", sports:["combattimento","forza","generale"], lv:{m:[20,30,40,50],f:[10,18,25,35]}},
+  // ─ AEROBICI SPECIFICI ─
+  {id:"trmInc",   name:"Tapis incr.", full:"Test incrementale al tapis roulant (tempo a esaurimento)", unit:"min", dir:1, cat:"Aerobico", sports:["combattimento","forza","generale","atletica"]},
+  {id:"airBike",  name:"Air bike",    full:"Air bike — calorie in 5 minuti",  unit:"kcal", dir:1, cat:"Aerobico", sports:["combattimento","forza","generale"]},
 ];
 const TMAP={}; TESTS.forEach(t=>TMAP[t.id]=t);
 
@@ -506,6 +553,7 @@ function normalize(){
   if(!S.teams) S.teams=[];
   if(!S.readiness) S.readiness={};
   if(!S.load) S.load={};
+  if(!S.cvar) S.cvar="percussione";
   if(!S.cfg) S.cfg={};
   Object.keys(CFG_DEF).forEach(k=>{ if(typeof S.cfg[k]!=="number"||isNaN(S.cfg[k])) S.cfg[k]=CFG_DEF[k]; });
   if(!S.activeTeam) S.activeTeam="all";
@@ -545,10 +593,46 @@ function showLogin(msg){
   const e=document.getElementById("logEmail"); if(e&&AUTH&&AUTH.email&&!e.value) e.value=AUTH.email;
 }
 function hideLogin(){ document.getElementById("login").classList.add("hide"); }
+function openRecover(){
+  document.getElementById("logCard").style.display="none";
+  const r=document.getElementById("recCard"); r.style.display="block";
+  document.getElementById("recErr").textContent="";
+  const em=document.getElementById("logEmail").value.trim();
+  if(em) document.getElementById("recEmail").value=em;
+}
+function closeRecover(){
+  document.getElementById("recCard").style.display="none";
+  document.getElementById("logCard").style.display="block";
+  ["recKey","recNew"].forEach(id=>document.getElementById(id).value="");
+}
+function doRecover(){
+  const email=document.getElementById("recEmail").value.trim().toLowerCase();
+  const key=document.getElementById("recKey").value;
+  const np=document.getElementById("recNew").value;
+  const err=document.getElementById("recErr"), btn=document.getElementById("recBtn");
+  if(!email||!key||!np){ err.textContent="Compila tutti i campi"; return; }
+  if(np.length<4){ err.textContent="Nuova password troppo corta (min 4)"; return; }
+  err.textContent=""; btn.disabled=true; btn.textContent="Reimposto…";
+  fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({action:"reset", email, recoveryKey:key, newPassword:np})})
+    .then(r=>r.json().then(j=>{ if(!r.ok) throw new Error(j.error||("HTTP "+r.status)); return j; }))
+    .then(()=>{
+      btn.disabled=false; btn.textContent="Reimposta password";
+      closeRecover();
+      document.getElementById("logEmail").value=email;
+      document.getElementById("logPass").value="";
+      document.getElementById("logErr").textContent="";
+      document.getElementById("logErr").style.color="var(--up)";
+      document.getElementById("logErr").textContent="Password reimpostata. Ora entra con quella nuova.";
+    })
+    .catch(e=>{ btn.disabled=false; btn.textContent="Reimposta password"; err.textContent=e.message; });
+}
+
 function doLogin(){
   const email=document.getElementById("logEmail").value.trim().toLowerCase();
   const pass=document.getElementById("logPass").value;
   const err=document.getElementById("logErr"), btn=document.getElementById("logBtn");
+  err.style.color="";
   if(!email||!pass){ err.textContent="Inserisci email e password"; return; }
   err.textContent=""; btn.disabled=true; btn.textContent="Accesso…";
   AUTH={email,password:pass};
@@ -1289,6 +1373,46 @@ const SPORTKB={
       "Test utili: <b>1RM/3-5RM, xRM→1RM, VBT, forza relativa</b>.",
       "ACWR applicato al tonnellaggio per i picchi di carico."]},
 
+  combattimento:{label:"Sport da combattimento", roleList:["Percussione (boxe/kickboxing/taekwondo/karate)","Lotta (wrestling/judo)","Grappling (BJJ/sambo)","Ibrido (MMA)"],
+    demands:[
+      "Sport <b>intermittente ad altissima intensità</b>: la forza va espressa ripetutamente contro una resistenza esterna (l'avversario).",
+      "Richiede <b>forza esplosiva e condizionamento metabolico insieme</b>: sono tra gli sport fisicamente più complessi.",
+      "Il rapporto <b>sforzo:pausa</b> definisce il dominio energetico e cambia molto per disciplina: judo/lotta/karate ~2:1, boxe ~3:1, taekwondo da 1:3 a 1:6, BJJ ~10:1, MMA da 1:2 a 1:4.",
+      "Sistemi energetici: <b>ATP-PCr e glicolitico</b> per le azioni ad alto impulso; l'<b>aerobico</b> sostiene il recupero tra le azioni e il ritmo di lavoro sull'intero match.",
+      "Riferimenti aerobici: pugili 44-65, karate 47-61, taekwondo 44-63, BJJ ~50, lottatori 53-56 ml/kg/min.",
+      "Le <b>categorie di peso</b> rendono centrale la composizione corporea: massimizzare la massa magra minimizzando il grasso."],
+    gesture:[
+      "<b>Percussione</b>: colpi esplosivi in frazioni di secondo — velocità d'impatto ~8,9-9,1 m/s nel pugno, 7,3-14,4 m/s nei calci. Sistema dei fosfati.",
+      "<b>Lotta</b>: proiezioni, takedown, controllo — manipolare la massa dell'avversario richiede alta forza assoluta e relativa, soprattutto della parte alta.",
+      "<b>Grappling</b>: prese, controllo a terra e sottomissioni — servono presa e <b>resistenza di forza</b> di tronco e arti superiori, più che forza massimale delle gambe.",
+      "<b>Ibrido (MMA)</b>: il più complesso — richiede insieme fisiologie divergenti (percussione esplosiva e grappling prolungato)."],
+    training:[
+      "<b>Forza relativa</b> come priorità: più forte a parità di peso, non più pesante. La categoria è un vincolo permanente.",
+      "Forza massimale (spinta e soprattutto <b>tirata/parte alta</b>) + lavori balistici per l'espressione esplosiva.",
+      "<b>HIIT</b> come strumento chiave: sviluppa insieme il sistema aerobico e quello anaerobico che regolano la tolleranza al carico.",
+      "Allenamento <b>fight-specific</b>: drill tecnici ad alta intensità (sparring a intervalli, shark tank). Attenzione: la fatica degrada la qualità tecnica — non allenare skill nuove in stato di fatica pesante.",
+      "Presa e resistenza di presa nelle discipline con kumikata/gi.",
+      "Gestisci il <b>concorrente</b>: il volume tecnico è già altissimo; la sala pesi deve integrare, non sommare fatica a caso."],
+    prevention:[
+      "Il volume tecnico (sparring, randori) è la fonte principale di carico: <b>contalo</b>, non solo la palestra.",
+      "Collo e spalle molto sollecitati nella lotta/grappling: rinforzo specifico del collo e salute della cuffia.",
+      "Gomito e avambraccio nelle fasi di alto volume di presa.",
+      "<b>Taglio di peso</b>: il rischio più sottovalutato. Tagli rapidi compromettono forza, recupero, funzione cognitiva e sicurezza — gestione graduale e supporto nutrizionale.",
+      "Sparring pesante: gestisci il volume di impatti alla testa come un carico da programmare, non come una variabile libera."],
+    monitoring:[
+      "<b>sRPE × durata</b> (Foster) è lo strumento d'elezione: aggrega sedute molto diverse (sparring, grappling, S&C, condizionamento) in un unico carico. Usa la vista <b>Fatica</b>.",
+      "Applica l'<b>ACWR</b> (acuto:cronico) per evitare picchi accentuati; ricorda però che un picco <i>pianificato</i> non è di per sé pericoloso.",
+      "<b>CMJ e RSI (drop jump)</b> come proxy oggettivo di readiness: un calo indica soppressione neuromuscolare da carico pesante.",
+      "<b>Questionari wellness</b> + readiness soggettiva: nel combattimento sono spesso l'opzione più praticabile e costo-efficace.",
+      "<b>Punch meter</b> dove disponibile: forza/velocità del colpo come indicatore grossolano ma utile dello stato di forma.",
+      "Il tracking esterno (GPS/sensori inerziali) è <b>poco praticabile</b> nelle discipline a terra: i sensori si spostano, l'avversario li tira, c'è rischio di infortunio. Punta sul carico interno.",
+      "Monitora <b>massa grassa e forza insieme</b> durante il camp: se la forza cala mentre scende il peso, stai perdendo massa magra."],
+    roles:{
+      "Percussione (boxe/kickboxing/taekwondo/karate)":["Dominio dei fosfati: colpi esplosivi, alta potenza anaerobica (picco ~9,3 W/kg, media ~6,7 W/kg).","Priorità: potenza esplosiva, velocità, capacità di ripetere azioni ad alta intensità; base aerobica per il recupero tra le azioni.","Monitora la potenza del colpo e il CMJ."],
+      "Lotta (wrestling/judo)":["Dispendio tra i più alti di tutti gli sport (~13-14 kcal/min). Lattato 10-20 mmol/L.","La <b>forza assoluta</b>, specie della parte alta, distingue i lottatori di successo.","Priorità: forza massimale e relativa, potenza e capacità anaerobica, presa."],
+      "Grappling (BJJ/sambo)":["Match lunghi con azioni continue: dominante la <b>resistenza di forza</b> di tronco e arti superiori.","Forza massimale delle gambe meno determinante; capacità di mantenere forza per tutto il match sì.","Priorità: resistenza di forza, presa, capacità aerobica; VO₂max tipico ~50 ml/kg/min."],
+      "Ibrido (MMA)":["Richiede insieme qualità divergenti: esplosività della percussione e resistenza del grappling.","Priorità: nessuna qualità sacrificabile — programma con attenzione al concorrente e alla gestione della fatica.","Il carico va aggregato tra tutte le modalità (sparring, wrestling, BJJ, S&C) con sRPE."]}},
+
   generale:{label:"Generale / Fitness", roleList:[],
     demands:[
       "Obiettivi di salute, composizione corporea e condizione generale.",
@@ -1887,7 +2011,9 @@ const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆
   spr10:"⏱️",spr30:"🏁",rsa:"🔄",sdec:"📉",vo2:"🫁",mas:"🏃",yoyo1:"🪀",yoyo2:"🪀",
   fvdef:"📈",cod505:"🔀",ttest:"✖️",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
   shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶",
-  fmsSquat:"🏋️",fmsHurdle:"🚧",fmsLunge:"🤺",fmsShoulder:"🙆",fmsASLR:"🦵",fmsPushup:"🛟",fmsRotary:"🔁",fmsTotal:"🧮"};
+  fmsSquat:"🏋️",fmsHurdle:"🚧",fmsLunge:"🤺",fmsShoulder:"🙆",fmsASLR:"🦵",fmsPushup:"🛟",fmsRotary:"🔁",fmsTotal:"🧮",
+  shuttle300:"🔁",shuttleFat:"📉",wingPeak:"⚡",wingMean:"🔋",gripStr:"🤝",pullMax:"🧗",punchPow:"🥊",bodyFat:"⚖️",
+  rmSquat:"🦵",rmBench:"🛏️",rmDead:"🪝",pushMax:"🤸",trmInc:"🏃",airBike:"🚴"};
 
 const PROTO={
   rm1:{eyebrow:"Forza massimale — Gold standard",
@@ -2206,7 +2332,135 @@ const PROTO={
       {t:"Lettura",d:"Il totale è indicativo; le <b>asimmetrie</b> tra lati e i <b>dolori</b> (0) pesano più del numero."}],
     interpret:["La soglia storica 14/21 ha <b>valore predittivo limitato</b>, ancora più basso negli atleti: usalo come baseline di qualità del movimento, non come test di rischio infortuni.","Un singolo 0 (dolore) o asimmetrie marcate sono più informativi del totale.","Per gli atleti, strumenti come CMJ/RSI, profilo F-V e batterie funzionali mirate sono più sensibili."],
     advice:["Usa il FMS come screening iniziale e come linguaggio comune col cliente, poi indirizza il lavoro sui pattern più carenti.","Rivaluta dopo un blocco di mobilità/controllo per vedere se i pattern migliorano."],
-    note:"Punteggio totale 0-21 (derivato). Screening di movimento, non misura di performance né predittore forte di infortunio."}
+    note:"Punteggio totale 0-21 (derivato). Screening di movimento, non misura di performance né predittore forte di infortunio."},
+
+  shuttle300:{eyebrow:"Capacità anaerobica — lattacida",
+    what:"<b>300 m shuttle</b> (12 × 25 m) eseguito <b>due volte</b> con 3 minuti di recupero. Si registra qui la <b>ripetizione più veloce</b>. È il test usato nel monitoraggio dei taekwondoka olimpici (French, in Laursen &amp; Buchheit).",
+    steps:[{t:"Setup",d:"Due coni a 25 m. Cronometro."},
+      {t:"Prova 1",d:"12 navette da 25 m alla massima intensità: cronometra il tempo totale."},
+      {t:"3 min di recupero",d:"Recupero passivo."},
+      {t:"Prova 2",d:"Ripeti. Registra qui il <b>tempo migliore</b> delle due; la differenza va nel test 'Fatica 300m'."}],
+    interpret:["Il tempo migliore misura la <b>potenza anaerobica lattacida</b>: la capacità di sostenere un'intensità altissima per ~60-75 s, tipica di un round.","Negli sport da combattimento il lattato può salire a 10-20 mmol/L: questo test riproduce quel dominio energetico."],
+    advice:["Migliora con HIIT ad alta intensità e intervalli lattacidi; supportalo con una solida base aerobica, che accelera il recupero tra le azioni.","Contestualizza sempre col decremento (test 'Fatica 300m'): un tempo alto ma stabile è diverso da un tempo alto che crolla."],
+    note:"Test molto impegnativo: programmalo lontano da sparring intensi e mai in fase di scarico."},
+
+  shuttleFat:{eyebrow:"Capacità anaerobica — ripetibilità",
+    what:"<b>% di decremento</b> tra la prova più veloce e la più lenta delle due 300 m shuttle. Misura quanto l'atleta <b>regge</b> l'intensità, non solo quanto è veloce.",
+    steps:[{t:"Esegui le due prove",d:"Come nel test 'Shuttle 300m', con 3 min di recupero."},
+      {t:"Calcola",d:"(tempo peggiore − tempo migliore) / tempo migliore × 100."},
+      {t:"Registra",d:"Inserisci qui la percentuale."}],
+    interpret:["Più il decremento è <b>basso</b>, meglio l'atleta mantiene la potenza tra round.","È il dato che distingue chi ha <b>capacità</b> anaerobica da chi ha solo potenza di picco: cruciale nei match multi-round."],
+    advice:["Decremento alto → lavora la base aerobica e la capacità di recupero tra sforzi (intervalli, buffering lattacido).","Decremento basso ma tempi lenti → serve potenza: intervalli più brevi e intensi."],
+    note:"Da leggere sempre insieme al tempo migliore."},
+
+  wingPeak:{eyebrow:"Potenza anaerobica di picco",
+    what:"<b>Potenza di picco</b> (W/kg) espressa in un test Wingate (30 s su cicloergometro). Rappresenta il sistema dei <b>fosfati</b> (ATP-PCr): quello del colpo, del takedown, della proiezione.",
+    steps:[{t:"Riscaldamento",d:"5-10 min con brevi accelerazioni."},
+      {t:"Wingate 30 s",d:"Massimo sforzo contro carico standardizzato (tipicamente 7,5% del peso corporeo)."},
+      {t:"Registra",d:"Potenza di picco normalizzata al peso (W/kg)."}],
+    interpret:["Riferimento dalla letteratura: negli sport di percussione (boxe, karate, taekwondo) la potenza di picco è ~<b>9,3 W/kg</b>; nei lottatori è più alta.","Valori più alti = maggiore esplosività per colpi e azioni ad alto impulso."],
+    advice:["Migliora con forza massimale, lavori balistici/pliometrici e sprint brevi massimali.","Nei fighter è inseparabile dalla forza relativa: alza la forza mantenendo la categoria di peso."],
+    note:"Valori di riferimento indicativi. Serve un cicloergometro adatto; in alternativa usa CMJ/salti come proxy di esplosività."},
+
+  wingMean:{eyebrow:"Capacità anaerobica",
+    what:"<b>Potenza media</b> (W/kg) sui 30 s del Wingate: rappresenta la <b>capacità</b> anaerobica, cioè quanto l'atleta sostiene l'alta potenza — determinante per la durata di un round.",
+    steps:[{t:"Stesso test del picco",d:"Un solo Wingate fornisce sia il picco sia la media."},
+      {t:"Registra",d:"Potenza media dei 30 s normalizzata al peso (W/kg)."}],
+    interpret:["Riferimento: negli sport di percussione la potenza media è ~<b>6,7 W/kg</b>; i lottatori tendono a valori superiori.","Il rapporto media/picco dice quanto l'atleta <b>tiene</b>: un picco alto con media bassa = si spegne."],
+    advice:["Migliora con intervalli lattacidi e capacità di buffering; la base aerobica sostiene il recupero tra le azioni.","Nei match multi-round questa qualità pesa spesso più del picco."],
+    note:"Valori di riferimento indicativi."},
+
+  gripStr:{eyebrow:"Presa — grappling",
+    what:"<b>Forza di presa</b> al dinamometro. Nelle discipline di lotta e grappling (judo, BJJ, lotta) la presa è un determinante diretto: chi controlla il bavero/polso controlla lo scambio.",
+    steps:[{t:"Posizione",d:"In piedi, braccio lungo il fianco, gomito esteso."},
+      {t:"3 prove per mano",d:"Massima contrazione di ~3-5 s; recupero tra le prove."},
+      {t:"Registra",d:"Miglior valore della mano dominante; annota anche l'altra per l'asimmetria."}],
+    interpret:["Confronta i due lati: asimmetrie marcate sono comuni ma vanno tenute d'occhio.","Un calo della presa tra un test e l'altro può segnalare <b>fatica accumulata</b> nelle discipline con molto kumikata."],
+    advice:["Allena presa isometrica (hold su sbarra, kimono/gi pull-up), tirate pesanti e resistenza specifica di presa.","Nei periodi di alto volume di grappling attenzione al sovraccarico di gomito/avambraccio."],
+    note:"Valori di riferimento indicativi, per adulti. La presa è molto specifica: il dinamometro non sostituisce la presa sul gi."},
+
+  pullMax:{eyebrow:"Resistenza di forza — arti superiori",
+    what:"<b>Trazioni massime</b> in una serie. Nel grappling la <b>resistenza di forza degli arti superiori</b> è un attributo critico: i BJJ-isti d'élite hanno ottimi livelli di endurance di forza di tronco e parte alta (Laursen &amp; Buchheit, cap. 11).",
+    steps:[{t:"Presa prona",d:"Presa poco più larga delle spalle, partenza a braccia tese."},
+      {t:"Massime ripetizioni",d:"Mento sopra la sbarra, controllo in discesa, senza slancio."},
+      {t:"Registra",d:"Numero di ripetizioni valide."}],
+    interpret:["Misura la resistenza di forza, non la forza massimale: se ne fa molte con poco carico aggiuntivo, serve lavorare la forza pura (trazioni zavorrate).","Nei lottatori la forza assoluta degli arti superiori distingue i più performanti."],
+    advice:["Alterna trazioni zavorrate (forza) e serie ad alte ripetizioni/isometriche (resistenza specifica).","Nel grappling aggiungi varianti su gi/corda per la specificità della presa."],
+    note:"Valori di riferimento indicativi. Standardizza la tecnica per confronti validi."},
+
+  punchPow:{eyebrow:"Potenza specifica di colpo",
+    what:"<b>Forza/potenza del colpo</b> misurata con un punch meter o sacco strumentato. La letteratura la considera una valutazione <b>grossolana ma utile</b> dello stato di forma nelle discipline di percussione.",
+    steps:[{t:"Riscaldamento specifico",d:"Colpi progressivi fino all'intensità massima."},
+      {t:"Serie di colpi massimali",d:"3-5 colpi con recupero completo; stesso colpo e stessa distanza ogni volta."},
+      {t:"Registra",d:"Miglior valore (unità dello strumento). Mantieni sempre lo <b>stesso dispositivo</b>."}],
+    interpret:["Confrontabile solo con sé stesso: gli strumenti non sono standardizzati tra loro.","Un calo nel tempo può indicare fatica o perdita di condizione; un aumento segue forza e tecnica."],
+    advice:["La potenza del colpo nasce dalla catena gambe-tronco-braccio: allena forza degli arti inferiori, rotazione del tronco e trasferimento balistico.","Migliora con lavoro di forza massimale + esercizi balistici (med ball rotazionali, spinte esplosive)."],
+    note:"Misura di <b>monitoraggio</b>, non un valore assoluto confrontabile con altri atleti o palestre."},
+
+  bodyFat:{eyebrow:"Categorie di peso",
+    what:"<b>Percentuale di massa grassa</b>. Negli sport da combattimento gli atleti gareggiano per categoria di peso: l'obiettivo è massimizzare la massa magra e minimizzare il grasso, mantenendo la performance.",
+    steps:[{t:"Metodo costante",d:"Plicometria, BIA o DEXA — usa <b>sempre lo stesso metodo</b> e operatore."},
+      {t:"Condizioni standard",d:"Stessa ora, idratazione simile, a digiuno se possibile."},
+      {t:"Registra",d:"Percentuale di massa grassa."}],
+    interpret:["Conta la <b>tendenza</b>, non il valore assoluto (i metodi differiscono tra loro).","Dato di riferimento in letteratura: nei professionisti MMA il grasso passa mediamente da ~19% fuori camp a ~13% nelle fasi finali del fight camp (misure DEXA).","Un calo troppo rapido o valori troppo bassi compromettono forza, recupero e salute."],
+    advice:["Gestisci il peso in <b>anticipo</b> e gradualmente: i tagli acuti e drastici compromettono performance e sicurezza.","Monitora insieme forza e potenza (CMJ, presa): se scendono mentre cala il peso, stai perdendo massa magra.","Il taglio di peso acuto è materia delicata: coinvolgi un nutrizionista sportivo."],
+    note:"Non è un test di performance ma un vincolo di categoria: leggilo sempre insieme a forza e potenza relativa."},
+
+  rmSquat:{eyebrow:"Forza massimale — arti inferiori",
+    what:"<b>1RM allo squat</b>. Base della potenza degli arti inferiori: spinta nei takedown, esplosività nei colpi (la catena parte da terra).",
+    steps:[{t:"Riscaldamento progressivo",d:"Serie a carico crescente riducendo le ripetizioni."},
+      {t:"Tentativi singoli",d:"Incrementi progressivi, 3-5 min di recupero tra i tentativi."},
+      {t:"Registra il massimo",d:"Ultimo singolo valido con tecnica pulita e profondità costante."}],
+    interpret:["Negli sport con categorie di peso conta la <b>forza relativa</b> (1RM ÷ peso corporeo), non il valore assoluto.","Un aumento del 1RM con peso corporeo invariato = guadagno netto di qualità."],
+    advice:["Ricontrolla ogni 6-10 settimane, non più spesso; nelle fasi vicine alla gara usa stime (3-5RM) invece del massimale puro.","Se cala durante il camp mentre scende il peso: stai perdendo massa magra, non solo grasso."],
+    note:"Test affaticante: programmalo lontano da sparring intensi."},
+
+  rmBench:{eyebrow:"Forza massimale — spinta",
+    what:"<b>1RM alla panca piana</b>. Forza di spinta della parte alta: rilevante nel controllo dell'avversario e come base della potenza di percussione.",
+    steps:[{t:"Riscaldamento progressivo",d:"Carico crescente, ripetizioni decrescenti."},
+      {t:"Tentativi singoli",d:"3-5 min di recupero; sempre con assistenza/spotter."},
+      {t:"Registra il massimo",d:"Ultimo singolo valido, stessa tecnica e presa."}],
+    interpret:["Leggilo in <b>relativo al peso</b>: la panca assoluta dice poco su un atleta di categoria.","Nei lottatori la forza della parte alta è quella che distingue i più performanti."],
+    advice:["La spinta è solo metà del quadro: bilanciala sempre con la <b>tirata</b> (trazioni, rematore) per la salute della spalla.","Non inseguire il numero: nel combattimento la panca è un mezzo, non l'obiettivo."],
+    note:"Usa sempre uno spotter."},
+
+  rmDead:{eyebrow:"Forza massimale — catena posteriore",
+    what:"<b>1RM allo stacco da terra</b>. Catena posteriore e capacità di esprimere forza dal suolo: il pattern più vicino al sollevare/proiettare un avversario.",
+    steps:[{t:"Riscaldamento progressivo",d:"Carico crescente con tecnica invariata."},
+      {t:"Tentativi singoli",d:"Recupero completo (3-5 min) tra i tentativi."},
+      {t:"Registra il massimo",d:"Singolo valido con schiena neutra e blocco completo."}],
+    interpret:["Molto correlato alla forza di trazione e di presa: nei grappler è spesso il lift più indicativo.","Esprimilo in <b>forza relativa</b> per confronti utili tra atleti di categorie diverse."],
+    advice:["Test molto affaticante per il sistema nervoso e la schiena: usalo con parsimonia, 1-2 volte per macrociclo.","In alternativa più sicura usa un 3-5RM e stima il massimale (test 'Stima 1RM')."],
+    note:"Il più tassante dei tre massimali: non metterlo nella stessa seduta degli altri."},
+
+  pushMax:{eyebrow:"Resistenza di forza — spinta",
+    what:"<b>Push-up massimi</b> in una serie. Misura la resistenza di forza di spinta: mantenere efficacia nei colpi e nel controllo quando la fatica sale.",
+    steps:[{t:"Posizione",d:"Corpo allineato, mani a larghezza spalle."},
+      {t:"Massime ripetizioni",d:"Petto vicino al suolo, estensione completa; senza cedere di bacino."},
+      {t:"Registra",d:"Numero di ripetizioni valide (fermati quando la tecnica si rompe)."}],
+    interpret:["Resistenza, non forza massimale: se ne fai moltissimi, la qualità limitante è altrove (vedi panca).","Il numero crolla velocemente in stato di fatica: utile anche come indicatore grezzo di condizione."],
+    advice:["Alterna spinta pesante (panca) e serie ad alte ripetizioni per la resistenza specifica.","Standardizza il criterio di stop, altrimenti i confronti nel tempo non valgono."],
+    note:"Valori di riferimento indicativi. Il criterio tecnico deve restare identico tra i test."},
+
+  trmInc:{eyebrow:"Aerobico — test incrementale",
+    what:"<b>Test incrementale al tapis roulant</b> (a rampa): la velocità aumenta a step regolari fino a esaurimento. Si registra la <b>velocità finale raggiunta</b>, che stima la capacità aerobica massimale.",
+    steps:[{t:"Riscaldamento",d:"5-10 min a intensità bassa."},
+      {t:"Protocollo a step",d:"Es. partenza a 8 km/h, +0,5-1 km/h ogni minuto (pendenza costante, tipicamente 1%)."},
+      {t:"Fino a esaurimento",d:"Prosegui fino a quando non riesci più a mantenere la velocità."},
+      {t:"Registra",d:"Velocità dell'ultimo step completato (km/h). Se hai gas analyzer o cardio, annota anche VO₂max/FC max."}],
+    interpret:["Proxy della <b>velocità aerobica massimale</b>: base per prescrivere gli intervalli (es. 100-120% della velocità finale).","Confrontabile nel tempo <b>solo se il protocollo resta identico</b> (velocità di partenza, incremento, pendenza)."],
+    advice:["Usa il risultato per dosare gli intervalli invece di andare a sensazione.","Nel combattimento l'aerobico serve a <b>recuperare tra le azioni</b>: costruisci la base, ma non trasformare il fighter in un fondista."],
+    note:"Fissa il protocollo una volta e non cambiarlo più, o i confronti non valgono."},
+
+  airBike:{eyebrow:"Aerobico — test incrementale su air bike",
+    what:"<b>Test incrementale su air bike</b> (Assault/Echo): la potenza richiesta sale a step fino a esaurimento. Coinvolge <b>arti superiori e inferiori insieme</b> — molto più specifico del tapis per un fighter.",
+    steps:[{t:"Riscaldamento",d:"5 min progressivi."},
+      {t:"Protocollo a step",d:"Es. parti da 100-150 W e aumenta di 20-25 W ogni minuto, mantenendo la potenza target."},
+      {t:"Fino a esaurimento",d:"Fino a quando non riesci più a tenere la potenza richiesta."},
+      {t:"Registra",d:"Potenza dell'ultimo step completato (W). Normalizzala al peso (W/kg) per confronti tra atleti."}],
+    interpret:["Più specifico del tapis per il combattimento: <b>coinvolge la parte alta</b>, che nel fight è sempre sotto carico.","È anche un ottimo mezzo di condizionamento, non solo un test: ma allora tienilo separato dal test."],
+    advice:["Usa la potenza finale per prescrivere gli intervalli (es. % della potenza massimale raggiunta).","Confronta i due test aerobici: se il tapis va bene ma l'air bike no, il limite è la <b>parte alta</b>, non il cuore — e nel combattimento conta."],
+    note:"Le air bike non sono calibrate tra loro: usa <b>sempre la stessa macchina</b>."}
 };
 
 const PROTO_EXTRA={
@@ -2304,6 +2558,53 @@ const BATTERY={
       {t:"Profilo", w:"Periodico", y:"Capire se manca forza o velocità.", tests:["fvdef"]},
       {t:"Functional Movement Screen (FMS)", w:"Baseline / periodico", y:"Screen della qualità del movimento e delle asimmetrie.", tests:["fmsSquat","fmsHurdle","fmsLunge","fmsShoulder","fmsASLR","fmsPushup","fmsRotary"]}
     ]},
+  combattimento:{
+    note:"Il combattimento <b>non è uno sport solo</b>: i domini energetici cambiano radicalmente (sforzo:pausa ~2:1 nella lotta, ~3:1 nella boxe, ~10:1 nel BJJ). La struttura della batteria è comune; cambia la <b>priorità</b>. Scegli la disciplina.",
+    core:["cmj","dj","rmSquat","pullMax"],
+    variants:[
+      {k:"percussione", label:"🥊 Percussione", core:["cmj","dj","rmSquat","airBike"],
+       note:"Boxe · kickboxing · karate · taekwondo. Dominio dei <b>fosfati</b>: azioni esplosive in frazioni di secondo. L'aerobico serve a recuperare tra le azioni, non a fare volume.",
+       groups:[
+         {t:"Monitoraggio neuromuscolare", w:"Ogni microciclo", y:"CMJ e Drop Jump (RSI): readiness ed esplosività. Un calo = fatica neuromuscolare. Affiancali al carico interno (sRPE/ACWR) nella vista Fatica.", tests:["cmj","dj"]},
+         {t:"Forza massimale", w:"Ogni 6-10 settimane", y:"Base della potenza. Leggila sempre in <b>relativo al peso</b>: più forte a parità di categoria, non più pesante.", tests:["rmSquat","rmBench","rmDead"]},
+         {t:"Resistenza di forza", w:"Periodico", y:"Mantenere efficacia quando la fatica sale: spinta e tirata.", tests:["pushMax","pullMax"]},
+         {t:"Aerobico", w:"Baseline · metà camp", y:"Due test: tapis (capacità generale) e air bike (coinvolge la parte alta, più specifico per il fight). Se il tapis va e l'air bike no, il limite è la parte alta.", tests:["trmInc","airBike"]},
+         {t:"Capacità anaerobica", w:"Baseline · metà camp", y:"Il dominio del round: potenza lattacida e capacità di reggerla tra le riprese.", tests:["shuttle300","shuttleFat"]},
+         {t:"Potenza specifica", w:"Periodico", y:"Punch meter: indicatore grezzo ma utile dello stato di forma.", tests:["punchPow"]},
+         {t:"Peso & composizione", w:"Settimanale in camp", y:"Se la forza cala mentre scende il peso, stai perdendo massa magra.", tests:["bodyFat"]}
+       ]},
+      {k:"lotta", label:"🤼 Lotta", core:["rmDead","rmSquat","pullMax","cmj"],
+       note:"Wrestling · judo. Dispendio tra i più alti di ogni sport (13-14 kcal/min), lattato 10-20 mmol/L. La <b>forza assoluta della parte alta</b> distingue i lottatori di successo.",
+       groups:[
+         {t:"Forza massimale (priorità)", w:"Ogni 6-10 settimane", y:"Priorità n.1: manipolare la massa dell'avversario. Lo stacco è il pattern più vicino al sollevare/proiettare.", tests:["rmDead","rmSquat","rmBench"]},
+         {t:"Resistenza di forza & presa", w:"Periodico", y:"Trazioni e presa: chi controlla il kumikata controlla lo scambio.", tests:["pullMax","pushMax","gripStr"]},
+         {t:"Monitoraggio neuromuscolare", w:"Ogni microciclo", y:"CMJ e Drop Jump come spia di fatica.", tests:["cmj","dj"]},
+         {t:"Capacità anaerobica", w:"Baseline · metà camp", y:"Reggere l'intensità per tutta la ripresa.", tests:["shuttle300","shuttleFat"]},
+         {t:"Aerobico", w:"Baseline · periodico", y:"Riferimento lottatori 53-56 ml/kg/min. L'air bike è più specifico (parte alta sotto carico).", tests:["trmInc","airBike"]},
+         {t:"Peso & composizione", w:"Settimanale in camp", y:"Categoria di peso: massimizza la massa magra, gradualmente.", tests:["bodyFat"]}
+       ]},
+      {k:"grappling", label:"🥋 Grappling", core:["pullMax","pushMax","airBike","gripStr"],
+       note:"BJJ · sambo. Sforzo:pausa ~10:1 — match lunghi e continui. Dominante la <b>resistenza di forza</b> di tronco e arti superiori; la forza massimale delle gambe è meno determinante. VO₂max tipico ~50 ml/kg/min.",
+       groups:[
+         {t:"Resistenza di forza (priorità)", w:"Periodico", y:"L'attributo critico del grappling: mantenere forza per tutta la durata del match. Qui sta il grosso del valore.", tests:["pullMax","pushMax","gripStr"]},
+         {t:"Aerobico", w:"Baseline · periodico", y:"Sostiene lo sforzo continuo: qui pesa più che nella percussione. L'air bike è il test più specifico (parte alta sempre sotto carico).", tests:["airBike","trmInc"]},
+         {t:"Forza massimale (di supporto)", w:"Ogni 6-10 settimane", y:"Base utile, ma non è la qualità dominante: non sacrificarle il resto.", tests:["rmDead","rmSquat","rmBench"]},
+         {t:"Monitoraggio neuromuscolare", w:"Ogni microciclo", y:"CMJ come spia di fatica; il carico interno (sRPE) resta lo strumento principale.", tests:["cmj","dj"]},
+         {t:"Capacità anaerobica", w:"Periodico", y:"Presente ma meno centrale rispetto a lotta e percussione.", tests:["shuttle300","shuttleFat"]},
+         {t:"Peso & composizione", w:"In avvicinamento alla gara", y:"Categoria di peso: gestione graduale.", tests:["bodyFat"]}
+       ]},
+      {k:"mma", label:"🥋🥊 MMA (ibrido)", core:["cmj","rmSquat","pullMax","airBike"],
+       note:"Il più complesso: richiede insieme <b>fisiologie divergenti</b> (percussione esplosiva e grappling prolungato). Nessuna qualità è sacrificabile — la vera sfida è gestire il concorrente e la fatica. Aggrega il carico di TUTTE le modalità con sRPE.",
+       groups:[
+         {t:"Monitoraggio neuromuscolare", w:"Ogni microciclo", y:"CMJ e Drop Jump + carico interno: qui è essenziale, perché sommi sparring, wrestling, BJJ e S&C.", tests:["cmj","dj"]},
+         {t:"Forza massimale", w:"Ogni 6-10 settimane", y:"Forza relativa: servono tutti e tre i pattern (spinta, squat, catena posteriore).", tests:["rmSquat","rmBench","rmDead"]},
+         {t:"Resistenza di forza & presa", w:"Periodico", y:"Componente grappling: spinta, tirata e presa sotto fatica.", tests:["pullMax","pushMax","gripStr"]},
+         {t:"Aerobico", w:"Baseline · metà camp", y:"Due test complementari: tapis e air bike. Il confronto tra i due ti dice se il limite è centrale o della parte alta.", tests:["trmInc","airBike"]},
+         {t:"Capacità anaerobica", w:"Baseline · metà camp", y:"Sforzo:pausa 1:2 → 1:4: potenza lattacida e capacità di ripeterla.", tests:["shuttle300","shuttleFat"]},
+         {t:"Peso & composizione", w:"Settimanale in camp", y:"Nei pro il grasso passa da ~19% fuori camp a ~13% a fine camp: gradualità e supporto nutrizionale.", tests:["bodyFat"]},
+         {t:"Prevenzione", w:"Pre-camp + se sintomi", y:"Asimmetrie e mobilità.", tests:["cmjAsym","ankleDF"]}
+       ]}
+    ]},
   generale:{
     note:"Fitness generale: forza di base, condizione e mobilità, con progressione graduale.",
     core:["cmj","vo2"],
@@ -2315,19 +2616,30 @@ const BATTERY={
       {t:"Functional Movement Screen (FMS)", w:"Baseline / periodico", y:"Qualità del movimento e asimmetrie: screen di base e linguaggio comune col cliente.", tests:["fmsSquat","fmsHurdle","fmsLunge","fmsShoulder","fmsASLR","fmsPushup","fmsRotary"]}
     ]}
 };
+function battVariant(b){ if(!b||!b.variants||!b.variants.length) return null;
+  return b.variants.find(v=>v.k===S.cvar) || b.variants[0]; }
+function battView(sport){ const b=BATTERY[sport]||BATTERY.generale; const v=battVariant(b);
+  return v ? {b, v, note:v.note||b.note, groups:v.groups, core:v.core||b.core||[]}
+           : {b, v:null, note:b.note, groups:b.groups, core:b.core||[]}; }
 function sportMeta(id){ return SPORTS.find(s=>s.id===id)||{icon:"",label:id}; }
-function isCore(tid){ if(S.sport==="all") return false; const b=BATTERY[S.sport]; return !!(b&&b.core&&b.core.indexOf(tid)>=0); }
-function openBattery(sp){
+function isCore(tid){ if(S.sport==="all") return false; const bv=battView(S.sport); return bv.core.indexOf(tid)>=0; }
+function openBattery(sp, vk){
   let sport=sp;
   if(!sport){ if(S.sport!=="all") sport=S.sport; else { const tm=S.teams.find(t=>t.id===S.activeTeam); sport=(tm&&tm.sport)||"pallavolo"; } }
+  if(vk){ S.cvar=vk; save(); }
   document.getElementById("menu").classList.remove("on");
-  const b=BATTERY[sport]||BATTERY.generale; const sm=sportMeta(sport);
+  const bv=battView(sport); const b=bv.b; const sm=sportMeta(sport);
   let h='<div class="mh"><div><div class="eyebrow">Batteria consigliata</div>'+
     '<div class="mt">'+sm.icon+' '+sm.label+'</div>'+
     '<div class="ms">Quali test usare e quando</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
   h+='<div class="bsports">'+SPORTS.filter(s=>s.id!=="all").map(s=>'<button class="'+(s.id===sport?"on":"")+'" onclick="openBattery(\''+s.id+'\')">'+s.label+'</button>').join("")+'</div>';
-  if(b.note) h+='<div class="gnote" style="margin:0 0 12px">'+b.note+'</div>';
-  b.groups.forEach(function(g,gi){
+  if(b.note) h+='<div class="gnote" style="margin:0 0 10px">'+b.note+'</div>';
+  if(b.variants){
+    const cur=bv.v;
+    h+='<div class="bsports bvars">'+b.variants.map(v=>'<button class="'+(v.k===cur.k?"on":"")+'" onclick="openBattery(\''+sport+'\',\''+v.k+'\')">'+v.label+'</button>').join("")+'</div>';
+    if(cur.note) h+='<div class="gnote" style="margin:0 0 12px;border-left:2px solid var(--accent)">'+cur.note+'</div>';
+  }
+  bv.groups.forEach(function(g,gi){
     h+='<div class="bgrp"><div class="bt">'+g.t+'</div><div class="bw">⏱ '+g.w+'</div><div class="by">'+g.y+'</div><div class="btests">';
     g.tests.forEach(id=>{ const t=TMAP[id]; if(!t) return;
       h+='<span class="btchip" onclick="openGuide(\''+id+'\')">'+(ICON[id]||"🔬")+' '+t.name+'</span>'; });
@@ -2346,7 +2658,7 @@ function chooseTests(){
   document.getElementById("menu").classList.remove("on");
   const sel={}; const base=(team.tests&&team.tests.length)?team.tests:TESTS.filter(t=>t.sports.includes(team.sport||"generale")).map(t=>t.id);
   base.forEach(id=>sel[id]=true);
-  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Asimmetria & funzionale","Mobilità & stabilità","Functional Movement Screen"];
+  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Anaerobico","Asimmetria & funzionale","Mobilità & stabilità","Composizione corporea","Functional Movement Screen"];
   let h='<div class="mh"><div><div class="mt">Test monitorati</div>'+
     '<div class="ms">'+esc(team.name)+' · '+sportMeta(team.sport||"generale").label+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
@@ -2369,7 +2681,7 @@ function chooserSet(mode){
   const boxes=document.querySelectorAll('#modal input[data-t]');
   if(mode==="all"){ boxes.forEach(b=>b.checked=true); }
   else if(mode==="none"){ boxes.forEach(b=>b.checked=false); }
-  else if(mode==="battery"){ const b=BATTERY[sport]; const set={}; if(b) b.groups.forEach(g=>g.tests.forEach(id=>set[id]=true));
+  else if(mode==="battery"){ const bv=battView(sport); const set={}; bv.groups.forEach(g=>g.tests.forEach(id=>set[id]=true));
     boxes.forEach(x=>{ x.checked=!!set[x.getAttribute("data-t")]; }); }
 }
 function saveChosenTests(){
@@ -2381,7 +2693,7 @@ function saveChosenTests(){
 
 function openBatterySession(sport, gi){
   const ath=teamAthletes(); if(ath.length===0){ addAthlete(); return; }
-  const b=BATTERY[sport]; if(!b) return; const g=b.groups[gi]; if(!g) return;
+  const bv=battView(sport); const g=bv.groups[gi]; if(!g) return;
   const tests=g.tests.map(id=>TMAP[id]).filter(t=>t && !t.derived);
   let body="";
   tests.forEach(t=>{
@@ -2416,7 +2728,7 @@ function saveBatterySession(){
 }
 
 function guideIndex(){
-  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Asimmetria & funzionale","Mobilità & stabilità","Functional Movement Screen"];
+  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Anaerobico","Asimmetria & funzionale","Mobilità & stabilità","Composizione corporea","Functional Movement Screen"];
   let h='<div class="mh"><div><div class="mt">Guida ai test</div>'+
     '<div class="ms">Come si eseguono · cosa misurano · a cosa servono</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div><div class="glist">';

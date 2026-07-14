@@ -255,6 +255,11 @@ ul.kb li b{color:#fff;font-weight:600}
 .tactions{display:flex;gap:8px;margin-top:20px}
 .tsugg{font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--line2);border-radius:9px;padding:7px 10px;line-height:1.4}
 .bar-tests{margin-left:8px}
+.bar-tests.on{border-color:var(--accent);color:var(--accent)}
+.chcount{margin-left:auto;align-self:center;font-size:11px;color:var(--muted2);font-family:var(--mono)}
+.tmbat{display:flex;align-items:center;gap:9px;margin:-4px 0 12px;padding-left:2px}
+.tmbat span{font-size:11px;color:var(--muted2);font-family:var(--mono)}
+.tmbat .btn.on{border-color:var(--accent);color:var(--accent)}
 .chq{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 6px}
 .tchk{display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px solid var(--line);cursor:pointer}
 .tchk input{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto}
@@ -880,8 +885,11 @@ function renderBar(){
   const bar=document.getElementById("bar");
   const mk=(v,l)=>'<button class="'+(S.view===v?"on":"")+'" onclick="setView(\''+v+'\')">'+l+'</button>';
   let h='<div class="seg">'+mk('today','Oggi')+mk('matrix','Matrice')+mk('trend','Andamento')+mk('readiness','Fatica')+'</div>';
-  if(S.activeTeam && S.activeTeam!=="all" && S.activeTeam!=="none")
-    h+='<button class="btn sm bar-tests" onclick="chooseTests()" title="Scegli i test da monitorare per questa squadra">🎚 Test</button>';
+  if(S.activeTeam && S.activeTeam!=="all" && S.activeTeam!=="none"){
+    const at=S.teams.find(t=>t.id===S.activeTeam);
+    const n=(at&&at.tests&&at.tests.length)?at.tests.length:0;
+    h+='<button class="btn sm bar-tests'+(n?' on':'')+'" onclick="chooseTests()" title="Scegli i test da monitorare per questa squadra">🎚 Test'+(n?' · '+n:'')+'</button>';
+  }
   if(S.view==="today"){
     h+='<div class="barhint">chi gestire oggi, prima di decidere la seduta</div>';
   } else if(S.view==="trend"){
@@ -1033,9 +1041,12 @@ function manageTeams(){
     '<button class="mcl" onclick="closeM()">✕</button></div>';
   if(S.teams.length===0) h+='<p class="hint">Nessuna squadra ancora.</p>';
   S.teams.forEach(t=>{ const c=S.athletes.filter(a=>a.team===t.id).length;
+    const n=(t.tests&&t.tests.length)?t.tests.length:0;
     h+='<div class="tmrow"><input value="'+esc(t.name)+'" onchange="renameTeam(\''+t.id+'\',this.value)">'+
        '<select onchange="setTeamSport(\''+t.id+'\',this.value)">'+sportOptions(t.sport)+'</select>'+
-       '<button class="tmdel" title="'+c+' atleti" onclick="delTeam(\''+t.id+'\')">🗑</button></div>'; });
+       '<button class="tmdel" title="'+c+' atleti" onclick="delTeam(\''+t.id+'\')">🗑</button></div>'+
+       '<div class="tmbat"><button class="btn sm'+(n?' on':'')+'" onclick="chooseTests(\''+t.id+'\')">🎚 Batteria test</button>'+
+       '<span>'+(n?n+' test monitorati':'automatici per sport')+'</span></div>'; });
   h+='<div style="height:12px"></div>'+
      '<button class="btn" style="width:100%" onclick="addTeam()">+ Aggiungi squadra</button>';
   modal(h);
@@ -2651,44 +2662,54 @@ function openBattery(sp, vk){
   modal(h);
 }
 
-function chooseTests(){
-  const tid=S.activeTeam;
-  if(!tid || tid==="all" || tid==="none"){ toast("Seleziona prima una squadra dalla barra"); return; }
-  const team=S.teams.find(t=>t.id===tid); if(!team){ toast("Seleziona una squadra"); return; }
+let CHOOSE_TEAM=null;
+function chooseTests(tid){
+  const target = tid || S.activeTeam;
+  if(!target || target==="all" || target==="none"){ toast("Seleziona prima una squadra dalla barra"); return; }
+  const team=S.teams.find(t=>t.id===target); if(!team){ toast("Seleziona una squadra"); return; }
+  CHOOSE_TEAM=team.id;
   document.getElementById("menu").classList.remove("on");
-  const sel={}; const base=(team.tests&&team.tests.length)?team.tests:TESTS.filter(t=>t.sports.includes(team.sport||"generale")).map(t=>t.id);
+  const sel={}; const custom=!!(team.tests&&team.tests.length);
+  const base=custom?team.tests:TESTS.filter(t=>t.sports.includes(team.sport||"generale")).map(t=>t.id);
   base.forEach(id=>sel[id]=true);
   const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Anaerobico","Asimmetria & funzionale","Mobilità & stabilità","Composizione corporea","Functional Movement Screen"];
-  let h='<div class="mh"><div><div class="mt">Test monitorati</div>'+
-    '<div class="ms">'+esc(team.name)+' · '+sportMeta(team.sport||"generale").label+'</div></div>'+
+  let h='<div class="mh"><div><div class="eyebrow">Batteria della squadra</div><div class="mt">'+esc(team.name)+'</div>'+
+    '<div class="ms">'+sportMeta(team.sport||"generale").label+' · '+(custom?"batteria personalizzata":"filtro automatico per sport")+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
-  h+='<div class="gnote" style="margin-top:0">Scegli quali test vedere nella matrice e nell\'andamento per questa squadra. Quelli non spuntati restano nascosti (non vengono cancellati i dati).</div>';
+  h+='<div class="gnote" style="margin-top:0">Scegli i test da monitorare <b>per questa squadra</b>. La selezione resta salvata e vale solo qui: ogni squadra ha la sua. Nascondere un test <b>non cancella i dati</b>.</div>';
   h+='<div class="chq"><button class="btn sm" onclick="chooserSet(\'battery\')">🎯 Batteria consigliata</button>'+
      '<button class="btn sm" onclick="chooserSet(\'all\')">Tutti</button>'+
-     '<button class="btn sm" onclick="chooserSet(\'none\')">Nessuno</button></div>';
+     '<button class="btn sm" onclick="chooserSet(\'none\')">Nessuno</button>'+
+     '<span class="chcount" id="chCount"></span></div>';
   cats.forEach(c=>{ const ts=TESTS.filter(t=>t.cat===c); if(!ts.length) return;
     h+='<div class="psec">'+c+'</div>';
     ts.forEach(t=>{
-      h+='<label class="tchk"><input type="checkbox" data-t="'+t.id+'"'+(sel[t.id]?" checked":"")+(t.derived?' data-d="1"':'')+'>'+
+      h+='<label class="tchk"><input type="checkbox" onchange="chCount()" data-t="'+t.id+'"'+(sel[t.id]?" checked":"")+(t.derived?' data-d="1"':'')+'>'+
          '<span>'+(ICON[t.id]||"🔬")+' '+t.name+' <i>'+t.unit+'</i>'+(t.derived?' <em>auto</em>':'')+'</span></label>';
     });
   });
-  h+='<div style="height:14px"></div><button class="btn primary" style="width:100%" onclick="saveChosenTests()">Salva selezione</button>';
-  modal(h);
+  h+='<div style="height:14px"></div><button class="btn primary" style="width:100%" onclick="saveChosenTests()">Salva batteria di '+esc(team.name)+'</button>';
+  modal(h); chCount();
 }
+function chCount(){ const el=document.getElementById("chCount"); if(!el) return;
+  const n=document.querySelectorAll('#modal input[data-t]:checked').length;
+  el.textContent=n+" selezionati"; }
 function chooserSet(mode){
-  const team=S.teams.find(t=>t.id===S.activeTeam); const sport=team?(team.sport||"generale"):"generale";
+  const team=S.teams.find(t=>t.id===CHOOSE_TEAM); const sport=team?(team.sport||"generale"):"generale";
   const boxes=document.querySelectorAll('#modal input[data-t]');
   if(mode==="all"){ boxes.forEach(b=>b.checked=true); }
   else if(mode==="none"){ boxes.forEach(b=>b.checked=false); }
   else if(mode==="battery"){ const bv=battView(sport); const set={}; bv.groups.forEach(g=>g.tests.forEach(id=>set[id]=true));
+    if(bv.core) bv.core.forEach(id=>set[id]=true);
     boxes.forEach(x=>{ x.checked=!!set[x.getAttribute("data-t")]; }); }
+  chCount();
 }
 function saveChosenTests(){
-  const team=S.teams.find(t=>t.id===S.activeTeam); if(!team) return;
+  const team=S.teams.find(t=>t.id===CHOOSE_TEAM); if(!team){ toast("Squadra non trovata"); return; }
   const ids=Array.prototype.map.call(document.querySelectorAll('#modal input[data-t]:checked'), i=>i.getAttribute("data-t"));
   if(ids.length) team.tests=ids; else delete team.tests;
-  save(); closeM(); render(); toast(ids.length?("Monitori "+ids.length+" test"):"Filtro azzerato (mostro per sport)");
+  save(); closeM(); render();
+  toast(ids.length?(team.name+": "+ids.length+" test monitorati"):(team.name+": filtro azzerato"));
 }
 
 function openBatterySession(sport, gi){

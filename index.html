@@ -625,14 +625,6 @@ const TESTS=[
   {id:"punchPow",  name:"Potenza colpo",full:"Potenza/forza del colpo (punch meter)", unit:"AU", dir:1, cat:"Potenza", sports:["combattimento"]},
   // ─ COMPOSIZIONE CORPOREA (categorie di peso) ─
   {id:"bodyFat",   name:"Massa grassa", full:"Percentuale di massa grassa",  unit:"%",  dir:-1, cat:"Composizione corporea", sports:["combattimento","forza","generale"]},
-  // ─ MASSIMALI SPECIFICI ─
-  {id:"rmSquat",  name:"1RM Squat",   full:"Massimale 1RM — Squat",          unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
-  {id:"rmBench",  name:"1RM Panca",   full:"Massimale 1RM — Panca piana",    unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
-  {id:"rmDead",   name:"1RM Stacco",  full:"Massimale 1RM — Stacco da terra",unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
-  {id:"pushMax",  name:"Push-up max", full:"Push-up massimi (resistenza di forza)", unit:"rip", dir:1, cat:"Forza", sports:["combattimento","forza","generale"], lv:{m:[20,30,40,50],f:[10,18,25,35]}},
-  // ─ AEROBICI SPECIFICI ─
-  {id:"trmInc",   name:"Tapis incr.", full:"Test incrementale al tapis roulant (tempo a esaurimento)", unit:"min", dir:1, cat:"Aerobico", sports:["combattimento","forza","generale","atletica"]},
-  {id:"airBike",  name:"Air bike",    full:"Air bike — calorie in 5 minuti",  unit:"kcal", dir:1, cat:"Aerobico", sports:["combattimento","forza","generale"]},
 ];
 const TMAP={}; TESTS.forEach(t=>TMAP[t.id]=t);
 

@@ -19,11 +19,12 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased}
-body{min-height:100vh;font-size:14px;line-height:1.4}
+html,body{height:100%;overflow:hidden}
+body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 
 /* ── Top bar ── */
-.top{position:sticky;top:0;z-index:40;background:rgba(10,10,10,0.92);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--line);padding:12px 14px 0}
+.top{flex:0 0 auto;z-index:40;background:rgba(10,10,10,0.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);padding:calc(12px + env(safe-area-inset-top)) 14px 0}
 .top-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
 .brand{display:flex;flex-direction:column;line-height:1.1}
 .brand .logo{height:30px;width:auto;display:block;margin-bottom:3px}
@@ -45,14 +46,14 @@ body{min-height:100vh;font-size:14px;line-height:1.4}
 .brand small{color:var(--muted2);font-size:10px;font-family:var(--mono);margin-top:2px;letter-spacing:0.2px}
 .actions{display:flex;gap:7px;align-items:center}
 .btn{border:1px solid var(--line2);background:var(--surface2);color:var(--text);
-  font-family:var(--sans);font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:9px;
-  cursor:pointer;white-space:nowrap;transition:.12s;display:inline-flex;align-items:center;gap:5px}
+  font-family:var(--sans);font-size:12.5px;font-weight:600;padding:10px 14px;border-radius:10px;min-height:40px;
+  cursor:pointer;white-space:nowrap;transition:.12s;display:inline-flex;align-items:center;justify-content:center;gap:5px}
 .btn:hover{background:var(--surface3);border-color:#4a4a4f}
 .btn:active{transform:scale(.97)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .btn.primary:hover{filter:brightness(1.08)}
-.btn.icon{padding:8px 11px;font-size:15px}
-.btn.sm{padding:6px 10px;font-size:11.5px}
+.btn.icon{padding:0;width:40px;height:40px;justify-content:center;font-size:17px}
+.btn.sm{padding:8px 12px;font-size:11.5px;min-height:34px}
 
 /* ── Sport tabs ── */
 .sports{display:flex;gap:4px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
@@ -65,13 +66,14 @@ body{min-height:100vh;font-size:14px;line-height:1.4}
 .sport .n{font-family:var(--mono);font-size:10px;opacity:.6}
 
 /* ── Legend ── */
-.legend{display:flex;align-items:center;gap:14px;padding:9px 14px;color:var(--muted2);font-size:11px;
+.legend{flex:0 0 auto;display:flex;align-items:center;gap:14px;padding:9px 14px;color:var(--muted2);font-size:11px;
   border-bottom:1px solid var(--line);flex-wrap:wrap}
 .legend .it{display:flex;align-items:center;gap:5px}
 .dot{width:8px;height:8px;border-radius:2px;display:inline-block}
 
 /* ── Grid ── */
-.wrap{overflow:auto;max-height:calc(100vh - 212px)}
+.wrap{flex:1 1 auto;overflow:auto;-webkit-overflow-scrolling:touch;
+  padding-bottom:calc(74px + env(safe-area-inset-bottom))}
 table{border-collapse:separate;border-spacing:0;min-width:100%}
 thead th{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line2)}
 th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
@@ -114,7 +116,7 @@ td.cell:hover{background:var(--surface2)}
 tbody tr:hover .cAth{background:var(--surface2)}
 
 /* empty state */
-.empty-state{padding:60px 24px;text-align:center;color:var(--muted2)}
+.empty-state{padding:56px 24px 40px;text-align:center;color:var(--muted2)}
 .empty-state h3{color:var(--text);font-size:16px;margin-bottom:6px;font-weight:600}
 .empty-state p{font-size:13px;margin-bottom:18px;line-height:1.5}
 
@@ -124,7 +126,11 @@ tbody tr:hover .cAth{background:var(--surface2)}
 .ov.on{display:flex}
 @media(min-width:640px){.ov.on{align-items:center}}
 .modal{background:var(--surface);border:1px solid var(--line2);border-radius:18px 18px 0 0;
-  width:100%;max-width:460px;max-height:92vh;overflow:auto;padding:18px}
+  width:100%;max-width:460px;max-height:92dvh;overflow:auto;
+  padding:14px 18px calc(20px + env(safe-area-inset-bottom));
+  animation:sheetUp .26s cubic-bezier(.32,.72,0,1)}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.modal{animation:none}}
 @media(min-width:640px){.modal{border-radius:18px}}
 .mh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
 .mh .mt{font-size:17px;font-weight:700;letter-spacing:-0.3px}
@@ -260,6 +266,38 @@ ul.kb li b{color:#fff;font-weight:600}
 .tmbat{display:flex;align-items:center;gap:9px;margin:-4px 0 12px;padding-left:2px}
 .tmbat span{font-size:11px;color:var(--muted2);font-family:var(--mono)}
 .tmbat .btn.on{border-color:var(--accent);color:var(--accent)}
+
+/* ── Tab bar (navigazione principale, raggiungibile col pollice) ── */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;
+  background:rgba(14,14,16,0.94);backdrop-filter:saturate(180%) blur(20px);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-height:52px;background:none;border:none;color:var(--muted2);font-family:var(--sans);
+  font-size:10px;font-weight:600;cursor:pointer;padding:7px 2px 6px;transition:color .15s}
+.tabbar button svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.tabbar button.on{color:var(--accent)}
+.tabbar button:active{opacity:.6}
+.tabbar .tbadge{position:absolute;transform:translate(14px,-14px);min-width:16px;height:16px;padding:0 4px;
+  border-radius:8px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;font-family:var(--sans)}
+
+/* ── Sheet (modale in stile iOS) ── */
+.modal .grab{width:36px;height:5px;border-radius:3px;background:var(--line2);margin:0 auto 12px;flex:0 0 auto}
+.set-sec{font-size:11px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;
+  margin:18px 0 7px;padding-left:2px}
+.set-group{background:var(--surface2);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.set-row{display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;
+  border-bottom:1px solid var(--line);padding:13px 14px;min-height:48px;cursor:pointer;
+  color:var(--text);font-family:var(--sans);font-size:14px;text-align:left}
+.set-row:last-child{border-bottom:none}
+.set-row:active{background:var(--surface3)}
+.set-row .si{font-size:17px;flex:0 0 24px;text-align:center}
+.set-row .sl{flex:1}
+.set-row .sl small{display:block;color:var(--muted2);font-size:11px;margin-top:2px;font-weight:400}
+.set-row .sv{color:var(--muted2);font-size:12px;font-family:var(--mono)}
+.set-row .sc{color:var(--line2);font-size:17px}
+.set-row.danger{color:var(--down)}
 .chq{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 6px}
 .tchk{display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px solid var(--line);cursor:pointer}
 .tchk input{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto}
@@ -416,7 +454,7 @@ ul.kb li b{color:#fff;font-weight:600}
     <div class="actions">
       <button class="btn primary sm" onclick="openSession()">+ Sessione</button>
       <button class="btn sm" onclick="addAthlete()">+ Atleta</button>
-      <button class="btn icon" onclick="toggleMenu(event)">⋯</button>
+      <button class="btn icon" onclick="openSettings()" aria-label="Impostazioni">⋯</button>
     </div>
   </div>
   <div class="teams" id="teams"></div>
@@ -444,6 +482,8 @@ ul.kb li b{color:#fff;font-weight:600}
 <div class="legend" id="bar"></div>
 
 <div class="wrap"><div id="grid"></div></div>
+
+<nav class="tabbar" id="tabbar"></nav>
 
 <input type="file" id="fileIn" accept="application/json" style="display:none">
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
@@ -815,6 +855,7 @@ function render(){
   renderSports();
   renderTeams();
   renderBar();
+  renderTabs();
   const grid=document.getElementById("grid");
   if(S.athletes.length===0){
     grid.innerHTML='<div class="empty-state"><h3>Nessun atleta</h3>'+
@@ -881,10 +922,43 @@ const APAL=["#E63946","#4DA3FF","#34C759","#FFD60A","#FF9F0A","#BF5AF2","#5AC8FA
 function acolor(i){ return APAL[i%APAL.length]; }
 let HIDDEN={};
 
+const TABS=[
+  {v:"today",  l:"Oggi",      ic:'<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2.4"/>'},
+  {v:"matrix", l:"Matrice",   ic:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/>'},
+  {v:"trend",  l:"Andamento", ic:'<path d="M3 17.5l5.5-6 4 3.5L21 6"/><path d="M21 6h-5"/><path d="M21 6v5"/>'},
+  {v:"readiness", l:"Fatica", ic:'<path d="M3 12h4l2.5-6 4 12 2.5-6h5"/>'}
+];
+function renderTabs(){
+  const el=document.getElementById("tabbar"); if(!el) return;
+  const manage=todayManageCount();
+  el.innerHTML=TABS.map(t=>{
+    const badge=(t.v==="today"&&manage)?'<span class="tbadge">'+manage+'</span>':'';
+    return '<button class="'+(S.view===t.v?"on":"")+'" onclick="setView(\''+t.v+'\')" aria-label="'+t.l+'">'+
+      '<svg viewBox="0 0 24 24">'+t.ic+'</svg>'+badge+'<span>'+t.l+'</span></button>';
+  }).join("");
+}
+function todayManageCount(){
+  try{
+    const today=todayISO(); let n=0;
+    teamAthletes().forEach(a=>{
+      const p=a.profile||{}; const pain=parseFloat(p.painLevel);
+      let flag=false;
+      if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) flag=true;
+      else if(!isNaN(pain) && pain>=S.cfg.painCut) flag=true;
+      if(SCREEN_KEYS.filter(k=>p[k]).length) flag=true;
+      const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1];
+      if(rl && readinessScore(rl)<S.cfg.rdAmber) flag=true;
+      const ac=acwr(a.id);
+      if(ac && (ac.acwr>S.cfg.acwrHigh || ac.acwr<S.cfg.acwrLow)) flag=true;
+      const cf=cmjFatigue(a.id); if(cf&&cf.fatigued) flag=true;
+      if(flag) n++;
+    });
+    return n;
+  }catch(e){ return 0; }
+}
 function renderBar(){
   const bar=document.getElementById("bar");
-  const mk=(v,l)=>'<button class="'+(S.view===v?"on":"")+'" onclick="setView(\''+v+'\')">'+l+'</button>';
-  let h='<div class="seg">'+mk('today','Oggi')+mk('matrix','Matrice')+mk('trend','Andamento')+mk('readiness','Fatica')+'</div>';
+  let h="";
   if(S.activeTeam && S.activeTeam!=="all" && S.activeTeam!=="none"){
     const at=S.teams.find(t=>t.id===S.activeTeam);
     const n=(at&&at.tests&&at.tests.length)?at.tests.length:0;
@@ -1091,8 +1165,10 @@ function addAthlete(){
 function saveAthlete(){
   const n=document.getElementById("aN").value.trim();
   if(!n){ toast("Inserisci un nome"); return; }
-  S.athletes.push({id:uid(), name:n, sex:document.getElementById("aS").value, team:document.getElementById("aT").value});
-  save(); closeM(); render(); toast("Atleta aggiunto");
+  const id=uid();
+  S.athletes.push({id, name:n, sex:document.getElementById("aS").value, team:document.getElementById("aT").value, profile:{}});
+  save(); render();
+  openAthlete(id, true);   // apri subito l'anamnesi
 }
 const PROFILE=[
   {sec:"Anagrafica & fisico"},
@@ -1178,18 +1254,20 @@ function ageFrom(birth){
   if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate())) a--;
   return a;
 }
-function openAthlete(id){
+function openAthlete(id, isNew){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   const p=a.profile||{};
   let topt=S.teams.map(t=>'<option value="'+t.id+'"'+(a.team===t.id?" selected":"")+'>'+esc(t.name)+'</option>').join("");
   topt+='<option value=""'+(!a.team?" selected":"")+'>Senza squadra</option>';
   const age=ageFrom(p.birth);
-  let h='<div class="mh"><div><div class="mt">Scheda atleta</div>'+
+  let h='<div class="mh"><div><div class="mt">'+(isNew?"Anamnesi — nuovo atleta":"Scheda atleta")+'</div>'+
     '<div class="ms">'+esc(a.name)+(age!=null?' · '+age+' anni':'')+'</div></div>'+
     '<div style="display:flex;gap:6px;align-items:center">'+
-    '<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Esporta / stampa in PDF">🖨 PDF</button>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div></div>'+
-    '<label class="fl">Nome e cognome</label>'+
+    (isNew?'':'<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Esporta / stampa in PDF">🖨 PDF</button>')+
+    '<button class="mcl" onclick="closeM()">✕</button></div></div>';
+  if(isNew) h+='<div class="alert info" style="margin-bottom:14px"><span class="ai">📋</span><span>'+
+    '<b>'+esc(a.name)+'</b> è stato aggiunto. Compila ora l\'anamnesi: bastano i campi che conosci, potrai completarla in qualsiasi momento.</span></div>';
+  h+='<label class="fl">Nome e cognome</label>'+
     '<input id="eN" value="'+esc(a.name)+'">'+
     '<div class="row2"><div><label class="fl">Squadra</label>'+
     '<select id="eT">'+topt+'</select></div>'+
@@ -1225,9 +1303,11 @@ function openAthlete(id){
   h+='<div class="psec" style="color:var(--accent);border-color:var(--line2);margin-top:24px">📋 Guida preparazione & percorso — '+kb.label+'</div>'+
      '<div id="briefBox">'+briefBody(kb, p.role||"", p)+'</div>';
   h+='<div style="height:18px"></div>'+
-    '<button class="btn primary" style="width:100%" onclick="saveAthleteEdit(\''+id+'\')">Salva scheda</button>'+
-    '<div class="dz"><span style="color:var(--muted);font-size:12px">Elimina atleta e dati</span>'+
-    '<button class="danger" onclick="delAthlete(\''+id+'\')">Elimina</button></div>';
+    '<button class="btn primary" style="width:100%" onclick="saveAthleteEdit(\''+id+'\')">'+(isNew?"Salva anamnesi":"Salva scheda")+'</button>'+
+    (isNew
+      ? '<button class="btn" style="width:100%;margin-top:8px" onclick="closeM()">Più tardi</button>'
+      : '<div class="dz"><span style="color:var(--muted);font-size:12px">Elimina atleta e dati</span>'+
+        '<button class="danger" onclick="delAthlete(\''+id+'\')">Elimina</button></div>');
   modal(h);
 }
 function saveAthleteEdit(id){
@@ -1959,12 +2039,47 @@ function saveSession(){
 }
 
 /* ═══════════════ MODALE GENERICA ═══════════════ */
-function modal(html){ document.getElementById("modal").innerHTML=html; document.getElementById("ov").classList.add("on"); }
+function modal(html){ document.getElementById("modal").innerHTML='<div class="grab"></div>'+html; document.getElementById("ov").classList.add("on"); }
 function closeM(){ document.getElementById("ov").classList.remove("on"); }
 document.getElementById("ov").addEventListener("click",e=>{ if(e.target.id==="ov") closeM(); });
 
 /* ═══════════════ MENU / EXPORT / IMPORT ═══════════════ */
 function toggleMenu(e){ e.stopPropagation(); document.getElementById("menu").classList.toggle("on"); }
+function openSettings(){
+  const team=S.teams.find(t=>t.id===S.activeTeam);
+  const nTests=(team&&team.tests&&team.tests.length)?team.tests.length:0;
+  const row=(ic,label,sub,fn,val,cls)=>'<button class="set-row '+(cls||"")+'" onclick="'+fn+'">'+
+    '<span class="si">'+ic+'</span><span class="sl">'+label+(sub?'<small>'+sub+'</small>':'')+'</span>'+
+    (val?'<span class="sv">'+val+'</span>':'')+'<span class="sc">›</span></button>';
+  let h='<div class="mh"><div><div class="mt">Impostazioni</div>'+
+    '<div class="ms">'+((AUTH&&AUTH.email)?esc(AUTH.email):'Iron Performance')+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+
+  h+='<div class="set-sec">Test e batterie</div><div class="set-group">'+
+    row("📖","Guida ai test","Esecuzione, interpretazione, consigli","guideIndex()")+
+    row("🎯","Batteria consigliata","Quali test usare e quando","openBattery()")+
+    row("🎚","Batteria della squadra", team?("Test monitorati da "+esc(team.name)):"Seleziona prima una squadra","chooseTests()", nTests?nTests:"auto")+
+    '</div>';
+
+  h+='<div class="set-sec">Monitoraggio</div><div class="set-group">'+
+    row("⚙️","Soglie","Readiness, ACWR, calo CMJ, dolore","openThresholds()")+
+    row("👥","Squadre","Rinomina, sport, batteria, elimina","manageTeams()", S.teams.length)+
+    '</div>';
+
+  h+='<div class="set-sec">Dati</div><div class="set-group">'+
+    row("⬇️","Esporta backup","File JSON completo","exportJSON()")+
+    row("📄","Esporta tabella","File CSV","exportCSV()")+
+    row("⬆️","Importa backup","Ripristina da un file JSON","importJSON()")+
+    row("✨","Carica dati di esempio","Per provare l'app","loadDemo()")+
+    '</div>';
+
+  h+='<div class="set-sec">Account</div><div class="set-group">'+
+    row("🔑","Cambia password","","changePassword()")+
+    row("🔒","Esci","","doLogout()")+
+    row("🗑","Svuota tutto","Cancella ogni dato di questo account","wipe()","","danger")+
+    '</div><div style="height:8px"></div>';
+  modal(h);
+}
 document.addEventListener("click",()=>document.getElementById("menu").classList.remove("on"));
 
 function dl(name,content,type){

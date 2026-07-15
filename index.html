@@ -72,8 +72,11 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .dot{width:8px;height:8px;border-radius:2px;display:inline-block}
 
 /* ── Grid ── */
-.wrap{flex:1 1 auto;overflow:auto;-webkit-overflow-scrolling:touch;
-  padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+.wrap{flex:1 1 auto;overflow:auto;-webkit-overflow-scrolling:touch;min-height:0}
+.wrap::-webkit-scrollbar{width:10px;height:10px}
+.wrap::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px;border:2px solid var(--bg)}
+.wrap::-webkit-scrollbar-thumb:hover{background:var(--muted2)}
+.wrap::-webkit-scrollbar-track{background:transparent}
 table{border-collapse:separate;border-spacing:0;min-width:100%}
 thead th{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line2)}
 th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
@@ -270,7 +273,7 @@ ul.kb li b{color:#fff;font-weight:600}
 .tmbat .btn.on{border-color:var(--accent);color:var(--accent)}
 
 /* ── Tab bar (navigazione principale, raggiungibile col pollice) ── */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;
+.tabbar{flex:0 0 auto;z-index:60;display:flex;
   background:rgba(14,14,16,0.94);backdrop-filter:saturate(180%) blur(20px);
   border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
@@ -405,18 +408,37 @@ ul.kb li b{color:#fff;font-weight:600}
   body[data-view="matrix"] #grid{max-width:1400px;margin:0 auto}
 }
 /* very small phones: evita che l'header rubi spazio */
-@media(max-width:380px){
-  .brand .logo{height:25px}
+@media(max-width:400px){
+  .brand .logo{height:24px}
   .top{padding-left:11px;padding-right:11px}
-  .top-row{gap:7px}
+  .top-row{gap:6px}
   .actions{gap:5px}
-  .actions .btn.sm{padding:7px 9px;font-size:11px}
+  .actions .btn.sm{padding:7px 9px;font-size:11px;min-height:36px}
   .actions .btn.icon{width:36px;height:36px;font-size:16px}
   .tabbar button{font-size:9.5px;gap:2px}
   .tabbar button svg{width:21px;height:21px}
-  .wrap{padding-left:0;padding-right:0}
+}
+@media(max-width:360px){
+  .brand .logo{height:22px}
+  .brand small{font-size:9px}
+  .actions{gap:4px}
+  .actions .btn.sm{padding:6px 7px;font-size:10.5px;min-height:33px}
+  .actions .btn.icon{width:33px;height:33px;font-size:15px}
+  .top-row{gap:5px}
 }
 .tchk{padding:9px 4px}
+/* controllo di scorrimento matrice */
+.mnav{display:inline-flex;align-items:center;gap:8px;margin-left:auto;color:var(--muted2);font-size:11px}
+.mnav button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line2);background:var(--surface2);
+  color:var(--text);font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.mnav button:active{background:var(--accent);border-color:var(--accent);color:#fff}
+.mnav span{font-family:var(--mono);white-space:nowrap}
+/* su desktop rendi visibili le scrollbar dei caroselli di chip, così si capisce che scorrono */
+@media(hover:hover){
+  .sports,.teams,.bsports,.chips{scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+  .sports::-webkit-scrollbar,.teams::-webkit-scrollbar,.bsports::-webkit-scrollbar,.chips::-webkit-scrollbar{display:block;height:7px}
+  .sports::-webkit-scrollbar-thumb,.teams::-webkit-scrollbar-thumb,.bsports::-webkit-scrollbar-thumb,.chips::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+}
 /* pointer fine (mouse): hover states più evidenti */
 @media(hover:hover){
   .set-row:hover{background:var(--surface3)}
@@ -948,6 +970,7 @@ function renderMatrix(){
   });
   h+='</tbody></table>';
   grid.innerHTML=h;
+  requestAnimationFrame(updateMatrixNav);
 }
 function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
 
@@ -1007,10 +1030,18 @@ function renderBar(){
   } else {
     h+='<div class="leg"><span class="it"><span class="dot" style="background:var(--up)"></span>Migliora</span>'+
        '<span class="it"><span class="dot" style="background:var(--down)"></span>Peggiora</span>'+
-       '<span class="it"><span class="dot" style="background:var(--flat)"></span>Uguale</span></div>';
+       '<span class="it"><span class="dot" style="background:var(--flat)"></span>Uguale</span></div>'+
+       '<div class="mnav" id="mnav" style="display:none">'+
+       '<button onclick="matrixScroll(-1)" aria-label="Test precedenti">‹</button>'+
+       '<span>scorri i test</span>'+
+       '<button onclick="matrixScroll(1)" aria-label="Test successivi">›</button></div>';
   }
   bar.innerHTML=h;
 }
+function matrixScroll(dir){ const w=document.querySelector(".wrap"); if(w) w.scrollBy({left:dir*Math.max(200,w.clientWidth*0.62), behavior:"smooth"}); }
+function updateMatrixNav(){ const w=document.querySelector(".wrap"); const nav=document.getElementById("mnav");
+  if(!w||!nav) return; nav.style.display=(w.scrollWidth>w.clientWidth+4)?"inline-flex":"none"; }
+window.addEventListener("resize", function(){ if(S&&S.view==="matrix") updateMatrixNav(); });
 function setView(v){ S.view=v; save(); render(); }
 function setTest(id){ S.activeTest=id; save(); render(); }
 function toggleAth(id){ HIDDEN[id]=!HIDDEN[id]; render(); }

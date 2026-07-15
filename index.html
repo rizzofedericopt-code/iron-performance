@@ -82,7 +82,9 @@ th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);tex
 .cAth{position:sticky;left:0;z-index:25;background:var(--surface);text-align:left;
   min-width:148px;max-width:148px;padding:10px 12px}
 thead .cAth{z-index:30}
-.cAth .nm{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:7px}
+.cAth .nm{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.cAth .nmt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.cAth .sx{flex:0 0 auto}
 .cAth .sx{font-family:var(--mono);font-size:9px;color:var(--muted2);border:1px solid var(--line2);
   border-radius:4px;padding:1px 4px;line-height:1.3}
 .cAth .sub{color:var(--muted2);font-size:10px;margin-top:3px;font-family:var(--mono)}
@@ -389,6 +391,37 @@ ul.kb li b{color:#fff;font-weight:600}
   background:var(--text);color:#0A0A0A;font-weight:600;font-size:13px;padding:11px 18px;border-radius:11px;
   z-index:200;opacity:0;transition:.25s;pointer-events:none}
 .toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+/* ═══════════ Responsive: colonna centrata su desktop, matrice a piena larghezza ═══════════ */
+@media(min-width:760px){
+  .top-row,.sports,.teams{max-width:1000px;margin-left:auto;margin-right:auto;width:100%}
+  #bar{max-width:1000px;margin-left:auto;margin-right:auto}
+  #grid{max-width:1000px;margin:0 auto;width:100%}
+  body[data-view="matrix"] #grid{max-width:none;margin:0}
+  .tabbar{justify-content:center;gap:6px}
+  .tabbar button{flex:0 0 128px}
+  .wrap{padding-left:8px;padding-right:8px}
+}
+@media(min-width:1120px){
+  body[data-view="matrix"] #grid{max-width:1400px;margin:0 auto}
+}
+/* very small phones: evita che l'header rubi spazio */
+@media(max-width:380px){
+  .brand .logo{height:25px}
+  .top{padding-left:11px;padding-right:11px}
+  .top-row{gap:7px}
+  .actions{gap:5px}
+  .actions .btn.sm{padding:7px 9px;font-size:11px}
+  .actions .btn.icon{width:36px;height:36px;font-size:16px}
+  .tabbar button{font-size:9.5px;gap:2px}
+  .tabbar button svg{width:21px;height:21px}
+  .wrap{padding-left:0;padding-right:0}
+}
+.tchk{padding:9px 4px}
+/* pointer fine (mouse): hover states più evidenti */
+@media(hover:hover){
+  .set-row:hover{background:var(--surface3)}
+  .tcard:hover,.grow:hover{border-color:var(--line2)}
+}
 </style>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0A0A0A">
@@ -852,6 +885,7 @@ function renderSports(){
 }
 
 function render(){
+  document.body.setAttribute("data-view", S.view||"today");
   renderSports();
   renderTeams();
   renderBar();
@@ -890,7 +924,7 @@ function renderMatrix(){
     const team=S.teams.find(t=>t.id===a.team);
     const tl=(S.activeTeam==="all"&&team)?esc(team.name)+" · ":"";
     const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
-    h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+esc(a.name)+
+    h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+'<span class="nmt">'+esc(a.name)+'</span>'+
        '<span class="sx">'+(a.sex||"M")+'</span>'+
        '<span class="del" onclick="event.stopPropagation();delAthlete(\''+a.id+'\')">✕</span></div>';
     const tot=tests.reduce((s,t)=>s+series(a.id,t.id).length,0);

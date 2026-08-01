@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Iron Performance — @federizzo_trainer</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A0A0A'/%3E%3Cpolyline points='12,47 25,38 38,28' fill='none' stroke='%23F4F5F7' stroke-width='7' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpolyline points='38,28 51,16' fill='none' stroke='%23E63946' stroke-width='7' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='51' cy='16' r='6.5' fill='%23E63946'/%3E%3C/svg%3E">
 <style>
@@ -473,26 +473,23 @@ ul.kb li b{color:#fff;font-weight:600}
     <input id="logPass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <div id="logErr" class="login-err"></div>
     <button class="btn primary" id="logBtn" style="width:100%;margin-top:14px" onclick="doLogin()">Entra</button>
-    <div class="login-forgot" onclick="openSignup()">Non hai un account? Registrati</div>
-    <div class="login-note">L'app tratta <b>dati sanitari</b>, anche di minori. L'accesso è personale: non condividere le credenziali e blocca sempre il dispositivo.</div>
+    <div class="login-forgot" onclick="openRecover()">Password dimenticata?</div>
+    <div class="login-note">Primo accesso? Scegli email e password: verrà creato il tuo spazio privato. I dati sono protetti e cifrati.</div>
   </div>
 
   <div class="login-card" id="recCard" style="display:none">
-    <div class="login-name">NUOVO <b>ACCOUNT</b></div>
-    <div class="login-sub">Serve il codice di invito</div>
-    <label class="fl">Codice di invito</label>
-    <input id="suCode" type="password" placeholder="fornito dall'amministratore">
-    <label class="fl">Email</label>
-    <input id="suEmail" type="email" inputmode="email" autocomplete="username" placeholder="la-tua@email.it">
-    <label class="fl">Password</label>
-    <input id="suPass" type="password" autocomplete="new-password" placeholder="almeno 12 caratteri" oninput="pwMeter()">
-    <div id="suMeter" class="login-note" style="margin-top:6px"></div>
-    <label class="fl">Ripeti la password</label>
-    <input id="suPass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSignup()">
+    <div class="login-name">RECUPERO <b>PASSWORD</b></div>
+    <div class="login-sub">Serve la tua chiave di recupero</div>
+    <label class="fl">Email dell'account</label>
+    <input id="recEmail" type="email" inputmode="email" placeholder="la-tua@email.it">
+    <label class="fl">Chiave di recupero</label>
+    <input id="recKey" type="password" placeholder="la chiave salvata su Vercel">
+    <label class="fl">Nuova password</label>
+    <input id="recNew" type="password" placeholder="min. 4 caratteri" onkeydown="if(event.key==='Enter')doRecover()">
     <div id="recErr" class="login-err"></div>
-    <button class="btn primary" id="recBtn" style="width:100%;margin-top:14px" onclick="doSignup()">Crea account</button>
+    <button class="btn primary" id="recBtn" style="width:100%;margin-top:14px" onclick="doRecover()">Reimposta password</button>
     <div class="login-forgot" onclick="closeRecover()">← Torna all'accesso</div>
-    <div class="login-note">Non esiste un recupero automatico: se perdi la password i dati restano cifrati e inaccessibili. <b>Annotala in un gestore di password</b> ed esporta backup periodici.</div>
+    <div class="login-note">I tuoi <b>dati non vengono toccati</b>: sono legati all'email, non alla password.</div>
   </div>
 </div>
 
@@ -529,18 +526,12 @@ ul.kb li b{color:#fff;font-weight:600}
   <button onclick="exportJSON()">⬇️ Esporta backup (JSON)</button>
   <button onclick="exportCSV()">📄 Esporta tabella (CSV)</button>
   <button onclick="importJSON()">⬆️ Importa backup</button>
-  <button onclick="importForms()">📋 Importa anamnesi da Google Moduli</button>
-  <div class="sep"></div>
-  <button onclick="openPrivacy()">🛡 Privacy e conformità</button>
-  <button onclick="openSessions()">📱 Dispositivi collegati</button>
   <div class="sep"></div>
   <button onclick="loadDemo()">✨ Carica dati di esempio</button>
   <button class="danger" onclick="wipe()">🗑 Svuota tutto</button>
   <div class="sep"></div>
   <button onclick="changePassword()">🔑 Cambia password</button>
-  <button onclick="lockNow()">🔒 Blocca schermo</button>
-  <button onclick="doLogout()">↩️ Esci (logout)</button>
-  <button class="danger" onclick="openErase()">☠️ Elimina account e dati</button>
+  <button onclick="doLogout()">🔒 Esci (logout)</button>
 </div>
 
 <div class="legend" id="bar"></div>
@@ -549,8 +540,7 @@ ul.kb li b{color:#fff;font-weight:600}
 
 <nav class="tabbar" id="tabbar"></nav>
 
-<input type="file" id="fileIn" accept="application/json,.json" style="display:none">
-<input type="file" id="formIn" accept=".csv,text/csv" style="display:none">
+<input type="file" id="fileIn" accept="application/json" style="display:none">
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -647,8 +637,7 @@ function load(){
   try{ const r=localStorage.getItem(KEY); if(r) S=JSON.parse(r); }catch(e){}
   normalize();
 }
-const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acwrCritLow:0.5, acwrCritHigh:1.5, cmjDrop:5, painCut:4,
-  rdBaseMin:7, rdZAmber:-1.0, rdZRed:-1.5, cmjMinBase:5, cmjNoise:1.5, acwrMinDays:14};
+const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acwrCritLow:0.5, acwrCritHigh:1.5, cmjDrop:5, painCut:4};
 function normalize(){
   if(!S.sport) S.sport="pallavolo";
   if(!S.view) S.view="today";
@@ -666,184 +655,69 @@ function normalize(){
     S.athletes.forEach(a=>{ if(!a.team) a.team=tid; });
   }
 }
-function save(){
-  S._dirty=true;
-  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("Memoria del dispositivo piena"); }
-  if(AUTH&&AUTH.token) triggerCloud();
-}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} if(AUTH&&AUTH.email) triggerCloud(); }
 
 /* ═══════════════ LOGIN + CLOUD ═══════════════ */
 const API="/api/store";
-const AUTHKEY="ip_auth";        // ora contiene {email, token} — MAI la password
-let AUTH=null;
-let _cloudTimer=null, _retryTimer=null, _retryMs=0, _saving=false;
-let CLOUD_V=0;                   // versione dello stato vista dal server
+const AUTHKEY="ip_auth";
+let AUTH=null;            // {email, password}
+let _cloudTimer=null;
 
-function setSync(state,msg){
+function setSync(state){
   const d=document.getElementById("syncDot"); if(!d) return;
   d.className="sdot"+(state==="saving"?" saving":state==="off"?" off":"");
-  d.title = msg || (state==="saving"?"Salvataggio…":
-            state==="off"?"In attesa di rete — i dati sono salvati sul dispositivo e verranno inviati appena possibile":
-            "Sincronizzato");
+  d.title = state==="saving"?"Salvataggio…":state==="off"?"Offline — salvato sul dispositivo":"Sincronizzato";
 }
-
 function apiCall(action, extra){
-  const h={"Content-Type":"application/json"};
-  if(AUTH&&AUTH.token) h["Authorization"]="Bearer "+AUTH.token;
-  return fetch(API,{method:"POST",headers:h,
-    body:JSON.stringify(Object.assign({action},extra||{}))})
-    .then(r=>r.json().catch(()=>({})).then(j=>{
-      if(!r.ok){ const e=new Error(j.error||("HTTP "+r.status)); e.status=r.status; e.body=j; throw e; }
-      return j; }));
+  return fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(Object.assign({action,email:AUTH.email,password:AUTH.password},extra||{}))})
+    .then(r=>r.json().then(j=>{ if(!r.ok){ const e=new Error(j.error||("HTTP "+r.status)); e.status=r.status; throw e; } return j; }));
 }
-
-/* ── Merge per record ──────────────────────────────────────────────────────
-   Il vecchio sync sovrascriveva l'intero stato: chi salvava per ultimo
-   cancellava il lavoro dell'altro. Qui uniamo record per record e usiamo
-   le tombstone per non far "resuscitare" ciò che è stato cancellato.      */
-function tombs(o){ return (o&&o.tomb)||{}; }
-function mergeByDate(a,b){
-  const m={};
-  (a||[]).forEach(e=>{ if(e&&e.d) m[e.d]=e; });
-  (b||[]).forEach(e=>{ if(e&&e.d) m[e.d]=e; });   // il locale vince a parità di data
-  return Object.keys(m).sort().map(k=>m[k]);
-}
-function mergeState(server, local){
-  if(!server||typeof server!=="object") return local;
-  const out=JSON.parse(JSON.stringify(server));
-  const T=Object.assign({}, tombs(server), tombs(local));
-  out.tomb=T;
-
-  const byId=arr=>{ const m={}; (arr||[]).forEach(x=>{ if(x&&x.id) m[x.id]=x; }); return m; };
-  const mt=Object.assign(byId(server.teams), byId(local.teams));
-  out.teams=Object.keys(mt).filter(id=>!T["team:"+id]).map(id=>mt[id]);
-  const ma=Object.assign(byId(server.athletes), byId(local.athletes));
-  out.athletes=Object.keys(ma).filter(id=>!T["ath:"+id]).map(id=>ma[id]);
-
-  const live={}; out.athletes.forEach(a=>live[a.id]=1);
-  ["data","readiness","load"].forEach(k=>{ if(!out[k]) out[k]={}; });
-
-  Object.keys(Object.assign({},server.data||{},local.data||{})).forEach(aid=>{
-    if(!live[aid]){ delete out.data[aid]; return; }
-    const sv=(server.data||{})[aid]||{}, lo=(local.data||{})[aid]||{};
-    const tests={}; Object.keys(sv).concat(Object.keys(lo)).forEach(t=>tests[t]=1);
-    out.data[aid]={};
-    Object.keys(tests).forEach(t=>{ out.data[aid][t]=mergeByDate(sv[t],lo[t]); });
-  });
-  ["readiness","load"].forEach(k=>{
-    Object.keys(Object.assign({},server[k]||{},local[k]||{})).forEach(aid=>{
-      if(!live[aid]){ delete out[k][aid]; return; }
-      out[k][aid]=mergeByDate((server[k]||{})[aid],(local[k]||{})[aid]);
-    });
-  });
-
-  out.cfg=local.cfg||server.cfg; out.sport=local.sport||server.sport;
-  out.view=local.view||server.view; out.activeTeam=local.activeTeam||server.activeTeam;
-  return out;
-}
-
-function triggerCloud(){ clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSave,1200); }
-
-function scheduleRetry(){
-  // backoff: 5s, 10s, 20s… fino a 5 minuti. La coda non si perde.
-  _retryMs = _retryMs ? Math.min(_retryMs*2, 300000) : 5000;
-  clearTimeout(_retryTimer);
-  _retryTimer=setTimeout(cloudSave,_retryMs);
-  setSync("off","Non sincronizzato — nuovo tentativo tra "+Math.round(_retryMs/1000)+"s");
-}
-
+function triggerCloud(){ clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSave,1400); }
 function cloudSave(){
-  if(!AUTH||!AUTH.token||_saving) return;
-  if(!S._dirty){ setSync("ok"); return; }
-  _saving=true; setSync("saving");
-  const snap=JSON.parse(JSON.stringify(S)); delete snap._dirty;
-  apiCall("save",{data:snap, baseVersion:CLOUD_V}).then(j=>{
-    _saving=false; _retryMs=0; CLOUD_V=j.version||CLOUD_V+1;
-    S._dirty=false; try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
-    setSync("ok");
-  }).catch(e=>{
-    _saving=false;
-    if(e.status===401){ showLogin("Sessione scaduta, rientra"); return; }
-    if(e.status===409){
-      // Un altro dispositivo ha salvato nel frattempo: uniamo invece di sovrascrivere.
-      S=mergeState(e.body&&e.body.serverData, S);
-      CLOUD_V=(e.body&&e.body.version)||CLOUD_V;
-      normalize(); S._dirty=true;
-      try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(err){}
-      render(); toast("Dati uniti con l'altro dispositivo");
-      clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSave,600);
-      return;
-    }
-    if(e.status===413){ setSync("off","Dati troppo grandi: esporta un backup e archivia le stagioni chiuse"); return; }
-    scheduleRetry();
-  });
+  if(!AUTH) return;
+  setSync("saving");
+  apiCall("save",{data:S}).then(()=>setSync("ok")).catch(()=>setSync("off"));
 }
-
-// Appena torna la rete o l'app riprende il fuoco, svuota la coda.
-window.addEventListener("online", ()=>{ _retryMs=0; cloudSave(); });
-document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) cloudSave(); });
-window.addEventListener("beforeunload", (ev)=>{
-  if(AUTH&&S._dirty){ ev.preventDefault(); ev.returnValue="Ci sono dati non ancora sincronizzati."; }
-});
 function showLogin(msg){
   document.getElementById("login").classList.remove("hide");
   const err=document.getElementById("logErr"); if(err) err.textContent=msg||"";
   const e=document.getElementById("logEmail"); if(e&&AUTH&&AUTH.email&&!e.value) e.value=AUTH.email;
 }
 function hideLogin(){ document.getElementById("login").classList.add("hide"); }
-const MIN_PW=12;
-function openSignup(){
+function openRecover(){
   document.getElementById("logCard").style.display="none";
-  document.getElementById("recCard").style.display="block";
+  const r=document.getElementById("recCard"); r.style.display="block";
   document.getElementById("recErr").textContent="";
   const em=document.getElementById("logEmail").value.trim();
-  if(em) document.getElementById("suEmail").value=em;
-  pwMeter();
+  if(em) document.getElementById("recEmail").value=em;
 }
-function openRecover(){ openSignup(); }
 function closeRecover(){
   document.getElementById("recCard").style.display="none";
   document.getElementById("logCard").style.display="block";
-  ["suCode","suPass","suPass2"].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=""; });
+  ["recKey","recNew"].forEach(id=>document.getElementById(id).value="");
 }
-function pwStrength(p){
-  p=String(p||""); let s=0;
-  if(p.length>=12) s++; if(p.length>=16) s++;
-  if(/[a-z]/.test(p)&&/[A-Z]/.test(p)) s++;
-  if(/[0-9]/.test(p)) s++; if(/[^A-Za-z0-9]/.test(p)) s++;
-  if(/^(.)\1+$/.test(p)||/^(123|abc|qwerty|password)/i.test(p)) s=0;
-  return s;
-}
-function pwMeter(){
-  const el=document.getElementById("suMeter"); if(!el) return;
-  const p=(document.getElementById("suPass")||{}).value||"";
-  if(!p){ el.textContent="Minimo 12 caratteri. Una frase lunga batte una parola complicata."; el.style.color=""; return; }
-  const s=pwStrength(p);
-  const lbl=["molto debole","debole","accettabile","buona","robusta","molto robusta"][s]||"debole";
-  el.textContent="Robustezza: "+lbl+(p.length<MIN_PW?" — troppo corta":"");
-  el.style.color = (p.length<MIN_PW||s<3) ? "var(--down)" : "var(--up)";
-}
-function doSignup(){
-  const code=document.getElementById("suCode").value;
-  const email=document.getElementById("suEmail").value.trim().toLowerCase();
-  const p1=document.getElementById("suPass").value, p2=document.getElementById("suPass2").value;
+function doRecover(){
+  const email=document.getElementById("recEmail").value.trim().toLowerCase();
+  const key=document.getElementById("recKey").value;
+  const np=document.getElementById("recNew").value;
   const err=document.getElementById("recErr"), btn=document.getElementById("recBtn");
-  if(!code||!email||!p1){ err.textContent="Compila tutti i campi"; return; }
-  if(p1.length<MIN_PW){ err.textContent="Password troppo corta (minimo "+MIN_PW+" caratteri)"; return; }
-  if(pwStrength(p1)<3){ err.textContent="Password troppo prevedibile: allungala o variala"; return; }
-  if(p1!==p2){ err.textContent="Le due password non coincidono"; return; }
-  err.textContent=""; btn.disabled=true; btn.textContent="Creo…";
-  apiCall("signup",{code, email, password:p1}).then(j=>{
-    AUTH={email:j.email, token:j.token};
-    try{ localStorage.setItem(AUTHKEY, JSON.stringify(AUTH)); }catch(e){}
-    CLOUD_V=0; normalize(); S._dirty=true;
-    closeRecover(); hideLogin(); setSync("ok"); render(); cloudSave();
-    btn.disabled=false; btn.textContent="Crea account";
-    toast("Account creato");
-  }).catch(e=>{
-    btn.disabled=false; btn.textContent="Crea account";
-    err.textContent=e.message;
-  });
+  if(!email||!key||!np){ err.textContent="Compila tutti i campi"; return; }
+  if(np.length<4){ err.textContent="Nuova password troppo corta (min 4)"; return; }
+  err.textContent=""; btn.disabled=true; btn.textContent="Reimposto…";
+  fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({action:"reset", email, recoveryKey:key, newPassword:np})})
+    .then(r=>r.json().then(j=>{ if(!r.ok) throw new Error(j.error||("HTTP "+r.status)); return j; }))
+    .then(()=>{
+      btn.disabled=false; btn.textContent="Reimposta password";
+      closeRecover();
+      document.getElementById("logEmail").value=email;
+      document.getElementById("logPass").value="";
+      document.getElementById("logErr").textContent="";
+      document.getElementById("logErr").style.color="var(--up)";
+      document.getElementById("logErr").textContent="Password reimpostata. Ora entra con quella nuova.";
+    })
+    .catch(e=>{ btn.disabled=false; btn.textContent="Reimposta password"; err.textContent=e.message; });
 }
 
 function doLogin(){
@@ -853,42 +727,26 @@ function doLogin(){
   err.style.color="";
   if(!email||!pass){ err.textContent="Inserisci email e password"; return; }
   err.textContent=""; btn.disabled=true; btn.textContent="Accesso…";
-  // La password serve solo per questa chiamata: non viene mai salvata.
-  apiCall("login",{email, password:pass}).then(j=>{
-    AUTH={email:j.email, token:j.token};
+  AUTH={email,password:pass};
+  apiCall("load").then(j=>{
     try{ localStorage.setItem(AUTHKEY, JSON.stringify(AUTH)); }catch(e){}
-    document.getElementById("logPass").value="";
-    return apiCall("load");
-  }).then(j=>{
-    // Se sul dispositivo c'erano modifiche non sincronizzate, si uniscono.
-    const localDirty = S && S._dirty && (S.athletes||[]).length;
-    S = (j && j.data) ? (localDirty ? mergeState(j.data, S) : j.data) : S;
-    CLOUD_V = (j && j.version) || 0;
-    normalize(); S._dirty=!!localDirty;
+    if(j && j.data) S=j.data;
+    normalize();
     try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
-    hideLogin(); setSync("ok"); render(); armLock();
-    if(S._dirty) cloudSave();
-    btn.disabled=false; btn.textContent="Entra";
+    hideLogin(); setSync("ok"); render();
+    btn.disabled=false; btn.textContent="Entra"; document.getElementById("logPass").value="";
   }).catch(e=>{
     AUTH=null; btn.disabled=false; btn.textContent="Entra";
-    err.textContent = e.status===401 ? "Email o password non corretti"
-                    : e.status===429 ? e.message
-                    : ("Errore di rete: "+e.message);
+    err.textContent = e.status===401 ? "Password errata" : ("Errore di rete: "+e.message);
   });
 }
 function doLogout(){
-  if(S && S._dirty){
-    if(!confirm("Ci sono dati NON ancora sincronizzati: uscendo vanno persi.\n\nUscire lo stesso?")) return;
-  } else if(!confirm("Uscire? I dati restano sul server e si ricaricano al prossimo accesso.")) return;
-  const bye = AUTH ? apiCall("logout").catch(()=>{}) : Promise.resolve();
-  bye.then(()=>{
-    AUTH=null; CLOUD_V=0;
-    clearTimeout(_cloudTimer); clearTimeout(_retryTimer);
-    try{ localStorage.removeItem(AUTHKEY); localStorage.removeItem(KEY); }catch(e){}
-    S={athletes:[],data:{},teams:[],sport:"pallavolo",view:"matrix",activeTeam:"all"};
-    document.getElementById("menu").classList.remove("on");
-    showLogin();
-  });
+  if(!confirm("Uscire? I dati restano nel cloud e si ricaricano al prossimo accesso.")) return;
+  AUTH=null;
+  try{ localStorage.removeItem(AUTHKEY); localStorage.removeItem(KEY); }catch(e){}
+  S={athletes:[],data:{},teams:[],sport:"pallavolo",view:"matrix",activeTeam:"all"};
+  document.getElementById("menu").classList.remove("on");
+  showLogin();
 }
 function openThresholds(){
   document.getElementById("menu").classList.remove("on");
@@ -907,16 +765,9 @@ function openThresholds(){
      f("acwrHigh","Zona ok — massimo",0.05)+
      f("acwrCritLow","Critico (basso) se <",0.05)+
      f("acwrCritHigh","Critico (alto) se >",0.05);
-  h+='<div class="psec">CMJ &amp; dolore</div>'+
-     f("cmjDrop","Calo CMJ % = fatica (soglia minima)",0.5,"La soglia effettiva non scende mai sotto CV × moltiplicatore: sotto quel valore staresti leggendo rumore.")+
-     f("cmjMinBase","Misurazioni minime per la baseline",1,"Con meno di 5-7 rilevazioni la media non è stabile.")+
-     f("cmjNoise","Moltiplicatore del rumore (CV)",0.1,"1.5 × CV è un compromesso ragionevole tra falsi allarmi e sensibilità.")+
+  h+='<div class="psec">CMJ & dolore</div>'+
+     f("cmjDrop","Calo CMJ % = fatica (es. 5)",0.5)+
      f("painCut","Dolore segnalato se ≥ (0-10)",1);
-  h+='<div class="psec">Baseline readiness</div>'+
-     f("rdBaseMin","Check-in minimi per la baseline personale",1,"Sotto questa soglia si usano i valori assoluti sopra, ed è dichiarato nell'interfaccia.")+
-     f("rdZAmber","Ambra se z ≤",0.1,"Scostamento in deviazioni standard dalla media dell'atleta.")+
-     f("rdZRed","Rosso se z ≤",0.1)+
-     f("acwrMinDays","Giorni minimi di carico per l'ACWR",1,"Sotto i 14 giorni il carico cronico è sottostimato e l'indice esce falsamente alto.");
   h+='<div class="thr-act"><button class="btn sm" onclick="resetThresholds()">Ripristina default</button>'+
      '<button class="btn primary" onclick="saveThresholds()">Salva soglie</button></div>';
   modal(h);
@@ -942,8 +793,7 @@ function changePassword(){
     '<label class="fl">Password attuale</label>'+
     '<input id="cpOld" type="password" autocomplete="current-password">'+
     '<label class="fl">Nuova password</label>'+
-    '<input id="cpNew" type="password" autocomplete="new-password" placeholder="almeno 12 caratteri">'+
-    '<div class="gnote" style="margin-top:8px">Cambiando password gli <b>altri dispositivi collegati verranno disconnessi</b>.</div>'+
+    '<input id="cpNew" type="password" autocomplete="new-password" placeholder="almeno 4 caratteri">'+
     '<div id="cpErr" class="login-err"></div>'+
     '<div style="height:14px"></div>'+
     '<button class="btn primary" id="cpBtn" style="width:100%" onclick="doChangePass()">Aggiorna password</button>');
@@ -952,159 +802,32 @@ function doChangePass(){
   const oldp=document.getElementById("cpOld").value, neu=document.getElementById("cpNew").value;
   const err=document.getElementById("cpErr"), btn=document.getElementById("cpBtn");
   if(!oldp||!neu){ err.textContent="Compila entrambi i campi"; return; }
-  if(neu.length<MIN_PW){ err.textContent="La nuova password è troppo corta (minimo "+MIN_PW+")"; return; }
-  if(pwStrength(neu)<3){ err.textContent="Password troppo prevedibile: allungala o variala"; return; }
-  if(neu===oldp){ err.textContent="La nuova password è uguale a quella attuale"; return; }
+  if(neu.length<4){ err.textContent="La nuova password è troppo corta (min 4)"; return; }
   err.textContent=""; btn.disabled=true; btn.textContent="Aggiorno…";
-  // La password non entra più in AUTH: viaggia solo dentro questa chiamata.
-  apiCall("changepass",{oldPassword:oldp, newPassword:neu}).then(()=>{
-    closeM(); toast("Password aggiornata · altri dispositivi disconnessi");
+  AUTH.password=oldp;
+  apiCall("changepass",{newPassword:neu}).then(()=>{
+    AUTH.password=neu;
+    try{ localStorage.setItem(AUTHKEY, JSON.stringify(AUTH)); }catch(e){}
+    closeM(); toast("Password aggiornata");
   }).catch(e=>{
     btn.disabled=false; btn.textContent="Aggiorna password";
     err.textContent = e.status===401 ? "Password attuale errata" : ("Errore: "+e.message);
   });
 }
-/* ═══════════════ PRIVACY, SESSIONI, BLOCCO ═══════════════ */
-const LOCK_MIN=15;
-let _lockTimer=null;
-function armLock(){
-  clearTimeout(_lockTimer);
-  if(!AUTH) return;
-  _lockTimer=setTimeout(lockNow, LOCK_MIN*60000);
-}
-function lockNow(){
-  if(!AUTH) return;
-  // Il token resta valido: si richiude solo lo schermo. Un tablet lasciato
-  // sul carrello in palestra non deve mostrare anamnesi di minori.
-  document.getElementById("menu").classList.remove("on");
-  closeM();
-  showLogin("Schermo bloccato per inattività — reinserisci la password");
-  document.getElementById("logEmail").value=AUTH.email;
-}
-["click","keydown","touchstart"].forEach(ev=>document.addEventListener(ev, armLock, {passive:true}));
-
-function openSessions(){
-  document.getElementById("menu").classList.remove("on");
-  modal('<div class="mh"><div><div class="mt">Dispositivi collegati</div><div class="ms">Carico…</div></div>'+
-        '<button class="mcl" onclick="closeM()">✕</button></div>');
-  apiCall("sessions").then(j=>{
-    let h='<div class="mh"><div><div class="mt">Dispositivi collegati</div>'+
-      '<div class="ms">'+(j.sessions||[]).length+' sessioni attive</div></div>'+
-      '<button class="mcl" onclick="closeM()">✕</button></div>';
-    (j.sessions||[]).forEach(s=>{
-      h+='<div class="bgrp"><div class="bt">'+(s.current?'📍 Questo dispositivo':'📱 Altro dispositivo')+'</div>'+
-         '<div class="bw">'+esc(String(s.user_agent||"—").slice(0,90))+'</div>'+
-         '<div class="bw">ultimo accesso '+fmtDate(String(s.last_seen).slice(0,10))+' · scade '+fmtDate(String(s.expires_at).slice(0,10))+'</div></div>';
-    });
-    h+='<div style="height:12px"></div><button class="btn" style="width:100%" onclick="logoutAll()">Disconnetti tutti gli altri dispositivi</button>';
-    modal(h);
-  }).catch(e=>toast("Errore: "+e.message));
-}
-function logoutAll(){
-  if(!confirm("Disconnettere TUTTI i dispositivi, incluso questo?")) return;
-  apiCall("logout_all").then(()=>{
-    AUTH=null; try{ localStorage.removeItem(AUTHKEY); localStorage.removeItem(KEY); }catch(e){}
-    closeM(); showLogin("Tutte le sessioni sono state chiuse");
-  }).catch(e=>toast("Errore: "+e.message));
-}
-
-function consentGaps(){
-  // Dati sanitari senza consenso tracciato = trattamento privo di base giuridica.
-  const CLIN=["conditions","surgeries","familyHistory","meds","supplements","allergies",
-              "injuriesCurrent","injuriesPast","painLevel","medical"];
-  return (S.athletes||[]).filter(a=>{
-    const p=a.profile||{};
-    const hasClin = CLIN.some(k=>p[k]!=null && String(p[k]).trim()!=="") ||
-                    SCREEN_KEYS.some(k=>p[k]);
-    if(!hasClin) return false;
-    return !(p.consent && p.consentDate);
-  });
-}
-function openPrivacy(){
-  document.getElementById("menu").classList.remove("on");
-  const gaps=consentGaps();
-  const minors=(S.athletes||[]).filter(a=>{ const g=ageFrom((a.profile||{}).birth); return g!=null&&g<18; });
-  let h='<div class="mh"><div><div class="mt">Privacy e conformità</div>'+
-    '<div class="ms">Dati sanitari · art. 9 GDPR</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div>';
-  h+='<div class="alert '+(gaps.length?'danger':'info')+'"><span class="ai">'+(gaps.length?'⚠️':'✅')+'</span><span>'+
-     (gaps.length
-       ? '<b>'+gaps.length+' atleti</b> hanno dati clinici registrati <b>senza consenso tracciato</b> (spunta + data). Finché manca, quel trattamento non ha base giuridica.'
-       : 'Tutti gli atleti con dati clinici hanno consenso e data registrati.')+'</span></div>';
-  if(gaps.length){
-    h+='<label class="fl">Da sistemare</label><div class="hist">';
-    gaps.forEach(a=>{ h+='<div class="hrow"><span class="hd">'+esc(a.name)+'</span>'+
-      '<span class="hv"><span class="rd-cmj down">consenso mancante</span></span>'+
-      (idOk(a.id)?'<span class="hdl" onclick="closeM();openAthlete(\''+a.id+'\')">→</span>':'')+'</div>'; });
-    h+='</div>';
-  }
-  h+='<div class="psec">Cosa tratti</div>';
-  h+='<div class="pf"><b>'+(S.athletes||[]).length+'</b> atleti, di cui <b>'+minors.length+'</b> minorenni</div>';
-  h+='<div class="pf">Categorie: anamnesi patologica, farmaci, infortuni, dolore, screening cardiologico, idoneità</div>';
-  h+='<div class="gnote">Per i <b>minori</b> il consenso lo presta chi esercita la responsabilità genitoriale. Registra sempre <b>data</b> e <b>versione dell\'informativa</b> firmata: senza quelli, la spunta non prova nulla.</div>';
-  h+='<div class="gnote">⚕️ Lo screening cardiologico e i suggerimenti dell\'app <b>non sono un giudizio medico</b> e non sostituiscono la visita di idoneità. Chi non è medico non può usarli per dichiarare qualcuno idoneo o non idoneo all\'attività.</div>';
-  h+='<div class="psec">I tuoi diritti e quelli degli atleti</div>';
-  h+='<button class="btn sm" style="width:100%;margin-bottom:8px" onclick="exportJSON()">⬇️ Esporta tutti i dati (portabilità, art. 20)</button>';
-  h+='<div class="gnote">Per cancellare un singolo atleta: aprilo e usa Elimina. Vengono rimossi anche readiness e carichi.</div>';
-  modal(h);
-}
-function openErase(){
-  document.getElementById("menu").classList.remove("on");
-  modal('<div class="mh"><div><div class="mt">Elimina account</div>'+
-    '<div class="ms">Operazione irreversibile</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div>'+
-    '<div class="alert danger"><span class="ai">⚠️</span><span>Vengono cancellati <b>account, atleti, anamnesi, test, readiness e carichi</b> dal server e da questo dispositivo. Non è recuperabile.</span></div>'+
-    '<button class="btn sm" style="width:100%;margin-bottom:12px" onclick="exportJSON()">⬇️ Esporta prima un backup</button>'+
-    '<label class="fl">Scrivi la tua email per confermare</label>'+
-    '<input id="erEmail" type="email" placeholder="'+esc(AUTH?AUTH.email:"")+'">'+
-    '<label class="fl">Password</label>'+
-    '<input id="erPass" type="password" autocomplete="current-password">'+
-    '<div id="erErr" class="login-err"></div><div style="height:14px"></div>'+
-    '<button class="btn danger" id="erBtn" style="width:100%" onclick="doErase()">Elimina definitivamente</button>');
-}
-function doErase(){
-  const em=document.getElementById("erEmail").value.trim().toLowerCase();
-  const pw=document.getElementById("erPass").value;
-  const err=document.getElementById("erErr"), btn=document.getElementById("erBtn");
-  if(em!==(AUTH&&AUTH.email)){ err.textContent="L'email non corrisponde all'account"; return; }
-  if(!pw){ err.textContent="Inserisci la password"; return; }
-  if(!confirm("Ultima conferma: eliminare account e TUTTI i dati?")) return;
-  btn.disabled=true; btn.textContent="Elimino…";
-  apiCall("erase",{confirm:em, password:pw}).then(()=>{
-    AUTH=null; try{ localStorage.removeItem(AUTHKEY); localStorage.removeItem(KEY); }catch(e){}
-    S={athletes:[],data:{},teams:[],sport:"pallavolo",view:"matrix",activeTeam:"all"};
-    closeM(); showLogin("Account eliminato");
-  }).catch(e=>{ btn.disabled=false; btn.textContent="Elimina definitivamente"; err.textContent=e.message; });
-}
-
 function autoLogin(){
   try{ const r=localStorage.getItem(AUTHKEY); if(r) AUTH=JSON.parse(r); }catch(e){}
-  // Le vecchie sessioni salvavano la password: non sono più valide.
-  if(AUTH && AUTH.password){ AUTH=null; try{ localStorage.removeItem(AUTHKEY); }catch(e){} }
-  if(!AUTH||!AUTH.token){ showLogin(); return; }
+  if(!AUTH||!AUTH.email){ showLogin(); return; }
   hideLogin(); render(); setSync("saving");
   apiCall("load").then(j=>{
-    const localDirty = S && S._dirty && (S.athletes||[]).length;
-    if(j && j.data){
-      // Prima il caricamento sovrascriveva lo stato locale: le sedute
-      // registrate offline sparivano senza avviso. Ora si uniscono.
-      S = localDirty ? mergeState(j.data, S) : j.data;
-      CLOUD_V = j.version||0;
-      normalize(); S._dirty=!!localDirty;
-      try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
-      render();
-    } else { CLOUD_V=0; }
-    if(S._dirty){ cloudSave(); } else setSync("ok");
+    if(j && j.data){ S=j.data; normalize(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} render(); }
+    setSync("ok");
   }).catch(e=>{
-    if(e.status===401){ AUTH=null; try{ localStorage.removeItem(AUTHKEY); }catch(err){} showLogin("Sessione scaduta, rientra"); }
-    else scheduleRetry();
+    if(e.status===401) showLogin("Sessione non valida, rientra");
+    else setSync("off");
   });
 }
 function uid(){ return Math.random().toString(36).slice(2,9); }
-function todayISO(){ const d=new Date();
-  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
-function dayNum(iso){ const p=String(iso||"").split("-"); return p.length===3 ? Date.UTC(+p[0],+p[1]-1,+p[2])/86400000 : NaN; }
-function daysAgo(iso){ return dayNum(todayISO())-dayNum(iso); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
 function fmtDate(d){ const p=d.split("-"); return p[2]+"/"+p[1]+"/"+p[0].slice(2); }
 
 /* ═══════════════ HELPER TREND ═══════════════ */
@@ -1241,10 +964,7 @@ function renderMatrix(){
   grid.innerHTML=h;
   requestAnimationFrame(updateMatrixNav);
 }
-function esc(s){ return String(s==null?"":s).replace(/[&<>"'`]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;","`":"&#96;"}[c])); }
-function escAttr(s){ return esc(s); }
-// id usati dentro onclick="...('X')": vanno ripuliti, non solo escapati
-function idOk(s){ return /^[A-Za-z0-9_-]{1,40}$/.test(String(s||"")); }
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
 
 /* ═══════════════ BARRA VISTA + ANDAMENTO ═══════════════ */
 const APAL=["#E63946","#4DA3FF","#34C759","#FFD60A","#FF9F0A","#BF5AF2","#5AC8FA","#FF6482","#30D158","#9A9AA2"];
@@ -1276,9 +996,9 @@ function todayManageCount(){
       else if(!isNaN(pain) && pain>=S.cfg.painCut) flag=true;
       if(SCREEN_KEYS.filter(k=>p[k]).length) flag=true;
       const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1];
-      if(rl){ const ev=readinessEval(a.id,rl); if(ev.color==="down"||ev.color==="amber") flag=true; }
+      if(rl && readinessScore(rl)<S.cfg.rdAmber) flag=true;
       const ac=acwr(a.id);
-      if(ac && ac.acwr!=null && (ac.acwr>S.cfg.acwrHigh || ac.acwr<S.cfg.acwrLow)) flag=true;
+      if(ac && (ac.acwr>S.cfg.acwrHigh || ac.acwr<S.cfg.acwrLow)) flag=true;
       const cf=cmjFatigue(a.id); if(cf&&cf.fatigued) flag=true;
       if(flag) n++;
     });
@@ -1565,10 +1285,7 @@ const PROFILE=[
   {sec:"Idoneità & consenso"},
   {k:"medical",      l:"Idoneità medica agonistica", t:"select", o:["","Idoneo","In attesa","Non idoneo"], half:true},
   {k:"medicalExpiry",l:"Scadenza certificato", t:"date", half:true},
-  {k:"consent",      l:"Consenso al trattamento dei dati raccolto", t:"check"},
-  {k:"consentBy",    l:"Prestato da", t:"select", o:["","L'atleta (maggiorenne)","Chi esercita la responsabilità genitoriale"], half:true},
-  {k:"consentDate",  l:"Data del consenso", t:"date", half:true},
-  {k:"consentDoc",   l:"Versione dell'informativa firmata (es. v1.0 del 01/09/2026)", t:"text"},
+  {k:"consent",      l:"Consenso al trattamento dei dati (genitori se minore)", t:"check"},
   {k:"notes",        l:"Note libere del preparatore", t:"area"}
 ];
 const SCREEN_KEYS=["scHeart","scChest","scDizzy","scBreath","scJoint","scFamily","scMedsHeart"];
@@ -1579,7 +1296,7 @@ function checkField(f,p){
 }
 function profileField(f, p){
   const v = (p && p[f.k]!=null) ? p[f.k] : "";
-  const ev = esc(String(v));
+  const ev = String(v).replace(/"/g,"&quot;");
   if(f.t==="area") return '<textarea id="p_'+f.k+'" placeholder="—">'+esc(String(v))+'</textarea>';
   if(f.t==="select"){
     let o=f.o.map(opt=>'<option value="'+opt+'"'+(v===opt?" selected":"")+'>'+(opt||"—")+'</option>').join("");
@@ -1664,16 +1381,9 @@ function saveAthleteEdit(id){
 }
 function delAthlete(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
-  if(!confirm("Eliminare "+a.name+" e TUTTI i suoi dati?\n\nVengono cancellati anche anamnesi, check-in di readiness e carichi. L'operazione è definitiva.")) return;
-  S.athletes=S.athletes.filter(x=>x.id!==id);
-  // Prima restavano readiness[id] e load[id]: dati sanitari di una persona
-  // cancellata continuavano a vivere nel cloud.
-  delete S.data[id];
-  if(S.readiness) delete S.readiness[id];
-  if(S.load) delete S.load[id];
-  if(!S.tomb) S.tomb={};
-  S.tomb["ath:"+id]=new Date().toISOString();   // impedisce che il merge lo resusciti
-  save(); closeM(); render(); toast("Atleta e dati eliminati");
+  if(!confirm("Eliminare "+a.name+" e tutti i suoi dati?")) return;
+  S.athletes=S.athletes.filter(x=>x.id!==id); delete S.data[id];
+  save(); closeM(); render(); toast("Atleta eliminato");
 }
 
 /* ═══════════════ KNOWLEDGE BASE SPORT + RUOLO ═══════════════ */
@@ -1953,9 +1663,8 @@ function printAthlete(id){
   const rarr=(S.readiness&&S.readiness[a.id])||[]; const rlast=rarr[rarr.length-1];
   const ac=(typeof acwr==="function")?acwr(a.id):null;
   if(rlast||ac){ h+='<div class="psc">Stato attuale</div>';
-    if(rlast){ const ev=readinessEval(a.id,rlast);
-      if(ev.pc!=null) h+='<div class="pf"><b>Readiness:</b> '+rdLabel(ev)+'/100 · check-in '+fmtDate(rlast.d)+(ev.mode==="abs"?' · baseline non ancora disponibile':'')+'</div>'; }
-    if(ac && ac.acwr!=null) h+='<div class="pf"><b>ACWR (carico acuto:cronico):</b> '+fmtNum(Math.round(ac.acwr*100)/100)+(ac.provisional?' (provvisorio)':'')+'</div>';
+    if(rlast) h+='<div class="pf"><b>Readiness:</b> '+readinessScore(rlast)+'/100 · check-in '+fmtDate(rlast.d)+'</div>';
+    if(ac) h+='<div class="pf"><b>ACWR (carico acuto:cronico):</b> '+fmtNum(Math.round(ac.acwr*100)/100)+'</div>';
   }
   // guida
   h+='<div class="psc">Guida preparazione &amp; percorso — '+kb.label+'</div><div class="pbrief">'+briefBody(kb, p.role||"", p)+'</div>';
@@ -2011,74 +1720,20 @@ function openCoachBrief(id){
 }
 
 /* ═══════════════ FATICA / READINESS ═══════════════ */
-/* Il punteggio precedente usava (e.sl||0): un item mancante valeva 0 e
-   affondava il totale senza segnalarlo. Qui si media solo su ciò che c'è. */
 function readinessScore(e){
-  if(!e) return null;
-  const p=[];
-  if(e.sl!=null) p.push((e.sl-1)/4);        // sonno: alto = meglio
-  if(e.so!=null) p.push((5-e.so)/4);        // dolori: alto = peggio
-  if(e.fa!=null) p.push((5-e.fa)/4);
-  if(e.st!=null) p.push((5-e.st)/4);
-  if(!p.length) return null;
-  return Math.round(p.reduce((a,b)=>a+b,0)/p.length*100);
+  // sonno: alto=meglio; dolori/fatica/stress: alto=peggio
+  const g = (e.sl||0) + (6-(e.so||0)) + (6-(e.fa||0)) + (6-(e.st||0));
+  return Math.round((g-4)/16*100);
 }
-
-/* Le scale di wellness non hanno significato assoluto: chi risponde sempre 3
-   sarebbe cronicamente "ambra" e chi risponde sempre 5 non entrerebbe mai in
-   rosso. Il segnale utile è lo scostamento dalla baseline del singolo atleta
-   (z-score). Sotto i rdBaseMin check-in la baseline non esiste ancora e si
-   ripiega sulle soglie assolute, dichiarandolo. */
-function readinessBaseline(aid, beforeDate){
-  const arr=(S.readiness&&S.readiness[aid])||[];
-  const vals=[];
-  for(let i=0;i<arr.length;i++){
-    if(beforeDate && arr[i].d>=beforeDate) continue;
-    if(daysAgo(arr[i].d)>56) continue;             // finestra 8 settimane
-    const s=readinessScore(arr[i]); if(s!=null) vals.push(s);
-  }
-  const v=vals.slice(-28);
-  if(v.length<(S.cfg.rdBaseMin||7)) return null;
-  const m=v.reduce((a,b)=>a+b,0)/v.length;
-  let sd=Math.sqrt(v.reduce((a,b)=>a+(b-m)*(b-m),0)/(v.length-1));
-  if(!isFinite(sd)||sd<3) sd=3;                    // evita z esplosivi su risposte piatte
-  return {mean:m, sd:sd, n:v.length};
-}
-function readinessEval(aid, entry){
-  const pc=readinessScore(entry);
-  if(pc==null) return {pc:null, color:"flat", mode:"none"};
-  const b=readinessBaseline(aid, entry&&entry.d);
-  if(!b) return {pc, color:readinessColorAbs(pc), mode:"abs"};
-  const z=(pc-b.mean)/b.sd;
-  const c=S.cfg;
-  const color = z<=(c.rdZRed!=null?c.rdZRed:-1.5) ? "down"
-              : z<=(c.rdZAmber!=null?c.rdZAmber:-1.0) ? "amber" : "up";
-  return {pc, z, color, mode:"z", mean:Math.round(b.mean), n:b.n};
-}
-function readinessColorAbs(pc){ const c=S.cfg; return pc==null?"flat":pc>=c.rdGreen?"up":pc>=c.rdAmber?"amber":"down"; }
-function readinessColor(pc){ return readinessColorAbs(pc); }   // compatibilità
-function rdLabel(ev){
-  if(!ev||ev.pc==null) return "—";
-  return ev.mode==="z" ? (ev.pc+" (z "+(ev.z>0?"+":"")+ev.z.toFixed(1)+")") : (ev.pc+"");
-}
-
-/* Il CV tipico del CMJ è 2-5%: una soglia fissa al 5% segnalava "fatica"
-   dentro l'errore di misura, e la baseline poteva essere una sola rilevazione.
-   Ora servono almeno cmjMinBase misure e la soglia non scende mai sotto
-   cmjNoise volte il CV osservato. */
+function readinessColor(pc){ const c=S.cfg; return pc>=c.rdGreen?"up":pc>=c.rdAmber?"amber":"down"; }
 function cmjFatigue(aid){
-  const arr=series(aid,"cmj");
-  const need=(S.cfg.cmjMinBase||5)+1;
-  if(arr.length<need) return {insufficient:true, have:arr.length, need:need};
+  const arr=series(aid,"cmj"); if(arr.length<2) return null;
   const latest=arr[arr.length-1].v;
-  const prev=arr.slice(Math.max(0,arr.length-1-10), arr.length-1).map(e=>e.v);
-  const base=prev.reduce((a,b)=>a+b,0)/prev.length;
-  if(!base) return {insufficient:true, have:arr.length, need:need};
-  let sd=Math.sqrt(prev.reduce((a,b)=>a+(b-base)*(b-base),0)/Math.max(1,prev.length-1));
-  const cv = base ? sd/base*100 : 0;
-  const thr = Math.max(S.cfg.cmjDrop||5, (S.cfg.cmjNoise||1.5)*cv);
+  const prev=arr.slice(Math.max(0,arr.length-4), arr.length-1);
+  const base=prev.reduce((s,e)=>s+e.v,0)/prev.length;
+  if(!base) return null;
   const pct=(latest-base)/base*100;
-  return {pct, cv, thr, nBase:prev.length, fatigued: pct<=-thr};
+  return {pct, fatigued: pct<=-(S.cfg.cmjDrop)};
 }
 function tstat(v,l,cls){ return '<div class="tstat"><div class="tsv '+(cls||"")+'">'+v+'</div><div class="tsl">'+l+'</div></div>'; }
 function renderToday(){
@@ -2094,35 +1749,30 @@ function renderToday(){
     const sc=SCREEN_KEYS.filter(k=>p[k]).length;
     if(sc){ flags.push({t:"🚩 Screening "+sc,c:"down"}); sev+=5; }
     const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1]; let rToday=false;
-    let rEv=null;
-    if(rl){ rEv=readinessEval(a.id,rl); rToday=(rl.d===today);
-      if(rEv.color==="down"){ flags.push({t:"🔋 Readiness "+rdLabel(rEv),c:"down"}); sev+=4; }
-      else if(rEv.color==="amber"){ flags.push({t:"🔋 Readiness "+rdLabel(rEv),c:"amber"}); sev+=2; } }
+    if(rl){ const pc=readinessScore(rl); rToday=(rl.d===today);
+      if(pc<S.cfg.rdCrit){ flags.push({t:"🔋 Readiness "+pc,c:"down"}); sev+=4; }
+      else if(pc<S.cfg.rdAmber){ flags.push({t:"🔋 Readiness "+pc,c:"amber"}); sev+=2; } }
     const ac=acwr(a.id);
-    if(ac && ac.acwr!=null){ const r=ac.acwr;
+    if(ac){ const r=ac.acwr;
       if(r>S.cfg.acwrCritHigh||r<S.cfg.acwrCritLow){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"down"}); sev+=3; }
       else if(r>S.cfg.acwrHigh||r<S.cfg.acwrLow){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"amber"}); sev+=1; } }
     const cf=cmjFatigue(a.id);
     if(cf&&cf.fatigued){ flags.push({t:"⬇️ CMJ "+fmtNum(Math.round(cf.pct*10)/10)+"%",c:"down"}); sev+=2; }
-    let sug=""; const rpc=(rEv&&rEv.pc!=null)?rEv.pc:null; const rCol=rEv?rEv.color:null;
+    let sug=""; const rpc=rl?readinessScore(rl):null;
     if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
     else if(!isNaN(pain) && pain>=S.cfg.painCut) sug="Dolore presente: resta sotto soglia, non peggiorare nelle 24h.";
     else if(sc) sug="Verifica medica prima di proporre carichi intensi.";
-    else if(rCol==="down") sug="Priorità recupero: riduci volume e intensità oggi.";
-    else if(ac && ac.acwr!=null && (ac.acwr>S.cfg.acwrCritHigh||ac.acwr<S.cfg.acwrCritLow)) sug=(ac.acwr>S.cfg.acwrCritHigh?"Carico acuto alto: attenua — o conferma che è un picco pianificato.":"Carico molto basso: reintroduci gradualmente (rischio detraining).");
-    else if(rCol==="amber") sug="Modula il volume, evita massimali; cura il recupero.";
-    else if(ac && ac.acwr!=null && (ac.acwr>S.cfg.acwrHigh||ac.acwr<S.cfg.acwrLow)) sug="ACWR in zona di attenzione: monitora il carico.";
+    else if(rpc!=null && rpc<S.cfg.rdCrit) sug="Priorità recupero: riduci volume e intensità oggi.";
+    else if(ac && (ac.acwr>S.cfg.acwrCritHigh||ac.acwr<S.cfg.acwrCritLow)) sug=(ac.acwr>S.cfg.acwrCritHigh?"Carico acuto alto: attenua — o conferma che è un picco pianificato.":"Carico molto basso: reintroduci gradualmente (rischio detraining).");
+    else if(rpc!=null && rpc<S.cfg.rdAmber) sug="Modula il volume, evita massimali; cura il recupero.";
+    else if(ac && (ac.acwr>S.cfg.acwrHigh||ac.acwr<S.cfg.acwrLow)) sug="ACWR in zona di attenzione: monitora il carico.";
     else if(cf&&cf.fatigued) sug="Riduci pliometria/alta intensità; monitora il CMJ.";
     return {a, flags, sev, rl, rToday, sug};
   });
   const manage=items.filter(x=>x.flags.length).sort((x,y)=>y.sev-x.sev);
   const ready=items.filter(x=>!x.flags.length);
   const checkinToday=items.filter(x=>x.rToday).length;
-  const _gaps=consentGaps();
-  let h='<div class="today">'+
-     (_gaps.length?'<div class="alert danger" style="margin-bottom:12px"><span class="ai">🛡</span><span><b>'+_gaps.length+
-       (_gaps.length===1?' atleta ha':' atleti hanno')+' dati clinici senza consenso tracciato.</b> <span onclick="openPrivacy()" style="text-decoration:underline;cursor:pointer">Verifica</span></span></div>':'')+
-     '<div class="tstats">'+
+  let h='<div class="today"><div class="tstats">'+
      tstat(ath.length,"Atleti")+
      tstat(checkinToday+"/"+ath.length,"Check-in oggi")+
      tstat(manage.length,"Da gestire", manage.length?"down":"up")+
@@ -2141,7 +1791,6 @@ function renderToday(){
   if(ready.length){
     h+='<div class="tsec">Pronti ('+ready.length+')</div><div class="treadywrap">';
     ready.forEach(x=>{ const pc=x.rl?readinessScore(x.rl):null;
-      /* punteggio grezzo: qui serve solo come etichetta */
       h+='<span class="tready" onclick="openAthlete(\''+x.a.id+'\')">'+esc(x.a.name)+(pc!=null?' <b>'+pc+'</b>':'')+'</span>'; });
     h+='</div>';
   }
@@ -2166,11 +1815,8 @@ function renderReadiness(){
     const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag">⚠ </span>':"";
     let scoreHtml, sub;
     if(last){
-      const ev=readinessEval(a.id,last); const pc=ev.pc;
-      scoreHtml='<div class="rd-score '+ev.color+'" title="'+(ev.mode==="z"
-        ? "Scostamento dalla baseline personale (media "+ev.mean+" su "+ev.n+" check-in)"
-        : "Baseline personale non ancora disponibile: soglie generiche")+'">'+(pc==null?"—":pc)+
-        (ev.mode==="z"?'<span style="font-size:9px;display:block;opacity:.8">z '+(ev.z>0?"+":"")+ev.z.toFixed(1)+'</span>':'')+'</div>';
+      const pc=readinessScore(last);
+      scoreHtml='<div class="rd-score '+readinessColor(pc)+'">'+pc+'</div>';
       sub='<div class="rd-sub"><span class="rd-chip">😴 '+last.sl+'</span>'+
           '<span class="rd-chip">💪 '+last.so+'</span>'+
           '<span class="rd-chip">🔋 '+last.fa+'</span>'+
@@ -2181,12 +1827,10 @@ function renderReadiness(){
       sub='<div class="rd-sub"><span class="rd-chip">nessun check-in</span></div>';
     }
     const cf=cmjFatigue(a.id); let cmjHtml="";
-    if(cf && !cf.insufficient){ const cls=cf.fatigued?"down":cf.pct>=cf.thr?"up":"flat";
-      cmjHtml='<span class="rd-cmj '+cls+'" title="soglia '+fmtNum(Math.round(cf.thr*10)/10)+'% · CV '+fmtNum(Math.round(cf.cv*10)/10)+'%">CMJ '+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%'+(cf.fatigued?' ⚠':'')+'</span>'; }
-    else if(cf && cf.insufficient) cmjHtml='<span class="rd-cmj flat" title="servono almeno '+cf.need+' misurazioni di CMJ per una baseline attendibile">CMJ '+cf.have+'/'+cf.need+'</span>';
+    if(cf){ const cls=cf.pct<=-(S.cfg.cmjDrop)?"down":cf.pct>=2?"up":"flat";
+      cmjHtml='<span class="rd-cmj '+cls+'">CMJ '+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%'+(cf.fatigued?' ⚠':'')+'</span>'; }
     const ac=acwr(a.id); let acHtml="";
-    if(ac && ac.acwr!=null){ const cls=acwrColor(ac.acwr); acHtml='<span class="rd-cmj '+cls+'">ACWR '+fmtNum(Math.round(ac.acwr*100)/100)+(ac.provisional?'*':'')+(cls==="down"?' ⚠':'')+'</span>'; }
-    else if(ac && ac.insufficient) acHtml='<span class="rd-cmj flat" title="servono almeno '+ac.needDays+' giorni di carico registrato">ACWR '+ac.haveDays+'/'+ac.needDays+'gg</span>';
+    if(ac){ const cls=acwrColor(ac.acwr); acHtml='<span class="rd-cmj '+cls+'">ACWR '+fmtNum(Math.round(ac.acwr*100)/100)+(cls==="down"?' ⚠':'')+'</span>'; }
     h+='<div class="rd-row" onclick="openReadinessHistory(\''+a.id+'\')">'+scoreHtml+
        '<div class="rd-main"><div class="rd-name">'+flag+esc(a.name)+' '+cmjHtml+' '+acHtml+'</div>'+sub+'</div></div>';
   });
@@ -2227,16 +1871,14 @@ function openReadinessHistory(aid){
   let h='<div class="mh"><div><div class="mt">'+esc(a.name)+'</div><div class="ms">Storico readiness</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
   const cf=cmjFatigue(aid);
-  if(cf && cf.insufficient) h+='<div class="alert info"><span class="ai">ℹ️</span><span>CMJ: <b>'+cf.have+'/'+cf.need+'</b> misurazioni. Sotto questa soglia la baseline non distingue la fatica dall\'errore di misura.</span></div>';
-  else if(cf) h+='<div class="alert '+(cf.fatigued?'danger':'info')+'"><span class="ai">'+(cf.fatigued?'⚠️':'ℹ️')+'</span>'+
-    '<span>CMJ vs baseline (<b>'+cf.nBase+'</b> misure): <b>'+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%</b>'+
-    (cf.fatigued?' — possibile fatica neuromuscolare':'')+
-    '<br><span style="font-size:11px;opacity:.8">Variabilità dell\'atleta (CV) '+fmtNum(Math.round(cf.cv*10)/10)+'% → soglia di segnalazione '+fmtNum(Math.round(cf.thr*10)/10)+'%</span></span></div>';
+  if(cf) h+='<div class="alert '+(cf.fatigued?'danger':'info')+'"><span class="ai">'+(cf.fatigued?'⚠️':'ℹ️')+'</span>'+
+    '<span>CMJ vs baseline recente: <b>'+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%</b>'+
+    (cf.fatigued?' — possibile fatica neuromuscolare':'')+'</span></div>';
   if(arr.length){
     h+='<label class="fl">Check-in ('+arr.length+')</label><div class="hist">';
-    for(let i=arr.length-1;i>=0;i--){ const e=arr[i], ev=readinessEval(aid,e), pc=ev.pc;
+    for(let i=arr.length-1;i>=0;i--){ const e=arr[i], pc=readinessScore(e);
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
-         '<span class="hv"><span class="rd-cmj '+ev.color+'">'+(pc==null?"—":pc)+'</span> '+
+         '<span class="hv"><span class="rd-cmj '+readinessColor(pc)+'">'+pc+'</span> '+
          '<span style="color:var(--muted2);font-size:10px;font-family:var(--mono)">😴'+e.sl+' 💪'+e.so+' 🔋'+e.fa+' 🧠'+e.st+'</span></span>'+
          '<span class="hdl" onclick="delCheckin(\''+aid+'\','+i+')">🗑</span></div>';
     }
@@ -2245,8 +1887,7 @@ function openReadinessHistory(aid){
   // ── carico interno + ACWR ──
   const ac=acwr(aid), ws=weekStats(aid), larr=(S.load&&S.load[aid])||[];
   h+='<div class="psec" style="color:var(--accent)">Carico interno & ACWR</div>';
-  if(ac && ac.insufficient) h+='<div class="alert info"><span class="ai">ℹ️</span><span>ACWR non calcolabile: <b>'+ac.haveDays+'</b> giorni di storico su <b>'+ac.needDays+'</b> minimi. Con meno dati il carico cronico risulta sottostimato e l\'indice esce falsamente alto.</span></div>';
-  if(ac && ac.acwr!=null){
+  if(ac){
     const cls=acwrColor(ac.acwr);
     h+='<div class="bgrp"><div style="display:flex;justify-content:space-between;align-items:center">'+
        '<div><div class="bt">ACWR <span class="rd-cmj '+cls+'" style="font-size:15px">'+fmtNum(Math.round(ac.acwr*100)/100)+'</span></div>'+
@@ -2255,9 +1896,7 @@ function openReadinessHistory(aid){
        '<span class="rd-chip">Monotonia: '+fmtNum(Math.round(ws.monotony*100)/100)+'</span>'+
        '<span class="rd-chip">Strain: '+ws.strain+'</span></div></div>';
     h+='<div class="gnote">Zona di comfort ~0.8-1.3; sopra ~1.5 carico acuto elevato; sotto ~0.8 possibile detraining. La <b>monotonia</b> alta (poco variata) aumenta il rischio.</div>';
-    if(ac.provisional) h+='<div class="gnote">⏳ Valore <b>provvisorio</b>: la finestra cronica copre '+ac.haveDays+' giorni invece di 28. Si stabilizza col passare delle settimane.</div>';
     h+='<div class="gnote">⚠️ Un ACWR alto <b>non è automaticamente pericoloso</b>: in un sovraccarico pianificato (block periodization) è atteso. Leggi il dato nel contesto del tuo programma, non come allarme assoluto.</div>';
-    h+='<div class="gnote">📚 L\'ACWR è un <b>descrittore del carico</b>, non un predittore di infortunio: la sua validità è contestata in letteratura (Impellizzeri et al., 2020). Usalo per vedere come varia il carico, non per decidere da solo chi si allena.</div>';
   } else {
     h+='<p class="hint">Servono almeno ~1-4 settimane di carichi per un ACWR sensato. Usa "+ Carico seduta".</p>';
   }
@@ -2276,33 +1915,15 @@ function delCheckin(aid,i){ const arr=S.readiness[aid]; arr.splice(i,1); if(!arr
 
 /* ── Carico interno (sRPE) + ACWR ── */
 function dayLoad(e){ return (e.rpe||0)*(e.min||0); }
-/* Prima il carico cronico era diviso per 4 anche con pochi giorni di storico:
-   nelle prime settimane il denominatore era artificialmente basso e l'ACWR
-   schizzava sopra 1.5, producendo allarmi rossi sistematici. Inoltre la
-   finestra acuta era contenuta nella cronica (versione "coupled"), che
-   introduce la correlazione spuria descritta da Windt & Gabbett.
-   Qui: finestra cronica disaccoppiata (giorni 7-27), divisa per le settimane
-   effettivamente coperte, e nessun valore prima di acwrMinDays di storico. */
 function acwr(aid){
-  const arr=(S.load&&S.load[aid])||[];
-  if(!arr.length) return null;
-  let acute=0, chronicSum=0, oldest=-1;
-  arr.forEach(e=>{
-    const d=daysAgo(e.d); if(!isFinite(d)||d<0) return;
-    if(d>oldest) oldest=d;
-    const L=dayLoad(e);
-    if(d<7) acute+=L; else if(d<28) chronicSum+=L;
-  });
-  if(oldest<0) return null;
-  const minD=(S.cfg.acwrMinDays||14);
-  const chronicDays=Math.min(21, oldest-6);          // giorni coperti in 7..27
-  if(oldest+1<minD || chronicDays<7){
-    return {acwr:null, insufficient:true, haveDays:oldest+1, needDays:minD, acute:Math.round(acute)};
-  }
-  const chronic=chronicSum/(chronicDays/7);          // AU per settimana, reali
-  if(chronic<=0) return {acwr:null, insufficient:true, haveDays:oldest+1, needDays:minD, acute:Math.round(acute)};
-  return {acwr:acute/chronic, acute:Math.round(acute), chronic:Math.round(chronic),
-          provisional: oldest<27, haveDays:oldest+1};
+  const arr=(S.load&&S.load[aid])||[]; if(!arr.length) return null;
+  const now=new Date(todayISO()); let acute=0, chronic=0;
+  arr.forEach(e=>{ const days=(now-new Date(e.d))/86400000; const L=dayLoad(e);
+    if(days>=0&&days<7) acute+=L;
+    if(days>=0&&days<28) chronic+=L; });
+  chronic=chronic/4;                       // media settimanale sulle 4 settimane
+  if(chronic<=0) return null;
+  return {acwr:acute/chronic, acute:Math.round(acute), chronic:Math.round(chronic)};
 }
 function acwrColor(r){ if(r==null) return "flat"; const c=S.cfg; if(r>=c.acwrLow&&r<=c.acwrHigh) return "up"; if(r>c.acwrCritHigh||r<c.acwrCritLow) return "down"; return "amber"; }
 function weekStats(aid){
@@ -2533,383 +2154,15 @@ function exportCSV(){
   dl("iron-performance-"+todayISO()+".csv", csv, "text/csv"); toast("CSV esportato");
 }
 function importJSON(){ document.getElementById("fileIn").click(); }
-/* Prima qualunque JSON con due chiavi diventava lo stato dell'app: gli id
-   importati finivano dentro attributi onclick, aprendo la porta a codice
-   iniettato tramite un file di backup manomesso. Ora si valida tutto. */
-function sanitizeImport(o){
-  if(!o||typeof o!=="object"||Array.isArray(o)) throw new Error("struttura non valida");
-  if(!Array.isArray(o.athletes)||typeof o.data!=="object"||o.data===null) throw new Error("manca atleti o dati");
-  if(o.athletes.length>500) throw new Error("troppi atleti");
-  const str=(v,max)=>String(v==null?"":v).slice(0,max||300);
-  const num=v=>{ const n=parseFloat(v); return isFinite(n)?n:null; };
-  const isDate=d=>/^\d{4}-\d{2}-\d{2}$/.test(String(d||""));
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},tomb:{}};
-
-  (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
-    if(!t||!idOk(t.id)) return;
-    out.teams.push({id:t.id, name:str(t.name,80)||"Squadra", sport:str(t.sport,40)});
-  });
-  const seen={};
-  o.athletes.forEach(a=>{
-    if(!a||!idOk(a.id)||seen[a.id]) return; seen[a.id]=1;
-    const at={id:a.id, name:str(a.name,80)||"Senza nome", sex:(a.sex==="F"?"F":"M")};
-    if(idOk(a.team)) at.team=a.team;
-    if(a.profile&&typeof a.profile==="object"&&!Array.isArray(a.profile)){
-      const p={}; let k=0;
-      for(const key in a.profile){
-        if(!/^[A-Za-z0-9_]{1,30}$/.test(key)||k++>80) continue;
-        const v=a.profile[key];
-        p[key] = (typeof v==="boolean") ? v : str(v,2000);
-      }
-      at.profile=p;
-    }
-    out.athletes.push(at);
-  });
-  const live={}; out.athletes.forEach(a=>live[a.id]=1);
-
-  Object.keys(o.data||{}).forEach(aid=>{
-    if(!live[aid]) return;
-    const src=o.data[aid]; if(!src||typeof src!=="object") return;
-    const dst={};
-    Object.keys(src).slice(0,200).forEach(tid=>{
-      if(!/^[A-Za-z0-9_-]{1,40}$/.test(tid)||!Array.isArray(src[tid])) return;
-      dst[tid]=src[tid].slice(0,2000).filter(e=>e&&isDate(e.d)&&num(e.v)!=null)
-                       .map(e=>({d:e.d, v:num(e.v)}));
-    });
-    out.data[aid]=dst;
-  });
-  ["readiness","load"].forEach(k=>{
-    Object.keys(o[k]||{}).forEach(aid=>{
-      if(!live[aid]||!Array.isArray(o[k][aid])) return;
-      out[k][aid]=o[k][aid].slice(0,2000).filter(e=>e&&isDate(e.d)).map(e=>{
-        const r={d:e.d};
-        (k==="readiness"?["sl","so","fa","st"]:["rpe","min"]).forEach(f=>{
-          const n=num(e[f]); if(n!=null) r[f]=n; });
-        return r;
-      });
-    });
-  });
-  if(o.tomb&&typeof o.tomb==="object") Object.keys(o.tomb).slice(0,2000).forEach(k=>{ out.tomb[k]=str(o.tomb[k],40); });
-  if(o.cfg&&typeof o.cfg==="object"){ out.cfg={}; Object.keys(CFG_DEF).forEach(k=>{ const n=num(o.cfg[k]); if(n!=null) out.cfg[k]=n; }); }
-  out.sport=str(o.sport,40)||"pallavolo";
-  out.view=["matrix","today","trend","fatigue"].indexOf(o.view)>=0?o.view:"matrix";
-  out.activeTeam=idOk(o.activeTeam)?o.activeTeam:"all";
-  return out;
-}
 document.getElementById("fileIn").addEventListener("change",function(e){
   const f=e.target.files[0]; if(!f) return;
-  if(f.size>20*1024*1024){ toast("File troppo grande"); e.target.value=""; return; }
   const r=new FileReader();
-  r.onload=()=>{
-    let o;
-    try{ o=sanitizeImport(JSON.parse(r.result)); }
-    catch(err){ toast("File non valido: "+(err.message||"formato sconosciuto")); return; }
-    const msg="Importare "+o.athletes.length+" atleti e "+o.teams.length+" squadre?\n\n"+
-      (S.athletes&&S.athletes.length ? "I dati attuali ("+S.athletes.length+" atleti) verranno SOSTITUITI." : "");
-    if(!confirm(msg)) return;
-    S=o; normalize(); save(); render(); toast("Backup importato ("+o.athletes.length+" atleti)");
-  };
-  r.onerror=()=>toast("Impossibile leggere il file");
+  r.onload=()=>{ try{ const o=JSON.parse(r.result);
+    if(!o.athletes||!o.data) throw 0;
+    S=o; normalize(); save(); render(); toast("Backup importato");
+  }catch(err){ toast("File non valido"); } };
   r.readAsText(f); e.target.value="";
 });
-/* ═══════════════ IMPORT ANAMNESI DA GOOGLE MODULI ═══════════════
-   Il modulo deve contenere, in testa, l'informativa e una domanda di
-   consenso obbligatoria. Le righe senza consenso NON portano dentro dati
-   clinici: entra solo l'anagrafica. Non è una scelta di stile — senza
-   consenso quel trattamento non ha base giuridica.                        */
-
-function parseCSV(text){
-  text=String(text||"").replace(/^\uFEFF/,"").replace(/\r\n/g,"\n").replace(/\r/g,"\n");
-  // separatore: conta fuori dalle virgolette sulla prima riga
-  let q=false, c1=0, c2=0;
-  for(let i=0;i<text.length;i++){
-    const ch=text[i];
-    if(ch==='"'){ q=!q; continue; }
-    if(q) continue;
-    if(ch==="\n") break;
-    if(ch===",") c1++; else if(ch===";") c2++;
-  }
-  const SEP = c2>c1 ? ";" : ",";
-  const rows=[]; let row=[], cur=""; q=false;
-  for(let i=0;i<text.length;i++){
-    const ch=text[i];
-    if(q){
-      if(ch==='"'){ if(text[i+1]==='"'){ cur+='"'; i++; } else q=false; }
-      else cur+=ch;
-    } else {
-      if(ch==='"') q=true;
-      else if(ch===SEP){ row.push(cur); cur=""; }
-      else if(ch==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }
-      else cur+=ch;
-    }
-  }
-  if(cur!==""||row.length){ row.push(cur); rows.push(row); }
-  return rows.filter(r=>r.some(c=>String(c).trim()!==""));
-}
-
-function normHdr(s){
-  return String(s||"").toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-}
-function normName(s){
-  return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^a-z ]/g," ").replace(/\s+/g," ").trim().split(" ").sort().join(" ");
-}
-function truthy(v){
-  const s=String(v||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-  if(!s) return false;
-  return ["si","s","yes","y","true","vero","x","1","ok","acconsento","autorizzo","presente","positivo"].indexOf(s)>=0
-      || /^si\b/.test(s) || /^acconsent/.test(s) || /^autorizz/.test(s) || /^confermo/.test(s);
-}
-function falsy(v){
-  const s=String(v||"").toLowerCase().trim();
-  return ["no","n","false","falso","0","nessuno","negativo","assente"].indexOf(s)>=0;
-}
-function toISODate(v){
-  const s=String(v||"").trim(); if(!s) return "";
-  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return m[1]+"-"+m[2]+"-"+m[3];
-  m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);            // gg/mm/aaaa
-  if(m) return m[3]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[1]).padStart(2,"0");
-  m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2})\b/);
-  if(m) return "20"+m[3]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[1]).padStart(2,"0");
-  return "";
-}
-
-/* Campi importabili. clin:true = bloccato senza consenso. */
-const FORM_FIELDS=[
-  {k:"name",   l:"Nome e cognome", req:true, kw:["nome cognome","nome e cognome","cognome nome","nominativo","atleta","nome"]},
-  {k:"team",   l:"Squadra / gruppo", kw:["squadra","team","gruppo","categoria"]},
-  {k:"sex",    l:"Sesso", kw:["sesso","genere"]},
-  {k:"birth",  l:"Data di nascita", clin:true, kw:["data di nascita","nascita","nato il","compleanno"]},
-  {k:"height", l:"Altezza (cm)", clin:true, kw:["altezza","statura"]},
-  {k:"weight", l:"Peso (kg)", clin:true, kw:["peso"]},
-  {k:"role",   l:"Ruolo", kw:["ruolo","posizione"]},
-  {k:"conditions",    l:"Patologie / condizioni croniche", clin:true, kw:["patologie","condizioni","malattie","croniche","diagnosi"]},
-  {k:"surgeries",     l:"Interventi chirurgici", clin:true, kw:["interventi","operazioni","chirurg","ricoveri","ospedal"]},
-  {k:"familyHistory", l:"Familiarità", clin:true, kw:["familiarita","famiglia","parenti"]},
-  {k:"injuriesCurrent", l:"Infortuni/dolori attuali", clin:true, kw:["infortuni attuali","dolori attuali","attualmente","in corso","dolore attuale"]},
-  {k:"painLevel",     l:"Dolore 0-10", clin:true, kw:["dolore 0","scala del dolore","intensita del dolore","quanto dolore","dolore da 0"]},
-  {k:"painContext",   l:"Quando compare il dolore", clin:true, kw:["quando compare","il dolore compare","in che momento"]},
-  {k:"injuriesPast",  l:"Infortuni passati", clin:true, kw:["infortuni passati","infortuni precedenti","in passato","pregress","storico infortuni"]},
-  {k:"recurrent",     l:"Zone fragili / recidive", clin:true, kw:["recidive","zone fragili","ricorrenti","punti deboli"]},
-  {k:"meds",          l:"Farmaci in uso", clin:true, kw:["farmaci","medicinali","terapia","assume"]},
-  {k:"supplements",   l:"Integratori", clin:true, kw:["integratori","supplement"]},
-  {k:"allergies",     l:"Allergie / intolleranze", clin:true, kw:["allergie","intolleranze"]},
-  {k:"medical",       l:"Idoneità medica", clin:true, kw:["idoneita","certificato medico","visita medica"]},
-  {k:"medicalExpiry", l:"Scadenza certificato", clin:true, kw:["scadenza"]},
-  {k:"notes",         l:"Note", kw:["note","altro","aggiungere","segnalare"]}
-];
-const FORM_SCREEN=[
-  {k:"scHeart",    l:"Problemi cardiaci", kw:["cuore","cardiac","cardiopat"]},
-  {k:"scChest",    l:"Dolore al petto", kw:["petto","toracic","torace"]},
-  {k:"scDizzy",    l:"Vertigini / svenimenti", kw:["vertigin","sveniment","capogir","sincope"]},
-  {k:"scBreath",   l:"Affanno anomalo", kw:["affanno","respir","fiato","dispnea"]},
-  {k:"scJoint",    l:"Problema osseo/articolare", kw:["articolar","osseo","ossa","ginocchio","schiena"]},
-  {k:"scFamily",   l:"Familiarità cardiaca precoce", kw:["familiarita cardiac","morte improvvisa","eventi cardiaci"]},
-  {k:"scMedsHeart",l:"Farmaci cuore/pressione", kw:["pressione","antipertensiv","farmaci per il cuore"]}
-];
-const FORM_CONSENT=[
-  {k:"consent",     l:"Consenso al trattamento (obbligatorio)", kw:["consenso","acconsento","autorizzo","privacy","trattamento dei dati","informativa"]},
-  {k:"consentBy",   l:"Chi ha prestato il consenso", kw:["genitore","tutore","responsabilita genitoriale","chi compila","compilato da"]},
-  {k:"consentDate", l:"Data del consenso", kw:["informazioni cronologiche","timestamp","data e ora","marca temporale"]},
-  {k:"consentDoc",  l:"Versione informativa", kw:["versione","informativa v"]}
-];
-const FORM_ALL=FORM_FIELDS.concat(FORM_SCREEN, FORM_CONSENT);
-
-let FORM_CSV=null;   // {hdr:[], rows:[[]]}
-
-function importForms(){
-  document.getElementById("menu").classList.remove("on");
-  document.getElementById("formIn").click();
-}
-document.getElementById("formIn").addEventListener("change",function(ev){
-  const f=ev.target.files[0]; if(!f) return;
-  if(f.size>10*1024*1024){ toast("File troppo grande"); ev.target.value=""; return; }
-  const r=new FileReader();
-  r.onload=()=>{
-    let rows;
-    try{ rows=parseCSV(r.result); }catch(e){ toast("CSV illeggibile"); return; }
-    if(rows.length<2){ toast("Il CSV non contiene righe di risposta"); return; }
-    FORM_CSV={hdr:rows[0].map(h=>String(h).trim()), rows:rows.slice(1)};
-    openFormMap();
-  };
-  r.onerror=()=>toast("Impossibile leggere il file");
-  r.readAsText(f,"UTF-8"); ev.target.value="";
-});
-
-function guessCol(field, hdr, used){
-  const H=hdr.map(normHdr);
-  let best=-1, bestScore=0;
-  for(let i=0;i<H.length;i++){
-    if(used[i]) continue;
-    let sc=0;
-    field.kw.forEach(k=>{ const n=normHdr(k);
-      if(H[i]===n) sc=Math.max(sc,100);
-      else if(H[i].indexOf(n)>=0) sc=Math.max(sc, 50+n.length); });
-    if(sc>bestScore){ bestScore=sc; best=i; }
-  }
-  return bestScore>=50 ? best : -1;
-}
-
-function openFormMap(){
-  const hdr=FORM_CSV.hdr, used={};
-  const guess={};
-  FORM_ALL.forEach(f=>{ const i=guessCol(f,hdr,used); if(i>=0){ guess[f.k]=i; used[i]=1; } });
-
-  const opts=(sel)=>{ let o='<option value="-1">— non importare —</option>';
-    hdr.forEach((h,i)=>{ o+='<option value="'+i+'"'+(sel===i?" selected":"")+'>'+esc(h.slice(0,70))+'</option>'; });
-    return o; };
-  const rowFor=f=>'<div class="thr"><label>'+esc(f.l)+(f.req?' <span style="color:var(--accent)">*</span>':'')+
-    (f.clin?' <span style="color:var(--muted2);font-size:10px">clinico</span>':'')+'</label>'+
-    '<select id="fm_'+f.k+'">'+opts(guess[f.k]!=null?guess[f.k]:-1)+'</select></div>';
-
-  const teamOpts=(S.teams||[]).map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join("");
-
-  let h='<div class="mh"><div><div class="mt">Importa anamnesi</div>'+
-    '<div class="ms">'+FORM_CSV.rows.length+' risposte · '+hdr.length+' colonne</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div>';
-  h+='<div class="alert danger"><span class="ai">🛡</span><span>Le righe <b>senza consenso</b> importano solo nome e squadra: nessun dato clinico. Mappa la colonna del consenso, altrimenti l\'intera importazione resta anagrafica.</span></div>';
-  h+='<label class="fl">Squadra di destinazione per i nuovi atleti</label>'+
-     '<select id="fmTeam"><option value="">— crea "Da modulo" —</option>'+teamOpts+'</select>';
-  h+='<div class="psec">Consenso</div>'+FORM_CONSENT.map(rowFor).join("");
-  h+='<div class="psec">Anagrafica e anamnesi</div>'+FORM_FIELDS.map(rowFor).join("");
-  h+='<div class="psec">Screening — colonne dedicate</div>'+FORM_SCREEN.map(rowFor).join("");
-  h+='<label class="fl">…oppure una sola colonna a scelta multipla</label>'+
-     '<select id="fm_screenMulti">'+opts(-1)+'</select>'+
-     '<div class="thrh">Se il modulo usa una casella di controllo con più opzioni, indicala qui: le voci selezionate vengono riconosciute per parola chiave.</div>';
-  h+='<div class="thr-act"><button class="btn sm" onclick="closeM()">Annulla</button>'+
-     '<button class="btn primary" onclick="previewForms()">Anteprima</button></div>';
-  modal(h);
-}
-
-function readFormMapping(){
-  const m={};
-  FORM_ALL.forEach(f=>{ const el=document.getElementById("fm_"+f.k); m[f.k]=el?parseInt(el.value,10):-1; });
-  m._screenMulti=parseInt((document.getElementById("fm_screenMulti")||{value:-1}).value,10);
-  m._team=(document.getElementById("fmTeam")||{value:""}).value;
-  return m;
-}
-
-function buildFormPlan(m){
-  const cell=(row,i)=>(i>=0&&i<row.length)?String(row[i]||"").trim():"";
-  const existing={}; (S.athletes||[]).forEach(a=>{ const n=normName(a.name); if(n) (existing[n]=existing[n]||[]).push(a); });
-  const plan={rows:[], newCount:0, updCount:0, noConsent:0, skipped:0, dupes:0};
-  const seen={};
-
-  FORM_CSV.rows.forEach((row,idx)=>{
-    const name=cell(row,m.name).replace(/\s+/g," ").trim();
-    if(!name){ plan.skipped++; return; }
-    const key=normName(name);
-    if(seen[key]){ plan.dupes++; }           // più invii della stessa persona: vince l'ultimo
-    seen[key]=1;
-
-    const consentRaw=cell(row,m.consent);
-    const consent = m.consent>=0 ? truthy(consentRaw) : false;
-    if(!consent) plan.noConsent++;
-
-    const p={};
-    FORM_FIELDS.forEach(f=>{
-      if(f.k==="name"||f.k==="team") return;
-      if(f.clin && !consent) return;          // ← il vincolo, applicato qui
-      const v=cell(row,m[f.k]); if(!v) return;
-      if(f.k==="sex") p.sex=/^f/i.test(v)?"F":"M";
-      else if(f.k==="birth"||f.k==="medicalExpiry"){ const d=toISODate(v); if(d) p[f.k]=d; }
-      else if(f.k==="painLevel"){ const n=parseFloat(String(v).replace(",",".")); if(isFinite(n)) p[f.k]=String(Math.max(0,Math.min(10,n))); }
-      else if(f.k==="height"||f.k==="weight"){ const n=parseFloat(String(v).replace(",",".")); if(isFinite(n)) p[f.k]=String(n); }
-      else p[f.k]=v.slice(0,2000);
-    });
-
-    if(consent){
-      FORM_SCREEN.forEach(f=>{ const v=cell(row,m[f.k]);
-        if(m[f.k]>=0 && v){ if(truthy(v)) p[f.k]=true; else if(!falsy(v)) p[f.k]=true; } });
-      if(m._screenMulti>=0){
-        const raw=normHdr(cell(row,m._screenMulti));
-        if(raw) FORM_SCREEN.forEach(f=>{ if(f.kw.some(k=>raw.indexOf(normHdr(k))>=0)) p[f.k]=true; });
-      }
-      p.consent=true;
-      const cd=toISODate(cell(row,m.consentDate)); p.consentDate=cd||todayISO();
-      const by=cell(row,m.consentBy);
-      p.consentBy = by ? (/genitor|tutor|madre|padre|responsabil/i.test(by)
-                          ? "Chi esercita la responsabilità genitoriale" : "L'atleta (maggiorenne)")
-                       : "";
-      const doc=cell(row,m.consentDoc); if(doc) p.consentDoc=doc.slice(0,200);
-    }
-
-    const sex=p.sex; delete p.sex;
-    const match=(existing[key]||[])[0];
-    if(match) plan.updCount++; else plan.newCount++;
-    plan.rows.push({name, key, sex:sex||"M", team:cell(row,m.team), profile:p, consent, match, line:idx+2});
-  });
-  return plan;
-}
-
-function previewForms(){
-  const m=readFormMapping();
-  if(m.name<0){ toast("Mappa almeno la colonna del nome"); return; }
-  FORM_MAP_CACHE=m;
-  const plan=buildFormPlan(m);
-  FORM_PLAN_CACHE=plan;
-
-  let h='<div class="mh"><div><div class="mt">Anteprima importazione</div>'+
-    '<div class="ms">'+plan.rows.length+' righe valide</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div>';
-  h+='<div class="tstats" style="margin-bottom:12px">'+
-     tstat(plan.newCount,"Nuovi")+tstat(plan.updCount,"Aggiornati")+
-     tstat(plan.noConsent,"Senza consenso", plan.noConsent?"down":"up")+
-     tstat(plan.skipped+plan.dupes,"Scartati")+'</div>';
-  if(m.consent<0){
-    h+='<div class="alert danger"><span class="ai">⚠️</span><span>Nessuna colonna di consenso mappata: verranno importati <b>solo nome e squadra</b>. Aggiungi la domanda di consenso al modulo e riesporta.</span></div>';
-  } else if(plan.noConsent){
-    h+='<div class="alert danger"><span class="ai">🛡</span><span><b>'+plan.noConsent+'</b> righe senza consenso: entra solo l\'anagrafica, i dati clinici vengono scartati.</span></div>';
-  }
-  if(plan.dupes) h+='<div class="alert info"><span class="ai">ℹ️</span><span><b>'+plan.dupes+'</b> invii ripetuti dallo stesso nome: viene tenuto l\'ultimo.</span></div>';
-
-  h+='<label class="fl">Dettaglio</label><div class="hist" style="max-height:280px">';
-  plan.rows.slice(0,120).forEach(r=>{
-    const nf=Object.keys(r.profile).length;
-    h+='<div class="hrow"><span class="hd">'+esc(r.name)+'</span>'+
-       '<span class="hv"><span class="rd-cmj '+(r.match?"flat":"up")+'">'+(r.match?"aggiorna":"nuovo")+'</span> '+
-       '<span class="rd-cmj '+(r.consent?"up":"down")+'">'+(r.consent?"consenso ✓":"no consenso")+'</span> '+
-       '<span style="color:var(--muted2);font-size:10px">'+nf+' campi</span></span></div>';
-  });
-  if(plan.rows.length>120) h+='<div class="hrow"><span class="hd">…e altre '+(plan.rows.length-120)+'</span></div>';
-  h+='</div>';
-  h+='<div class="gnote">L\'importazione <b>non cancella nulla</b>: i campi già compilati e non presenti nel modulo restano come sono.</div>';
-  h+='<div class="thr-act"><button class="btn sm" onclick="openFormMap()">← Correggi mappatura</button>'+
-     '<button class="btn primary" onclick="applyForms()">Importa '+plan.rows.length+' anamnesi</button></div>';
-  modal(h);
-}
-let FORM_MAP_CACHE=null, FORM_PLAN_CACHE=null;
-
-function applyForms(){
-  const plan=FORM_PLAN_CACHE, m=FORM_MAP_CACHE;
-  if(!plan||!m){ toast("Rifai l'anteprima"); return; }
-  let teamId=m._team;
-  if(!teamId){
-    const ex=(S.teams||[]).find(t=>t.name==="Da modulo");
-    if(ex) teamId=ex.id;
-    else { teamId=uid(); S.teams.push({id:teamId, name:"Da modulo", sport:S.sport}); }
-  }
-  let created=0, updated=0;
-  plan.rows.forEach(r=>{
-    let a=r.match;
-    if(!a){
-      a={id:uid(), name:r.name, sex:r.sex, team:teamId, profile:{}};
-      S.athletes.push(a); created++;
-    } else { updated++; if(!a.profile) a.profile={}; }
-    // merge non distruttivo: sovrascrive solo i campi che il modulo porta
-    Object.keys(r.profile).forEach(k=>{ a.profile[k]=r.profile[k]; });
-    if(r.team && !r.match){
-      const t=(S.teams||[]).find(x=>normHdr(x.name)===normHdr(r.team));
-      if(t) a.team=t.id;
-    }
-  });
-  save(); closeM(); render();
-  toast("Importate "+plan.rows.length+" anamnesi · "+created+" nuovi, "+updated+" aggiornati");
-  FORM_CSV=null; FORM_PLAN_CACHE=null; FORM_MAP_CACHE=null;
-}
-
 function wipe(){ if(!confirm("Cancellare TUTTI gli atleti, le squadre e i dati? Esporta prima un backup se vuoi conservarli.")) return;
   S={athletes:[],data:{},teams:[],sport:S.sport,view:S.view,activeTeam:"all"}; save(); render(); toast("Tutto cancellato"); }
 

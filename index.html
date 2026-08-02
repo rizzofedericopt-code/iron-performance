@@ -455,6 +455,38 @@ ul.kb li b{color:#fff;font-weight:600}
   .set-row:hover{background:var(--surface3)}
   .tcard:hover,.grow:hover{border-color:var(--line2)}
 }
+/* ═══════════ Modulo anamnesi pubblico (link atleta) ═══════════ */
+.pubform{position:fixed;inset:0;z-index:200;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(24px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
+.pf-box{max-width:560px;margin:0 auto}
+.pf-load,.pf-gen{color:var(--muted);text-align:center;padding:40px 0}
+.pf-err2{color:var(--down);font-weight:700;text-align:center;padding:20px 0 8px}
+.pf-head{border-bottom:2px solid var(--line);padding-bottom:16px;margin-bottom:8px}
+.pf-brand{font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--accent);font-weight:700}
+.pf-head h1{font-size:24px;margin:6px 0 0;color:var(--text)}
+.pf-sub{color:var(--muted);font-size:14px;margin-top:8px;line-height:1.5}
+.pf-sub b{color:var(--text)}
+.pf-sec{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);margin:24px 0 10px}
+.pf-field{margin-bottom:13px}
+.pf-l{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px}
+.pf-field input,.pf-field select,.pf-field textarea{width:100%}
+.pf-note{background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;font-size:12.5px;
+  color:var(--muted);line-height:1.55;margin:6px 0 12px}
+.pf-note b{color:var(--text)}
+.pf-check{display:flex;align-items:flex-start;gap:11px;background:var(--surface2);border:1px solid var(--line2);
+  border-radius:11px;padding:14px;margin-bottom:12px;cursor:pointer}
+.pf-check input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--accent);margin-top:1px}
+.pf-check span{font-size:13.5px;color:var(--text);line-height:1.45}
+.pf-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:15px;
+  font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;min-height:52px}
+.pf-btn:disabled{opacity:.6}
+.pf-err{color:var(--down);font-size:13px;font-weight:600;margin:12px 0 0;min-height:16px;text-align:center}
+.pf-foot{color:var(--muted2);font-size:11px;text-align:center;margin-top:14px;line-height:1.5}
+.pf-done{text-align:center;padding-top:40px}
+.pf-ok{width:64px;height:64px;border-radius:50%;background:var(--up);color:#fff;font-size:34px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.pf-done h1{font-size:22px;color:var(--text)}
+.pf-p{color:var(--muted);font-size:14px;line-height:1.5;margin-top:10px;max-width:380px;margin-left:auto;margin-right:auto}
 </style>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0A0A0A">
@@ -871,6 +903,114 @@ function autoLogin(){
 function uid(){ return Math.random().toString(36).slice(2,9); }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function fmtDate(d){ const p=d.split("-"); return p[2]+"/"+p[1]+"/"+p[0].slice(2); }
+
+/* ═══════════════ ANAMNESI VIA LINK ═══════════════ */
+function anamToken(){ try{ return new URLSearchParams(location.search).get("anamnesi"); }catch(e){ return null; } }
+function bootAnamnesi(token){
+  var lg=document.getElementById("login"); if(lg) lg.classList.add("hide");
+  var el=document.createElement("div"); el.id="pubform"; el.className="pubform";
+  el.innerHTML='<div class="pf-box"><div class="pf-load">Carico il modulo…</div></div>';
+  document.body.appendChild(el);
+  fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"formInfo",token:token})})
+    .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||"Link non valido"); return j; }); })
+    .then(function(j){ renderAnamForm(token, j.athleteName); })
+    .catch(function(e){ el.innerHTML='<div class="pf-box"><div class="pf-err2">⚠️ '+esc(e.message)+'</div><p class="pf-p">Il link potrebbe essere scaduto. Chiedi al tuo preparatore un link aggiornato.</p></div>'; });
+}
+function anamFields(){
+  var skipSec={"Programmazione":1}; var skipKey={medical:1,medicalExpiry:1,notes:1,consentDate:1};
+  var active=true, out=[];
+  PROFILE.forEach(function(f){
+    if(f.sec){ active=!skipSec[f.sec]; if(active) out.push({sec:f.sec}); return; }
+    if(!active) return; if(skipKey[f.k]) return; out.push(f);
+  });
+  return out;
+}
+function renderAnamForm(token, name){
+  var fields=anamFields(); var body="";
+  fields.forEach(function(f){
+    if(f.sec){ body+='<div class="pf-sec">'+f.sec+'</div>'; return; }
+    if(f.t==="note"){ body+='<div class="pf-note">'+f.txt+'</div>'; return; }
+    if(f.t==="check"){ body+='<label class="pf-check"><input type="checkbox" data-k="'+f.k+'"><span>'+f.l+'</span></label>'; return; }
+    var inp="";
+    if(f.t==="select"){ inp='<select data-k="'+f.k+'">'+f.o.map(function(o){return '<option value="'+esc(o)+'">'+(o?esc(o):"—")+'</option>';}).join("")+'</select>'; }
+    else if(f.t==="area"){ inp='<textarea data-k="'+f.k+'" rows="2"></textarea>'; }
+    else { inp='<input type="'+(f.t==="number"?"number":f.t==="date"?"date":"text")+'" data-k="'+f.k+'"'+(f.t==="number"?' inputmode="decimal"':'')+'>'; }
+    body+='<div class="pf-field"><label class="pf-l">'+f.l+'</label>'+inp+'</div>';
+  });
+  document.getElementById("pubform").innerHTML=
+    '<div class="pf-box">'+
+    '<div class="pf-head"><div class="pf-brand">IRON PERFORMANCE</div>'+
+    '<h1>Scheda anamnesi</h1><p class="pf-sub">'+(name?("Ciao <b>"+esc(name)+"</b>, "):"")+'compila con i dati che conosci: bastano pochi minuti. La scheda resta riservata al tuo preparatore.</p></div>'+
+    '<div class="pf-fields">'+body+'</div>'+
+    '<div class="pf-err" id="pfErr"></div>'+
+    '<button class="pf-btn" id="pfBtn">Invia la scheda</button>'+
+    '<p class="pf-foot">Inviando confermi di aver letto l\'informativa e presti il consenso al trattamento dei dati, anche sanitari (art. 9 GDPR).</p>'+
+    '</div>';
+  document.getElementById("pfBtn").onclick=function(){ submitAnam(token); };
+}
+function submitAnam(token){
+  var box=document.getElementById("pubform"); var err=document.getElementById("pfErr"); var btn=document.getElementById("pfBtn");
+  var prof={};
+  box.querySelectorAll("[data-k]").forEach(function(el){
+    var k=el.getAttribute("data-k");
+    if(el.type==="checkbox"){ if(el.checked) prof[k]=true; }
+    else { var v=(el.value||"").trim(); if(v!=="") prof[k]=v; }
+  });
+  if(!prof.consent){ err.textContent="Per inviare devi confermare il consenso al trattamento dei dati (in fondo al modulo)."; return; }
+  prof.consentDate=todayISO();
+  err.textContent=""; btn.disabled=true; btn.textContent="Invio…";
+  fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"formSubmit",token:token,profile:prof})})
+    .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||"Errore"); return j; }); })
+    .then(function(){ box.innerHTML='<div class="pf-box pf-done"><div class="pf-ok">✓</div><h1>Scheda inviata</h1><p class="pf-p">Grazie! I dati sono stati inviati in modo sicuro al tuo preparatore. Puoi chiudere questa pagina.</p></div>'; })
+    .catch(function(e){ btn.disabled=false; btn.textContent="Invia la scheda"; err.textContent=e.message; });
+}
+/* ── Coach: genera e condivide il link ── */
+function anamLink(id){
+  var a=S.athletes.find(function(x){return x.id===id;}); if(!a) return;
+  if(!AUTH||!AUTH.email){ toast("Rientra per generare il link"); return; }
+  modal('<div class="mh"><div><div class="mt">Link anamnesi</div><div class="ms">'+esc(a.name)+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div><div class="pf-gen">Genero il link sicuro…</div>');
+  apiCall("formLink",{athleteId:id, athleteName:a.name}).then(function(j){
+    var link=location.origin+location.pathname+"?anamnesi="+j.token;
+    var h='<div class="mh"><div><div class="mt">Link anamnesi</div><div class="ms">'+esc(a.name)+'</div></div>'+
+      '<button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="gnote" style="margin-top:0">Manda questo link all\'atleta (WhatsApp, email…). Quando lo compila, la scheda <b>si aggiorna qui</b>. Valido '+(j.expiresDays||21)+' giorni; scrive solo la sua scheda.</div>'+
+      '<label class="fl">Link personale</label>'+
+      '<input id="lnkF" readonly value="'+esc(link)+'" onclick="this.select()">'+
+      '<div style="display:flex;gap:8px;margin-top:12px">'+
+      '<button class="btn primary" style="flex:1" onclick="copyText(\'lnkF\')">📋 Copia link</button>'+
+      (navigator.share?'<button class="btn" style="flex:1" onclick="shareLink(\''+esc(link).replace(/\\'/g,"")+'\',\''+esc(a.name)+'\')">↗ Condividi</button>':'')+
+      '</div>';
+    modal(h);
+  }).catch(function(e){
+    modal('<div class="mh"><div><div class="mt">Link anamnesi</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="alert info"><span class="ai">⚠️</span><span>'+esc(e.message)+(/FORM_SECRET/.test(e.message)?' — imposta la variabile <b>FORM_SECRET</b> su Vercel (te lo spiego).':'')+'</span></div>');
+  });
+}
+function copyText(inputId){
+  var el=document.getElementById(inputId); if(!el) return; el.select();
+  var done=function(){ toast("Link copiato"); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(el.value).then(done).catch(function(){ try{document.execCommand("copy");done();}catch(e){} }); }
+  else { try{ document.execCommand("copy"); done(); }catch(e){} }
+}
+function shareLink(link, name){
+  if(navigator.share){ navigator.share({title:"Scheda anamnesi", text:"Ciao "+name+", compila la tua scheda per la preparazione:", url:link}).catch(function(){}); }
+}
+/* ── Coach: scarica le schede compilate dalle atlete ── */
+let _lastRefresh=0;
+function refreshFromCloud(silent){
+  if(!AUTH||!AUTH.email) return;
+  if(!silent){ var mm=document.getElementById("menu"); if(mm) mm.classList.remove("on"); closeM&&closeM(); }
+  setSync("saving");
+  apiCall("save",{data:S}).catch(function(){}).then(function(){ return apiCall("load"); }).then(function(j){
+    if(j&&j.data){ S=j.data; normalize(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} render(); }
+    setSync("ok"); _lastRefresh=Date.now();
+    if(!silent) toast("Dati aggiornati dal cloud");
+  }).catch(function(){ setSync("off"); if(!silent) toast("Aggiornamento non riuscito"); });
+}
+document.addEventListener("visibilitychange", function(){
+  if(document.visibilityState==="visible" && AUTH && AUTH.email && !anamToken() && (Date.now()-_lastRefresh>30000)){ refreshFromCloud(true); }
+});
 
 /* ═══════════════ HELPER TREND ═══════════════ */
 function series(aid,tid){
@@ -1365,6 +1505,7 @@ function openAthlete(id, isNew){
   let h='<div class="mh"><div><div class="mt">'+(isNew?"Anamnesi — nuovo atleta":"Scheda atleta")+'</div>'+
     '<div class="ms">'+esc(a.name)+(age!=null?' · '+age+' anni':'')+'</div></div>'+
     '<div style="display:flex;gap:6px;align-items:center">'+
+    (isNew?'':'<button class="btn sm" onclick="anamLink(\''+id+'\')" title="Manda l\'anamnesi da compilare">🔗 Link</button>')+
     (isNew?'':'<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Esporta / stampa in PDF">🖨 PDF</button>')+
     '<button class="mcl" onclick="closeM()">✕</button></div></div>';
   if(isNew) h+='<div class="alert info" style="margin-bottom:14px"><span class="ai">📋</span><span>'+
@@ -2218,6 +2359,7 @@ function openSettings(){
     '</div>';
 
   h+='<div class="set-sec">Dati</div><div class="set-group">'+
+    row("🔄","Aggiorna dal cloud","Scarica le schede compilate dalle atlete","refreshFromCloud()")+
     row("⬇️","Esporta backup","File JSON completo","exportJSON()")+
     row("📄","Esporta tabella","File CSV","exportCSV()")+
     row("⬆️","Importa backup","Ripristina da un file JSON","importJSON()")+
@@ -3068,9 +3210,11 @@ function toast(m){ const e=document.getElementById("toast"); e.textContent=m; e.
   clearTimeout(_tt); _tt=setTimeout(()=>e.classList.remove("on"),1900); }
 
 /* ═══════════════ INIT ═══════════════ */
-load();
-render();
-autoLogin();
+(function(){
+  var t=anamToken();
+  if(t){ bootAnamnesi(t); return; }   // modalità modulo anamnesi: l'app non si inizializza
+  load(); render(); autoLogin();
+})();
 </script>
 </body>
 </html>

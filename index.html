@@ -218,6 +218,19 @@ ul.kb li b{color:#fff;font-weight:600}
 .btests{display:flex;flex-wrap:wrap;gap:6px}
 .btchip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surface);border-radius:16px;padding:6px 11px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer}
 .btchip:hover{border-color:var(--accent)}
+.tiptip{position:fixed;z-index:300;max-width:280px;background:var(--surface3);border:1px solid var(--line2);
+  border-radius:10px;padding:10px 12px;box-shadow:0 12px 34px rgba(0,0,0,.55);pointer-events:none;display:none}
+.tiptip .tt-t{font-weight:700;font-size:13px;color:var(--text);margin-bottom:3px}
+.tiptip .tt-m{font-family:var(--mono);font-size:10.5px;color:var(--accent);margin-bottom:6px;letter-spacing:.2px}
+.tiptip .tt-w{font-size:12px;color:var(--muted);line-height:1.45}
+.notice{display:flex;align-items:center;gap:11px;background:rgba(52,199,89,.10);border:1px solid rgba(52,199,89,.4);
+  border-radius:12px;padding:11px 13px;margin-bottom:14px}
+.notice-ic{font-size:18px;flex:0 0 auto}
+.notice-tx{flex:1;font-size:13px;color:var(--text);line-height:1.4}
+.notice-tx b{color:var(--up)}
+.notice-see{flex:0 0 auto;background:var(--up);color:#fff;border:none;border-radius:8px;padding:8px 13px;
+  font-family:var(--sans);font-size:12.5px;font-weight:700;cursor:pointer;min-height:36px}
+.notice-x{flex:0 0 auto;background:none;border:none;color:var(--muted2);font-size:15px;cursor:pointer;padding:4px 6px}
 .bsess-test{margin-bottom:16px}
 .bsess-th{font-weight:700;font-size:13px;color:var(--text);padding:8px 0 7px;border-bottom:1px solid var(--line);margin-bottom:5px}
 .bsess-th span{color:var(--muted2);font-family:var(--mono);font-size:11px;font-weight:400}
@@ -399,13 +412,21 @@ ul.kb li b{color:#fff;font-weight:600}
   .top-row,.sports,.teams{max-width:1000px;margin-left:auto;margin-right:auto;width:100%}
   #bar{max-width:1000px;margin-left:auto;margin-right:auto}
   #grid{max-width:1000px;margin:0 auto;width:100%}
-  body[data-view="matrix"] #grid{max-width:none;margin:0}
+  body[data-view="matrix"] #grid,
+  body[data-view="matrix"] .top-row,
+  body[data-view="matrix"] .sports,
+  body[data-view="matrix"] .teams,
+  body[data-view="matrix"] #bar{max-width:none;margin-left:auto;margin-right:auto}
   .tabbar{justify-content:center;gap:6px}
   .tabbar button{flex:0 0 128px}
   .wrap{padding-left:8px;padding-right:8px}
 }
 @media(min-width:1120px){
-  body[data-view="matrix"] #grid{max-width:1400px;margin:0 auto}
+  body[data-view="matrix"] #grid,
+  body[data-view="matrix"] .top-row,
+  body[data-view="matrix"] .sports,
+  body[data-view="matrix"] .teams,
+  body[data-view="matrix"] #bar{max-width:1400px;margin-left:auto;margin-right:auto}
 }
 /* very small phones: evita che l'header rubi spazio */
 @media(max-width:400px){
@@ -579,7 +600,7 @@ ul.kb li b{color:#fff;font-weight:600}
 
 <div class="legend" id="bar"></div>
 
-<div class="wrap"><div id="grid"></div></div>
+<div class="wrap"><div id="notice"></div><div id="grid"></div></div>
 
 <nav class="tabbar" id="tabbar"></nav>
 
@@ -689,6 +710,7 @@ function normalize(){
   if(!S.teams) S.teams=[];
   if(!S.readiness) S.readiness={};
   if(!S.load) S.load={};
+  if(!S.anamAck) S.anamAck={};
   if(!S.cvar) S.cvar="percussione";
   if(!S.cfg) S.cfg={};
   Object.keys(CFG_DEF).forEach(k=>{ if(typeof S.cfg[k]!=="number"||isNaN(S.cfg[k])) S.cfg[k]=CFG_DEF[k]; });
@@ -1080,12 +1102,40 @@ function renderSports(){
   });
 }
 
+function newAnamnesi(){
+  return (S.athletes||[]).filter(a=>{
+    const sd=a.profile&&a.profile._submittedAt;
+    return sd && (S.anamAck||{})[a.id]!==sd;
+  });
+}
+function renderNotice(){
+  const el=document.getElementById("notice"); if(!el) return;
+  const list=newAnamnesi();
+  if(!list.length){ el.innerHTML=""; return; }
+  const names=list.map(a=>esc(a.name)).join(", ");
+  el.innerHTML='<div class="notice">'+
+    '<span class="notice-ic">📋</span>'+
+    '<div class="notice-tx"><b>'+list.length+' '+(list.length===1?"nuova anamnesi":"nuove anamnesi")+'</b> compilata da: '+names+'</div>'+
+    '<button class="notice-see" onclick="openAthlete(\''+list[0].id+'\')">Vedi</button>'+
+    '<button class="notice-x" onclick="ackAllAnamnesi()" title="Segna come lette">✕</button></div>';
+}
+function ackAnamnesi(id){
+  const a=(S.athletes||[]).find(x=>x.id===id); if(!a||!a.profile||!a.profile._submittedAt) return;
+  if(!S.anamAck) S.anamAck={};
+  if(S.anamAck[id]!==a.profile._submittedAt){ S.anamAck[id]=a.profile._submittedAt; save(); }
+}
+function ackAllAnamnesi(){
+  if(!S.anamAck) S.anamAck={};
+  newAnamnesi().forEach(a=>{ S.anamAck[a.id]=a.profile._submittedAt; });
+  save(); renderNotice();
+}
 function render(){
   document.body.setAttribute("data-view", S.view||"today");
   renderSports();
   renderTeams();
   renderBar();
   renderTabs();
+  renderNotice();
   const grid=document.getElementById("grid");
   if(S.athletes.length===0){
     grid.innerHTML='<div class="empty-state"><h3>Nessun atleta</h3>'+
@@ -1498,6 +1548,7 @@ function ageFrom(birth){
 }
 function openAthlete(id, isNew){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
+  if(!isNew){ ackAnamnesi(id); renderNotice(); }
   const p=a.profile||{};
   let topt=S.teams.map(t=>'<option value="'+t.id+'"'+(a.team===t.id?" selected":"")+'>'+esc(t.name)+'</option>').join("");
   topt+='<option value=""'+(!a.team?" selected":"")+'>Senza squadra</option>';
@@ -3051,6 +3102,30 @@ function battView(sport){ const b=BATTERY[sport]||BATTERY.generale; const v=batt
   return v ? {b, v, note:v.note||b.note, groups:v.groups, core:v.core||b.core||[]}
            : {b, v:null, note:b.note, groups:b.groups, core:b.core||[]}; }
 function sportMeta(id){ return SPORTS.find(s=>s.id===id)||{icon:"",label:id}; }
+function stripHtml(s){ return (s||"").replace(/<[^>]*>/g,""); }
+let _tipEl=null;
+function testTip(id){
+  const t=TMAP[id]; if(!t) return "";
+  const dir = t.dir<0 ? "più basso = meglio" : "più alto = meglio";
+  let what=""; const pr=(typeof PROTO!=="undefined")?PROTO[id]:null;
+  if(pr && pr.what){ what=stripHtml(pr.what); if(what.length>170) what=what.slice(0,168)+"…"; }
+  else if(t.full){ what=t.full; }
+  return '<div class="tt-t">'+esc(t.full||t.name)+'</div>'+
+    '<div class="tt-m">'+esc(t.unit)+' · '+dir+' · '+esc(t.cat)+'</div>'+
+    (what?'<div class="tt-w">'+esc(what)+'</div>':'');
+}
+function showTip(ev, id){
+  const html=testTip(id); if(!html) return;
+  if(!_tipEl){ _tipEl=document.createElement("div"); _tipEl.className="tiptip"; document.body.appendChild(_tipEl); }
+  _tipEl.innerHTML=html; _tipEl.style.display="block"; _tipEl.style.left="-9999px";
+  const chip=ev.currentTarget; const r=chip.getBoundingClientRect();
+  const tw=_tipEl.offsetWidth, th=_tipEl.offsetHeight;
+  let left=r.left + r.width/2 - tw/2;
+  left=Math.max(8, Math.min(left, window.innerWidth-tw-8));
+  let top=r.top - th - 8; if(top<8) top=r.bottom+8;
+  _tipEl.style.left=left+"px"; _tipEl.style.top=top+"px";
+}
+function hideTip(){ if(_tipEl) _tipEl.style.display="none"; }
 function isCore(tid){ if(S.sport==="all") return false; const bv=battView(S.sport); return bv.core.indexOf(tid)>=0; }
 function openBattery(sp, vk){
   let sport=sp;
@@ -3071,7 +3146,7 @@ function openBattery(sp, vk){
   bv.groups.forEach(function(g,gi){
     h+='<div class="bgrp"><div class="bt">'+g.t+'</div><div class="bw">⏱ '+g.w+'</div><div class="by">'+g.y+'</div><div class="btests">';
     g.tests.forEach(id=>{ const t=TMAP[id]; if(!t) return;
-      h+='<span class="btchip" onclick="openGuide(\''+id+'\')">'+(ICON[id]||"🔬")+' '+t.name+'</span>'; });
+      h+='<span class="btchip" onmouseenter="showTip(event,\''+id+'\')" onmouseleave="hideTip()" onclick="hideTip();openGuide(\''+id+'\')">'+(ICON[id]||"🔬")+' '+t.name+'</span>'; });
     h+='</div>';
     const enterable=g.tests.map(id=>TMAP[id]).filter(t=>t&&!t.derived).length;
     if(enterable) h+='<button class="btn sm" style="margin-top:11px" onclick="openBatterySession(\''+sport+'\','+gi+')">+ Crea sessione con questi test</button>';

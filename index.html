@@ -223,6 +223,23 @@ ul.kb li b{color:#fff;font-weight:600}
 .tiptip .tt-t{font-weight:700;font-size:13px;color:var(--text);margin-bottom:3px}
 .tiptip .tt-m{font-family:var(--mono);font-size:10.5px;color:var(--accent);margin-bottom:6px;letter-spacing:.2px}
 .tiptip .tt-w{font-size:12px;color:var(--muted);line-height:1.45}
+.anamflag{color:#f5a623}
+.anamfilter{border-color:#f5a623;color:#f5a623}
+.anamfilter.on{background:#f5a623;color:#1a1206;border-color:#f5a623}
+.vsum{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px}
+.vsum-t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted2);margin-bottom:10px}
+.vsum-n{text-transform:none;font-weight:400;letter-spacing:0}
+.vsum-row{display:flex;gap:10px;flex-wrap:wrap}
+.vsum-c{flex:1;min-width:78px}
+.vsum-l{font-size:10.5px;color:var(--muted2);margin-bottom:2px}
+.vsum-v{font-size:14px;font-weight:700;color:var(--text)}
+.vsum-v i{font-size:10px;font-style:normal;font-weight:600;margin-left:2px}
+.vv-up{color:var(--up)}
+.vv-amber{color:#f5a623}
+.vv-down{color:var(--down)}
+.vv-muted{color:var(--muted2)}
+.vspark{width:100%;height:18px;margin-top:4px;display:block}
+.vspark polyline{fill:none;stroke:var(--accent);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
 .notice{display:flex;align-items:center;gap:11px;background:rgba(52,199,89,.10);border:1px solid rgba(52,199,89,.4);
   border-radius:12px;padding:11px 13px;margin-bottom:14px}
 .notice-ic{font-size:18px;flex:0 0 auto}
@@ -538,7 +555,7 @@ ul.kb li b{color:#fff;font-weight:600}
     <div id="logErr" class="login-err"></div>
     <button class="btn primary" id="logBtn" style="width:100%;margin-top:14px" onclick="doLogin()">Entra</button>
     <div class="login-forgot" onclick="openRecover()">Password dimenticata?</div>
-    <div class="login-note">Primo accesso? Scegli email e password: verrà creato il tuo spazio privato. I dati sono protetti e cifrati.</div>
+    <div class="login-note">Primo accesso? Scegli email e password: verrà creato il tuo spazio privato, protetto da password.</div>
   </div>
 
   <div class="login-card" id="recCard" style="display:none">
@@ -1155,7 +1172,9 @@ function render(){
 function renderMatrix(){
   const tests=visibleTests();
   const grid=document.getElementById("grid");
-  const rows=teamAthletes();
+  const rows=(S._filterNoAnam
+    ? teamAthletes().filter(a=>!(a.profile&&(a.profile.birth||a.profile.height||a.profile._submittedAt)))
+    : teamAthletes());
   if(rows.length===0){ grid.innerHTML=emptyTeam(); return; }
   let h='<table><thead><tr><th class="cAth">Atleta</th>';
   tests.forEach(t=>{
@@ -1170,7 +1189,8 @@ function renderMatrix(){
     const team=S.teams.find(t=>t.id===a.team);
     const tl=(S.activeTeam==="all"&&team)?esc(team.name)+" · ":"";
     const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
-    h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+'<span class="nmt">'+esc(a.name)+'</span>'+
+    const noAnam=!(a.profile&&(a.profile.birth||a.profile.height||a.profile._submittedAt))?'<span class="anamflag" title="Anamnesi non ancora compilata">📋 </span>':"";
+    h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+noAnam+'<span class="nmt">'+esc(a.name)+'</span>'+
        '<span class="sx">'+(a.sex||"M")+'</span>'+
        '<span class="del" onclick="event.stopPropagation();delAthlete(\''+a.id+'\')">✕</span></div>';
     const tot=tests.reduce((s,t)=>s+series(a.id,t.id).length,0);
@@ -1253,9 +1273,11 @@ function renderBar(){
   } else if(S.view==="readiness"){
     h+='<div class="barhint">readiness + fatica neuromuscolare</div>';
   } else {
+    const missing=teamAthletes().filter(a=>!(a.profile&&(a.profile.birth||a.profile.height||a.profile._submittedAt))).length;
     h+='<div class="leg"><span class="it"><span class="dot" style="background:var(--up)"></span>Migliora</span>'+
        '<span class="it"><span class="dot" style="background:var(--down)"></span>Peggiora</span>'+
        '<span class="it"><span class="dot" style="background:var(--flat)"></span>Uguale</span></div>'+
+       (missing?'<button class="btn sm anamfilter'+(S._filterNoAnam?' on':'')+'" onclick="toggleAnamFilter()">📋 Senza anamnesi · '+missing+'</button>':'')+
        '<div class="mnav" id="mnav" style="display:none">'+
        '<button onclick="matrixScroll(-1)" aria-label="Test precedenti">‹</button>'+
        '<span>scorri i test</span>'+
@@ -1263,6 +1285,7 @@ function renderBar(){
   }
   bar.innerHTML=h;
 }
+function toggleAnamFilter(){ S._filterNoAnam=!S._filterNoAnam; render(); }
 function matrixScroll(dir){ const w=document.querySelector(".wrap"); if(w) w.scrollBy({left:dir*Math.max(200,w.clientWidth*0.62), behavior:"smooth"}); }
 function updateMatrixNav(){ const w=document.querySelector(".wrap"); const nav=document.getElementById("mnav");
   if(!w||!nav) return; nav.style.display=(w.scrollWidth>w.clientWidth+4)?"inline-flex":"none"; }
@@ -1546,6 +1569,34 @@ function ageFrom(birth){
   if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate())) a--;
   return a;
 }
+function athleteVitalsSummary(id){
+  const arr=(S.readiness&&S.readiness[id])||[];
+  if(!arr.length) return '';
+  const last=arr[arr.length-1];
+  const recent=arr.slice(-6); // ultime settimane di check-in
+  const spark=(key,dir)=>{
+    const vals=recent.filter(e=>e[key]!=null).map(e=>e[key]);
+    if(vals.length<2) return '';
+    const min=Math.min(...vals), max=Math.max(...vals), rng=(max-min)||1;
+    const pts=vals.map((v,i)=>{
+      const x=(i/(vals.length-1))*100;
+      const y=30-((v-min)/rng)*26-2;
+      return x.toFixed(1)+','+y.toFixed(1);
+    }).join(' ');
+    return '<svg viewBox="0 0 100 30" class="vspark" preserveAspectRatio="none"><polyline points="'+pts+'"/></svg>';
+  };
+  const hb=vitalBaseline(id,"hrv"), rb=vitalBaseline(id,"rhr");
+  const rd=readinessScore(last), rc=readinessColor(rd);
+  let h='<div class="vsum"><div class="vsum-t">Ultimi check-in <span class="vsum-n">('+arr.length+' totali)</span></div><div class="vsum-row">';
+  h+='<div class="vsum-c"><div class="vsum-l">Readiness</div><div class="vsum-v vv-'+rc+'">'+rd+'%</div></div>';
+  if(last.hrv!=null){ const dev=hb?Math.round(hb.pct):null;
+    h+='<div class="vsum-c"><div class="vsum-l">HRV</div><div class="vsum-v">'+last.hrv+'ms'+(dev!=null?' <i class="vv-'+(dev<-8?"down":"muted")+'">'+(dev>0?"+":"")+dev+'%</i>':'')+'</div>'+spark("hrv")+'</div>'; }
+  if(last.rhr!=null){ const dev=rb?Math.round(rb.pct):null;
+    h+='<div class="vsum-c"><div class="vsum-l">FC riposo</div><div class="vsum-v">'+last.rhr+'bpm'+(dev!=null?' <i class="vv-'+(dev>7?"down":"muted")+'">'+(dev>0?"+":"")+dev+'%</i>':'')+'</div>'+spark("rhr")+'</div>'; }
+  if(last.sl!=null){ h+='<div class="vsum-c"><div class="vsum-l">Sonno</div><div class="vsum-v">'+last.sl+'/5</div>'+spark("sl")+'</div>'; }
+  h+='</div></div>';
+  return h;
+}
 function openAthlete(id, isNew){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   if(!isNew){ ackAnamnesi(id); renderNotice(); }
@@ -1561,6 +1612,7 @@ function openAthlete(id, isNew){
     '<button class="mcl" onclick="closeM()">✕</button></div></div>';
   if(isNew) h+='<div class="alert info" style="margin-bottom:14px"><span class="ai">📋</span><span>'+
     '<b>'+esc(a.name)+'</b> è stato aggiunto. Compila ora l\'anamnesi: bastano i campi che conosci, potrai completarla in qualsiasi momento.</span></div>';
+  if(!isNew) h+=athleteVitalsSummary(id);
   h+='<label class="fl">Nome e cognome</label>'+
     '<input id="eN" value="'+esc(a.name)+'">'+
     '<div class="row2"><div><label class="fl">Squadra</label>'+
@@ -3177,7 +3229,7 @@ function chooseTests(tid){
   cats.forEach(c=>{ const ts=TESTS.filter(t=>t.cat===c); if(!ts.length) return;
     h+='<div class="psec">'+c+'</div>';
     ts.forEach(t=>{
-      h+='<label class="tchk"><input type="checkbox" onchange="chCount()" data-t="'+t.id+'"'+(sel[t.id]?" checked":"")+(t.derived?' data-d="1"':'')+'>'+
+      h+='<label class="tchk" onmouseenter="showTip(event,\''+t.id+'\')" onmouseleave="hideTip()"><input type="checkbox" onchange="chCount()" data-t="'+t.id+'"'+(sel[t.id]?" checked":"")+(t.derived?' data-d="1"':'')+'>'+
          '<span>'+(ICON[t.id]||"🔬")+' '+t.name+' <i>'+t.unit+'</i>'+(t.derived?' <em>auto</em>':'')+'</span></label>';
     });
   });

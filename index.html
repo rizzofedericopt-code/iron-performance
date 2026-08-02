@@ -427,6 +427,17 @@ ul.kb li b{color:#fff;font-weight:600}
   .top-row{gap:5px}
 }
 .tchk{padding:9px 4px}
+/* check-in card (soggettivo + parametri) */
+.ci-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.ci-card{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+.ci-nm{font-weight:700;font-size:14px;margin-bottom:9px}
+.ci-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ci-grid label{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:15px}
+.ci-grid label span{font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.3px}
+.ci-grid select{width:100%;text-align:center;padding:6px 2px}
+.ci-vit{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ci-vit label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.ci-vit input{flex:1;min-width:0;text-align:center}
 /* controllo di scorrimento matrice */
 .mnav{display:inline-flex;align-items:center;gap:8px;margin-left:auto;color:var(--muted2);font-size:11px}
 .mnav button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line2);background:var(--surface2);
@@ -567,6 +578,7 @@ const TESTS=[
   {id:"pred", name:"xRM→1RM",  full:"1RM stimato (submassimale)",unit:"kg",      dir:1, cat:"Forza", sports:["forza","generale"]},
   {id:"vbt",  name:"VBT",      full:"Velocità bilanciere (load-velocity)",unit:"m/s",dir:1,cat:"Forza",sports:["forza","combattimento"]},
   {id:"imtp", name:"IMTP",     full:"Forza isometrica mid-thigh",unit:"N/kg",    dir:1, cat:"Forza", sports:["forza","pallavolo","basket","combattimento"], lv:{m:[22,28,34,40],f:[18,24,30,36]}},
+  {id:"nordic",name:"Nordic",   full:"Nordic hamstring — forza eccentrica ischiocrurali", unit:"N", dir:1, cat:"Forza", sports:["calcio","atletica","forza","generale"]},
   // ─ POTENZA / SALTO ─
   {id:"cmj",  name:"CMJ",      full:"Countermovement Jump",     unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
   {id:"sj",   name:"SJ",       full:"Squat Jump",               unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","forza","combattimento"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
@@ -720,33 +732,63 @@ function doRecover(){
     .catch(e=>{ btn.disabled=false; btn.textContent="Reimposta password"; err.textContent=e.message; });
 }
 
+function loginLock(){ try{ return JSON.parse(localStorage.getItem("ip_lock")||"{}"); }catch(e){ return {}; } }
+function setLoginLock(o){ try{ localStorage.setItem("ip_lock", JSON.stringify(o)); }catch(e){} }
+function lockRemaining(){ const l=loginLock(); return (l.until && Date.now()<l.until)? Math.ceil((l.until-Date.now())/1000) : 0; }
 function doLogin(){
   const email=document.getElementById("logEmail").value.trim().toLowerCase();
   const pass=document.getElementById("logPass").value;
   const err=document.getElementById("logErr"), btn=document.getElementById("logBtn");
   err.style.color="";
+  const rem=lockRemaining();
+  if(rem>0){ err.textContent="Troppi tentativi falliti. Riprova tra "+rem+" s."; return; }
   if(!email||!pass){ err.textContent="Inserisci email e password"; return; }
   err.textContent=""; btn.disabled=true; btn.textContent="Accesso…";
   AUTH={email,password:pass};
   apiCall("load").then(j=>{
+    setLoginLock({});
     try{ localStorage.setItem(AUTHKEY, JSON.stringify(AUTH)); }catch(e){}
     if(j && j.data) S=j.data;
     normalize();
     try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
-    hideLogin(); setSync("ok"); render();
+    hideLogin(); setSync("ok"); render(); startIdle();
     btn.disabled=false; btn.textContent="Entra"; document.getElementById("logPass").value="";
   }).catch(e=>{
     AUTH=null; btn.disabled=false; btn.textContent="Entra";
-    err.textContent = e.status===401 ? "Password errata" : ("Errore di rete: "+e.message);
+    if(e.status===401){
+      const l=loginLock(); l.fails=(l.fails||0)+1;
+      if(l.fails>=5){ const steps=[30,60,120,300,600]; l.until=Date.now()+steps[Math.min(l.fails-5,steps.length-1)]*1000; }
+      setLoginLock(l);
+      const left=5-(l.fails||0);
+      err.textContent = (l.until && Date.now()<l.until)
+        ? ("Troppi tentativi. Bloccato per "+Math.ceil((l.until-Date.now())/1000)+" s.")
+        : ("Password errata"+(left>0&&left<=3?" · "+left+" tentativi rimasti":""));
+    } else err.textContent="Errore di rete: "+e.message;
   });
 }
 function doLogout(){
   if(!confirm("Uscire? I dati restano nel cloud e si ricaricano al prossimo accesso.")) return;
   AUTH=null;
   try{ localStorage.removeItem(AUTHKEY); localStorage.removeItem(KEY); }catch(e){}
-  S={athletes:[],data:{},teams:[],sport:"pallavolo",view:"matrix",activeTeam:"all"};
+  S={athletes:[],data:{},teams:[],sport:"pallavolo",view:"today",activeTeam:"all"};
   document.getElementById("menu").classList.remove("on");
+  clearTimeout(IDLE_T);
   showLogin();
+}
+/* ── Auto-logout per inattività ── */
+let IDLE_T=null, IDLE_LISTEN=false; const IDLE_MS=15*60*1000;
+function startIdle(){
+  if(!IDLE_LISTEN){ IDLE_LISTEN=true; ["click","keydown","touchstart","scroll"].forEach(ev=>document.addEventListener(ev, resetIdle, {passive:true})); }
+  resetIdle();
+}
+function resetIdle(){ clearTimeout(IDLE_T); if(!AUTH) return; IDLE_T=setTimeout(idleLogout, IDLE_MS); }
+function idleLogout(){
+  if(!AUTH) return;
+  AUTH=null; clearTimeout(IDLE_T);
+  try{ localStorage.removeItem(AUTHKEY); }catch(e){}
+  showLogin();
+  const err=document.getElementById("logErr");
+  if(err){ err.style.color="var(--muted)"; err.textContent="Sessione scaduta per inattività — rientra per continuare."; }
 }
 function openThresholds(){
   document.getElementById("menu").classList.remove("on");
@@ -817,7 +859,7 @@ function doChangePass(){
 function autoLogin(){
   try{ const r=localStorage.getItem(AUTHKEY); if(r) AUTH=JSON.parse(r); }catch(e){}
   if(!AUTH||!AUTH.email){ showLogin(); return; }
-  hideLogin(); render(); setSync("saving");
+  hideLogin(); render(); setSync("saving"); startIdle();
   apiCall("load").then(j=>{
     if(j && j.data){ S=j.data; normalize(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} render(); }
     setSync("ok");
@@ -1000,6 +1042,7 @@ function todayManageCount(){
       const ac=acwr(a.id);
       if(ac && (ac.acwr>S.cfg.acwrHigh || ac.acwr<S.cfg.acwrLow)) flag=true;
       const cf=cmjFatigue(a.id); if(cf&&cf.fatigued) flag=true;
+      if(vitalsInfo(a.id).some(x=>x.cls==="down")) flag=true;
       if(flag) n++;
     });
     return n;
@@ -1283,9 +1326,11 @@ const PROFILE=[
   {k:"allergies",   l:"Allergie / intolleranze", t:"area"},
 
   {sec:"Idoneità & consenso"},
+  {k:"_privnote", t:"note", txt:"<b>Informativa privacy.</b> I dati di questa scheda — inclusi quelli sulla salute (infortuni, patologie, farmaci) — sono trattati esclusivamente dal preparatore per finalità di allenamento e prevenzione, conservati in forma protetta e non condivisi con terzi. L'atleta può chiederne in ogni momento visione, modifica o cancellazione. Compilando la scheda l'atleta presta il consenso al trattamento (art. 9 GDPR)."},
   {k:"medical",      l:"Idoneità medica agonistica", t:"select", o:["","Idoneo","In attesa","Non idoneo"], half:true},
   {k:"medicalExpiry",l:"Scadenza certificato", t:"date", half:true},
-  {k:"consent",      l:"Consenso al trattamento dei dati (genitori se minore)", t:"check"},
+  {k:"consent",      l:"L'atleta acconsente al trattamento dei dati (anche sanitari)", t:"check"},
+  {k:"consentDate",  l:"Data del consenso", t:"date", half:true},
   {k:"notes",        l:"Note libere del preparatore", t:"area"}
 ];
 const SCREEN_KEYS=["scHeart","scChest","scDizzy","scBreath","scJoint","scFamily","scMedsHeart"];
@@ -1343,6 +1388,7 @@ function openAthlete(id, isNew){
   while(i<PROFILE.length){
     const f=PROFILE[i];
     if(f.sec){ h+='<div class="psec">'+f.sec+'</div>'; i++; continue; }
+    if(f.t==="note"){ h+='<div class="gnote" style="margin:2px 0 12px">'+f.txt+'</div>'; i++; continue; }
     // accoppia due campi "half" consecutivi
     const next=PROFILE[i+1];
     if(f.half && next && next.half && !next.sec){
@@ -1758,12 +1804,15 @@ function renderToday(){
       else if(r>S.cfg.acwrHigh||r<S.cfg.acwrLow){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"amber"}); sev+=1; } }
     const cf=cmjFatigue(a.id);
     if(cf&&cf.fatigued){ flags.push({t:"⬇️ CMJ "+fmtNum(Math.round(cf.pct*10)/10)+"%",c:"down"}); sev+=2; }
+    let vDown=false;
+    vitalsInfo(a.id).forEach(x=>{ if(x.cls==="down"){ vDown=true; flags.push({t:(x.k==="HRV"?"❤️ HRV ":"🫀 FC ")+(x.pct>0?"+":"")+Math.round(x.pct)+"%",c:"amber"}); sev+=2; } });
     let sug=""; const rpc=rl?readinessScore(rl):null;
     if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
     else if(!isNaN(pain) && pain>=S.cfg.painCut) sug="Dolore presente: resta sotto soglia, non peggiorare nelle 24h.";
     else if(sc) sug="Verifica medica prima di proporre carichi intensi.";
     else if(rpc!=null && rpc<S.cfg.rdCrit) sug="Priorità recupero: riduci volume e intensità oggi.";
     else if(ac && (ac.acwr>S.cfg.acwrCritHigh||ac.acwr<S.cfg.acwrCritLow)) sug=(ac.acwr>S.cfg.acwrCritHigh?"Carico acuto alto: attenua — o conferma che è un picco pianificato.":"Carico molto basso: reintroduci gradualmente (rischio detraining).");
+    else if(vDown) sug="Parametri fuori baseline (HRV/FC): considera una seduta più leggera e ricontrolla domani.";
     else if(rpc!=null && rpc<S.cfg.rdAmber) sug="Modula il volume, evita massimali; cura il recupero.";
     else if(ac && (ac.acwr>S.cfg.acwrHigh||ac.acwr<S.cfg.acwrLow)) sug="ACWR in zona di attenzione: monitora il carico.";
     else if(cf&&cf.fatigued) sug="Riduci pliometria/alta intensità; monitora il CMJ.";
@@ -1831,40 +1880,76 @@ function renderReadiness(){
       cmjHtml='<span class="rd-cmj '+cls+'">CMJ '+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%'+(cf.fatigued?' ⚠':'')+'</span>'; }
     const ac=acwr(a.id); let acHtml="";
     if(ac){ const cls=acwrColor(ac.acwr); acHtml='<span class="rd-cmj '+cls+'">ACWR '+fmtNum(Math.round(ac.acwr*100)/100)+(cls==="down"?' ⚠':'')+'</span>'; }
+    let viHtml=""; vitalsInfo(a.id).forEach(x=>{ if(x.cls!=="flat") viHtml+='<span class="rd-cmj '+x.cls+'">'+(x.k==="HRV"?"❤️":"🫀")+' '+(x.pct>0?"+":"")+Math.round(x.pct)+'%</span> '; });
     h+='<div class="rd-row" onclick="openReadinessHistory(\''+a.id+'\')">'+scoreHtml+
-       '<div class="rd-main"><div class="rd-name">'+flag+esc(a.name)+' '+cmjHtml+' '+acHtml+'</div>'+sub+'</div></div>';
+       '<div class="rd-main"><div class="rd-name">'+flag+esc(a.name)+' '+cmjHtml+' '+acHtml+' '+viHtml+'</div>'+sub+'</div></div>';
   });
   grid.innerHTML=h;
 }
 function openCheckin(){
   const ath=teamAthletes(); if(ath.length===0){ addAthlete(); return; }
   const sel=(k,def)=>{ let o=""; for(let i=1;i<=5;i++) o+='<option value="'+i+'"'+(i===def?" selected":"")+'>'+i+'</option>'; return '<select data-k="'+k+'">'+o+'</select>'; };
-  let rows="";
+  let cards="";
   ath.forEach(a=>{ const arr=(S.readiness&&S.readiness[a.id])||[]; const l=arr[arr.length-1]||{};
-    rows+='<div class="ci-row" data-a="'+a.id+'"><span class="ci-n">'+esc(a.name)+'</span>'+
-      sel('sl',l.sl||3)+sel('so',l.so||2)+sel('fa',l.fa||2)+sel('st',l.st||2)+'</div>'; });
+    cards+='<div class="ci-card" data-a="'+a.id+'"><div class="ci-nm">'+esc(a.name)+'</div>'+
+      '<div class="ci-grid">'+
+      '<label>😴<span>Sonno</span>'+sel("sl",l.sl||3)+'</label>'+
+      '<label>💪<span>Dolori</span>'+sel("so",l.so||2)+'</label>'+
+      '<label>🔋<span>Fatica</span>'+sel("fa",l.fa||2)+'</label>'+
+      '<label>🧠<span>Stress</span>'+sel("st",l.st||2)+'</label>'+
+      '</div>'+
+      '<div class="ci-vit">'+
+      '<label>❤️ HRV <input type="number" inputmode="numeric" step="any" data-k="hrv" placeholder="ms" value="'+(l.hrv!=null?l.hrv:"")+'"></label>'+
+      '<label>🫀 FC riposo <input type="number" inputmode="numeric" step="any" data-k="rhr" placeholder="bpm" value="'+(l.rhr!=null?l.rhr:"")+'"></label>'+
+      '</div></div>';
+  });
   modal('<div class="mh"><div><div class="mt">Check-in fatica</div>'+
-    '<div class="ms">Squadra · valori 1-5</div></div>'+
+    '<div class="ms">Squadra · soggettivo 1-5 + parametri</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>'+
     '<label class="fl">Data</label><input id="ciD" type="date" value="'+todayISO()+'">'+
     '<div class="alert info" style="margin-top:10px"><span class="ai">ℹ️</span><span>'+
-    '😴 <b>Sonno</b> 1 pessimo→5 ottimo · 💪 <b>Dolori</b> 1 nessuno→5 forti · 🔋 <b>Fatica</b> 1 fresco→5 esausto · 🧠 <b>Stress</b> 1 calmo→5 stress</span></div>'+
-    '<div class="ci-head"><span class="ci-n"></span><span>😴</span><span>💪</span><span>🔋</span><span>🧠</span></div>'+
-    '<div class="sess-list">'+rows+'</div>'+
+    'Soggettivi 1-5: 😴 Sonno 1 pessimo→5 ottimo · 💪 Dolori 1 nessuno→5 forti · 🔋 Fatica 1 fresco→5 esausto · 🧠 Stress 1 calmo→5 stress. '+
+    '<b>HRV</b> e <b>FC a riposo</b> mattutine (dallo smartwatch, opzionali) contano come <b>tendenza</b> sulla baseline dell\'atleta, non come valore singolo.</span></div>'+
+    '<div class="ci-list">'+cards+'</div>'+
     '<div style="height:14px"></div>'+
     '<button class="btn primary" style="width:100%" onclick="saveCheckin()">Salva check-in</button>');
 }
 function saveCheckin(){
   const d=document.getElementById("ciD").value||todayISO(); let n=0;
-  document.querySelectorAll(".ci-row").forEach(row=>{
-    const aid=row.getAttribute("data-a"); const e={d:d};
-    row.querySelectorAll("select").forEach(s=>{ e[s.getAttribute("data-k")]=parseInt(s.value,10); });
+  document.querySelectorAll(".ci-card").forEach(card=>{
+    const aid=card.getAttribute("data-a"); const e={d:d};
+    card.querySelectorAll("select[data-k]").forEach(s=>{ e[s.getAttribute("data-k")]=parseInt(s.value,10); });
+    card.querySelectorAll("input[data-k]").forEach(inp=>{ const v=parseFloat(inp.value); if(!isNaN(v)) e[inp.getAttribute("data-k")]=v; });
     if(!S.readiness) S.readiness={}; if(!S.readiness[aid]) S.readiness[aid]=[];
     const arr=S.readiness[aid]; const ex=arr.find(x=>x.d===d);
     if(ex) Object.assign(ex,e); else arr.push(e);
     arr.sort((x,y)=>x.d<y.d?-1:1); n++;
   });
   save(); closeM(); render(); toast("Check-in salvato ("+n+")");
+}
+/* ── Parametri (HRV / FC riposo): lettura per tendenza sulla baseline ── */
+function vitalBaseline(aid, key){
+  const arr=(S.readiness&&S.readiness[aid])||[];
+  const vals=arr.filter(e=>e[key]!=null).map(e=>e[key]);
+  if(vals.length<3) return null;
+  const latest=vals[vals.length-1];
+  const hist=vals.slice(0,-1).slice(-7);
+  if(!hist.length) return null;
+  const mean=hist.reduce((s,x)=>s+x,0)/hist.length;
+  if(!mean) return null;
+  return {latest, mean, pct:(latest-mean)/mean*100, n:hist.length};
+}
+function vitalsInfo(aid){
+  const out=[];
+  const hrv=vitalBaseline(aid,"hrv");
+  if(hrv){ const cls=hrv.pct<=-8?"down":hrv.pct>=5?"up":"flat";
+    out.push({k:"HRV", v:Math.round(hrv.latest), unit:"ms", pct:hrv.pct, cls,
+      note: hrv.pct<=-8?"sotto baseline — recupero ridotto":(hrv.pct>=5?"sopra baseline — buon recupero":"in linea con la baseline")}); }
+  const rhr=vitalBaseline(aid,"rhr");
+  if(rhr){ const cls=rhr.pct>=7?"down":rhr.pct<=-3?"up":"flat";
+    out.push({k:"FC", v:Math.round(rhr.latest), unit:"bpm", pct:rhr.pct, cls,
+      note: rhr.pct>=7?"sopra baseline — possibile fatica/stress":"in linea con la baseline"}); }
+  return out;
 }
 function openReadinessHistory(aid){
   const a=S.athletes.find(x=>x.id===aid); const arr=(S.readiness&&S.readiness[aid])||[];
@@ -1879,11 +1964,20 @@ function openReadinessHistory(aid){
     for(let i=arr.length-1;i>=0;i--){ const e=arr[i], pc=readinessScore(e);
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
          '<span class="hv"><span class="rd-cmj '+readinessColor(pc)+'">'+pc+'</span> '+
-         '<span style="color:var(--muted2);font-size:10px;font-family:var(--mono)">😴'+e.sl+' 💪'+e.so+' 🔋'+e.fa+' 🧠'+e.st+'</span></span>'+
+         '<span style="color:var(--muted2);font-size:10px;font-family:var(--mono)">😴'+e.sl+' 💪'+e.so+' 🔋'+e.fa+' 🧠'+e.st+(e.hrv!=null?' ❤️'+e.hrv:'')+(e.rhr!=null?' 🫀'+e.rhr:'')+'</span></span>'+
          '<span class="hdl" onclick="delCheckin(\''+aid+'\','+i+')">🗑</span></div>';
     }
     h+='</div>';
   } else h+='<p class="hint">Nessun check-in ancora. Usa "+ Check-in di oggi".</p>';
+  // ── parametri smartwatch (HRV / FC riposo) ──
+  const vi=vitalsInfo(aid);
+  if(vi.length){
+    h+='<div class="psec" style="color:var(--accent)">Parametri (HRV / FC riposo)</div>';
+    vi.forEach(x=>{ h+='<div class="bgrp"><div style="display:flex;justify-content:space-between;align-items:center">'+
+      '<div><div class="bt">'+x.k+' <span class="rd-cmj '+x.cls+'" style="font-size:15px">'+x.v+' '+x.unit+'</span></div>'+
+      '<div class="bw">vs baseline '+(x.pct>0?"+":"")+fmtNum(Math.round(x.pct*10)/10)+'% · '+x.note+'</div></div></div></div>'; });
+    h+='<div class="gnote">HRV e FC a riposo vanno lette come <b>tendenza</b> sulla baseline individuale, sempre nelle stesse condizioni (mattina, a riposo). Un valore singolo dice poco: conta lo scostamento ripetuto.</div>';
+  }
   // ── carico interno + ACWR ──
   const ac=acwr(aid), ws=weekStats(aid), larr=(S.load&&S.load[aid])||[];
   h+='<div class="psec" style="color:var(--accent)">Carico interno & ACWR</div>';
@@ -2190,7 +2284,7 @@ function loadDemo(){
 }
 
 /* ═══════════════ GUIDA AI TEST (protocolli) ═══════════════ */
-const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆️",sj:"🔽",dj:"⬇️",eur:"🔁",
+const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",nordic:"🦵",cmj:"⬆️",sj:"🔽",dj:"⬇️",eur:"🔁",
   spr10:"⏱️",spr30:"🏁",rsa:"🔄",sdec:"📉",vo2:"🫁",mas:"🏃",yoyo1:"🪀",yoyo2:"🪀",
   fvdef:"📈",cod505:"🔀",ttest:"✖️",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
   shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶",
@@ -2643,7 +2737,16 @@ const PROTO={
       {t:"Registra",d:"Potenza dell'ultimo step completato (W). Normalizzala al peso (W/kg) per confronti tra atleti."}],
     interpret:["Più specifico del tapis per il combattimento: <b>coinvolge la parte alta</b>, che nel fight è sempre sotto carico.","È anche un ottimo mezzo di condizionamento, non solo un test: ma allora tienilo separato dal test."],
     advice:["Usa la potenza finale per prescrivere gli intervalli (es. % della potenza massimale raggiunta).","Confronta i due test aerobici: se il tapis va bene ma l'air bike no, il limite è la <b>parte alta</b>, non il cuore — e nel combattimento conta."],
-    note:"Le air bike non sono calibrate tra loro: usa <b>sempre la stessa macchina</b>."}
+    note:"Le air bike non sono calibrate tra loro: usa <b>sempre la stessa macchina</b>."},
+
+  nordic:{eyebrow:"Prevenzione — forza eccentrica ischiocrurali",
+    what:"<b>Nordic hamstring test</b>: in ginocchio con le caviglie bloccate, l'atleta si abbassa in avanti resistendo il più a lungo possibile. Misura la <b>forza eccentrica</b> dei flessori — il fattore modificabile con più evidenza per ridurre l'infortunio n.1 nel calcio e nella corsa veloce.",
+    steps:[{t:"Setup",d:"In ginocchio su superficie morbida, caviglie ancorate (NordBord, o partner + dinamometro con cinghia)."},
+      {t:"Esecuzione",d:"Tronco rigido, scendi in avanti il più lentamente possibile resistendo con gli ischiocrurali."},
+      {t:"Registra",d:"Picco di forza per gamba (N) e soprattutto l'<b>asimmetria destra/sinistra</b>. Senza device: usa l'angolo di rottura o le ripetizioni controllate."}],
+    interpret:["Forza più alta = meglio. Il segnale preventivo chiave è l'<b>asimmetria &gt;~10-15%</b> tra le gambe e/o un valore assoluto basso.","La forza eccentrica cala con la fatica: un test a fine settimana intensa può sottostimare il valore reale."],
+    advice:["Il test e la <b>cura</b> coincidono: il Nordic curl come esercizio è l'intervento con l'evidenza più forte. Programma il volume gradualmente (DOMS marcati all'inizio).","Asimmetria alta → lavoro unilaterale mirato e progressione eccentrica sull'arto debole."],
+    note:"Con NordBord ottieni forza + asimmetria; senza, ripiega su angolo di rottura o ripetizioni controllate. L'intervento (Nordic curl) conta più del test in sé."}
 };
 
 const PROTO_EXTRA={
@@ -2711,6 +2814,7 @@ const BATTERY={
       {t:"Velocità & RSA", w:"Periodico", y:"Accelerazione, velocità e ripetibilità degli sprint.", tests:["spr10","spr30","rsa","sdec"]},
       {t:"Cambio direzione", w:"Periodico", y:"Decelerazione e agilità.", tests:["cod505","ttest"]},
       {t:"Forza / potenza", w:"Baseline · metà", y:"Base di forza ed esplosività.", tests:["imtp","cmj"]},
+      {t:"Prevenzione ischiocrurali", w:"Baseline · periodico", y:"Forza eccentrica dei flessori: è l'infortunio n.1 nel calcio, con forte evidenza preventiva. Su tutti, non solo sugli infortunati.", tests:["nordic"]},
       {t:"Funzionale / RTS", w:"Storia infortuni (hamstring)", y:"Asimmetrie e return-to-sport.", tests:["hopLSI","ybtLow","cmjAsym"]}
     ]},
   basket:{
@@ -2729,7 +2833,7 @@ const BATTERY={
     groups:[
       {t:"Velocità & salti", w:"Baseline · periodico", y:"Esplosività, reattività e profilo F-V.", tests:["spr10","spr30","cmj","sj","dj","fvdef"]},
       {t:"Mezzofondo & fondo", w:"Baseline · metà · fine", y:"Capacità aerobica e soglia.", tests:["mas","vo2"]},
-      {t:"Prevenzione & funzionale", w:"Pre-season + sintomi", y:"Caviglia e simmetria monopodalica.", tests:["ankleDF","hopLSI"]}
+      {t:"Prevenzione & funzionale", w:"Pre-season + periodico", y:"Forza eccentrica dei flessori (chiave per i velocisti), caviglia e simmetria monopodalica.", tests:["nordic","ankleDF","hopLSI"]}
     ]},
   forza:{
     note:"Forza / palestra: la progressione del carico è il driver. Monitora la velocità in sala.",

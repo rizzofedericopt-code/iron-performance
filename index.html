@@ -248,12 +248,34 @@ ul.kb li b{color:#fff;font-weight:600}
 .notice-see{flex:0 0 auto;background:var(--up);color:#fff;border:none;border-radius:8px;padding:8px 13px;
   font-family:var(--sans);font-size:12.5px;font-weight:700;cursor:pointer;min-height:36px}
 .notice-x{flex:0 0 auto;background:none;border:none;color:var(--muted2);font-size:15px;cursor:pointer;padding:4px 6px}
+.pcheck.locked{opacity:.55}
+.pcheck.locked input{accent-color:var(--muted2)}
+.cmp-list{display:flex;flex-direction:column;gap:2px}
+.cmp-row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.cmp-n{font-size:13.5px;font-weight:600;color:var(--text)}
+.cmp-v{font-size:12px;color:var(--muted);text-align:right;display:flex;align-items:center;gap:5px;justify-content:flex-end}
+.cmp-arrow{color:var(--muted2)}
+.cmp-l{font-weight:700;color:var(--text)}
+.cmp-d{grid-column:2;text-align:right;font-family:var(--mono);font-size:12.5px;font-weight:700}
+.cmp-up{color:var(--up)}
+.cmp-down{color:var(--down)}
+.cmp-flat{color:var(--muted2)}
+.cmp-dates{grid-column:1;font-size:10.5px;color:var(--muted2)}
+.onboard{max-width:420px;margin:0 auto;text-align:left;padding-top:48px}
+.onboard h3{text-align:center}
+.onboard>p{text-align:center;color:var(--muted);margin-bottom:16px}
+.ob-steps{display:flex;flex-direction:column;gap:10px}
+.ob-step{display:flex;gap:12px;align-items:flex-start;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.ob-n{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;
+  display:flex;align-items:center;justify-content:center}
+.ob-step b{display:block;font-size:13.5px;color:var(--text)}
+.ob-step small{display:block;color:var(--muted2);font-size:11.5px;margin-top:2px;line-height:1.4}
 .bsess-test{margin-bottom:16px}
 .bsess-th{font-weight:700;font-size:13px;color:var(--text);padding:8px 0 7px;border-bottom:1px solid var(--line);margin-bottom:5px}
 .bsess-th span{color:var(--muted2);font-family:var(--mono);font-size:11px;font-weight:400}
 /* ---- Export PDF / stampa scheda atleta ---- */
 #printArea{display:none}
-.pdoc{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;color:#111;background:#fff;font-size:12px;line-height:1.5;max-width:760px;margin:0 auto;padding:18px}
+.pdoc{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;color:#111;background:#fff;font-size:12px;line-height:1.5;max-width:680px;margin:0 auto;padding:18px}
 .pdoc h1{font-size:21px;margin:2px 0 0}
 .pdoc .pbrand{font-family:ui-monospace,'SF Mono',monospace;color:#E63946;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700}
 .pdoc .pmeta{color:#555;font-size:11px;margin-top:3px}
@@ -273,7 +295,7 @@ ul.kb li b{color:#fff;font-weight:600}
 @media print{
   body.printing > *{display:none !important}
   body.printing > #printArea{display:block !important}
-  @page{margin:14mm}
+  @page{size:A4;margin:14mm}
 }
 /* ---- Vista Oggi (cruscotto) ---- */
 .tstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px}
@@ -334,7 +356,7 @@ ul.kb li b{color:#fff;font-weight:600}
 .set-row .sc{color:var(--line2);font-size:17px}
 .set-row.danger{color:var(--down)}
 .chq{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 6px}
-.tchk{display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.tchk{display:flex;align-items:center;gap:9px;padding:9px 4px;border-bottom:1px solid var(--line);cursor:pointer}
 .tchk input{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto}
 .tchk span{font-size:13px;color:var(--text)}
 .tchk span i{color:var(--muted2);font-family:var(--mono);font-size:11px;font-style:normal}
@@ -412,14 +434,6 @@ ul.kb li b{color:#fff;font-weight:600}
 .sess-row .sn{flex:1;font-size:13.5px;font-weight:600}
 .sess-row .sp{font-family:var(--mono);font-size:10px;color:var(--muted2)}
 .sess-row input{flex:0 0 96px;text-align:right;padding:9px 10px;font-family:var(--mono)}
-.menu{position:absolute;right:14px;top:54px;background:var(--surface2);border:1px solid var(--line2);
-  border-radius:12px;padding:6px;z-index:60;display:none;min-width:190px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
-.menu.on{display:block}
-.menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;
-  color:var(--text);font-family:var(--sans);font-size:13px;padding:9px 10px;border-radius:8px;cursor:pointer}
-.menu button:hover{background:var(--surface3)}
-.menu button.danger{color:var(--down)}
-.menu .sep{height:1px;background:var(--line);margin:5px 4px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
   background:var(--text);color:#0A0A0A;font-weight:600;font-size:13px;padding:11px 18px;border-radius:11px;
   z-index:200;opacity:0;transition:.25s;pointer-events:none}
@@ -464,7 +478,6 @@ ul.kb li b{color:#fff;font-weight:600}
   .actions .btn.icon{width:33px;height:33px;font-size:15px}
   .top-row{gap:5px}
 }
-.tchk{padding:9px 4px}
 /* check-in card (soggettivo + parametri) */
 .ci-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
 .ci-card{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
@@ -595,24 +608,6 @@ ul.kb li b{color:#fff;font-weight:600}
   </div>
   <div class="teams" id="teams"></div>
   <div class="sports" id="sports"></div>
-</div>
-
-<div class="menu" id="menu">
-  <button onclick="guideIndex()">📖 Guida ai test</button>
-  <button onclick="openBattery()">🎯 Batteria consigliata</button>
-  <button onclick="chooseTests()">🎚 Scegli test da monitorare</button>
-  <button onclick="openThresholds()">⚙️ Soglie di monitoraggio</button>
-  <button onclick="manageTeams()">👥 Gestisci squadre</button>
-  <div class="sep"></div>
-  <button onclick="exportJSON()">⬇️ Esporta backup (JSON)</button>
-  <button onclick="exportCSV()">📄 Esporta tabella (CSV)</button>
-  <button onclick="importJSON()">⬆️ Importa backup</button>
-  <div class="sep"></div>
-  <button onclick="loadDemo()">✨ Carica dati di esempio</button>
-  <button class="danger" onclick="wipe()">🗑 Svuota tutto</button>
-  <div class="sep"></div>
-  <button onclick="changePassword()">🔑 Cambia password</button>
-  <button onclick="doLogout()">🔒 Esci (logout)</button>
 </div>
 
 <div class="legend" id="bar"></div>
@@ -842,7 +837,6 @@ function doLogout(){
   AUTH=null;
   try{ localStorage.removeItem(AUTHKEY); localStorage.removeItem(KEY); }catch(e){}
   S={athletes:[],data:{},teams:[],sport:"pallavolo",view:"today",activeTeam:"all"};
-  document.getElementById("menu").classList.remove("on");
   clearTimeout(IDLE_T);
   showLogin();
 }
@@ -862,7 +856,6 @@ function idleLogout(){
   if(err){ err.style.color="var(--muted)"; err.textContent="Sessione scaduta per inattività — rientra per continuare."; }
 }
 function openThresholds(){
-  document.getElementById("menu").classList.remove("on");
   const c=S.cfg;
   const f=(k,lbl,step,hint)=>'<div class="thr"><label>'+lbl+'</label><input type="number" step="'+(step||1)+'" id="cfg_'+k+'" value="'+c[k]+'">'+(hint?'<div class="thrh">'+hint+'</div>':'')+'</div>';
   let h='<div class="mh"><div><div class="mt">Soglie di monitoraggio</div>'+
@@ -899,7 +892,6 @@ function saveThresholds(){
 function resetThresholds(){ Object.keys(CFG_DEF).forEach(k=>S.cfg[k]=CFG_DEF[k]); save(); render(); openThresholds(); toast("Default ripristinati"); }
 
 function changePassword(){
-  document.getElementById("menu").classList.remove("on");
   modal('<div class="mh"><div><div class="mt">Cambia password</div>'+
     '<div class="ms">Account: '+(AUTH?esc(AUTH.email):'')+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>'+
@@ -932,7 +924,9 @@ function autoLogin(){
   if(!AUTH||!AUTH.email){ showLogin(); return; }
   hideLogin(); render(); setSync("saving"); startIdle();
   apiCall("load").then(j=>{
-    if(j && j.data){ S=j.data; normalize(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} render(); }
+    if(j && j.data){ S=j.data; normalize(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} render();
+      sealAthleteProfiles().then(changed=>{ if(changed){ save(); render(); } });
+    }
     setSync("ok");
   }).catch(e=>{
     if(e.status===401) showLogin("Sessione non valida, rientra");
@@ -1039,10 +1033,12 @@ function shareLink(link, name){
 let _lastRefresh=0;
 function refreshFromCloud(silent){
   if(!AUTH||!AUTH.email) return;
-  if(!silent){ var mm=document.getElementById("menu"); if(mm) mm.classList.remove("on"); closeM&&closeM(); }
+  if(!silent){ closeM&&closeM(); }
   setSync("saving");
   apiCall("save",{data:S}).catch(function(){}).then(function(){ return apiCall("load"); }).then(function(j){
-    if(j&&j.data){ S=j.data; normalize(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} render(); }
+    if(j&&j.data){ S=j.data; normalize(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} render();
+      sealAthleteProfiles().then(function(changed){ if(changed){ save(); render(); } });
+    }
     setSync("ok"); _lastRefresh=Date.now();
     if(!silent) toast("Dati aggiornati dal cloud");
   }).catch(function(){ setSync("off"); if(!silent) toast("Aggiornamento non riuscito"); });
@@ -1155,12 +1151,16 @@ function render(){
   renderNotice();
   const grid=document.getElementById("grid");
   if(S.athletes.length===0){
-    grid.innerHTML='<div class="empty-state"><h3>Nessun atleta</h3>'+
-      '<p>Aggiungi i membri della squadra, poi registra una sessione di test.<br>'+
-      'Ogni nuova misurazione si colora di verde o rosso in base al confronto con la precedente.</p>'+
-      '<button class="btn primary" onclick="addAthlete()">+ Aggiungi il primo atleta</button>'+
-      '<div style="height:10px"></div>'+
-      '<button class="btn sm" onclick="loadDemo()">✨ oppure carica dati di esempio</button></div>';
+    grid.innerHTML='<div class="empty-state onboard">'+
+      '<h3>Benvenuto in Iron Performance 👋</h3>'+
+      '<p>Tre passi per iniziare:</p>'+
+      '<div class="ob-steps">'+
+      '<div class="ob-step"><span class="ob-n">1</span><div><b>Crea o scegli una squadra</b><small>In alto, tocca "+ Squadra" — o salta se lavori senza squadre</small></div></div>'+
+      '<div class="ob-step"><span class="ob-n">2</span><div><b>Aggiungi un\'atleta</b><small>Nome, squadra, sesso: bastano 10 secondi</small></div></div>'+
+      '<div class="ob-step"><span class="ob-n">3</span><div><b>Manda il link anamnesi</b><small>Dalla sua scheda, tocca 🔗 Link: compila lei, arriva a te</small></div></div>'+
+      '</div>'+
+      '<button class="btn primary" style="width:100%;margin-top:16px" onclick="addAthlete()">+ Aggiungi il primo atleta</button>'+
+      '<button class="btn sm" style="width:100%;margin-top:8px" onclick="loadDemo()">✨ oppure esplora con dati di esempio</button></div>';
     return;
   }
   if(S.view==="today"){ renderToday(); return; }
@@ -1188,7 +1188,7 @@ function renderMatrix(){
   rows.forEach(a=>{
     const team=S.teams.find(t=>t.id===a.team);
     const tl=(S.activeTeam==="all"&&team)?esc(team.name)+" · ":"";
-    const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
+    const flag=(a.profile&&a.profile._flagInjury)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
     const noAnam=!(a.profile&&(a.profile.birth||a.profile.height||a.profile._submittedAt))?'<span class="anamflag" title="Anamnesi non ancora compilata">📋 </span>':"";
     h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+noAnam+'<span class="nmt">'+esc(a.name)+'</span>'+
        '<span class="sx">'+(a.sex||"M")+'</span>'+
@@ -1244,9 +1244,9 @@ function todayManageCount(){
     teamAthletes().forEach(a=>{
       const p=a.profile||{}; const pain=parseFloat(p.painLevel);
       let flag=false;
-      if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) flag=true;
+      if(p._flagInjury) flag=true;
       else if(!isNaN(pain) && pain>=S.cfg.painCut) flag=true;
-      if(SCREEN_KEYS.filter(k=>p[k]).length) flag=true;
+      if(p._flagScreen) flag=true;
       const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1];
       if(rl && readinessScore(rl)<S.cfg.rdAmber) flag=true;
       const ac=acwr(a.id);
@@ -1433,13 +1433,16 @@ function manageTeams(){
        '<select onchange="setTeamSport(\''+t.id+'\',this.value)">'+sportOptions(t.sport)+'</select>'+
        '<button class="tmdel" title="'+c+' atleti" onclick="delTeam(\''+t.id+'\')">🗑</button></div>'+
        '<div class="tmbat"><button class="btn sm'+(n?' on':'')+'" onclick="chooseTests(\''+t.id+'\')">🎚 Batteria test</button>'+
-       '<span>'+(n?n+' test monitorati':'automatici per sport')+'</span></div>'; });
+       '<span>'+(n?n+' test monitorati':'automatici per sport')+'</span></div>'+
+       '<div class="tmbat"><label class="fl" style="margin:8px 0 0">📅 Prossima batteria di test</label></div>'+
+       '<input type="date" value="'+(t.nextBattery||"")+'" onchange="setNextBattery(\''+t.id+'\',this.value)">'; });
   h+='<div style="height:12px"></div>'+
      '<button class="btn" style="width:100%" onclick="addTeam()">+ Aggiungi squadra</button>';
   modal(h);
 }
 function renameTeam(id,v){ const t=S.teams.find(x=>x.id===id); if(t) t.name=v.trim()||t.name; save(); renderTeams(); }
 function setTeamSport(id,v){ const t=S.teams.find(x=>x.id===id); if(t) t.sport=v; save(); renderTeams(); }
+function setNextBattery(id,v){ const t=S.teams.find(x=>x.id===id); if(t) t.nextBattery=v||null; save(); }
 function delTeam(id){
   const t=S.teams.find(x=>x.id===id); if(!t) return;
   const mem=S.athletes.filter(a=>a.team===id);
@@ -1490,6 +1493,7 @@ const PROFILE=[
   {k:"height",  l:"Altezza (cm)",    t:"number", half:true},
   {k:"weight",  l:"Peso (kg)",       t:"number", half:true},
   {k:"role",    l:"Ruolo / posizione", t:"text"},
+  {k:"email",   l:"Email atleta (per inviare i report)", t:"text"},
 
   {sec:"Programmazione"},
   {k:"experience", l:"Esperienza di allenamento", t:"select", o:["","Principiante (<1 anno)","Intermedio (1-3 anni)","Avanzato (3-5 anni)","Esperto (5+ anni)"]},
@@ -1552,6 +1556,102 @@ function checkField(f,p){
   const on=!!(p&&p[f.k]);
   return '<label class="pcheck"><input type="checkbox" id="p_'+f.k+'"'+(on?' checked':'')+'><span>'+f.l+'</span></label>';
 }
+
+/* ═══════════════ CIFRATURA CAMPI SANITARI (AES-256-GCM, Web Crypto) ═══════════════ */
+const SENSITIVE_KEYS=["conditions","surgeries","familyHistory","injuriesCurrent","painContext",
+  "injuriesPast","recurrent","painAreas","orthoNotes","scHeart","scChest","scDizzy","scBreath",
+  "scJoint","scFamily","scMedsHeart","meds","supplements","allergies","medical","medicalExpiry","cycle"];
+const SECKEY_LS="ip_seckey";
+let SECKEY_RAW=null;
+try{ SECKEY_RAW=localStorage.getItem(SECKEY_LS)||null; }catch(e){}
+function b64(bytes){ let s=""; bytes.forEach(b=>s+=String.fromCharCode(b)); return btoa(s); }
+function b64d(s){ const bin=atob(s); const a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return a; }
+async function importSecKey(){
+  if(!SECKEY_RAW) return null;
+  return crypto.subtle.importKey("raw", b64d(SECKEY_RAW), {name:"AES-GCM"}, false, ["encrypt","decrypt"]);
+}
+function hasSecKey(){ return !!SECKEY_RAW; }
+async function ensureSecKey(){
+  if(SECKEY_RAW) return;
+  const bytes=crypto.getRandomValues(new Uint8Array(32));
+  SECKEY_RAW=b64(bytes);
+  try{ localStorage.setItem(SECKEY_LS, SECKEY_RAW); }catch(e){}
+  showSecKeyModal(true);
+}
+async function encField(obj){
+  await ensureSecKey();
+  const key=await importSecKey();
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const enc=new TextEncoder().encode(JSON.stringify(obj));
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, enc);
+  const combined=new Uint8Array(iv.length+ct.byteLength);
+  combined.set(iv,0); combined.set(new Uint8Array(ct), iv.length);
+  return b64(combined);
+}
+async function decField(str){
+  if(!SECKEY_RAW||!str) return null;
+  try{
+    const key=await importSecKey();
+    const bytes=b64d(str);
+    const iv=bytes.slice(0,12), ct=bytes.slice(12);
+    const dec=await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, ct);
+    return JSON.parse(new TextDecoder().decode(dec));
+  }catch(e){ return null; }
+}
+// Migra/cifra automaticamente: dati vecchi in chiaro o arrivati da anamnesi via link.
+async function sealAthleteProfiles(){
+  let changed=false;
+  for(const a of (S.athletes||[])){
+    const p=a.profile||{}; const plain={}; let hasPlain=false;
+    SENSITIVE_KEYS.forEach(k=>{ if(p[k]!=null && p[k]!==""){ plain[k]=p[k]; hasPlain=true; } });
+    if(!hasPlain) continue;
+    let existing={};
+    if(p._sec){ const d=await decField(p._sec); if(d) existing=d; }
+    const merged=Object.assign({}, existing, plain);
+    p._sec=await encField(merged);
+    SENSITIVE_KEYS.forEach(k=>{ delete p[k]; });
+    p._flagInjury=!!(merged.injuriesCurrent && String(merged.injuriesCurrent).trim());
+    p._flagScreen=SCREEN_KEYS.some(k=>merged[k]);
+    a.profile=p; changed=true;
+  }
+  return changed;
+}
+function showSecKeyModal(isNew){
+  const h='<div class="mh"><div><div class="mt">'+(isNew?"Chiave di cifratura creata":"Chiave di cifratura")+'</div>'+
+    '<div class="ms">Protegge infortuni, patologie e farmaci</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="alert danger" style="margin-bottom:14px"><span class="ai">🔐</span><span>'+
+    (isNew?'D\'ora in poi i dati sanitari delle schede vengono cifrati prima di essere salvati. ':'')+
+    '<b>Salva questa chiave</b> in un posto sicuro (gestore password, note private). Se la perdi, i dati sanitari cifrati non saranno più leggibili — nemmeno da noi.</span></div>'+
+    '<label class="fl">Chiave (32 caratteri)</label>'+
+    '<input id="secKeyF" readonly value="'+esc(SECKEY_RAW||"")+'" onclick="this.select()">'+
+    '<button class="btn primary" style="width:100%;margin-top:12px" onclick="copyText(\'secKeyF\')">📋 Copia chiave</button>'+
+    '<div class="gnote" style="margin-top:14px">Cambi telefono? Apri <b>Impostazioni → Chiave di cifratura</b> e incolla qui questa stessa chiave.</div>';
+  modal(h);
+}
+function openSecKey(){
+  if(!SECKEY_RAW){
+    modal('<div class="mh"><div><div class="mt">Chiave di cifratura</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="gnote">Nessuna chiave ancora creata: verrà generata automaticamente alla prima scheda con dati sanitari.</div>');
+    return;
+  }
+  const h='<div class="mh"><div><div class="mt">Chiave di cifratura</div><div class="ms">Protegge infortuni, patologie e farmaci</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<label class="fl">Chiave attuale</label>'+
+    '<input id="secKeyF" readonly value="'+esc(SECKEY_RAW)+'" onclick="this.select()">'+
+    '<button class="btn primary" style="width:100%;margin-top:10px" onclick="copyText(\'secKeyF\')">📋 Copia chiave</button>'+
+    '<div class="psec" style="margin-top:20px">Cambio dispositivo</div>'+
+    '<div class="gnote" style="margin-bottom:10px">Se apri l\'app da un altro telefono, incolla qui la chiave salvata per sbloccare le schede.</div>'+
+    '<input id="secKeyImport" placeholder="Incolla la chiave qui">'+
+    '<button class="btn" style="width:100%;margin-top:8px" onclick="importDifferentKey()">Usa questa chiave</button>';
+  modal(h);
+}
+function importDifferentKey(){
+  const v=(document.getElementById("secKeyImport").value||"").trim();
+  if(!v){ toast("Incolla una chiave"); return; }
+  SECKEY_RAW=v; try{ localStorage.setItem(SECKEY_LS, v); }catch(e){}
+  closeM(); toast("Chiave importata"); render();
+}
 function profileField(f, p){
   const v = (p && p[f.k]!=null) ? p[f.k] : "";
   const ev = String(v).replace(/"/g,"&quot;");
@@ -1597,10 +1697,46 @@ function athleteVitalsSummary(id){
   h+='</div></div>';
   return h;
 }
-function openAthlete(id, isNew){
+function openCompare(id){
+  const a=S.athletes.find(x=>x.id===id); if(!a) return;
+  const rows=TESTS.map(t=>{
+    const arr=series(id,t.id); if(arr.length<2) return null;
+    const first=arr[0], last=arr[arr.length-1];
+    if(first.d===last.d) return null;
+    const delta=last.v-first.v;
+    const pct=first.v?Math.round(delta/Math.abs(first.v)*1000)/10:null;
+    const better=(t.dir>0)===(delta>0);
+    return {t, first, last, delta, pct, better: delta===0?null:better};
+  }).filter(Boolean);
+  let h='<div class="mh"><div><div class="mt">Confronto periodi</div><div class="ms">'+esc(a.name)+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  if(!rows.length){ h+='<div class="gnote">Servono almeno due rilevazioni in date diverse su un test per fare un confronto.</div>'; modal(h); return; }
+  h+='<div class="gnote" style="margin-bottom:14px">Primo rilievo registrato vs più recente, per ogni test con almeno due misurazioni.</div>';
+  h+='<div class="cmp-list">';
+  rows.forEach(r=>{
+    const cls=r.better===null?"flat":r.better?"up":"down";
+    const sign=r.delta>0?"+":"";
+    h+='<div class="cmp-row"><div class="cmp-n">'+(ICON[r.t.id]||"🔬")+' '+esc(r.t.name)+'</div>'+
+      '<div class="cmp-v"><span class="cmp-f">'+fmtNum(r.first.v)+'</span><span class="cmp-arrow">→</span><span class="cmp-l">'+fmtNum(r.last.v)+' '+esc(r.t.unit)+'</span></div>'+
+      '<div class="cmp-d cmp-'+cls+'">'+sign+fmtNum(r.delta)+(r.pct!=null?' ('+sign+r.pct+'%)':'')+'</div>'+
+      '<div class="cmp-dates">'+fmtDate(r.first.d)+' → '+fmtDate(r.last.d)+'</div></div>';
+  });
+  h+='</div>';
+  modal(h);
+}
+async function openAthlete(id, isNew){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   if(!isNew){ ackAnamnesi(id); renderNotice(); }
-  const p=a.profile||{};
+  const raw=a.profile||{};
+  const p=Object.assign({}, raw);
+  let locked=false;
+  if(raw._sec){
+    if(hasSecKey()){
+      const dec=await decField(raw._sec);
+      if(dec) Object.assign(p, dec); else locked=true;
+    } else locked=true;
+  }
+  p._locked=locked;
   let topt=S.teams.map(t=>'<option value="'+t.id+'"'+(a.team===t.id?" selected":"")+'>'+esc(t.name)+'</option>').join("");
   topt+='<option value=""'+(!a.team?" selected":"")+'>Senza squadra</option>';
   const age=ageFrom(p.birth);
@@ -1608,6 +1744,8 @@ function openAthlete(id, isNew){
     '<div class="ms">'+esc(a.name)+(age!=null?' · '+age+' anni':'')+'</div></div>'+
     '<div style="display:flex;gap:6px;align-items:center">'+
     (isNew?'':'<button class="btn sm" onclick="anamLink(\''+id+'\')" title="Manda l\'anamnesi da compilare">🔗 Link</button>')+
+    (isNew?'':'<button class="btn sm" onclick="openCompare(\''+id+'\')" title="Confronta inizio vs oggi">📊 Confronto</button>')+
+    (isNew?'':'<button class="btn sm" onclick="sendReport(\''+id+'\')" title="Genera e invia il report andamento">✉️ Report</button>')+
     (isNew?'':'<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Esporta / stampa in PDF">🖨 PDF</button>')+
     '<button class="mcl" onclick="closeM()">✕</button></div></div>';
   if(isNew) h+='<div class="alert info" style="margin-bottom:14px"><span class="ai">📋</span><span>'+
@@ -1623,11 +1761,20 @@ function openAthlete(id, isNew){
   const _team=S.teams.find(t=>t.id===a.team);
   const _sport=(_team&&_team.sport)||"generale";
   const kb=SPORTKB[_sport]||SPORTKB.generale;
-  const _flags=SCREEN_KEYS.filter(k=>p[k]).length;
+  const _flags=locked ? (raw._flagScreen?1:0) : SCREEN_KEYS.filter(k=>p[k]).length;
   if(_flags) h+='<div class="alert danger" style="margin-top:10px"><span class="ai">⚠️</span><span>'+
-    '<b>Screening: '+_flags+' voce/i positive.</b> Consigliata una verifica medica prima di proporre carichi intensi.</span></div>';
+    '<b>Screening: '+(locked?"voce/i positive":_flags+" voce/i positive")+'.</b> Consigliata una verifica medica prima di proporre carichi intensi.</span></div>';
+  if(locked) h+='<div class="alert info" style="margin-top:10px"><span class="ai">🔒</span><span>'+
+    '<b>Dati sanitari cifrati.</b> Su questo dispositivo manca la chiave: infortuni, patologie e farmaci non sono visibili né modificabili qui. Vai su <b>Impostazioni → Chiave di cifratura</b> per sbloccarli.</span></div>';
   // sezioni profilo (wrapper per aggiornare la guida dal vivo)
   h+='<div oninput="updateBrief(\''+id+'\')" onchange="updateBrief(\''+id+'\')">';
+  const fld=(f,pp)=>{
+    if(locked && SENSITIVE_KEYS.indexOf(f.k)>=0){
+      if(f.t==="check") return '<label class="pcheck locked"><input type="checkbox" disabled><span>🔒 '+f.l+' (cifrato)</span></label>';
+      return '<input disabled placeholder="🔒 dato cifrato" value="">';
+    }
+    return f.t==="check"?checkField(f,pp):profileField(f,pp);
+  };
   let i=0;
   while(i<PROFILE.length){
     const f=PROFILE[i];
@@ -1636,13 +1783,13 @@ function openAthlete(id, isNew){
     // accoppia due campi "half" consecutivi
     const next=PROFILE[i+1];
     if(f.half && next && next.half && !next.sec){
-      h+='<div class="row2"><div><label class="fl">'+f.l+'</label>'+profileField(f,p)+'</div>'+
-         '<div><label class="fl">'+next.l+'</label>'+profileField(next,p)+'</div></div>';
+      h+='<div class="row2"><div><label class="fl">'+f.l+'</label>'+fld(f,p)+'</div>'+
+         '<div><label class="fl">'+next.l+'</label>'+fld(next,p)+'</div></div>';
       i+=2;
     } else if(f.t==="check"){
-      h+=checkField(f,p); i++;
+      h+=fld(f,p); i++;
     } else {
-      h+='<label class="fl">'+f.l+'</label>'+(f.k==="role"?roleInput(p,kb,id):profileField(f,p)); i++;
+      h+='<label class="fl">'+f.l+'</label>'+(f.k==="role"?roleInput(p,kb,id):fld(f,p)); i++;
     }
   }
   h+='</div>';
@@ -1650,6 +1797,7 @@ function openAthlete(id, isNew){
   h+='<div class="psec" style="color:var(--accent);border-color:var(--line2);margin-top:24px">📋 Guida preparazione & percorso — '+kb.label+'</div>'+
      '<div id="briefBox">'+briefBody(kb, p.role||"", p)+'</div>';
   h+='<div style="height:18px"></div>'+
+    (locked?'<input type="hidden" id="secLocked" value="1">':'')+
     '<button class="btn primary" style="width:100%" onclick="saveAthleteEdit(\''+id+'\')">'+(isNew?"Salva anamnesi":"Salva scheda")+'</button>'+
     (isNew
       ? '<button class="btn" style="width:100%;margin-top:8px" onclick="closeM()">Più tardi</button>'
@@ -1657,21 +1805,36 @@ function openAthlete(id, isNew){
         '<button class="danger" onclick="delAthlete(\''+id+'\')">Elimina</button></div>');
   modal(h);
 }
-function saveAthleteEdit(id){
+async function saveAthleteEdit(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   const n=document.getElementById("eN").value.trim(); if(!n){ toast("Inserisci un nome"); return; }
   a.name=n; a.team=document.getElementById("eT").value||null; a.sex=document.getElementById("eS").value;
+  const locked=!!document.getElementById("secLocked");
+  const raw=a.profile||{};
   const p={};
+  // metadati che non sono campi del form: si preservano sempre
+  Object.keys(raw).forEach(k=>{ if(k.indexOf("_")===0) p[k]=raw[k]; });
+  const sensitive={};
   PROFILE.forEach(f=>{ if(f.sec) return; const el=document.getElementById("p_"+f.k); if(!el) return;
-    if(f.t==="check"){ if(el.checked) p[f.k]=true; }
-    else { const v=el.value.trim(); if(v) p[f.k]=v; }
+    const isSens=SENSITIVE_KEYS.indexOf(f.k)>=0;
+    if(isSens && locked) return; // campi bloccati: non toccarli, restano cifrati come prima
+    if(f.t==="check"){ if(el.checked){ if(isSens) sensitive[f.k]=true; else p[f.k]=true; } }
+    else { const v=el.value.trim(); if(v){ if(isSens) sensitive[f.k]=v; else p[f.k]=v; } }
   });
+  if(locked){
+    p._sec=raw._sec; p._flagInjury=raw._flagInjury; p._flagScreen=raw._flagScreen;
+  } else if(Object.keys(sensitive).length){
+    p._sec=await encField(sensitive);
+    p._flagInjury=!!(sensitive.injuriesCurrent && String(sensitive.injuriesCurrent).trim());
+    p._flagScreen=SCREEN_KEYS.some(k=>sensitive[k]);
+  }
   a.profile=p;
-  save(); closeM(); render(); toast("Scheda salvata");
+  save(); closeM(); render(); toast("Scheda salvata"+(locked?"":Object.keys(sensitive).length?" · dati sanitari cifrati":""));
 }
 function delAthlete(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   if(!confirm("Eliminare "+a.name+" e tutti i suoi dati?")) return;
+  snapshotBeforeRisk("eliminazione di "+a.name);
   S.athletes=S.athletes.filter(x=>x.id!==id); delete S.data[id];
   save(); closeM(); render(); toast("Atleta eliminato");
 }
@@ -1914,9 +2077,99 @@ function briefBody(kb, role, p){
   }
   return h;
 }
-function printAthlete(id){
+/* ═══════════════ REPORT ANDAMENTO (per invio all'atleta) ═══════════════ */
+// Report volutamente SENZA dati sanitari sensibili: pensato per essere condiviso
+// con l'atleta o la famiglia, mostra solo l'andamento nei test.
+function reportSpark(arr,dir){
+  const vals=arr.map(e=>e.v);
+  const min=Math.min(...vals), max=Math.max(...vals), rng=(max-min)||1;
+  const W=200,H=44,pad=6;
+  const pts=vals.map((v,i)=>{
+    const x=(i/(vals.length-1))*W;
+    const y=pad+(1-(v-min)/rng)*(H-pad*2);
+    return x.toFixed(1)+","+y.toFixed(1);
+  }).join(' ');
+  const lastImproved=vals.length<2?true:((vals[vals.length-1]-vals[0])*dir>=0);
+  const stroke=lastImproved?"#639922":"#E24B4A";
+  const dotFill=lastImproved?"#3B6D11":"#A32D2D";
+  const lastPt=pts.split(' ').pop().split(',');
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:38px;display:block" preserveAspectRatio="none">'+
+    '<polyline points="'+pts+'" fill="none" stroke="'+stroke+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'+
+    '<circle cx="'+lastPt[0]+'" cy="'+lastPt[1]+'" r="3.2" fill="'+dotFill+'"/>'+
+    '</svg>';
+}
+function buildProgressReport(id){
+  const a=S.athletes.find(x=>x.id===id); if(!a) return null;
+  const team=S.teams.find(t=>t.id===a.team);
+  const rows=TESTS.map(t=>{
+    const arr=series(id,t.id); if(arr.length<2) return null;
+    const first=arr[0], last=arr[arr.length-1];
+    if(first.d===last.d) return null;
+    const delta=last.v-first.v;
+    const pct=first.v?Math.round(delta/Math.abs(first.v)*1000)/10:null;
+    const better=(t.dir>0)===(delta>0);
+    return {t, arr, first, last, delta, pct, better: delta===0?null:better};
+  }).filter(Boolean);
+  let h='<div class="pdoc">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:9px">'+
+     '<div><div class="pbrand">Iron Performance</div><h1 style="font-size:22px;margin:6px 0 0;color:#111">'+esc(a.name)+'</h1>'+
+     '<div class="pmeta">'+(team?esc(team.name)+' · ':'')+'Report andamento</div></div>'+
+     '<div class="pmeta">'+fmtDate(todayISO())+'</div></div>';
+  if(!rows.length){
+    h+='<div class="pf" style="margin-top:16px">Non ci sono ancora abbastanza rilevazioni per mostrare un andamento (serve almeno un test ripetuto in due date diverse).</div>';
+  } else {
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:16px">';
+    rows.forEach(r=>{
+      const sign=r.delta>0?"+":""; const cls=r.better===null?"#888":r.better?"#3B6D11":"#A32D2D";
+      const arrow=r.better===null?"→":r.better?"↑":"↓";
+      h+='<div style="border:0.5px solid #e3e1d8;border-radius:9px;padding:11px 12px;break-inside:avoid">'+
+        '<div style="font-size:10.5px;color:#888;margin-bottom:1px">'+esc(r.t.name)+'</div>'+
+        '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:5px">'+
+        '<span style="font-size:17px;font-weight:700;color:#111">'+fmtNum(r.last.v)+' <span style="font-size:10px;font-weight:400;color:#999">'+esc(r.t.unit)+'</span></span>'+
+        '<span style="font-size:11px;font-weight:700;color:'+cls+'">'+arrow+' '+sign+fmtNum(r.delta)+(r.pct!=null?' ('+sign+r.pct+'%)':'')+'</span></div>'+
+        reportSpark(r.arr, r.t.dir)+
+        '<div style="display:flex;justify-content:space-between;font-size:9px;color:#bbb;margin-top:2px">'+
+        '<span>'+fmtDate(r.first.d)+'</span><span>'+fmtDate(r.last.d)+'</span></div></div>';
+    });
+    h+='</div>';
+  }
+  const rarr=(S.readiness&&S.readiness[id])||[]; const rlast=rarr[rarr.length-1];
+  if(rlast) h+='<div class="psc">Stato attuale</div><div class="pf"><b>Readiness:</b> '+readinessScore(rlast)+'/100 · ultimo check-in '+fmtDate(rlast.d)+'</div>';
+  h+='<div class="pfoot">Iron Performance · report riepilogativo, non sostituisce la scheda clinica'+((AUTH&&AUTH.email)?' · '+esc(AUTH.email):'')+'</div></div>';
+  return h;
+}
+function sendReport(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
-  const p=a.profile||{};
+  const html=buildProgressReport(id); if(!html) return;
+  let pa=document.getElementById("printArea");
+  if(!pa){ pa=document.createElement("div"); pa.id="printArea"; document.body.appendChild(pa); }
+  pa.innerHTML=html;
+  const email=(a.profile&&a.profile.email)||"";
+  function done(){
+    document.body.classList.remove("printing");
+    window.removeEventListener("afterprint",done); window.removeEventListener("focus",done);
+    setTimeout(()=>{
+      if(email){
+        const subj=encodeURIComponent("Il tuo andamento — "+a.name);
+        const body=encodeURIComponent("Ciao "+a.name.split(" ")[0]+",\n\nin allegato trovi il tuo report andamento.\nHai appena salvato il PDF: ricordati di allegarlo qui prima di inviare.\n\nA presto.");
+        window.location.href="mailto:"+encodeURIComponent(email)+"?subject="+subj+"&body="+body;
+        toast("PDF salvato — allega il file nell'email che si è aperta");
+      } else {
+        toast("PDF salvato. Aggiungi l'email dell'atleta nella scheda per pre-compilare l'invio");
+      }
+    }, 400);
+  }
+  window.addEventListener("afterprint",done);
+  window.addEventListener("focus",done);
+  document.body.classList.add("printing");
+  setTimeout(()=>{ window.print(); }, 80);
+}
+async function printAthlete(id){
+  const a=S.athletes.find(x=>x.id===id); if(!a) return;
+  const raw=a.profile||{};
+  const p=Object.assign({}, raw);
+  let locked=false;
+  if(raw._sec){ if(hasSecKey()){ const dec=await decField(raw._sec); if(dec) Object.assign(p,dec); else locked=true; } else locked=true; }
   const team=S.teams.find(t=>t.id===a.team); const sport=(team&&team.sport)||"generale";
   const kb=SPORTKB[sport]||SPORTKB.generale; const age=ageFrom(p.birth);
   const L=["Base","Discreto","Buono","Ottimo","Elite"];
@@ -1927,8 +2180,9 @@ function printAthlete(id){
      ' · '+(team?esc(team.name):'Senza squadra')+' · '+sportMeta(sport).label+'</div></div>'+
      '<div class="pmeta">Generato il '+fmtDate(todayISO())+'</div></div>';
   const flagLab={scHeart:"Problemi cardiaci",scChest:"Dolore al petto sotto sforzo",scDizzy:"Vertigini/svenimenti",scBreath:"Affanno anomalo",scJoint:"Problema osteo-articolare aggravato dall'attività",scFamily:"Familiarità eventi cardiaci precoci",scMedsHeart:"Farmaci cuore/pressione"};
-  const flags=SCREEN_KEYS.filter(k=>p[k]);
+  const flags=p._flagScreen?["x"]:[];  // solo per il conteggio; il dettaglio è cifrato
   if(flags.length) h+='<div class="palert"><b>⚠ Screening: '+flags.length+' voce/i positive.</b> '+flags.map(k=>flagLab[k]).join(" · ")+'. Verifica medica consigliata prima di carichi intensi.</div>';
+  if(locked) h+='<div class="palert">🔒 Dati sanitari cifrati non disponibili su questo dispositivo: infortuni, patologie e farmaci non compaiono in questo documento.</div>';
   // profilo (solo campi compilati)
   let secName="", buf="", body="";
   function flush(){ if(secName && buf) body+='<div class="psc">'+secName+'</div>'+buf; buf=""; }
@@ -1978,37 +2232,6 @@ function updateBrief(id){
   const live={role:g("role"), seasonPhase:g("seasonPhase"), goal:g("goal"), experience:g("experience")};
   const box=document.getElementById("briefBox"); if(box) box.innerHTML=briefBody(kb, live.role, live);
 }
-function openCoachBrief(id){
-  const a=S.athletes.find(x=>x.id===id); if(!a) return;
-  const team=S.teams.find(t=>t.id===a.team);
-  const sport=(team&&team.sport)||"generale";
-  const kb=SPORTKB[sport]||SPORTKB.generale;
-  let role=""; const rin=document.getElementById("p_role");
-  if(rin) role=rin.value.trim(); else role=(a.profile&&a.profile.role)||"";
-  const sp=SPORTS.find(s=>s.id===sport);
-  let h='<button class="gback" onclick="openAthlete(\''+id+'\')">‹ Scheda atleta</button>'+
-    '<div class="mh"><div><div class="eyebrow">Preparazione fisica</div>'+
-    '<div class="mt">'+(sp?sp.icon+' ':'')+kb.label+'</div>'+
-    '<div class="ms">'+esc(a.name)+(role?' · '+esc(role):'')+'</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div>';
-  h+=kbSection("Richieste dello sport", kb.demands);
-  h+=kbSection("Gesto specifico", kb.gesture);
-  h+=kbSection("Direttive di allenamento", kb.training);
-  h+=kbSection("Prevenzione infortuni", kb.prevention);
-  h+=kbSection("Monitoraggio &amp; carichi", kb.monitoring);
-  if(kb.roles && Object.keys(kb.roles).length){
-    if(role){
-      const rk=matchRole(kb, role);
-      if(rk) h+=kbSection("Ruolo: "+esc(role), rk);
-      else h+='<div class="gnote">Nessuna scheda specifica per il ruolo «'+esc(role)+'»: mostrate le indicazioni generali dello sport.</div>';
-    } else {
-      h+='<div class="gnote">Imposta il <b>ruolo</b> nella scheda atleta per vedere le indicazioni specifiche di ruolo.</div>';
-    }
-  }
-  h+='<div class="gnote">Indicazioni generali a scopo di preparazione fisica: adattale sempre al singolo atleta e alla sua anamnesi.</div>';
-  modal(h);
-}
-
 /* ═══════════════ FATICA / READINESS ═══════════════ */
 function readinessScore(e){
   // sonno: alto=meglio; dolori/fatica/stress: alto=peggio
@@ -2031,12 +2254,20 @@ function renderToday(){
   const ath=teamAthletes();
   if(!ath.length){ grid.innerHTML=emptyTeam(); return; }
   const today=todayISO();
+  let battBanner="";
+  const teamsToWatch=(S.activeTeam&&S.activeTeam!=="all"&&S.activeTeam!=="none")?S.teams.filter(t=>t.id===S.activeTeam):S.teams;
+  teamsToWatch.forEach(t=>{
+    if(!t.nextBattery) return;
+    const days=Math.round((new Date(t.nextBattery)-new Date(today))/86400000);
+    if(days<0 && days>=-3) battBanner+='<div class="alert danger" style="margin-bottom:10px"><span class="ai">📅</span><span><b>'+esc(t.name)+'</b>: batteria di test in programma il '+fmtDate(t.nextBattery)+' — non ancora registrata.</span></div>';
+    else if(days>=0 && days<=14) battBanner+='<div class="alert info" style="margin-bottom:10px"><span class="ai">📅</span><span><b>'+esc(t.name)+'</b>: batteria di test tra '+(days===0?"oggi":days+" giorni")+' ('+fmtDate(t.nextBattery)+').</span></div>';
+  });
   const items=ath.map(a=>{
     const p=a.profile||{}; const flags=[]; let sev=0;
     const pain=parseFloat(p.painLevel);
-    if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()){ flags.push({t:"⚠ Infortunio/dolore",c:"down"}); sev+=5; }
+    if(p._flagInjury){ flags.push({t:"⚠ Infortunio/dolore",c:"down"}); sev+=5; }
     else if(!isNaN(pain) && pain>=S.cfg.painCut){ flags.push({t:"⚠ Dolore "+pain+"/10",c:"down"}); sev+=4; }
-    const sc=SCREEN_KEYS.filter(k=>p[k]).length;
+    const sc=p._flagScreen?1:0;
     if(sc){ flags.push({t:"🚩 Screening "+sc,c:"down"}); sev+=5; }
     const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1]; let rToday=false;
     if(rl){ const pc=readinessScore(rl); rToday=(rl.d===today);
@@ -2051,7 +2282,7 @@ function renderToday(){
     let vDown=false;
     vitalsInfo(a.id).forEach(x=>{ if(x.cls==="down"){ vDown=true; flags.push({t:(x.k==="HRV"?"❤️ HRV ":"🫀 FC ")+(x.pct>0?"+":"")+Math.round(x.pct)+"%",c:"amber"}); sev+=2; } });
     let sug=""; const rpc=rl?readinessScore(rl):null;
-    if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
+    if(p._flagInjury) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
     else if(!isNaN(pain) && pain>=S.cfg.painCut) sug="Dolore presente: resta sotto soglia, non peggiorare nelle 24h.";
     else if(sc) sug="Verifica medica prima di proporre carichi intensi.";
     else if(rpc!=null && rpc<S.cfg.rdCrit) sug="Priorità recupero: riduci volume e intensità oggi.";
@@ -2065,7 +2296,7 @@ function renderToday(){
   const manage=items.filter(x=>x.flags.length).sort((x,y)=>y.sev-x.sev);
   const ready=items.filter(x=>!x.flags.length);
   const checkinToday=items.filter(x=>x.rToday).length;
-  let h='<div class="today"><div class="tstats">'+
+  let h='<div class="today">'+battBanner+'<div class="tstats">'+
      tstat(ath.length,"Atleti")+
      tstat(checkinToday+"/"+ath.length,"Check-in oggi")+
      tstat(manage.length,"Da gestire", manage.length?"down":"up")+
@@ -2105,7 +2336,7 @@ function renderReadiness(){
   scored.forEach(function(o){ const a=o.a;
     const arr=(S.readiness&&S.readiness[a.id])||[];
     const last=arr[arr.length-1];
-    const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag">⚠ </span>':"";
+    const flag=(a.profile&&a.profile._flagInjury)?'<span class="medflag">⚠ </span>':"";
     let scoreHtml, sub;
     if(last){
       const pc=readinessScore(last);
@@ -2439,7 +2670,6 @@ function closeM(){ document.getElementById("ov").classList.remove("on"); }
 document.getElementById("ov").addEventListener("click",e=>{ if(e.target.id==="ov") closeM(); });
 
 /* ═══════════════ MENU / EXPORT / IMPORT ═══════════════ */
-function toggleMenu(e){ e.stopPropagation(); document.getElementById("menu").classList.toggle("on"); }
 function openSettings(){
   const team=S.teams.find(t=>t.id===S.activeTeam);
   const nTests=(team&&team.tests&&team.tests.length)?team.tests.length:0;
@@ -2459,6 +2689,7 @@ function openSettings(){
   h+='<div class="set-sec">Monitoraggio</div><div class="set-group">'+
     row("⚙️","Soglie","Readiness, ACWR, calo CMJ, dolore","openThresholds()")+
     row("👥","Squadre","Rinomina, sport, batteria, elimina","manageTeams()", S.teams.length)+
+    row("🔐","Chiave di cifratura","Protegge infortuni, patologie, farmaci","openSecKey()", hasSecKey()?"attiva":"—")+
     '</div>';
 
   h+='<div class="set-sec">Dati</div><div class="set-group">'+
@@ -2467,6 +2698,7 @@ function openSettings(){
     row("📄","Esporta tabella","File CSV","exportCSV()")+
     row("⬆️","Importa backup","Ripristina da un file JSON","importJSON()")+
     row("✨","Carica dati di esempio","Per provare l'app","loadDemo()")+
+    row("↩️","Ripristina ultimo stato","Rete di sicurezza prima di eliminazioni o import","restoreSnapshot()")+
     '</div>';
 
   h+='<div class="set-sec">Account</div><div class="set-group">'+
@@ -2476,13 +2708,22 @@ function openSettings(){
     '</div><div style="height:8px"></div>';
   modal(h);
 }
-document.addEventListener("click",()=>document.getElementById("menu").classList.remove("on"));
-
 function dl(name,content,type){
   const b=new Blob([content],{type}); const u=URL.createObjectURL(b);
   const a=document.createElement("a"); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
 }
 function exportJSON(){ dl("iron-performance-"+todayISO()+".json", JSON.stringify(S,null,2), "application/json"); toast("Backup esportato"); }
+// Rete di sicurezza: salva uno snapshot silenzioso prima di ogni operazione che può perdere dati.
+function snapshotBeforeRisk(label){
+  try{ localStorage.setItem("ip_snapshot", JSON.stringify({at:new Date().toISOString(), label, data:S})); }catch(e){}
+}
+function restoreSnapshot(){
+  let snap; try{ snap=JSON.parse(localStorage.getItem("ip_snapshot")||"null"); }catch(e){ snap=null; }
+  if(!snap){ toast("Nessuno snapshot disponibile"); return; }
+  const when=new Date(snap.at).toLocaleString("it-IT");
+  if(!confirm("Ripristinare lo stato di prima di \""+snap.label+"\" ("+when+")? Le modifiche fatte dopo andranno perse.")) return;
+  S=snap.data; normalize(); save(); render(); closeM(); toast("Stato ripristinato");
+}
 function exportCSV(){
   let rows=[["Squadra","Atleta","Sesso","Test","Unità","Data","Valore"]];
   S.athletes.forEach(a=>{ const tm=S.teams.find(t=>t.id===a.team);
@@ -2498,11 +2739,13 @@ document.getElementById("fileIn").addEventListener("change",function(e){
   const r=new FileReader();
   r.onload=()=>{ try{ const o=JSON.parse(r.result);
     if(!o.athletes||!o.data) throw 0;
+    snapshotBeforeRisk("importazione backup");
     S=o; normalize(); save(); render(); toast("Backup importato");
   }catch(err){ toast("File non valido"); } };
   r.readAsText(f); e.target.value="";
 });
 function wipe(){ if(!confirm("Cancellare TUTTI gli atleti, le squadre e i dati? Esporta prima un backup se vuoi conservarli.")) return;
+  snapshotBeforeRisk("cancellazione totale");
   S={athletes:[],data:{},teams:[],sport:S.sport,view:S.view,activeTeam:"all"}; save(); render(); toast("Tutto cancellato"); }
 
 /* ═══════════════ DATI DI ESEMPIO ═══════════════ */
@@ -3183,7 +3426,6 @@ function openBattery(sp, vk){
   let sport=sp;
   if(!sport){ if(S.sport!=="all") sport=S.sport; else { const tm=S.teams.find(t=>t.id===S.activeTeam); sport=(tm&&tm.sport)||"pallavolo"; } }
   if(vk){ S.cvar=vk; save(); }
-  document.getElementById("menu").classList.remove("on");
   const bv=battView(sport); const b=bv.b; const sm=sportMeta(sport);
   let h='<div class="mh"><div><div class="eyebrow">Batteria consigliata</div>'+
     '<div class="mt">'+sm.icon+' '+sm.label+'</div>'+
@@ -3213,7 +3455,6 @@ function chooseTests(tid){
   if(!target || target==="all" || target==="none"){ toast("Seleziona prima una squadra dalla barra"); return; }
   const team=S.teams.find(t=>t.id===target); if(!team){ toast("Seleziona una squadra"); return; }
   CHOOSE_TEAM=team.id;
-  document.getElementById("menu").classList.remove("on");
   const sel={}; const custom=!!(team.tests&&team.tests.length);
   const base=custom?team.tests:TESTS.filter(t=>t.sports.includes(team.sport||"generale")).map(t=>t.id);
   base.forEach(id=>sel[id]=true);

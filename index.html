@@ -50,6 +50,28 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .pf-fields input,.pf-fields select,.pf-fields textarea{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:9px 10px;color:var(--text);font-size:14px;font-family:inherit}
 .pf-check{display:flex;align-items:flex-start;gap:8px;font-size:13px;padding:6px 0;cursor:pointer}
 .pf-check input{margin-top:3px}
+.modech{display:grid;gap:8px;margin-bottom:14px}
+.modech-on,.modech-alt{text-align:left;border-radius:12px;padding:11px 13px;font-family:var(--sans);
+  border:1px solid var(--line);background:var(--surface);color:var(--text);display:block;width:100%}
+.modech-on{border-color:var(--accent);background:rgba(230,57,70,0.08)}
+.modech-alt{cursor:pointer}
+.modech-alt:hover{background:var(--surface2)}
+.modech b{display:block;font-size:13px;font-weight:700}
+.modech small{display:block;color:var(--muted2);font-size:11.5px;line-height:1.35;margin-top:2px;font-weight:500}
+.asec{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-top:9px;overflow:hidden}
+.asec>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:10px;
+  font-size:13px;font-weight:700;color:var(--text);user-select:none}
+.asec>summary::-webkit-details-marker{display:none}
+.asec>summary::before{content:"\203A";font-size:18px;line-height:1;color:var(--muted2);
+  transition:transform .18s;display:inline-block;flex:0 0 auto}
+.asec[open]>summary::before{transform:rotate(90deg)}
+.asec[open]>summary{border-bottom:1px solid var(--line)}
+.as-t{flex:1 1 auto;min-width:0}
+.as-n{font-family:var(--mono);font-size:10.5px;color:var(--muted2);background:var(--surface2);
+  border-radius:20px;padding:3px 8px;flex:0 0 auto}
+.as-n.has{color:var(--up)}
+.as-b{padding:4px 14px 14px}
+.as-b>.fl:first-child{margin-top:6px}
 .pf-consent{background:var(--surface);border:1px solid var(--line2);border-radius:12px;padding:12px;margin-top:16px;color:var(--muted2)}
 .pol{font-size:13px;line-height:1.55;color:var(--muted2)}
 .pol h4{margin:14px 0 4px;font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:var(--text)}
@@ -319,6 +341,7 @@ ul.kb li b{color:#fff;font-weight:600}
 .tabbar button svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.7;
   stroke-linecap:round;stroke-linejoin:round}
 .tabbar button.on{color:var(--accent)}
+.tabbar button small{display:none}
 .tabbar button:active{opacity:.6}
 .tabbar .tbadge{position:absolute;transform:translate(14px,-14px);min-width:16px;height:16px;padding:0 4px;
   border-radius:8px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;
@@ -489,7 +512,14 @@ ul.kb li b{color:#fff;font-weight:600}
   /* Il contatore nel markup sta fra icona ed etichetta: sul telefono e'
      sovrapposto e non si nota, in colonna finisce in mezzo alla riga.
      Lo mando in fondo con l'ordine, senza toccare l'HTML. */
-  .tabbar button>svg{order:1}
+  .tabbar button{align-items:flex-start;padding-top:9px;padding-bottom:9px}
+  .tabbar button>svg{order:1;margin-top:2px}
+  .tabbar button>span:not(.tbadge){display:flex;flex-direction:column;gap:1px;text-align:left}
+  /* Il sottotitolo dice QUANDO serve quella vista. Sul telefono non c'e'
+     spazio e resta nascosto; su PC toglie il dubbio senza doverlo chiedere. */
+  .tabbar button small{display:block;font-size:10.5px;font-weight:500;line-height:1.25;
+    color:var(--muted2);letter-spacing:0}
+  .tabbar button.on small{color:var(--muted)}
   .tabbar button>span:not(.tbadge){order:2}
   .tabbar .tbadge{order:3;position:static;transform:none;margin-left:auto}
 
@@ -642,7 +672,7 @@ ul.kb li b{color:#fff;font-weight:600}
       <small><span class="sdot" id="syncDot"></span><span id="syncTxt">@federizzo_trainer</span></small>
     </div>
     <div class="actions">
-      <button class="btn primary sm" onclick="openSession()">+ Sessione</button>
+      <button class="btn primary sm" onclick="openSession()">+ Registra test</button>
       <button class="btn sm" onclick="addAthlete()">+ Atleta</button>
       <button class="btn icon" onclick="openSettings()" aria-label="Impostazioni">⋯</button>
     </div>
@@ -1780,10 +1810,10 @@ function acolor(i){ return APAL[i%APAL.length]; }
 let HIDDEN={};
 
 const TABS=[
-  {v:"today",  l:"Oggi",      ic:'<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2.4"/>'},
-  {v:"matrix", l:"Matrice",   ic:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/>'},
-  {v:"trend",  l:"Andamento", ic:'<path d="M3 17.5l5.5-6 4 3.5L21 6"/><path d="M21 6h-5"/><path d="M21 6v5"/>'},
-  {v:"readiness", l:"Fatica", ic:'<path d="M3 12h4l2.5-6 4 12 2.5-6h5"/>'}
+  {v:"today",  l:"Oggi", d:"Chi gestire prima della seduta",      ic:'<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2.4"/>'},
+  {v:"matrix", l:"Matrice", d:"Tutti i test di tutti, in tabella",   ic:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/>'},
+  {v:"trend",  l:"Andamento", d:"Un test nel tempo, a confronto", ic:'<path d="M3 17.5l5.5-6 4 3.5L21 6"/><path d="M21 6h-5"/><path d="M21 6v5"/>'},
+  {v:"readiness", l:"Fatica", d:"Carico, recupero e segnali di allarme", ic:'<path d="M3 12h4l2.5-6 4 12 2.5-6h5"/>'}
 ];
 function renderTabs(){
   const el=document.getElementById("tabbar"); if(!el) return;
@@ -1791,7 +1821,8 @@ function renderTabs(){
   el.innerHTML=TABS.map(t=>{
     const badge=(t.v==="today"&&manage)?'<span class="tbadge">'+manage+'</span>':'';
     return '<button class="'+(S.view===t.v?"on":"")+'" onclick="setView(\''+t.v+'\')" aria-label="'+t.l+'">'+
-      '<svg viewBox="0 0 24 24">'+t.ic+'</svg>'+badge+'<span>'+t.l+'</span></button>';
+      '<svg viewBox="0 0 24 24">'+t.ic+'</svg>'+badge+
+      '<span>'+t.l+(t.d?'<small>'+t.d+'</small>':'')+'</span></button>';
   }).join("");
 }
 function todayManageCount(){
@@ -2334,10 +2365,34 @@ function openAthlete(id, isNew){
     '<b>Screening: '+_flags+' voce/i positive.</b> Consigliata una verifica medica prima di proporre carichi intensi.</span></div>';
   // sezioni profilo (wrapper per aggiornare la guida dal vivo)
   h+='<div oninput="updateBrief(\''+id+'\')" onchange="updateBrief(\''+id+'\')">';
-  let i=0;
+  /* Le otto sezioni erano tutte aperte insieme: 48 campi in una finestra sola,
+     dove per trovare il peso si scorreva oltre l'anamnesi patologica. Ora si
+     aprono una alla volta e ognuna dichiara quanto è compilata, così si vede
+     a colpo d'occhio cosa manca senza aprire niente. La prima resta aperta
+     perché è quella che si tocca sempre. */
+  const secCount=(start)=>{
+    let n=0, tot=0;
+    for(let j=start;j<PROFILE.length;j++){
+      const g=PROFILE[j]; if(g.sec) break;
+      tot++;
+      const v=p[g.k];
+      if(g.t==="check"){ if(v) n++; }
+      else if(v!=null && String(v).trim()!=="") n++;
+    }
+    return {n,tot};
+  };
+  let i=0, aperta=false, prima=true;
   while(i<PROFILE.length){
     const f=PROFILE[i];
-    if(f.sec){ h+='<div class="psec">'+f.sec+'</div>'; i++; continue; }
+    if(f.sec){
+      if(aperta) h+='</div></details>';
+      const c=secCount(i+1);
+      h+='<details class="asec"'+(prima?' open':'')+'><summary>'+
+         '<span class="as-t">'+esc(f.sec)+'</span>'+
+         '<span class="as-n'+(c.n?" has":"")+'">'+c.n+'/'+c.tot+'</span>'+
+         '</summary><div class="as-b">';
+      aperta=true; prima=false; i++; continue;
+    }
     // accoppia due campi "half" consecutivi
     const next=PROFILE[i+1];
     if(f.half && next && next.half && !next.sec){
@@ -2350,6 +2405,7 @@ function openAthlete(id, isNew){
       h+='<label class="fl">'+f.l+'</label>'+(f.k==="role"?roleInput(p,kb,id):profileField(f,p)); i++;
     }
   }
+  if(aperta) h+='</div></details>';
   h+='</div>';
   // GUIDA inline in fondo
   h+='<div class="psec" style="color:var(--accent);border-color:var(--line2);margin-top:24px">📋 Guida preparazione & percorso — '+kb.label+'</div>'+
@@ -3400,9 +3456,18 @@ function openSession(){
   const tm=S.teams.find(x=>x.id===S.activeTeam);
   const sub = tm ? ("Squadra: "+esc(tm.name)) : (S.activeTeam==="none"?"Atleti senza squadra":"Tutte le squadre");
   let opt=tests.map(t=>'<option value="'+t.id+'">'+t.name+' ('+t.unit+')</option>').join("");
-  modal('<div class="mh"><div><div class="mt">Sessione di test</div>'+
+  const sport=(tm&&tm.sport)||S.sport||"generale";
+  modal('<div class="mh"><div><div class="mt">Registra test</div>'+
     '<div class="ms">'+sub+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    /* C'erano tre strade per la stessa cosa e nessuna diceva in cosa
+       differiva dalle altre. Qui si sceglie una volta, con parole. */
+    '<div class="modech">'+
+      '<div class="modech-on"><b>Un test a tutta la squadra</b>'+
+      '<small>Scegli il test, inserisci un numero per atleta. Il modo più rapido in palestra.</small></div>'+
+      '<button class="modech-alt" onclick="openBattery(\''+sport+'\')"><b>Una batteria intera ›</b>'+
+      '<small>Più test in sequenza, già raggruppati per tipo di seduta.</small></button>'+
+    '</div>'+
     '<div class="row2"><div><label class="fl">Test</label>'+
     '<select id="sT" onchange="sessRows()">'+opt+'</select></div>'+
     '<div><label class="fl">Data</label><input id="sD" type="date" value="'+todayISO()+'"></div></div>'+

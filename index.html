@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Iron Performance — @federizzo_trainer</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A0A0A'/%3E%3Cpolyline points='12,47 25,38 38,28' fill='none' stroke='%23F4F5F7' stroke-width='7' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpolyline points='38,28 51,16' fill='none' stroke='%23E63946' stroke-width='7' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='51' cy='16' r='6.5' fill='%23E63946'/%3E%3C/svg%3E">
 <style>
@@ -32,6 +32,32 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .sdot.saving{background:#FFB340} .sdot.off{background:var(--down)}
 .login{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:22px}
 .login.hide{display:none}
+
+.pubform{position:fixed;inset:0;z-index:310;background:var(--bg);overflow-y:auto;padding:24px 16px 60px;display:flex;justify-content:center}
+.pf-box{width:100%;max-width:460px}
+.pf-load,.pf-err2{background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:24px;text-align:center;color:var(--muted)}
+.pf-err2{color:var(--down)}
+.pf-p{color:var(--muted2);font-size:13px;text-align:center;margin-top:10px}
+.pf-head{text-align:center;margin-bottom:18px}
+.pf-brand{font-family:'Montserrat',var(--sans);font-weight:800;font-size:12px;letter-spacing:2px;color:var(--accent)}
+.pf-head h1{font-size:21px;margin:6px 0 8px}
+.pf-sub{color:var(--muted2);font-size:13px;line-height:1.5}
+.pf-fields{background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:16px}
+.pf-sec{font-family:'Montserrat',var(--sans);font-weight:700;font-size:11px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin:16px 0 8px}
+.pf-sec:first-child{margin-top:0}
+.pf-field{margin-bottom:10px}
+.pf-l{display:block;font-size:12px;color:var(--muted2);margin-bottom:4px}
+.pf-fields input,.pf-fields select,.pf-fields textarea{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:9px 10px;color:var(--text);font-size:14px;font-family:inherit}
+.pf-check{display:flex;align-items:flex-start;gap:8px;font-size:13px;padding:6px 0;cursor:pointer}
+.pf-check input{margin-top:3px}
+.pf-consent{background:var(--surface);border:1px solid var(--line2);border-radius:12px;padding:12px;margin-top:16px;color:var(--muted2)}
+.pf-err{color:var(--down);font-size:12px;margin-top:10px;min-height:14px}
+.pf-btn{width:100%;margin-top:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer}
+.pf-btn:disabled{opacity:.6}
+.pf-foot{color:var(--muted2);font-size:11px;text-align:center;margin-top:12px}
+.pf-done{text-align:center;padding:40px 20px;background:var(--surface);border:1px solid var(--line2);border-radius:16px}
+.pf-ok{font-size:40px;color:var(--up);margin-bottom:10px}
+.pf-gen{color:var(--muted2);font-size:13px;padding:20px 0;text-align:center}
 .login-card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line2);border-radius:20px;padding:28px 22px 22px;text-align:center}
 .login-name{font-family:'Montserrat',var(--sans);font-weight:600;font-size:20px;letter-spacing:1px;color:var(--text);margin-top:2px}
 .login-name b{font-weight:800}
@@ -218,64 +244,12 @@ ul.kb li b{color:#fff;font-weight:600}
 .btests{display:flex;flex-wrap:wrap;gap:6px}
 .btchip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surface);border-radius:16px;padding:6px 11px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer}
 .btchip:hover{border-color:var(--accent)}
-.tiptip{position:fixed;z-index:300;max-width:280px;background:var(--surface3);border:1px solid var(--line2);
-  border-radius:10px;padding:10px 12px;box-shadow:0 12px 34px rgba(0,0,0,.55);pointer-events:none;display:none}
-.tiptip .tt-t{font-weight:700;font-size:13px;color:var(--text);margin-bottom:3px}
-.tiptip .tt-m{font-family:var(--mono);font-size:10.5px;color:var(--accent);margin-bottom:6px;letter-spacing:.2px}
-.tiptip .tt-w{font-size:12px;color:var(--muted);line-height:1.45}
-.anamflag{color:#f5a623}
-.anamfilter{border-color:#f5a623;color:#f5a623}
-.anamfilter.on{background:#f5a623;color:#1a1206;border-color:#f5a623}
-.vsum{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px}
-.vsum-t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted2);margin-bottom:10px}
-.vsum-n{text-transform:none;font-weight:400;letter-spacing:0}
-.vsum-row{display:flex;gap:10px;flex-wrap:wrap}
-.vsum-c{flex:1;min-width:78px}
-.vsum-l{font-size:10.5px;color:var(--muted2);margin-bottom:2px}
-.vsum-v{font-size:14px;font-weight:700;color:var(--text)}
-.vsum-v i{font-size:10px;font-style:normal;font-weight:600;margin-left:2px}
-.vv-up{color:var(--up)}
-.vv-amber{color:#f5a623}
-.vv-down{color:var(--down)}
-.vv-muted{color:var(--muted2)}
-.vspark{width:100%;height:18px;margin-top:4px;display:block}
-.vspark polyline{fill:none;stroke:var(--accent);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
-.notice{display:flex;align-items:center;gap:11px;background:rgba(52,199,89,.10);border:1px solid rgba(52,199,89,.4);
-  border-radius:12px;padding:11px 13px;margin-bottom:14px}
-.notice-ic{font-size:18px;flex:0 0 auto}
-.notice-tx{flex:1;font-size:13px;color:var(--text);line-height:1.4}
-.notice-tx b{color:var(--up)}
-.notice-see{flex:0 0 auto;background:var(--up);color:#fff;border:none;border-radius:8px;padding:8px 13px;
-  font-family:var(--sans);font-size:12.5px;font-weight:700;cursor:pointer;min-height:36px}
-.notice-x{flex:0 0 auto;background:none;border:none;color:var(--muted2);font-size:15px;cursor:pointer;padding:4px 6px}
-.pcheck.locked{opacity:.55}
-.pcheck.locked input{accent-color:var(--muted2)}
-.cmp-list{display:flex;flex-direction:column;gap:2px}
-.cmp-row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 4px;border-bottom:1px solid var(--line)}
-.cmp-n{font-size:13.5px;font-weight:600;color:var(--text)}
-.cmp-v{font-size:12px;color:var(--muted);text-align:right;display:flex;align-items:center;gap:5px;justify-content:flex-end}
-.cmp-arrow{color:var(--muted2)}
-.cmp-l{font-weight:700;color:var(--text)}
-.cmp-d{grid-column:2;text-align:right;font-family:var(--mono);font-size:12.5px;font-weight:700}
-.cmp-up{color:var(--up)}
-.cmp-down{color:var(--down)}
-.cmp-flat{color:var(--muted2)}
-.cmp-dates{grid-column:1;font-size:10.5px;color:var(--muted2)}
-.onboard{max-width:420px;margin:0 auto;text-align:left;padding-top:48px}
-.onboard h3{text-align:center}
-.onboard>p{text-align:center;color:var(--muted);margin-bottom:16px}
-.ob-steps{display:flex;flex-direction:column;gap:10px}
-.ob-step{display:flex;gap:12px;align-items:flex-start;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.ob-n{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:13px;
-  display:flex;align-items:center;justify-content:center}
-.ob-step b{display:block;font-size:13.5px;color:var(--text)}
-.ob-step small{display:block;color:var(--muted2);font-size:11.5px;margin-top:2px;line-height:1.4}
 .bsess-test{margin-bottom:16px}
 .bsess-th{font-weight:700;font-size:13px;color:var(--text);padding:8px 0 7px;border-bottom:1px solid var(--line);margin-bottom:5px}
 .bsess-th span{color:var(--muted2);font-family:var(--mono);font-size:11px;font-weight:400}
 /* ---- Export PDF / stampa scheda atleta ---- */
 #printArea{display:none}
-.pdoc{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;color:#111;background:#fff;font-size:12px;line-height:1.5;max-width:680px;margin:0 auto;padding:18px}
+.pdoc{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;color:#111;background:#fff;font-size:12px;line-height:1.5;max-width:760px;margin:0 auto;padding:18px}
 .pdoc h1{font-size:21px;margin:2px 0 0}
 .pdoc .pbrand{font-family:ui-monospace,'SF Mono',monospace;color:#E63946;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700}
 .pdoc .pmeta{color:#555;font-size:11px;margin-top:3px}
@@ -295,7 +269,7 @@ ul.kb li b{color:#fff;font-weight:600}
 @media print{
   body.printing > *{display:none !important}
   body.printing > #printArea{display:block !important}
-  @page{size:A4;margin:14mm}
+  @page{margin:14mm}
 }
 /* ---- Vista Oggi (cruscotto) ---- */
 .tstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px}
@@ -356,7 +330,7 @@ ul.kb li b{color:#fff;font-weight:600}
 .set-row .sc{color:var(--line2);font-size:17px}
 .set-row.danger{color:var(--down)}
 .chq{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 6px}
-.tchk{display:flex;align-items:center;gap:9px;padding:9px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.tchk{display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px solid var(--line);cursor:pointer}
 .tchk input{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto}
 .tchk span{font-size:13px;color:var(--text)}
 .tchk span i{color:var(--muted2);font-family:var(--mono);font-size:11px;font-style:normal}
@@ -434,6 +408,14 @@ ul.kb li b{color:#fff;font-weight:600}
 .sess-row .sn{flex:1;font-size:13.5px;font-weight:600}
 .sess-row .sp{font-family:var(--mono);font-size:10px;color:var(--muted2)}
 .sess-row input{flex:0 0 96px;text-align:right;padding:9px 10px;font-family:var(--mono)}
+.menu{position:absolute;right:14px;top:54px;background:var(--surface2);border:1px solid var(--line2);
+  border-radius:12px;padding:6px;z-index:60;display:none;min-width:190px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.menu.on{display:block}
+.menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;
+  color:var(--text);font-family:var(--sans);font-size:13px;padding:9px 10px;border-radius:8px;cursor:pointer}
+.menu button:hover{background:var(--surface3)}
+.menu button.danger{color:var(--down)}
+.menu .sep{height:1px;background:var(--line);margin:5px 4px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
   background:var(--text);color:#0A0A0A;font-weight:600;font-size:13px;padding:11px 18px;border-radius:11px;
   z-index:200;opacity:0;transition:.25s;pointer-events:none}
@@ -443,21 +425,13 @@ ul.kb li b{color:#fff;font-weight:600}
   .top-row,.sports,.teams{max-width:1000px;margin-left:auto;margin-right:auto;width:100%}
   #bar{max-width:1000px;margin-left:auto;margin-right:auto}
   #grid{max-width:1000px;margin:0 auto;width:100%}
-  body[data-view="matrix"] #grid,
-  body[data-view="matrix"] .top-row,
-  body[data-view="matrix"] .sports,
-  body[data-view="matrix"] .teams,
-  body[data-view="matrix"] #bar{max-width:none;margin-left:auto;margin-right:auto}
+  body[data-view="matrix"] #grid{max-width:none;margin:0}
   .tabbar{justify-content:center;gap:6px}
   .tabbar button{flex:0 0 128px}
   .wrap{padding-left:8px;padding-right:8px}
 }
 @media(min-width:1120px){
-  body[data-view="matrix"] #grid,
-  body[data-view="matrix"] .top-row,
-  body[data-view="matrix"] .sports,
-  body[data-view="matrix"] .teams,
-  body[data-view="matrix"] #bar{max-width:1400px;margin-left:auto;margin-right:auto}
+  body[data-view="matrix"] #grid{max-width:1400px;margin:0 auto}
 }
 /* very small phones: evita che l'header rubi spazio */
 @media(max-width:400px){
@@ -478,17 +452,7 @@ ul.kb li b{color:#fff;font-weight:600}
   .actions .btn.icon{width:33px;height:33px;font-size:15px}
   .top-row{gap:5px}
 }
-/* check-in card (soggettivo + parametri) */
-.ci-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-.ci-card{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
-.ci-nm{font-weight:700;font-size:14px;margin-bottom:9px}
-.ci-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.ci-grid label{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:15px}
-.ci-grid label span{font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.3px}
-.ci-grid select{width:100%;text-align:center;padding:6px 2px}
-.ci-vit{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.ci-vit label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
-.ci-vit input{flex:1;min-width:0;text-align:center}
+.tchk{padding:9px 4px}
 /* controllo di scorrimento matrice */
 .mnav{display:inline-flex;align-items:center;gap:8px;margin-left:auto;color:var(--muted2);font-size:11px}
 .mnav button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line2);background:var(--surface2);
@@ -506,38 +470,6 @@ ul.kb li b{color:#fff;font-weight:600}
   .set-row:hover{background:var(--surface3)}
   .tcard:hover,.grow:hover{border-color:var(--line2)}
 }
-/* ═══════════ Modulo anamnesi pubblico (link atleta) ═══════════ */
-.pubform{position:fixed;inset:0;z-index:200;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch;
-  padding:calc(24px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
-.pf-box{max-width:560px;margin:0 auto}
-.pf-load,.pf-gen{color:var(--muted);text-align:center;padding:40px 0}
-.pf-err2{color:var(--down);font-weight:700;text-align:center;padding:20px 0 8px}
-.pf-head{border-bottom:2px solid var(--line);padding-bottom:16px;margin-bottom:8px}
-.pf-brand{font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--accent);font-weight:700}
-.pf-head h1{font-size:24px;margin:6px 0 0;color:var(--text)}
-.pf-sub{color:var(--muted);font-size:14px;margin-top:8px;line-height:1.5}
-.pf-sub b{color:var(--text)}
-.pf-sec{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);margin:24px 0 10px}
-.pf-field{margin-bottom:13px}
-.pf-l{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px}
-.pf-field input,.pf-field select,.pf-field textarea{width:100%}
-.pf-note{background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:13px 14px;font-size:12.5px;
-  color:var(--muted);line-height:1.55;margin:6px 0 12px}
-.pf-note b{color:var(--text)}
-.pf-check{display:flex;align-items:flex-start;gap:11px;background:var(--surface2);border:1px solid var(--line2);
-  border-radius:11px;padding:14px;margin-bottom:12px;cursor:pointer}
-.pf-check input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--accent);margin-top:1px}
-.pf-check span{font-size:13.5px;color:var(--text);line-height:1.45}
-.pf-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:15px;
-  font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;min-height:52px}
-.pf-btn:disabled{opacity:.6}
-.pf-err{color:var(--down);font-size:13px;font-weight:600;margin:12px 0 0;min-height:16px;text-align:center}
-.pf-foot{color:var(--muted2);font-size:11px;text-align:center;margin-top:14px;line-height:1.5}
-.pf-done{text-align:center;padding-top:40px}
-.pf-ok{width:64px;height:64px;border-radius:50%;background:var(--up);color:#fff;font-size:34px;font-weight:800;
-  display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
-.pf-done h1{font-size:22px;color:var(--text)}
-.pf-p{color:var(--muted);font-size:14px;line-height:1.5;margin-top:10px;max-width:380px;margin-left:auto;margin-right:auto}
 </style>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0A0A0A">
@@ -567,23 +499,51 @@ ul.kb li b{color:#fff;font-weight:600}
     <input id="logPass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <div id="logErr" class="login-err"></div>
     <button class="btn primary" id="logBtn" style="width:100%;margin-top:14px" onclick="doLogin()">Entra</button>
-    <div class="login-forgot" onclick="openRecover()">Password dimenticata?</div>
-    <div class="login-note">Primo accesso? Scegli email e password: verrà creato il tuo spazio privato, protetto da password.</div>
+    <div class="login-forgot" onclick="openForgot()">Password dimenticata?</div>
+    <div class="login-forgot" onclick="openSignup()">Non hai un account? Registrati</div>
+    <div class="login-note">L'app tratta <b>dati sanitari</b>, anche di minori. L'accesso è personale: non condividere le credenziali e blocca sempre il dispositivo.</div>
+  </div>
+
+  <div class="login-card" id="fgtCard" style="display:none">
+    <div class="login-name">RECUPERA <b>PASSWORD</b></div>
+    <div class="login-sub">Ti mandiamo un link via email</div>
+    <label class="fl">Email dell'account</label>
+    <input id="fgtEmail" type="email" inputmode="email" autocomplete="username" placeholder="la-tua@email.it" onkeydown="if(event.key==='Enter')doForgot()">
+    <div id="fgtErr" class="login-err"></div>
+    <button class="btn primary" id="fgtBtn" style="width:100%;margin-top:14px" onclick="doForgot()">Invia link di recupero</button>
+    <div class="login-forgot" onclick="closeForgot()">← Torna all'accesso</div>
+    <div class="login-note">Il link scade dopo 30 minuti e funziona una sola volta. Se non arriva, controlla anche lo spam.</div>
+  </div>
+
+  <div class="login-card" id="rstCard" style="display:none">
+    <div class="login-name">NUOVA <b>PASSWORD</b></div>
+    <div class="login-sub">Scegline una che non usi altrove</div>
+    <label class="fl">Nuova password</label>
+    <input id="rstPass" type="password" autocomplete="new-password" placeholder="almeno 12 caratteri" oninput="pwMeter('rstMeter','rstPass')">
+    <div id="rstMeter" class="login-note" style="margin-top:6px"></div>
+    <label class="fl">Ripeti la password</label>
+    <input id="rstPass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetConfirm()">
+    <div id="rstErr" class="login-err"></div>
+    <button class="btn primary" id="rstBtn" style="width:100%;margin-top:14px" onclick="doResetConfirm()">Imposta la nuova password</button>
+    <div class="login-note">Impostando la nuova password verrai disconnesso da tutti gli altri dispositivi, per sicurezza.</div>
   </div>
 
   <div class="login-card" id="recCard" style="display:none">
-    <div class="login-name">RECUPERO <b>PASSWORD</b></div>
-    <div class="login-sub">Serve la tua chiave di recupero</div>
-    <label class="fl">Email dell'account</label>
-    <input id="recEmail" type="email" inputmode="email" placeholder="la-tua@email.it">
-    <label class="fl">Chiave di recupero</label>
-    <input id="recKey" type="password" placeholder="la chiave salvata su Vercel">
-    <label class="fl">Nuova password</label>
-    <input id="recNew" type="password" placeholder="min. 4 caratteri" onkeydown="if(event.key==='Enter')doRecover()">
+    <div class="login-name">NUOVO <b>ACCOUNT</b></div>
+    <div class="login-sub">Serve il codice di invito</div>
+    <label class="fl">Codice di invito</label>
+    <input id="suCode" type="password" placeholder="fornito dall'amministratore">
+    <label class="fl">Email</label>
+    <input id="suEmail" type="email" inputmode="email" autocomplete="username" placeholder="la-tua@email.it">
+    <label class="fl">Password</label>
+    <input id="suPass" type="password" autocomplete="new-password" placeholder="almeno 12 caratteri" oninput="pwMeter()">
+    <div id="suMeter" class="login-note" style="margin-top:6px"></div>
+    <label class="fl">Ripeti la password</label>
+    <input id="suPass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSignup()">
     <div id="recErr" class="login-err"></div>
-    <button class="btn primary" id="recBtn" style="width:100%;margin-top:14px" onclick="doRecover()">Reimposta password</button>
+    <button class="btn primary" id="recBtn" style="width:100%;margin-top:14px" onclick="doSignup()">Crea account</button>
     <div class="login-forgot" onclick="closeRecover()">← Torna all'accesso</div>
-    <div class="login-note">I tuoi <b>dati non vengono toccati</b>: sono legati all'email, non alla password.</div>
+    <div class="login-note">Non esiste un recupero automatico: se perdi la password i dati restano cifrati e inaccessibili. <b>Annotala in un gestore di password</b> ed esporta backup periodici.</div>
   </div>
 </div>
 
@@ -610,13 +570,38 @@ ul.kb li b{color:#fff;font-weight:600}
   <div class="sports" id="sports"></div>
 </div>
 
+<div class="menu" id="menu">
+  <button onclick="guideIndex()">📖 Guida ai test</button>
+  <button onclick="openBattery()">🎯 Batteria consigliata</button>
+  <button onclick="chooseTests()">🎚 Scegli test da monitorare</button>
+  <button onclick="openThresholds()">⚙️ Soglie di monitoraggio</button>
+  <button onclick="manageTeams()">👥 Gestisci squadre</button>
+  <div class="sep"></div>
+  <button onclick="exportJSON()">⬇️ Esporta backup (JSON)</button>
+  <button onclick="exportCSV()">📄 Esporta tabella (CSV)</button>
+  <button onclick="importJSON()">⬆️ Importa backup</button>
+  <button onclick="importForms()">📋 Importa anamnesi da Google Moduli</button>
+  <div class="sep"></div>
+  <button onclick="openPrivacy()">🛡 Privacy e conformità</button>
+  <button onclick="openSessions()">📱 Dispositivi collegati</button>
+  <div class="sep"></div>
+  <button onclick="loadDemo()">✨ Carica dati di esempio</button>
+  <button class="danger" onclick="wipe()">🗑 Svuota tutto</button>
+  <div class="sep"></div>
+  <button onclick="changePassword()">🔑 Cambia password</button>
+  <button onclick="lockNow()">🔒 Blocca schermo</button>
+  <button onclick="doLogout()">↩️ Esci (logout)</button>
+  <button class="danger" onclick="openErase()">☠️ Elimina account e dati</button>
+</div>
+
 <div class="legend" id="bar"></div>
 
-<div class="wrap"><div id="notice"></div><div id="grid"></div></div>
+<div class="wrap"><div id="grid"></div></div>
 
 <nav class="tabbar" id="tabbar"></nav>
 
-<input type="file" id="fileIn" accept="application/json" style="display:none">
+<input type="file" id="fileIn" accept="application/json,.json" style="display:none">
+<input type="file" id="formIn" accept=".csv,text/csv" style="display:none">
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -643,12 +628,27 @@ const TESTS=[
   {id:"pred", name:"xRM→1RM",  full:"1RM stimato (submassimale)",unit:"kg",      dir:1, cat:"Forza", sports:["forza","generale"]},
   {id:"vbt",  name:"VBT",      full:"Velocità bilanciere (load-velocity)",unit:"m/s",dir:1,cat:"Forza",sports:["forza","combattimento"]},
   {id:"imtp", name:"IMTP",     full:"Forza isometrica mid-thigh",unit:"N/kg",    dir:1, cat:"Forza", sports:["forza","pallavolo","basket","combattimento"], lv:{m:[22,28,34,40],f:[18,24,30,36]}},
-  {id:"nordic",name:"Nordic",   full:"Nordic hamstring — forza eccentrica ischiocrurali", unit:"N", dir:1, cat:"Forza", sports:["calcio","atletica","forza","generale"]},
   // ─ POTENZA / SALTO ─
   {id:"cmj",  name:"CMJ",      full:"Countermovement Jump",     unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
   {id:"sj",   name:"SJ",       full:"Squat Jump",               unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","forza","combattimento"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
   {id:"dj",   name:"Drop Jump",full:"Drop Jump — RSI",          unit:"RSI",      dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","combattimento"], lv:{m:[0.8,1.2,1.6,2.0],f:[0.6,1.0,1.4,1.7]}},
   {id:"eur",  name:"EUR",      full:"Elastic Index (CMJ ÷ SJ)", unit:"ratio",    dir:1, cat:"Potenza", sports:["pallavolo","basket"], derived:{from:["cmj","sj"], fn:(c,s)=> s? c/s : null}},
+  // ─ SALTO MONOPODALICO ─
+  {id:"cmj1lL", name:"CMJ 1L sx", full:"CMJ monopodalico — sinistra", unit:"cm", dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"]},
+  {id:"cmj1lR", name:"CMJ 1L dx", full:"CMJ monopodalico — destra",   unit:"cm", dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"]},
+  {id:"cmj1lAsym", name:"Asimm. CMJ 1L", full:"Asimmetria CMJ monopodalico", unit:"%", dir:-1, cat:"Asimmetria & funzionale",
+     sports:["pallavolo","basket","calcio","atletica","generale","combattimento"],
+     derived:{from:["cmj1lL","cmj1lR"], fn:(l,r)=>{ const mx=Math.max(l,r); return mx? Math.abs(l-r)/mx*100 : null; }}},
+  {id:"dj1lL", name:"DJ 1L sx", full:"Drop Jump monopodalico — sinistra — RSI", unit:"RSI", dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","combattimento"]},
+  {id:"dj1lR", name:"DJ 1L dx", full:"Drop Jump monopodalico — destra — RSI",   unit:"RSI", dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","combattimento"]},
+  {id:"dj1lAsym", name:"Asimm. DJ 1L", full:"Asimmetria Drop Jump monopodalico", unit:"%", dir:-1, cat:"Asimmetria & funzionale",
+     sports:["pallavolo","basket","atletica","combattimento"],
+     derived:{from:["dj1lL","dj1lR"], fn:(l,r)=>{ const mx=Math.max(l,r); return mx? Math.abs(l-r)/mx*100 : null; }}},
+  // ─ TEST DI BOSCO (salti ripetuti, potenza anaerobica) ─
+  // Formula di Bosco, Luhtanen, Komi (1983): P(W/kg) = g²·Tvolo·Tdurata / (4·n·(Tdurata−Tvolo))
+  {id:"bosco15", name:"Bosco 15s", full:"Test di Bosco — 15 secondi", unit:"W/kg", dir:1, cat:"Anaerobico", sports:["pallavolo","basket","calcio","atletica","combattimento","generale"]},
+  {id:"bosco30", name:"Bosco 30s", full:"Test di Bosco — 30 secondi", unit:"W/kg", dir:1, cat:"Anaerobico", sports:["pallavolo","basket","calcio","atletica","combattimento","generale"]},
+  {id:"bosco60", name:"Bosco 60s", full:"Test di Bosco — 60 secondi", unit:"W/kg", dir:1, cat:"Anaerobico", sports:["pallavolo","basket","calcio","atletica","combattimento","generale"]},
   // ─ VELOCITÀ / AGILITÀ ─
   {id:"spr10",name:"Sprint 10m",full:"Sprint 10 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo","atletica","combattimento"], lv:{m:[2.10,1.95,1.85,1.75],f:[2.30,2.15,2.05,1.95]}},
   {id:"spr30",name:"Sprint 30m",full:"Sprint 30 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","atletica"], lv:{m:[4.80,4.50,4.25,4.00],f:[5.20,4.90,4.60,4.35]}},
@@ -714,7 +714,11 @@ function load(){
   try{ const r=localStorage.getItem(KEY); if(r) S=JSON.parse(r); }catch(e){}
   normalize();
 }
-const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acwrCritLow:0.5, acwrCritHigh:1.5, cmjDrop:5, painCut:4};
+const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acwrCritLow:0.5, acwrCritHigh:1.5, cmjDrop:5, painCut:4,
+  rdBaseMin:7, rdZAmber:-1.0, rdZRed:-1.5, cmjMinBase:5, cmjNoise:1.5, acwrMinDays:14,
+  // Curva carico-velocità: soglie MODIFICABILI dal coach, non valori assoluti di letteratura.
+  lvMVT:0.30,               // velocità minima (m/s) usata per stimare l'1RM, regolabile per esercizio
+  lvRelStrengthGate:1.5};   // 1RM stimato ÷ peso corporeo: sopra questa soglia si considera "forza relativa sufficiente"
 function normalize(){
   if(!S.sport) S.sport="pallavolo";
   if(!S.view) S.view="today";
@@ -722,140 +726,376 @@ function normalize(){
   if(!S.teams) S.teams=[];
   if(!S.readiness) S.readiness={};
   if(!S.load) S.load={};
-  if(!S.anamAck) S.anamAck={};
+  if(!S.screen) S.screen={};   // valutazioni posturali/funzionali, una per data
+  if(!S.lv) S.lv={};           // sessioni di curva carico-velocità
   if(!S.cvar) S.cvar="percussione";
   if(!S.cfg) S.cfg={};
   Object.keys(CFG_DEF).forEach(k=>{ if(typeof S.cfg[k]!=="number"||isNaN(S.cfg[k])) S.cfg[k]=CFG_DEF[k]; });
   if(!S.activeTeam) S.activeTeam="all";
+  pruneTombs();
   // migrazione: atleti senza squadra → crea una squadra di default
   if(S.athletes.length && S.teams.length===0){
     const tid=uid(); S.teams.push({id:tid, name:"Squadra 1", sport:S.sport});
     S.athletes.forEach(a=>{ if(!a.team) a.team=tid; });
   }
 }
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} if(AUTH&&AUTH.email) triggerCloud(); }
+/* Le tombstone viaggiano dentro il payload sincronizzato e non si cancellano
+   da sole: senza potatura crescono per sempre e mangiano il limite di 6 MB.
+   Un anno è molto oltre qualsiasi periodo plausibile di disconnessione di un
+   dispositivo; oltre quella soglia, resuscitare un record cancellato è meno
+   grave che gonfiare il salvataggio a ogni sincronizzazione. */
+const TOMB_TTL_DAYS=365;
+function pruneTombs(){
+  if(!S.tomb) { S.tomb={}; return; }
+  const limite=Date.now()-TOMB_TTL_DAYS*864e5;
+  Object.keys(S.tomb).forEach(k=>{
+    const t=Date.parse(S.tomb[k]);
+    if(isFinite(t) && t<limite) delete S.tomb[k];
+  });
+}
+
+function save(){
+  S._dirty=true;
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("Memoria del dispositivo piena"); }
+  if(AUTH&&AUTH.token) triggerCloud();
+}
 
 /* ═══════════════ LOGIN + CLOUD ═══════════════ */
 const API="/api/store";
-const AUTHKEY="ip_auth";
-let AUTH=null;            // {email, password}
-let _cloudTimer=null;
+const AUTHKEY="ip_auth";        // ora contiene {email, token} — MAI la password
+let AUTH=null;
+let _cloudTimer=null, _retryTimer=null, _retryMs=0, _saving=false;
+let CLOUD_V=0;                   // versione dello stato vista dal server
 
-function setSync(state){
+function setSync(state,msg){
   const d=document.getElementById("syncDot"); if(!d) return;
   d.className="sdot"+(state==="saving"?" saving":state==="off"?" off":"");
-  d.title = state==="saving"?"Salvataggio…":state==="off"?"Offline — salvato sul dispositivo":"Sincronizzato";
+  d.title = msg || (state==="saving"?"Salvataggio…":
+            state==="off"?"In attesa di rete — i dati sono salvati sul dispositivo e verranno inviati appena possibile":
+            "Sincronizzato");
 }
+
 function apiCall(action, extra){
-  return fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(Object.assign({action,email:AUTH.email,password:AUTH.password},extra||{}))})
-    .then(r=>r.json().then(j=>{ if(!r.ok){ const e=new Error(j.error||("HTTP "+r.status)); e.status=r.status; throw e; } return j; }));
+  const h={"Content-Type":"application/json"};
+  if(AUTH&&AUTH.token) h["Authorization"]="Bearer "+AUTH.token;
+  return fetch(API,{method:"POST",headers:h,
+    body:JSON.stringify(Object.assign({action},extra||{}))})
+    .then(r=>r.json().catch(()=>({})).then(j=>{
+      if(!r.ok){ const e=new Error(j.error||("HTTP "+r.status)); e.status=r.status; e.body=j; throw e; }
+      return j; }));
 }
-function triggerCloud(){ clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSave,1400); }
+
+/* ── Merge per record ──────────────────────────────────────────────────────
+   Il vecchio sync sovrascriveva l'intero stato: chi salvava per ultimo
+   cancellava il lavoro dell'altro. Qui uniamo record per record e usiamo
+   le tombstone per non far "resuscitare" ciò che è stato cancellato.      */
+function tombs(o){ return (o&&o.tomb)||{}; }
+
+/* Le tombstone esistevano solo per gli atleti: mergeState filtrava le squadre
+   su tomb["team:"+id], una chiave che nessuno scriveva mai, e le cancellazioni
+   di misure, check-in e carichi non lasciavano alcuna traccia. Risultato: sul
+   percorso di merge (409, o rientro con dati locali non sincronizzati) tutto
+   ciò che era stato cancellato tornava indietro dal server. Il coach correggeva
+   un dato sbagliato sul telefono, apriva il tablet, e il dato era di nuovo lì.
+
+   Prefissi delle chiavi:
+     ath:<idAtleta>                          atleta
+     team:<idSquadra>                        squadra
+     m:<idAtleta>:<idTest>:<data>            misurazione di un test
+     r:<idAtleta>:<data>                     check-in readiness
+     l:<idAtleta>:<data>                     registrazione di carico
+     s:<idAtleta>:<data>                     valutazione posturale
+     v:<idAtleta>:<data>|<esercizio>         curva carico-velocità          */
+function tombSet(key){
+  if(!S.tomb) S.tomb={};
+  S.tomb[key]=new Date().toISOString();
+}
+const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v"};
+
+/* Le curve carico-velocità ammettono più esercizi nella stessa data: la chiave
+   di merge non può essere la sola data, o il secondo esercizio sparisce. */
+function recKey(e){ return e.exercise ? e.d+"|"+e.exercise : e.d; }
+
+function mergeByDate(a,b,tp,T){
+  const m={};
+  (a||[]).forEach(e=>{ if(e&&e.d) m[recKey(e)]=e; });
+  (b||[]).forEach(e=>{ if(e&&e.d) m[recKey(e)]=e; });   // il locale vince a parità di chiave
+  return Object.keys(m)
+    .filter(k=> !(tp && T && T[tp+k]))                  // scartato: cancellato altrove
+    .sort()
+    .map(k=>m[k]);
+}
+function mergeState(server, local){
+  if(!server||typeof server!=="object") return local;
+  const out=JSON.parse(JSON.stringify(server));
+  const T=Object.assign({}, tombs(server), tombs(local));
+  out.tomb=T;
+
+  const byId=arr=>{ const m={}; (arr||[]).forEach(x=>{ if(x&&x.id) m[x.id]=x; }); return m; };
+  const mt=Object.assign(byId(server.teams), byId(local.teams));
+  out.teams=Object.keys(mt).filter(id=>!T["team:"+id]).map(id=>mt[id]);
+  const ma=Object.assign(byId(server.athletes), byId(local.athletes));
+  out.athletes=Object.keys(ma).filter(id=>!T["ath:"+id]).map(id=>ma[id]);
+
+  const live={}; out.athletes.forEach(a=>live[a.id]=1);
+  ["data","readiness","load","screen","lv"].forEach(k=>{ if(!out[k]) out[k]={}; });
+
+  Object.keys(Object.assign({},server.data||{},local.data||{})).forEach(aid=>{
+    if(!live[aid]){ delete out.data[aid]; return; }
+    const sv=(server.data||{})[aid]||{}, lo=(local.data||{})[aid]||{};
+    const tests={}; Object.keys(sv).concat(Object.keys(lo)).forEach(t=>tests[t]=1);
+    out.data[aid]={};
+    Object.keys(tests).forEach(t=>{
+      const arr=mergeByDate(sv[t],lo[t],"m:"+aid+":"+t+":",T);
+      if(arr.length) out.data[aid][t]=arr; // un test svuotato non resta come chiave vuota
+    });
+  });
+  ["readiness","load","screen","lv"].forEach(k=>{
+    Object.keys(Object.assign({},server[k]||{},local[k]||{})).forEach(aid=>{
+      if(!live[aid]){ delete out[k][aid]; return; }
+      const arr=mergeByDate((server[k]||{})[aid],(local[k]||{})[aid],TOMB_PREFIX[k]+":"+aid+":",T);
+      if(arr.length) out[k][aid]=arr; else delete out[k][aid];
+    });
+  });
+
+  out.cfg=local.cfg||server.cfg; out.sport=local.sport||server.sport;
+  out.view=local.view||server.view; out.activeTeam=local.activeTeam||server.activeTeam;
+  return out;
+}
+
+function triggerCloud(){ clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSave,1200); }
+
+function scheduleRetry(){
+  // backoff: 5s, 10s, 20s… fino a 5 minuti. La coda non si perde.
+  _retryMs = _retryMs ? Math.min(_retryMs*2, 300000) : 5000;
+  clearTimeout(_retryTimer);
+  _retryTimer=setTimeout(cloudSave,_retryMs);
+  setSync("off","Non sincronizzato — nuovo tentativo tra "+Math.round(_retryMs/1000)+"s");
+}
+
 function cloudSave(){
-  if(!AUTH) return;
-  setSync("saving");
-  apiCall("save",{data:S}).then(()=>setSync("ok")).catch(()=>setSync("off"));
+  if(!AUTH||!AUTH.token||_saving) return;
+  if(!S._dirty){ setSync("ok"); return; }
+  _saving=true; setSync("saving");
+  const snap=JSON.parse(JSON.stringify(S)); delete snap._dirty;
+  apiCall("save",{data:snap, baseVersion:CLOUD_V}).then(j=>{
+    _saving=false; _retryMs=0; CLOUD_V=j.version||CLOUD_V+1;
+    S._dirty=false; try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
+    setSync("ok");
+  }).catch(e=>{
+    _saving=false;
+    if(e.status===401){ showLogin("Sessione scaduta, rientra"); return; }
+    if(e.status===400){
+      // Il server rifiuta un salvataggio senza baseVersion valida. Non ha senso
+      // riprovare con lo stesso payload: ricarichiamo la versione dal server
+      // e lasciamo che il prossimo salvataggio riparta da un numero buono.
+      apiCall("load").then(j=>{
+        CLOUD_V = Number.isFinite(j&&j.version) ? j.version : 0;
+        if(j&&j.data){ S=mergeState(j.data,S); normalize(); render(); }
+        S._dirty=true; triggerCloud();
+      }).catch(()=>scheduleRetry());
+      return;
+    }
+    if(e.status===409){
+      // Un altro dispositivo ha salvato nel frattempo: uniamo invece di sovrascrivere.
+      S=mergeState(e.body&&e.body.serverData, S);
+      // `||` trattava la versione 0 come assente e la scartava, lasciando
+      // CLOUD_V disallineato: il salvataggio successivo rimbalzava di nuovo in 409.
+      CLOUD_V = (e.body && Number.isFinite(e.body.version)) ? e.body.version : CLOUD_V;
+      normalize(); S._dirty=true;
+      try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(err){}
+      render(); toast("Dati uniti con l'altro dispositivo");
+      clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSave,600);
+      return;
+    }
+    if(e.status===413){ setSync("off","Dati troppo grandi: esporta un backup e archivia le stagioni chiuse"); return; }
+    scheduleRetry();
+  });
 }
+
+// Appena torna la rete o l'app riprende il fuoco, svuota la coda.
+window.addEventListener("online", ()=>{ _retryMs=0; cloudSave(); });
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) cloudSave(); });
+window.addEventListener("beforeunload", (ev)=>{
+  if(AUTH&&S._dirty){ ev.preventDefault(); ev.returnValue="Ci sono dati non ancora sincronizzati."; }
+});
 function showLogin(msg){
   document.getElementById("login").classList.remove("hide");
   const err=document.getElementById("logErr"); if(err) err.textContent=msg||"";
   const e=document.getElementById("logEmail"); if(e&&AUTH&&AUTH.email&&!e.value) e.value=AUTH.email;
 }
 function hideLogin(){ document.getElementById("login").classList.add("hide"); }
-function openRecover(){
+const MIN_PW=12;
+function openSignup(){
   document.getElementById("logCard").style.display="none";
-  const r=document.getElementById("recCard"); r.style.display="block";
+  document.getElementById("recCard").style.display="block";
   document.getElementById("recErr").textContent="";
   const em=document.getElementById("logEmail").value.trim();
-  if(em) document.getElementById("recEmail").value=em;
+  if(em) document.getElementById("suEmail").value=em;
+  pwMeter();
 }
+function openRecover(){ openSignup(); }
 function closeRecover(){
   document.getElementById("recCard").style.display="none";
   document.getElementById("logCard").style.display="block";
-  ["recKey","recNew"].forEach(id=>document.getElementById(id).value="");
-}
-function doRecover(){
-  const email=document.getElementById("recEmail").value.trim().toLowerCase();
-  const key=document.getElementById("recKey").value;
-  const np=document.getElementById("recNew").value;
-  const err=document.getElementById("recErr"), btn=document.getElementById("recBtn");
-  if(!email||!key||!np){ err.textContent="Compila tutti i campi"; return; }
-  if(np.length<4){ err.textContent="Nuova password troppo corta (min 4)"; return; }
-  err.textContent=""; btn.disabled=true; btn.textContent="Reimposto…";
-  fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action:"reset", email, recoveryKey:key, newPassword:np})})
-    .then(r=>r.json().then(j=>{ if(!r.ok) throw new Error(j.error||("HTTP "+r.status)); return j; }))
-    .then(()=>{
-      btn.disabled=false; btn.textContent="Reimposta password";
-      closeRecover();
-      document.getElementById("logEmail").value=email;
-      document.getElementById("logPass").value="";
-      document.getElementById("logErr").textContent="";
-      document.getElementById("logErr").style.color="var(--up)";
-      document.getElementById("logErr").textContent="Password reimpostata. Ora entra con quella nuova.";
-    })
-    .catch(e=>{ btn.disabled=false; btn.textContent="Reimposta password"; err.textContent=e.message; });
+  ["suCode","suPass","suPass2"].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=""; });
 }
 
-function loginLock(){ try{ return JSON.parse(localStorage.getItem("ip_lock")||"{}"); }catch(e){ return {}; } }
-function setLoginLock(o){ try{ localStorage.setItem("ip_lock", JSON.stringify(o)); }catch(e){} }
-function lockRemaining(){ const l=loginLock(); return (l.until && Date.now()<l.until)? Math.ceil((l.until-Date.now())/1000) : 0; }
+/* ── Password dimenticata ── */
+function hideAllLoginCards(){
+  ["logCard","recCard","fgtCard","rstCard"].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display="none"; });
+}
+function openForgot(){
+  hideAllLoginCards();
+  document.getElementById("fgtCard").style.display="block";
+  document.getElementById("fgtErr").textContent="";
+  const em=document.getElementById("logEmail").value.trim();
+  if(em) document.getElementById("fgtEmail").value=em;
+}
+function closeForgot(){
+  hideAllLoginCards();
+  document.getElementById("logCard").style.display="block";
+  document.getElementById("fgtEmail").value="";
+}
+function doForgot(){
+  const email=document.getElementById("fgtEmail").value.trim().toLowerCase();
+  const err=document.getElementById("fgtErr"), btn=document.getElementById("fgtBtn");
+  if(!email){ err.textContent="Inserisci l'email"; return; }
+  err.textContent=""; btn.disabled=true; btn.textContent="Invio…";
+  // La risposta del server è identica che l'account esista o no: non deve
+  // rivelare quali email sono registrate. Qui mostriamo sempre lo stesso esito.
+  apiCall("forgot",{email}).then(()=>{
+    btn.disabled=false; btn.textContent="Invia link di recupero";
+    hideAllLoginCards();
+    document.getElementById("logCard").style.display="block";
+    err.textContent="";
+    const le=document.getElementById("logErr");
+    le.style.color="var(--up)";
+    le.textContent="Se l'indirizzo è registrato, riceverai un'email con le istruzioni entro qualche minuto.";
+  }).catch(e=>{
+    btn.disabled=false; btn.textContent="Invia link di recupero";
+    err.textContent="Errore di rete: "+e.message;
+  });
+}
+
+/* ── Nuova password da link email ── */
+let RESET_TOKEN=null;
+function openResetCard(token){
+  RESET_TOKEN=token;
+  hideAllLoginCards();
+  document.getElementById("rstCard").style.display="block";
+  document.getElementById("rstErr").textContent="";
+  pwMeter("rstMeter","rstPass");
+}
+function doResetConfirm(){
+  const p1=document.getElementById("rstPass").value, p2=document.getElementById("rstPass2").value;
+  const err=document.getElementById("rstErr"), btn=document.getElementById("rstBtn");
+  if(!p1){ err.textContent="Inserisci la nuova password"; return; }
+  if(p1.length<MIN_PW){ err.textContent="Password troppo corta (minimo "+MIN_PW+" caratteri)"; return; }
+  if(pwStrength(p1)<3){ err.textContent="Password troppo prevedibile: allungala o variala"; return; }
+  if(p1!==p2){ err.textContent="Le due password non coincidono"; return; }
+  if(!RESET_TOKEN){ err.textContent="Link non valido: richiedine uno nuovo"; return; }
+  err.textContent=""; btn.disabled=true; btn.textContent="Aggiorno…";
+  apiCall("reset_confirm",{token:RESET_TOKEN, newPassword:p1}).then(j=>{
+    AUTH={email:j.email, token:j.token};
+    try{ localStorage.setItem(AUTHKEY, JSON.stringify(AUTH)); }catch(e){}
+    RESET_TOKEN=null;
+    try{ const u=new URL(location.href); u.searchParams.delete("reset"); history.replaceState({},"",u.toString()); }catch(e){}
+    CLOUD_V=0; normalize(); S._dirty=true;
+    hideAllLoginCards(); hideLogin(); setSync("ok"); render(); armLock(); cloudSave();
+    btn.disabled=false; btn.textContent="Imposta la nuova password";
+    toast("Password aggiornata");
+  }).catch(e=>{
+    btn.disabled=false; btn.textContent="Imposta la nuova password";
+    err.textContent = e.status===400 ? e.message : ("Errore: "+e.message);
+  });
+}
+function pwStrength(p){
+  p=String(p||""); let s=0;
+  if(p.length>=12) s++; if(p.length>=16) s++;
+  if(/[a-z]/.test(p)&&/[A-Z]/.test(p)) s++;
+  if(/[0-9]/.test(p)) s++; if(/[^A-Za-z0-9]/.test(p)) s++;
+  if(/^(.)\1+$/.test(p)||/^(123|abc|qwerty|password)/i.test(p)) s=0;
+  return s;
+}
+function pwMeter(meterId,inputId){
+  const el=document.getElementById(meterId||"suMeter"); if(!el) return;
+  const p=(document.getElementById(inputId||"suPass")||{}).value||"";
+  if(!p){ el.textContent="Minimo 12 caratteri. Una frase lunga batte una parola complicata."; el.style.color=""; return; }
+  const s=pwStrength(p);
+  const lbl=["molto debole","debole","accettabile","buona","robusta","molto robusta"][s]||"debole";
+  el.textContent="Robustezza: "+lbl+(p.length<MIN_PW?" — troppo corta":"");
+  el.style.color = (p.length<MIN_PW||s<3) ? "var(--down)" : "var(--up)";
+}
+function doSignup(){
+  const code=document.getElementById("suCode").value;
+  const email=document.getElementById("suEmail").value.trim().toLowerCase();
+  const p1=document.getElementById("suPass").value, p2=document.getElementById("suPass2").value;
+  const err=document.getElementById("recErr"), btn=document.getElementById("recBtn");
+  if(!code||!email||!p1){ err.textContent="Compila tutti i campi"; return; }
+  if(p1.length<MIN_PW){ err.textContent="Password troppo corta (minimo "+MIN_PW+" caratteri)"; return; }
+  if(pwStrength(p1)<3){ err.textContent="Password troppo prevedibile: allungala o variala"; return; }
+  if(p1!==p2){ err.textContent="Le due password non coincidono"; return; }
+  err.textContent=""; btn.disabled=true; btn.textContent="Creo…";
+  apiCall("signup",{code, email, password:p1}).then(j=>{
+    AUTH={email:j.email, token:j.token};
+    try{ localStorage.setItem(AUTHKEY, JSON.stringify(AUTH)); }catch(e){}
+    CLOUD_V=0; normalize(); S._dirty=true;
+    closeRecover(); hideLogin(); setSync("ok"); render(); cloudSave();
+    btn.disabled=false; btn.textContent="Crea account";
+    toast("Account creato");
+  }).catch(e=>{
+    btn.disabled=false; btn.textContent="Crea account";
+    err.textContent=e.message;
+  });
+}
+
 function doLogin(){
   const email=document.getElementById("logEmail").value.trim().toLowerCase();
   const pass=document.getElementById("logPass").value;
   const err=document.getElementById("logErr"), btn=document.getElementById("logBtn");
   err.style.color="";
-  const rem=lockRemaining();
-  if(rem>0){ err.textContent="Troppi tentativi falliti. Riprova tra "+rem+" s."; return; }
   if(!email||!pass){ err.textContent="Inserisci email e password"; return; }
   err.textContent=""; btn.disabled=true; btn.textContent="Accesso…";
-  AUTH={email,password:pass};
-  apiCall("load").then(j=>{
-    setLoginLock({});
+  // La password serve solo per questa chiamata: non viene mai salvata.
+  apiCall("login",{email, password:pass}).then(j=>{
+    AUTH={email:j.email, token:j.token};
     try{ localStorage.setItem(AUTHKEY, JSON.stringify(AUTH)); }catch(e){}
-    if(j && j.data) S=j.data;
-    normalize();
+    document.getElementById("logPass").value="";
+    return apiCall("load");
+  }).then(j=>{
+    // Se sul dispositivo c'erano modifiche non sincronizzate, si uniscono.
+    const localDirty = S && S._dirty && (S.athletes||[]).length;
+    S = (j && j.data) ? (localDirty ? mergeState(j.data, S) : j.data) : S;
+    CLOUD_V = (j && j.version) || 0;
+    normalize(); S._dirty=!!localDirty;
     try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
-    hideLogin(); setSync("ok"); render(); startIdle();
-    btn.disabled=false; btn.textContent="Entra"; document.getElementById("logPass").value="";
+    hideLogin(); setSync("ok"); render(); armLock();
+    if(S._dirty) cloudSave();
+    btn.disabled=false; btn.textContent="Entra";
   }).catch(e=>{
     AUTH=null; btn.disabled=false; btn.textContent="Entra";
-    if(e.status===401){
-      const l=loginLock(); l.fails=(l.fails||0)+1;
-      if(l.fails>=5){ const steps=[30,60,120,300,600]; l.until=Date.now()+steps[Math.min(l.fails-5,steps.length-1)]*1000; }
-      setLoginLock(l);
-      const left=5-(l.fails||0);
-      err.textContent = (l.until && Date.now()<l.until)
-        ? ("Troppi tentativi. Bloccato per "+Math.ceil((l.until-Date.now())/1000)+" s.")
-        : ("Password errata"+(left>0&&left<=3?" · "+left+" tentativi rimasti":""));
-    } else err.textContent="Errore di rete: "+e.message;
+    err.textContent = e.status===401 ? "Email o password non corretti"
+                    : e.status===429 ? e.message
+                    : ("Errore di rete: "+e.message);
   });
 }
 function doLogout(){
-  if(!confirm("Uscire? I dati restano nel cloud e si ricaricano al prossimo accesso.")) return;
-  AUTH=null;
-  try{ localStorage.removeItem(AUTHKEY); localStorage.removeItem(KEY); }catch(e){}
-  S={athletes:[],data:{},teams:[],sport:"pallavolo",view:"today",activeTeam:"all"};
-  clearTimeout(IDLE_T);
-  showLogin();
-}
-/* ── Auto-logout per inattività ── */
-let IDLE_T=null, IDLE_LISTEN=false; const IDLE_MS=15*60*1000;
-function startIdle(){
-  if(!IDLE_LISTEN){ IDLE_LISTEN=true; ["click","keydown","touchstart","scroll"].forEach(ev=>document.addEventListener(ev, resetIdle, {passive:true})); }
-  resetIdle();
-}
-function resetIdle(){ clearTimeout(IDLE_T); if(!AUTH) return; IDLE_T=setTimeout(idleLogout, IDLE_MS); }
-function idleLogout(){
-  if(!AUTH) return;
-  AUTH=null; clearTimeout(IDLE_T);
-  try{ localStorage.removeItem(AUTHKEY); }catch(e){}
-  showLogin();
-  const err=document.getElementById("logErr");
-  if(err){ err.style.color="var(--muted)"; err.textContent="Sessione scaduta per inattività — rientra per continuare."; }
+  if(S && S._dirty){
+    if(!confirm("Ci sono dati NON ancora sincronizzati: uscendo vanno persi.\n\nUscire lo stesso?")) return;
+  } else if(!confirm("Uscire? I dati restano sul server e si ricaricano al prossimo accesso.")) return;
+  const bye = AUTH ? apiCall("logout").catch(()=>{}) : Promise.resolve();
+  bye.then(()=>{
+    AUTH=null; CLOUD_V=0;
+    clearTimeout(_cloudTimer); clearTimeout(_retryTimer);
+    try{ localStorage.removeItem(AUTHKEY); localStorage.removeItem(KEY); }catch(e){}
+    S={athletes:[],data:{},teams:[],sport:"pallavolo",view:"matrix",activeTeam:"all"};
+    document.getElementById("menu").classList.remove("on");
+    showLogin();
+  });
 }
 function openThresholds(){
+  document.getElementById("menu").classList.remove("on");
   const c=S.cfg;
   const f=(k,lbl,step,hint)=>'<div class="thr"><label>'+lbl+'</label><input type="number" step="'+(step||1)+'" id="cfg_'+k+'" value="'+c[k]+'">'+(hint?'<div class="thrh">'+hint+'</div>':'')+'</div>';
   let h='<div class="mh"><div><div class="mt">Soglie di monitoraggio</div>'+
@@ -871,9 +1111,16 @@ function openThresholds(){
      f("acwrHigh","Zona ok — massimo",0.05)+
      f("acwrCritLow","Critico (basso) se <",0.05)+
      f("acwrCritHigh","Critico (alto) se >",0.05);
-  h+='<div class="psec">CMJ & dolore</div>'+
-     f("cmjDrop","Calo CMJ % = fatica (es. 5)",0.5)+
+  h+='<div class="psec">CMJ &amp; dolore</div>'+
+     f("cmjDrop","Calo CMJ % = fatica (soglia minima)",0.5,"La soglia effettiva non scende mai sotto CV × moltiplicatore: sotto quel valore staresti leggendo rumore.")+
+     f("cmjMinBase","Misurazioni minime per la baseline",1,"Con meno di 5-7 rilevazioni la media non è stabile.")+
+     f("cmjNoise","Moltiplicatore del rumore (CV)",0.1,"1.5 × CV è un compromesso ragionevole tra falsi allarmi e sensibilità.")+
      f("painCut","Dolore segnalato se ≥ (0-10)",1);
+  h+='<div class="psec">Baseline readiness</div>'+
+     f("rdBaseMin","Check-in minimi per la baseline personale",1,"Sotto questa soglia si usano i valori assoluti sopra, ed è dichiarato nell'interfaccia.")+
+     f("rdZAmber","Ambra se z ≤",0.1,"Scostamento in deviazioni standard dalla media dell'atleta.")+
+     f("rdZRed","Rosso se z ≤",0.1)+
+     f("acwrMinDays","Giorni minimi di carico per l'ACWR",1,"Sotto i 14 giorni il carico cronico è sottostimato e l'indice esce falsamente alto.");
   h+='<div class="thr-act"><button class="btn sm" onclick="resetThresholds()">Ripristina default</button>'+
      '<button class="btn primary" onclick="saveThresholds()">Salva soglie</button></div>';
   modal(h);
@@ -892,13 +1139,15 @@ function saveThresholds(){
 function resetThresholds(){ Object.keys(CFG_DEF).forEach(k=>S.cfg[k]=CFG_DEF[k]); save(); render(); openThresholds(); toast("Default ripristinati"); }
 
 function changePassword(){
+  document.getElementById("menu").classList.remove("on");
   modal('<div class="mh"><div><div class="mt">Cambia password</div>'+
     '<div class="ms">Account: '+(AUTH?esc(AUTH.email):'')+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>'+
     '<label class="fl">Password attuale</label>'+
     '<input id="cpOld" type="password" autocomplete="current-password">'+
     '<label class="fl">Nuova password</label>'+
-    '<input id="cpNew" type="password" autocomplete="new-password" placeholder="almeno 4 caratteri">'+
+    '<input id="cpNew" type="password" autocomplete="new-password" placeholder="almeno 12 caratteri">'+
+    '<div class="gnote" style="margin-top:8px">Cambiando password gli <b>altri dispositivi collegati verranno disconnessi</b>.</div>'+
     '<div id="cpErr" class="login-err"></div>'+
     '<div style="height:14px"></div>'+
     '<button class="btn primary" id="cpBtn" style="width:100%" onclick="doChangePass()">Aggiorna password</button>');
@@ -907,145 +1156,160 @@ function doChangePass(){
   const oldp=document.getElementById("cpOld").value, neu=document.getElementById("cpNew").value;
   const err=document.getElementById("cpErr"), btn=document.getElementById("cpBtn");
   if(!oldp||!neu){ err.textContent="Compila entrambi i campi"; return; }
-  if(neu.length<4){ err.textContent="La nuova password è troppo corta (min 4)"; return; }
+  if(neu.length<MIN_PW){ err.textContent="La nuova password è troppo corta (minimo "+MIN_PW+")"; return; }
+  if(pwStrength(neu)<3){ err.textContent="Password troppo prevedibile: allungala o variala"; return; }
+  if(neu===oldp){ err.textContent="La nuova password è uguale a quella attuale"; return; }
   err.textContent=""; btn.disabled=true; btn.textContent="Aggiorno…";
-  AUTH.password=oldp;
-  apiCall("changepass",{newPassword:neu}).then(()=>{
-    AUTH.password=neu;
-    try{ localStorage.setItem(AUTHKEY, JSON.stringify(AUTH)); }catch(e){}
-    closeM(); toast("Password aggiornata");
+  // La password non entra più in AUTH: viaggia solo dentro questa chiamata.
+  apiCall("changepass",{oldPassword:oldp, newPassword:neu}).then(()=>{
+    closeM(); toast("Password aggiornata · altri dispositivi disconnessi");
   }).catch(e=>{
     btn.disabled=false; btn.textContent="Aggiorna password";
     err.textContent = e.status===401 ? "Password attuale errata" : ("Errore: "+e.message);
   });
 }
+/* ═══════════════ PRIVACY, SESSIONI, BLOCCO ═══════════════ */
+const LOCK_MIN=15;
+let _lockTimer=null;
+function armLock(){
+  clearTimeout(_lockTimer);
+  if(!AUTH) return;
+  _lockTimer=setTimeout(lockNow, LOCK_MIN*60000);
+}
+function lockNow(){
+  if(!AUTH) return;
+  // Il token resta valido: si richiude solo lo schermo. Un tablet lasciato
+  // sul carrello in palestra non deve mostrare anamnesi di minori.
+  document.getElementById("menu").classList.remove("on");
+  closeM();
+  showLogin("Schermo bloccato per inattività — reinserisci la password");
+  document.getElementById("logEmail").value=AUTH.email;
+}
+["click","keydown","touchstart"].forEach(ev=>document.addEventListener(ev, armLock, {passive:true}));
+
+function openSessions(){
+  document.getElementById("menu").classList.remove("on");
+  modal('<div class="mh"><div><div class="mt">Dispositivi collegati</div><div class="ms">Carico…</div></div>'+
+        '<button class="mcl" onclick="closeM()">✕</button></div>');
+  apiCall("sessions").then(j=>{
+    let h='<div class="mh"><div><div class="mt">Dispositivi collegati</div>'+
+      '<div class="ms">'+(j.sessions||[]).length+' sessioni attive</div></div>'+
+      '<button class="mcl" onclick="closeM()">✕</button></div>';
+    (j.sessions||[]).forEach(s=>{
+      h+='<div class="bgrp"><div class="bt">'+(s.current?'📍 Questo dispositivo':'📱 Altro dispositivo')+'</div>'+
+         '<div class="bw">'+esc(String(s.user_agent||"—").slice(0,90))+'</div>'+
+         '<div class="bw">ultimo accesso '+fmtDate(String(s.last_seen).slice(0,10))+' · scade '+fmtDate(String(s.expires_at).slice(0,10))+'</div></div>';
+    });
+    h+='<div style="height:12px"></div><button class="btn" style="width:100%" onclick="logoutAll()">Disconnetti tutti gli altri dispositivi</button>';
+    modal(h);
+  }).catch(e=>toast("Errore: "+e.message));
+}
+function logoutAll(){
+  if(!confirm("Disconnettere TUTTI i dispositivi, incluso questo?")) return;
+  apiCall("logout_all").then(()=>{
+    AUTH=null; try{ localStorage.removeItem(AUTHKEY); localStorage.removeItem(KEY); }catch(e){}
+    closeM(); showLogin("Tutte le sessioni sono state chiuse");
+  }).catch(e=>toast("Errore: "+e.message));
+}
+
+function consentGaps(){
+  // Dati sanitari senza consenso tracciato = trattamento privo di base giuridica.
+  const CLIN=["conditions","surgeries","familyHistory","meds","supplements","allergies",
+              "injuriesCurrent","injuriesPast","painLevel","medical"];
+  return (S.athletes||[]).filter(a=>{
+    const p=a.profile||{};
+    const hasClin = CLIN.some(k=>p[k]!=null && String(p[k]).trim()!=="") ||
+                    SCREEN_KEYS.some(k=>p[k]);
+    if(!hasClin) return false;
+    return !(p.consent && p.consentDate);
+  });
+}
+function openPrivacy(){
+  document.getElementById("menu").classList.remove("on");
+  const gaps=consentGaps();
+  const minors=(S.athletes||[]).filter(a=>{ const g=ageFrom((a.profile||{}).birth); return g!=null&&g<18; });
+  let h='<div class="mh"><div><div class="mt">Privacy e conformità</div>'+
+    '<div class="ms">Dati sanitari · art. 9 GDPR</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="alert '+(gaps.length?'danger':'info')+'"><span class="ai">'+(gaps.length?'⚠️':'✅')+'</span><span>'+
+     (gaps.length
+       ? '<b>'+gaps.length+' atleti</b> hanno dati clinici registrati <b>senza consenso tracciato</b> (spunta + data). Finché manca, quel trattamento non ha base giuridica.'
+       : 'Tutti gli atleti con dati clinici hanno consenso e data registrati.')+'</span></div>';
+  if(gaps.length){
+    h+='<label class="fl">Da sistemare</label><div class="hist">';
+    gaps.forEach(a=>{ h+='<div class="hrow"><span class="hd">'+esc(a.name)+'</span>'+
+      '<span class="hv"><span class="rd-cmj down">consenso mancante</span></span>'+
+      (idOk(a.id)?'<span class="hdl" onclick="closeM();openAthlete(\''+a.id+'\')">→</span>':'')+'</div>'; });
+    h+='</div>';
+  }
+  h+='<div class="psec">Cosa tratti</div>';
+  h+='<div class="pf"><b>'+(S.athletes||[]).length+'</b> atleti, di cui <b>'+minors.length+'</b> minorenni</div>';
+  h+='<div class="pf">Categorie: anamnesi patologica, farmaci, infortuni, dolore, screening cardiologico, idoneità</div>';
+  h+='<div class="gnote">Per i <b>minori</b> il consenso lo presta chi esercita la responsabilità genitoriale. Registra sempre <b>data</b> e <b>versione dell\'informativa</b> firmata: senza quelli, la spunta non prova nulla.</div>';
+  h+='<div class="gnote">⚕️ Lo screening cardiologico e i suggerimenti dell\'app <b>non sono un giudizio medico</b> e non sostituiscono la visita di idoneità. Chi non è medico non può usarli per dichiarare qualcuno idoneo o non idoneo all\'attività.</div>';
+  h+='<div class="psec">I tuoi diritti e quelli degli atleti</div>';
+  h+='<button class="btn sm" style="width:100%;margin-bottom:8px" onclick="exportJSON()">⬇️ Esporta tutti i dati (portabilità, art. 20)</button>';
+  h+='<div class="gnote">Per cancellare un singolo atleta: aprilo e usa Elimina. Vengono rimossi anche readiness e carichi.</div>';
+  modal(h);
+}
+function openErase(){
+  document.getElementById("menu").classList.remove("on");
+  modal('<div class="mh"><div><div class="mt">Elimina account</div>'+
+    '<div class="ms">Operazione irreversibile</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="alert danger"><span class="ai">⚠️</span><span>Vengono cancellati <b>account, atleti, anamnesi, test, readiness e carichi</b> dal server e da questo dispositivo. Non è recuperabile.</span></div>'+
+    '<button class="btn sm" style="width:100%;margin-bottom:12px" onclick="exportJSON()">⬇️ Esporta prima un backup</button>'+
+    '<label class="fl">Scrivi la tua email per confermare</label>'+
+    '<input id="erEmail" type="email" placeholder="'+esc(AUTH?AUTH.email:"")+'">'+
+    '<label class="fl">Password</label>'+
+    '<input id="erPass" type="password" autocomplete="current-password">'+
+    '<div id="erErr" class="login-err"></div><div style="height:14px"></div>'+
+    '<button class="btn danger" id="erBtn" style="width:100%" onclick="doErase()">Elimina definitivamente</button>');
+}
+function doErase(){
+  const em=document.getElementById("erEmail").value.trim().toLowerCase();
+  const pw=document.getElementById("erPass").value;
+  const err=document.getElementById("erErr"), btn=document.getElementById("erBtn");
+  if(em!==(AUTH&&AUTH.email)){ err.textContent="L'email non corrisponde all'account"; return; }
+  if(!pw){ err.textContent="Inserisci la password"; return; }
+  if(!confirm("Ultima conferma: eliminare account e TUTTI i dati?")) return;
+  btn.disabled=true; btn.textContent="Elimino…";
+  apiCall("erase",{confirm:em, password:pw}).then(()=>{
+    AUTH=null; try{ localStorage.removeItem(AUTHKEY); localStorage.removeItem(KEY); }catch(e){}
+    S={athletes:[],data:{},teams:[],sport:"pallavolo",view:"matrix",activeTeam:"all"};
+    closeM(); showLogin("Account eliminato");
+  }).catch(e=>{ btn.disabled=false; btn.textContent="Elimina definitivamente"; err.textContent=e.message; });
+}
+
 function autoLogin(){
   try{ const r=localStorage.getItem(AUTHKEY); if(r) AUTH=JSON.parse(r); }catch(e){}
-  if(!AUTH||!AUTH.email){ showLogin(); return; }
-  hideLogin(); render(); setSync("saving"); startIdle();
+  // Le vecchie sessioni salvavano la password: non sono più valide.
+  if(AUTH && AUTH.password){ AUTH=null; try{ localStorage.removeItem(AUTHKEY); }catch(e){} }
+  if(!AUTH||!AUTH.token){ showLogin(); return; }
+  hideLogin(); render(); setSync("saving");
   apiCall("load").then(j=>{
-    if(j && j.data){ S=j.data; normalize(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} render();
-      sealAthleteProfiles().then(changed=>{ if(changed){ save(); render(); } });
-    }
-    setSync("ok");
+    const localDirty = S && S._dirty && (S.athletes||[]).length;
+    if(j && j.data){
+      // Prima il caricamento sovrascriveva lo stato locale: le sedute
+      // registrate offline sparivano senza avviso. Ora si uniscono.
+      S = localDirty ? mergeState(j.data, S) : j.data;
+      CLOUD_V = j.version||0;
+      normalize(); S._dirty=!!localDirty;
+      try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+      render();
+    } else { CLOUD_V=0; }
+    if(S._dirty){ cloudSave(); } else setSync("ok");
   }).catch(e=>{
-    if(e.status===401) showLogin("Sessione non valida, rientra");
-    else setSync("off");
+    if(e.status===401){ AUTH=null; try{ localStorage.removeItem(AUTHKEY); }catch(err){} showLogin("Sessione scaduta, rientra"); }
+    else scheduleRetry();
   });
 }
 function uid(){ return Math.random().toString(36).slice(2,9); }
-function todayISO(){ return new Date().toISOString().slice(0,10); }
+function todayISO(){ const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function dayNum(iso){ const p=String(iso||"").split("-"); return p.length===3 ? Date.UTC(+p[0],+p[1]-1,+p[2])/86400000 : NaN; }
+function daysAgo(iso){ return dayNum(todayISO())-dayNum(iso); }
 function fmtDate(d){ const p=d.split("-"); return p[2]+"/"+p[1]+"/"+p[0].slice(2); }
-
-/* ═══════════════ ANAMNESI VIA LINK ═══════════════ */
-function anamToken(){ try{ return new URLSearchParams(location.search).get("anamnesi"); }catch(e){ return null; } }
-function bootAnamnesi(token){
-  var lg=document.getElementById("login"); if(lg) lg.classList.add("hide");
-  var el=document.createElement("div"); el.id="pubform"; el.className="pubform";
-  el.innerHTML='<div class="pf-box"><div class="pf-load">Carico il modulo…</div></div>';
-  document.body.appendChild(el);
-  fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"formInfo",token:token})})
-    .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||"Link non valido"); return j; }); })
-    .then(function(j){ renderAnamForm(token, j.athleteName); })
-    .catch(function(e){ el.innerHTML='<div class="pf-box"><div class="pf-err2">⚠️ '+esc(e.message)+'</div><p class="pf-p">Il link potrebbe essere scaduto. Chiedi al tuo preparatore un link aggiornato.</p></div>'; });
-}
-function anamFields(){
-  var skipSec={"Programmazione":1}; var skipKey={medical:1,medicalExpiry:1,notes:1,consentDate:1};
-  var active=true, out=[];
-  PROFILE.forEach(function(f){
-    if(f.sec){ active=!skipSec[f.sec]; if(active) out.push({sec:f.sec}); return; }
-    if(!active) return; if(skipKey[f.k]) return; out.push(f);
-  });
-  return out;
-}
-function renderAnamForm(token, name){
-  var fields=anamFields(); var body="";
-  fields.forEach(function(f){
-    if(f.sec){ body+='<div class="pf-sec">'+f.sec+'</div>'; return; }
-    if(f.t==="note"){ body+='<div class="pf-note">'+f.txt+'</div>'; return; }
-    if(f.t==="check"){ body+='<label class="pf-check"><input type="checkbox" data-k="'+f.k+'"><span>'+f.l+'</span></label>'; return; }
-    var inp="";
-    if(f.t==="select"){ inp='<select data-k="'+f.k+'">'+f.o.map(function(o){return '<option value="'+esc(o)+'">'+(o?esc(o):"—")+'</option>';}).join("")+'</select>'; }
-    else if(f.t==="area"){ inp='<textarea data-k="'+f.k+'" rows="2"></textarea>'; }
-    else { inp='<input type="'+(f.t==="number"?"number":f.t==="date"?"date":"text")+'" data-k="'+f.k+'"'+(f.t==="number"?' inputmode="decimal"':'')+'>'; }
-    body+='<div class="pf-field"><label class="pf-l">'+f.l+'</label>'+inp+'</div>';
-  });
-  document.getElementById("pubform").innerHTML=
-    '<div class="pf-box">'+
-    '<div class="pf-head"><div class="pf-brand">IRON PERFORMANCE</div>'+
-    '<h1>Scheda anamnesi</h1><p class="pf-sub">'+(name?("Ciao <b>"+esc(name)+"</b>, "):"")+'compila con i dati che conosci: bastano pochi minuti. La scheda resta riservata al tuo preparatore.</p></div>'+
-    '<div class="pf-fields">'+body+'</div>'+
-    '<div class="pf-err" id="pfErr"></div>'+
-    '<button class="pf-btn" id="pfBtn">Invia la scheda</button>'+
-    '<p class="pf-foot">Inviando confermi di aver letto l\'informativa e presti il consenso al trattamento dei dati, anche sanitari (art. 9 GDPR).</p>'+
-    '</div>';
-  document.getElementById("pfBtn").onclick=function(){ submitAnam(token); };
-}
-function submitAnam(token){
-  var box=document.getElementById("pubform"); var err=document.getElementById("pfErr"); var btn=document.getElementById("pfBtn");
-  var prof={};
-  box.querySelectorAll("[data-k]").forEach(function(el){
-    var k=el.getAttribute("data-k");
-    if(el.type==="checkbox"){ if(el.checked) prof[k]=true; }
-    else { var v=(el.value||"").trim(); if(v!=="") prof[k]=v; }
-  });
-  if(!prof.consent){ err.textContent="Per inviare devi confermare il consenso al trattamento dei dati (in fondo al modulo)."; return; }
-  prof.consentDate=todayISO();
-  err.textContent=""; btn.disabled=true; btn.textContent="Invio…";
-  fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"formSubmit",token:token,profile:prof})})
-    .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||"Errore"); return j; }); })
-    .then(function(){ box.innerHTML='<div class="pf-box pf-done"><div class="pf-ok">✓</div><h1>Scheda inviata</h1><p class="pf-p">Grazie! I dati sono stati inviati in modo sicuro al tuo preparatore. Puoi chiudere questa pagina.</p></div>'; })
-    .catch(function(e){ btn.disabled=false; btn.textContent="Invia la scheda"; err.textContent=e.message; });
-}
-/* ── Coach: genera e condivide il link ── */
-function anamLink(id){
-  var a=S.athletes.find(function(x){return x.id===id;}); if(!a) return;
-  if(!AUTH||!AUTH.email){ toast("Rientra per generare il link"); return; }
-  modal('<div class="mh"><div><div class="mt">Link anamnesi</div><div class="ms">'+esc(a.name)+'</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div><div class="pf-gen">Genero il link sicuro…</div>');
-  apiCall("formLink",{athleteId:id, athleteName:a.name}).then(function(j){
-    var link=location.origin+location.pathname+"?anamnesi="+j.token;
-    var h='<div class="mh"><div><div class="mt">Link anamnesi</div><div class="ms">'+esc(a.name)+'</div></div>'+
-      '<button class="mcl" onclick="closeM()">✕</button></div>'+
-      '<div class="gnote" style="margin-top:0">Manda questo link all\'atleta (WhatsApp, email…). Quando lo compila, la scheda <b>si aggiorna qui</b>. Valido '+(j.expiresDays||21)+' giorni; scrive solo la sua scheda.</div>'+
-      '<label class="fl">Link personale</label>'+
-      '<input id="lnkF" readonly value="'+esc(link)+'" onclick="this.select()">'+
-      '<div style="display:flex;gap:8px;margin-top:12px">'+
-      '<button class="btn primary" style="flex:1" onclick="copyText(\'lnkF\')">📋 Copia link</button>'+
-      (navigator.share?'<button class="btn" style="flex:1" onclick="shareLink(\''+esc(link).replace(/\\'/g,"")+'\',\''+esc(a.name)+'\')">↗ Condividi</button>':'')+
-      '</div>';
-    modal(h);
-  }).catch(function(e){
-    modal('<div class="mh"><div><div class="mt">Link anamnesi</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
-      '<div class="alert info"><span class="ai">⚠️</span><span>'+esc(e.message)+(/FORM_SECRET/.test(e.message)?' — imposta la variabile <b>FORM_SECRET</b> su Vercel (te lo spiego).':'')+'</span></div>');
-  });
-}
-function copyText(inputId){
-  var el=document.getElementById(inputId); if(!el) return; el.select();
-  var done=function(){ toast("Link copiato"); };
-  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(el.value).then(done).catch(function(){ try{document.execCommand("copy");done();}catch(e){} }); }
-  else { try{ document.execCommand("copy"); done(); }catch(e){} }
-}
-function shareLink(link, name){
-  if(navigator.share){ navigator.share({title:"Scheda anamnesi", text:"Ciao "+name+", compila la tua scheda per la preparazione:", url:link}).catch(function(){}); }
-}
-/* ── Coach: scarica le schede compilate dalle atlete ── */
-let _lastRefresh=0;
-function refreshFromCloud(silent){
-  if(!AUTH||!AUTH.email) return;
-  if(!silent){ closeM&&closeM(); }
-  setSync("saving");
-  apiCall("save",{data:S}).catch(function(){}).then(function(){ return apiCall("load"); }).then(function(j){
-    if(j&&j.data){ S=j.data; normalize(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} render();
-      sealAthleteProfiles().then(function(changed){ if(changed){ save(); render(); } });
-    }
-    setSync("ok"); _lastRefresh=Date.now();
-    if(!silent) toast("Dati aggiornati dal cloud");
-  }).catch(function(){ setSync("off"); if(!silent) toast("Aggiornamento non riuscito"); });
-}
-document.addEventListener("visibilitychange", function(){
-  if(document.visibilityState==="visible" && AUTH && AUTH.email && !anamToken() && (Date.now()-_lastRefresh>30000)){ refreshFromCloud(true); }
-});
 
 /* ═══════════════ HELPER TREND ═══════════════ */
 function series(aid,tid){
@@ -1115,52 +1379,20 @@ function renderSports(){
   });
 }
 
-function newAnamnesi(){
-  return (S.athletes||[]).filter(a=>{
-    const sd=a.profile&&a.profile._submittedAt;
-    return sd && (S.anamAck||{})[a.id]!==sd;
-  });
-}
-function renderNotice(){
-  const el=document.getElementById("notice"); if(!el) return;
-  const list=newAnamnesi();
-  if(!list.length){ el.innerHTML=""; return; }
-  const names=list.map(a=>esc(a.name)).join(", ");
-  el.innerHTML='<div class="notice">'+
-    '<span class="notice-ic">📋</span>'+
-    '<div class="notice-tx"><b>'+list.length+' '+(list.length===1?"nuova anamnesi":"nuove anamnesi")+'</b> compilata da: '+names+'</div>'+
-    '<button class="notice-see" onclick="openAthlete(\''+list[0].id+'\')">Vedi</button>'+
-    '<button class="notice-x" onclick="ackAllAnamnesi()" title="Segna come lette">✕</button></div>';
-}
-function ackAnamnesi(id){
-  const a=(S.athletes||[]).find(x=>x.id===id); if(!a||!a.profile||!a.profile._submittedAt) return;
-  if(!S.anamAck) S.anamAck={};
-  if(S.anamAck[id]!==a.profile._submittedAt){ S.anamAck[id]=a.profile._submittedAt; save(); }
-}
-function ackAllAnamnesi(){
-  if(!S.anamAck) S.anamAck={};
-  newAnamnesi().forEach(a=>{ S.anamAck[a.id]=a.profile._submittedAt; });
-  save(); renderNotice();
-}
 function render(){
   document.body.setAttribute("data-view", S.view||"today");
   renderSports();
   renderTeams();
   renderBar();
   renderTabs();
-  renderNotice();
   const grid=document.getElementById("grid");
   if(S.athletes.length===0){
-    grid.innerHTML='<div class="empty-state onboard">'+
-      '<h3>Benvenuto in Iron Performance 👋</h3>'+
-      '<p>Tre passi per iniziare:</p>'+
-      '<div class="ob-steps">'+
-      '<div class="ob-step"><span class="ob-n">1</span><div><b>Crea o scegli una squadra</b><small>In alto, tocca "+ Squadra" — o salta se lavori senza squadre</small></div></div>'+
-      '<div class="ob-step"><span class="ob-n">2</span><div><b>Aggiungi un\'atleta</b><small>Nome, squadra, sesso: bastano 10 secondi</small></div></div>'+
-      '<div class="ob-step"><span class="ob-n">3</span><div><b>Manda il link anamnesi</b><small>Dalla sua scheda, tocca 🔗 Link: compila lei, arriva a te</small></div></div>'+
-      '</div>'+
-      '<button class="btn primary" style="width:100%;margin-top:16px" onclick="addAthlete()">+ Aggiungi il primo atleta</button>'+
-      '<button class="btn sm" style="width:100%;margin-top:8px" onclick="loadDemo()">✨ oppure esplora con dati di esempio</button></div>';
+    grid.innerHTML='<div class="empty-state"><h3>Nessun atleta</h3>'+
+      '<p>Aggiungi i membri della squadra, poi registra una sessione di test.<br>'+
+      'Ogni nuova misurazione si colora di verde o rosso in base al confronto con la precedente.</p>'+
+      '<button class="btn primary" onclick="addAthlete()">+ Aggiungi il primo atleta</button>'+
+      '<div style="height:10px"></div>'+
+      '<button class="btn sm" onclick="loadDemo()">✨ oppure carica dati di esempio</button></div>';
     return;
   }
   if(S.view==="today"){ renderToday(); return; }
@@ -1172,9 +1404,7 @@ function render(){
 function renderMatrix(){
   const tests=visibleTests();
   const grid=document.getElementById("grid");
-  const rows=(S._filterNoAnam
-    ? teamAthletes().filter(a=>!(a.profile&&(a.profile.birth||a.profile.height||a.profile._submittedAt)))
-    : teamAthletes());
+  const rows=teamAthletes();
   if(rows.length===0){ grid.innerHTML=emptyTeam(); return; }
   let h='<table><thead><tr><th class="cAth">Atleta</th>';
   tests.forEach(t=>{
@@ -1188,9 +1418,8 @@ function renderMatrix(){
   rows.forEach(a=>{
     const team=S.teams.find(t=>t.id===a.team);
     const tl=(S.activeTeam==="all"&&team)?esc(team.name)+" · ":"";
-    const flag=(a.profile&&a.profile._flagInjury)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
-    const noAnam=!(a.profile&&(a.profile.birth||a.profile.height||a.profile._submittedAt))?'<span class="anamflag" title="Anamnesi non ancora compilata">📋 </span>':"";
-    h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+noAnam+'<span class="nmt">'+esc(a.name)+'</span>'+
+    const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
+    h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+'<span class="nmt">'+esc(a.name)+'</span>'+
        '<span class="sx">'+(a.sex||"M")+'</span>'+
        '<span class="del" onclick="event.stopPropagation();delAthlete(\''+a.id+'\')">✕</span></div>';
     const tot=tests.reduce((s,t)=>s+series(a.id,t.id).length,0);
@@ -1216,7 +1445,10 @@ function renderMatrix(){
   grid.innerHTML=h;
   requestAnimationFrame(updateMatrixNav);
 }
-function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"'`]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;","`":"&#96;"}[c])); }
+function escAttr(s){ return esc(s); }
+// id usati dentro onclick="...('X')": vanno ripuliti, non solo escapati
+function idOk(s){ return /^[A-Za-z0-9_-]{1,40}$/.test(String(s||"")); }
 
 /* ═══════════════ BARRA VISTA + ANDAMENTO ═══════════════ */
 const APAL=["#E63946","#4DA3FF","#34C759","#FFD60A","#FF9F0A","#BF5AF2","#5AC8FA","#FF6482","#30D158","#9A9AA2"];
@@ -1244,15 +1476,14 @@ function todayManageCount(){
     teamAthletes().forEach(a=>{
       const p=a.profile||{}; const pain=parseFloat(p.painLevel);
       let flag=false;
-      if(p._flagInjury) flag=true;
+      if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) flag=true;
       else if(!isNaN(pain) && pain>=S.cfg.painCut) flag=true;
-      if(p._flagScreen) flag=true;
+      if(SCREEN_KEYS.filter(k=>p[k]).length) flag=true;
       const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1];
-      if(rl && readinessScore(rl)<S.cfg.rdAmber) flag=true;
+      if(rl){ const ev=readinessEval(a.id,rl); if(ev.color==="down"||ev.color==="amber") flag=true; }
       const ac=acwr(a.id);
-      if(ac && (ac.acwr>S.cfg.acwrHigh || ac.acwr<S.cfg.acwrLow)) flag=true;
+      if(ac && ac.acwr!=null && (ac.acwr>S.cfg.acwrHigh || ac.acwr<S.cfg.acwrLow)) flag=true;
       const cf=cmjFatigue(a.id); if(cf&&cf.fatigued) flag=true;
-      if(vitalsInfo(a.id).some(x=>x.cls==="down")) flag=true;
       if(flag) n++;
     });
     return n;
@@ -1273,11 +1504,9 @@ function renderBar(){
   } else if(S.view==="readiness"){
     h+='<div class="barhint">readiness + fatica neuromuscolare</div>';
   } else {
-    const missing=teamAthletes().filter(a=>!(a.profile&&(a.profile.birth||a.profile.height||a.profile._submittedAt))).length;
     h+='<div class="leg"><span class="it"><span class="dot" style="background:var(--up)"></span>Migliora</span>'+
        '<span class="it"><span class="dot" style="background:var(--down)"></span>Peggiora</span>'+
        '<span class="it"><span class="dot" style="background:var(--flat)"></span>Uguale</span></div>'+
-       (missing?'<button class="btn sm anamfilter'+(S._filterNoAnam?' on':'')+'" onclick="toggleAnamFilter()">📋 Senza anamnesi · '+missing+'</button>':'')+
        '<div class="mnav" id="mnav" style="display:none">'+
        '<button onclick="matrixScroll(-1)" aria-label="Test precedenti">‹</button>'+
        '<span>scorri i test</span>'+
@@ -1285,7 +1514,6 @@ function renderBar(){
   }
   bar.innerHTML=h;
 }
-function toggleAnamFilter(){ S._filterNoAnam=!S._filterNoAnam; render(); }
 function matrixScroll(dir){ const w=document.querySelector(".wrap"); if(w) w.scrollBy({left:dir*Math.max(200,w.clientWidth*0.62), behavior:"smooth"}); }
 function updateMatrixNav(){ const w=document.querySelector(".wrap"); const nav=document.getElementById("mnav");
   if(!w||!nav) return; nav.style.display=(w.scrollWidth>w.clientWidth+4)?"inline-flex":"none"; }
@@ -1433,16 +1661,13 @@ function manageTeams(){
        '<select onchange="setTeamSport(\''+t.id+'\',this.value)">'+sportOptions(t.sport)+'</select>'+
        '<button class="tmdel" title="'+c+' atleti" onclick="delTeam(\''+t.id+'\')">🗑</button></div>'+
        '<div class="tmbat"><button class="btn sm'+(n?' on':'')+'" onclick="chooseTests(\''+t.id+'\')">🎚 Batteria test</button>'+
-       '<span>'+(n?n+' test monitorati':'automatici per sport')+'</span></div>'+
-       '<div class="tmbat"><label class="fl" style="margin:8px 0 0">📅 Prossima batteria di test</label></div>'+
-       '<input type="date" value="'+(t.nextBattery||"")+'" onchange="setNextBattery(\''+t.id+'\',this.value)">'; });
+       '<span>'+(n?n+' test monitorati':'automatici per sport')+'</span></div>'; });
   h+='<div style="height:12px"></div>'+
      '<button class="btn" style="width:100%" onclick="addTeam()">+ Aggiungi squadra</button>';
   modal(h);
 }
 function renameTeam(id,v){ const t=S.teams.find(x=>x.id===id); if(t) t.name=v.trim()||t.name; save(); renderTeams(); }
 function setTeamSport(id,v){ const t=S.teams.find(x=>x.id===id); if(t) t.sport=v; save(); renderTeams(); }
-function setNextBattery(id,v){ const t=S.teams.find(x=>x.id===id); if(t) t.nextBattery=v||null; save(); }
 function delTeam(id){
   const t=S.teams.find(x=>x.id===id); if(!t) return;
   const mem=S.athletes.filter(a=>a.team===id);
@@ -1451,6 +1676,7 @@ function delTeam(id){
   if(!confirm(msg)) return;
   mem.forEach(a=>a.team=null);
   S.teams=S.teams.filter(x=>x.id!==id);
+  tombSet("team:"+id);   // mergeState filtrava già su questa chiave; nessuno la scriveva
   if(S.activeTeam===id) S.activeTeam="all";
   save(); manageTeams(); render(); toast("Squadra eliminata");
 }
@@ -1493,7 +1719,6 @@ const PROFILE=[
   {k:"height",  l:"Altezza (cm)",    t:"number", half:true},
   {k:"weight",  l:"Peso (kg)",       t:"number", half:true},
   {k:"role",    l:"Ruolo / posizione", t:"text"},
-  {k:"email",   l:"Email atleta (per inviare i report)", t:"text"},
 
   {sec:"Programmazione"},
   {k:"experience", l:"Esperienza di allenamento", t:"select", o:["","Principiante (<1 anno)","Intermedio (1-3 anni)","Avanzato (3-5 anni)","Esperto (5+ anni)"]},
@@ -1543,11 +1768,12 @@ const PROFILE=[
   {k:"allergies",   l:"Allergie / intolleranze", t:"area"},
 
   {sec:"Idoneità & consenso"},
-  {k:"_privnote", t:"note", txt:"<b>Informativa privacy.</b> I dati di questa scheda — inclusi quelli sulla salute (infortuni, patologie, farmaci) — sono trattati esclusivamente dal preparatore per finalità di allenamento e prevenzione, conservati in forma protetta e non condivisi con terzi. L'atleta può chiederne in ogni momento visione, modifica o cancellazione. Compilando la scheda l'atleta presta il consenso al trattamento (art. 9 GDPR)."},
   {k:"medical",      l:"Idoneità medica agonistica", t:"select", o:["","Idoneo","In attesa","Non idoneo"], half:true},
   {k:"medicalExpiry",l:"Scadenza certificato", t:"date", half:true},
-  {k:"consent",      l:"L'atleta acconsente al trattamento dei dati (anche sanitari)", t:"check"},
+  {k:"consent",      l:"Consenso al trattamento dei dati raccolto", t:"check"},
+  {k:"consentBy",    l:"Prestato da", t:"select", o:["","L'atleta (maggiorenne)","Chi esercita la responsabilità genitoriale"], half:true},
   {k:"consentDate",  l:"Data del consenso", t:"date", half:true},
+  {k:"consentDoc",   l:"Versione dell'informativa firmata (es. v1.0 del 01/09/2026)", t:"text"},
   {k:"notes",        l:"Note libere del preparatore", t:"area"}
 ];
 const SCREEN_KEYS=["scHeart","scChest","scDizzy","scBreath","scJoint","scFamily","scMedsHeart"];
@@ -1556,105 +1782,9 @@ function checkField(f,p){
   const on=!!(p&&p[f.k]);
   return '<label class="pcheck"><input type="checkbox" id="p_'+f.k+'"'+(on?' checked':'')+'><span>'+f.l+'</span></label>';
 }
-
-/* ═══════════════ CIFRATURA CAMPI SANITARI (AES-256-GCM, Web Crypto) ═══════════════ */
-const SENSITIVE_KEYS=["conditions","surgeries","familyHistory","injuriesCurrent","painContext",
-  "injuriesPast","recurrent","painAreas","orthoNotes","scHeart","scChest","scDizzy","scBreath",
-  "scJoint","scFamily","scMedsHeart","meds","supplements","allergies","medical","medicalExpiry","cycle"];
-const SECKEY_LS="ip_seckey";
-let SECKEY_RAW=null;
-try{ SECKEY_RAW=localStorage.getItem(SECKEY_LS)||null; }catch(e){}
-function b64(bytes){ let s=""; bytes.forEach(b=>s+=String.fromCharCode(b)); return btoa(s); }
-function b64d(s){ const bin=atob(s); const a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return a; }
-async function importSecKey(){
-  if(!SECKEY_RAW) return null;
-  return crypto.subtle.importKey("raw", b64d(SECKEY_RAW), {name:"AES-GCM"}, false, ["encrypt","decrypt"]);
-}
-function hasSecKey(){ return !!SECKEY_RAW; }
-async function ensureSecKey(){
-  if(SECKEY_RAW) return;
-  const bytes=crypto.getRandomValues(new Uint8Array(32));
-  SECKEY_RAW=b64(bytes);
-  try{ localStorage.setItem(SECKEY_LS, SECKEY_RAW); }catch(e){}
-  showSecKeyModal(true);
-}
-async function encField(obj){
-  await ensureSecKey();
-  const key=await importSecKey();
-  const iv=crypto.getRandomValues(new Uint8Array(12));
-  const enc=new TextEncoder().encode(JSON.stringify(obj));
-  const ct=await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, enc);
-  const combined=new Uint8Array(iv.length+ct.byteLength);
-  combined.set(iv,0); combined.set(new Uint8Array(ct), iv.length);
-  return b64(combined);
-}
-async function decField(str){
-  if(!SECKEY_RAW||!str) return null;
-  try{
-    const key=await importSecKey();
-    const bytes=b64d(str);
-    const iv=bytes.slice(0,12), ct=bytes.slice(12);
-    const dec=await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, ct);
-    return JSON.parse(new TextDecoder().decode(dec));
-  }catch(e){ return null; }
-}
-// Migra/cifra automaticamente: dati vecchi in chiaro o arrivati da anamnesi via link.
-async function sealAthleteProfiles(){
-  let changed=false;
-  for(const a of (S.athletes||[])){
-    const p=a.profile||{}; const plain={}; let hasPlain=false;
-    SENSITIVE_KEYS.forEach(k=>{ if(p[k]!=null && p[k]!==""){ plain[k]=p[k]; hasPlain=true; } });
-    if(!hasPlain) continue;
-    let existing={};
-    if(p._sec){ const d=await decField(p._sec); if(d) existing=d; }
-    const merged=Object.assign({}, existing, plain);
-    p._sec=await encField(merged);
-    SENSITIVE_KEYS.forEach(k=>{ delete p[k]; });
-    p._flagInjury=!!(merged.injuriesCurrent && String(merged.injuriesCurrent).trim());
-    p._flagScreen=SCREEN_KEYS.some(k=>merged[k]);
-    a.profile=p; changed=true;
-  }
-  return changed;
-}
-function showSecKeyModal(isNew){
-  const h='<div class="mh"><div><div class="mt">'+(isNew?"Chiave di cifratura creata":"Chiave di cifratura")+'</div>'+
-    '<div class="ms">Protegge infortuni, patologie e farmaci</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div>'+
-    '<div class="alert danger" style="margin-bottom:14px"><span class="ai">🔐</span><span>'+
-    (isNew?'D\'ora in poi i dati sanitari delle schede vengono cifrati prima di essere salvati. ':'')+
-    '<b>Salva questa chiave</b> in un posto sicuro (gestore password, note private). Se la perdi, i dati sanitari cifrati non saranno più leggibili — nemmeno da noi.</span></div>'+
-    '<label class="fl">Chiave (32 caratteri)</label>'+
-    '<input id="secKeyF" readonly value="'+esc(SECKEY_RAW||"")+'" onclick="this.select()">'+
-    '<button class="btn primary" style="width:100%;margin-top:12px" onclick="copyText(\'secKeyF\')">📋 Copia chiave</button>'+
-    '<div class="gnote" style="margin-top:14px">Cambi telefono? Apri <b>Impostazioni → Chiave di cifratura</b> e incolla qui questa stessa chiave.</div>';
-  modal(h);
-}
-function openSecKey(){
-  if(!SECKEY_RAW){
-    modal('<div class="mh"><div><div class="mt">Chiave di cifratura</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
-      '<div class="gnote">Nessuna chiave ancora creata: verrà generata automaticamente alla prima scheda con dati sanitari.</div>');
-    return;
-  }
-  const h='<div class="mh"><div><div class="mt">Chiave di cifratura</div><div class="ms">Protegge infortuni, patologie e farmaci</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div>'+
-    '<label class="fl">Chiave attuale</label>'+
-    '<input id="secKeyF" readonly value="'+esc(SECKEY_RAW)+'" onclick="this.select()">'+
-    '<button class="btn primary" style="width:100%;margin-top:10px" onclick="copyText(\'secKeyF\')">📋 Copia chiave</button>'+
-    '<div class="psec" style="margin-top:20px">Cambio dispositivo</div>'+
-    '<div class="gnote" style="margin-bottom:10px">Se apri l\'app da un altro telefono, incolla qui la chiave salvata per sbloccare le schede.</div>'+
-    '<input id="secKeyImport" placeholder="Incolla la chiave qui">'+
-    '<button class="btn" style="width:100%;margin-top:8px" onclick="importDifferentKey()">Usa questa chiave</button>';
-  modal(h);
-}
-function importDifferentKey(){
-  const v=(document.getElementById("secKeyImport").value||"").trim();
-  if(!v){ toast("Incolla una chiave"); return; }
-  SECKEY_RAW=v; try{ localStorage.setItem(SECKEY_LS, v); }catch(e){}
-  closeM(); toast("Chiave importata"); render();
-}
 function profileField(f, p){
   const v = (p && p[f.k]!=null) ? p[f.k] : "";
-  const ev = String(v).replace(/"/g,"&quot;");
+  const ev = esc(String(v));
   if(f.t==="area") return '<textarea id="p_'+f.k+'" placeholder="—">'+esc(String(v))+'</textarea>';
   if(f.t==="select"){
     let o=f.o.map(opt=>'<option value="'+opt+'"'+(v===opt?" selected":"")+'>'+(opt||"—")+'</option>').join("");
@@ -1669,88 +1799,131 @@ function ageFrom(birth){
   if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate())) a--;
   return a;
 }
-function athleteVitalsSummary(id){
-  const arr=(S.readiness&&S.readiness[id])||[];
-  if(!arr.length) return '';
-  const last=arr[arr.length-1];
-  const recent=arr.slice(-6); // ultime settimane di check-in
-  const spark=(key,dir)=>{
-    const vals=recent.filter(e=>e[key]!=null).map(e=>e[key]);
-    if(vals.length<2) return '';
-    const min=Math.min(...vals), max=Math.max(...vals), rng=(max-min)||1;
-    const pts=vals.map((v,i)=>{
-      const x=(i/(vals.length-1))*100;
-      const y=30-((v-min)/rng)*26-2;
-      return x.toFixed(1)+','+y.toFixed(1);
-    }).join(' ');
-    return '<svg viewBox="0 0 100 30" class="vspark" preserveAspectRatio="none"><polyline points="'+pts+'"/></svg>';
-  };
-  const hb=vitalBaseline(id,"hrv"), rb=vitalBaseline(id,"rhr");
-  const rd=readinessScore(last), rc=readinessColor(rd);
-  let h='<div class="vsum"><div class="vsum-t">Ultimi check-in <span class="vsum-n">('+arr.length+' totali)</span></div><div class="vsum-row">';
-  h+='<div class="vsum-c"><div class="vsum-l">Readiness</div><div class="vsum-v vv-'+rc+'">'+rd+'%</div></div>';
-  if(last.hrv!=null){ const dev=hb?Math.round(hb.pct):null;
-    h+='<div class="vsum-c"><div class="vsum-l">HRV</div><div class="vsum-v">'+last.hrv+'ms'+(dev!=null?' <i class="vv-'+(dev<-8?"down":"muted")+'">'+(dev>0?"+":"")+dev+'%</i>':'')+'</div>'+spark("hrv")+'</div>'; }
-  if(last.rhr!=null){ const dev=rb?Math.round(rb.pct):null;
-    h+='<div class="vsum-c"><div class="vsum-l">FC riposo</div><div class="vsum-v">'+last.rhr+'bpm'+(dev!=null?' <i class="vv-'+(dev>7?"down":"muted")+'">'+(dev>0?"+":"")+dev+'%</i>':'')+'</div>'+spark("rhr")+'</div>'; }
-  if(last.sl!=null){ h+='<div class="vsum-c"><div class="vsum-l">Sonno</div><div class="vsum-v">'+last.sl+'/5</div>'+spark("sl")+'</div>'; }
-  h+='</div></div>';
-  return h;
+
+/* ═══════════════ ANAMNESI VIA LINK ═══════════════
+   Il coach genera un link monouso (48 ore) per un atleta. L'atleta lo apre
+   SENZA fare login e compila la propria scheda; l'invio scrive solo il suo
+   profilo, mai il resto dei dati. Il server marca il link come usato nella
+   stessa transazione del salvataggio: non è riutilizzabile, anche se due
+   invii arrivano nello stesso istante.                                     */
+function anamToken(){ try{ return new URL(location.href).searchParams.get("anamnesi"); }catch(e){ return null; } }
+
+function bootAnamnesi(token){
+  hideAllLoginCards();
+  const lg=document.getElementById("login"); if(lg) lg.style.display="none";
+  const wrap=document.querySelector(".wrap"); if(wrap) wrap.style.display="none";
+  let el=document.getElementById("pubform");
+  if(!el){ el=document.createElement("div"); el.id="pubform"; el.className="pubform"; document.body.appendChild(el); }
+  el.innerHTML='<div class="pf-box"><div class="pf-load">Carico il modulo…</div></div>';
+  apiCall("formInfo",{token}).then(j=>renderAnamForm(token, j.athleteName))
+    .catch(e=>{ el.innerHTML='<div class="pf-box"><div class="pf-err2">⚠️ '+esc(e.message)+'</div>'+
+      '<p class="pf-p">Il link potrebbe essere scaduto o già usato. Chiedi al tuo preparatore un link nuovo.</p></div>'; });
 }
-function openCompare(id){
-  const a=S.athletes.find(x=>x.id===id); if(!a) return;
-  const rows=TESTS.map(t=>{
-    const arr=series(id,t.id); if(arr.length<2) return null;
-    const first=arr[0], last=arr[arr.length-1];
-    if(first.d===last.d) return null;
-    const delta=last.v-first.v;
-    const pct=first.v?Math.round(delta/Math.abs(first.v)*1000)/10:null;
-    const better=(t.dir>0)===(delta>0);
-    return {t, first, last, delta, pct, better: delta===0?null:better};
-  }).filter(Boolean);
-  let h='<div class="mh"><div><div class="mt">Confronto periodi</div><div class="ms">'+esc(a.name)+'</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div>';
-  if(!rows.length){ h+='<div class="gnote">Servono almeno due rilevazioni in date diverse su un test per fare un confronto.</div>'; modal(h); return; }
-  h+='<div class="gnote" style="margin-bottom:14px">Primo rilievo registrato vs più recente, per ogni test con almeno due misurazioni.</div>';
-  h+='<div class="cmp-list">';
-  rows.forEach(r=>{
-    const cls=r.better===null?"flat":r.better?"up":"down";
-    const sign=r.delta>0?"+":"";
-    h+='<div class="cmp-row"><div class="cmp-n">'+(ICON[r.t.id]||"🔬")+' '+esc(r.t.name)+'</div>'+
-      '<div class="cmp-v"><span class="cmp-f">'+fmtNum(r.first.v)+'</span><span class="cmp-arrow">→</span><span class="cmp-l">'+fmtNum(r.last.v)+' '+esc(r.t.unit)+'</span></div>'+
-      '<div class="cmp-d cmp-'+cls+'">'+sign+fmtNum(r.delta)+(r.pct!=null?' ('+sign+r.pct+'%)':'')+'</div>'+
-      '<div class="cmp-dates">'+fmtDate(r.first.d)+' → '+fmtDate(r.last.d)+'</div></div>';
+
+function anamFields(){
+  // Il coach compila idoneità, scadenza certificato e note dal suo lato:
+  // l'atleta non li vede né li può toccare da qui.
+  const skipKey={medical:1, medicalExpiry:1, notes:1, consentDate:1, consentDoc:1};
+  let active=true, out=[];
+  PROFILE.forEach(f=>{
+    if(f.sec){ active=true; out.push({sec:f.sec}); return; }
+    if(!active) return; if(skipKey[f.k]) return;
+    out.push(f);
   });
-  h+='</div>';
-  modal(h);
+  return out;
 }
-async function openAthlete(id, isNew){
+
+function renderAnamForm(token, name){
+  const fields=anamFields(); let body="";
+  fields.forEach(f=>{
+    if(f.sec){ body+='<div class="pf-sec">'+esc(f.sec)+'</div>'; return; }
+    if(f.t==="check"){ body+='<label class="pf-check"><input type="checkbox" data-k="'+f.k+'"><span>'+esc(f.l)+'</span></label>'; return; }
+    let inp;
+    if(f.t==="select") inp='<select data-k="'+f.k+'">'+f.o.map(o=>'<option value="'+esc(o)+'">'+(o?esc(o):"—")+'</option>').join("")+'</select>';
+    else if(f.t==="area") inp='<textarea data-k="'+f.k+'" rows="2"></textarea>';
+    else inp='<input type="'+(f.t==="number"?"number":f.t==="date"?"date":"text")+'" data-k="'+f.k+'"'+(f.t==="number"?' inputmode="decimal"':'')+'>';
+    body+='<div class="pf-field"><label class="pf-l">'+esc(f.l)+'</label>'+inp+'</div>';
+  });
+  document.getElementById("pubform").innerHTML=
+    '<div class="pf-box">'+
+    '<div class="pf-head"><div class="pf-brand">IRON PERFORMANCE</div>'+
+    '<h1>Scheda anamnesi</h1><p class="pf-sub">'+(name?("Ciao <b>"+esc(name)+"</b>, "):"")+
+    'compila con i dati che conosci: bastano pochi minuti. Il link funziona <b>una sola volta</b> ed è valido 48 ore.</p></div>'+
+    '<div class="pf-fields">'+body+'</div>'+
+    '<label class="pf-check pf-consent"><input type="checkbox" data-k="consent"><span>Confermo di aver letto l\'informativa privacy e presto il consenso al trattamento dei dati, anche sanitari (art. 9 GDPR). Se sono minorenne, questo consenso lo presta chi esercita la responsabilità genitoriale.</span></label>'+
+    '<div class="pf-err" id="pfErr"></div>'+
+    '<button class="pf-btn" id="pfBtn">Invia la scheda</button>'+
+    '<p class="pf-foot">Una volta inviata, la scheda resta riservata al tuo preparatore.</p>'+
+    '</div>';
+  document.getElementById("pfBtn").onclick=()=>submitAnam(token);
+}
+
+function submitAnam(token){
+  const box=document.getElementById("pubform"), err=document.getElementById("pfErr"), btn=document.getElementById("pfBtn");
+  const profile={};
+  box.querySelectorAll("[data-k]").forEach(el=>{
+    const k=el.getAttribute("data-k");
+    if(el.type==="checkbox"){ if(el.checked) profile[k]=true; }
+    else { const v=(el.value||"").trim(); if(v!=="") profile[k]=v; }
+  });
+  if(!profile.consent){ err.textContent="Per inviare devi confermare il consenso in fondo al modulo."; return; }
+  err.textContent=""; btn.disabled=true; btn.textContent="Invio…";
+  apiCall("formSubmit",{token, profile}).then(()=>{
+    box.innerHTML='<div class="pf-box pf-done"><div class="pf-ok">✓</div><h1>Scheda inviata</h1>'+
+      '<p class="pf-p">Grazie! I dati sono stati inviati in modo sicuro al tuo preparatore. Puoi chiudere questa pagina.</p></div>';
+  }).catch(e=>{
+    btn.disabled=false; btn.textContent="Invia la scheda";
+    err.textContent = e.status===410 ? "Questa scheda è già stata inviata: il link è monouso." : e.message;
+  });
+}
+
+/* ── lato coach: genera e condivide il link ── */
+function anamLink(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
-  if(!isNew){ ackAnamnesi(id); renderNotice(); }
-  const raw=a.profile||{};
-  const p=Object.assign({}, raw);
-  let locked=false;
-  if(raw._sec){
-    if(hasSecKey()){
-      const dec=await decField(raw._sec);
-      if(dec) Object.assign(p, dec); else locked=true;
-    } else locked=true;
-  }
-  p._locked=locked;
+  if(!AUTH||!AUTH.token){ toast("Rientra per generare il link"); return; }
+  modal('<div class="mh"><div><div class="mt">Link anamnesi</div><div class="ms">'+esc(a.name)+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div><div class="pf-gen">Genero il link sicuro…</div>');
+  apiCall("formLink",{athleteId:id, athleteName:a.name}).then(j=>{
+    const link=location.origin+location.pathname+"?anamnesi="+encodeURIComponent(j.token);
+    let h='<div class="mh"><div><div class="mt">Link anamnesi</div><div class="ms">'+esc(a.name)+'</div></div>'+
+      '<button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="alert info"><span class="ai">ℹ️</span><span>Valido <b>'+(j.expiresHours||48)+' ore</b> e utilizzabile <b>una sola volta</b>: se l\'atleta lo apre e non invia, o serve rimandarlo, generane uno nuovo da qui.</span></div>'+
+      '<label class="fl">Link personale</label>'+
+      '<input id="lnkF" readonly value="'+esc(link)+'" onclick="this.select()">'+
+      '<div style="display:flex;gap:8px;margin-top:12px">'+
+      '<button class="btn primary" style="flex:1" onclick="copyText(\'lnkF\')">📋 Copia link</button>'+
+      (navigator.share?'<button class="btn" style="flex:1" onclick="shareLink(document.getElementById(\'lnkF\').value,\''+esc(a.name).replace(/'/g,"")+'\')">↗ Condividi</button>':'')+
+      '</div>'+
+      '<div class="gnote">Manda il link su un canale che sai essere del destinatario giusto — WhatsApp diretto, non un gruppo.</div>';
+    modal(h);
+  }).catch(e=>{
+    modal('<div class="mh"><div><div class="mt">Link anamnesi</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="alert info"><span class="ai">⚠️</span><span>'+esc(e.message)+'</span></div>');
+  });
+}
+function copyText(inputId){
+  const el=document.getElementById(inputId); if(!el) return; el.select();
+  const done=()=>toast("Link copiato");
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(el.value).then(done).catch(()=>{ try{document.execCommand("copy");done();}catch(e){} });
+  else { try{ document.execCommand("copy"); done(); }catch(e){} }
+}
+function shareLink(link,name){
+  if(navigator.share) navigator.share({title:"Scheda anamnesi", text:"Ciao "+name+", compila la tua scheda per la preparazione:", url:link}).catch(()=>{});
+}
+
+function openAthlete(id, isNew){
+  const a=S.athletes.find(x=>x.id===id); if(!a) return;
+  const p=a.profile||{};
   let topt=S.teams.map(t=>'<option value="'+t.id+'"'+(a.team===t.id?" selected":"")+'>'+esc(t.name)+'</option>').join("");
   topt+='<option value=""'+(!a.team?" selected":"")+'>Senza squadra</option>';
   const age=ageFrom(p.birth);
   let h='<div class="mh"><div><div class="mt">'+(isNew?"Anamnesi — nuovo atleta":"Scheda atleta")+'</div>'+
     '<div class="ms">'+esc(a.name)+(age!=null?' · '+age+' anni':'')+'</div></div>'+
     '<div style="display:flex;gap:6px;align-items:center">'+
-    (isNew?'':'<button class="btn sm" onclick="anamLink(\''+id+'\')" title="Manda l\'anamnesi da compilare">🔗 Link</button>')+
-    (isNew?'':'<button class="btn sm" onclick="openCompare(\''+id+'\')" title="Confronta inizio vs oggi">📊 Confronto</button>')+
-    (isNew?'':'<button class="btn sm" onclick="sendReport(\''+id+'\')" title="Genera e invia il report andamento">✉️ Report</button>')+
     (isNew?'':'<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Esporta / stampa in PDF">🖨 PDF</button>')+
     '<button class="mcl" onclick="closeM()">✕</button></div></div>';
   if(isNew) h+='<div class="alert info" style="margin-bottom:14px"><span class="ai">📋</span><span>'+
     '<b>'+esc(a.name)+'</b> è stato aggiunto. Compila ora l\'anamnesi: bastano i campi che conosci, potrai completarla in qualsiasi momento.</span></div>';
-  if(!isNew) h+=athleteVitalsSummary(id);
   h+='<label class="fl">Nome e cognome</label>'+
     '<input id="eN" value="'+esc(a.name)+'">'+
     '<div class="row2"><div><label class="fl">Squadra</label>'+
@@ -1761,35 +1934,25 @@ async function openAthlete(id, isNew){
   const _team=S.teams.find(t=>t.id===a.team);
   const _sport=(_team&&_team.sport)||"generale";
   const kb=SPORTKB[_sport]||SPORTKB.generale;
-  const _flags=locked ? (raw._flagScreen?1:0) : SCREEN_KEYS.filter(k=>p[k]).length;
+  const _flags=SCREEN_KEYS.filter(k=>p[k]).length;
   if(_flags) h+='<div class="alert danger" style="margin-top:10px"><span class="ai">⚠️</span><span>'+
-    '<b>Screening: '+(locked?"voce/i positive":_flags+" voce/i positive")+'.</b> Consigliata una verifica medica prima di proporre carichi intensi.</span></div>';
-  if(locked) h+='<div class="alert info" style="margin-top:10px"><span class="ai">🔒</span><span>'+
-    '<b>Dati sanitari cifrati.</b> Su questo dispositivo manca la chiave: infortuni, patologie e farmaci non sono visibili né modificabili qui. Vai su <b>Impostazioni → Chiave di cifratura</b> per sbloccarli.</span></div>';
+    '<b>Screening: '+_flags+' voce/i positive.</b> Consigliata una verifica medica prima di proporre carichi intensi.</span></div>';
   // sezioni profilo (wrapper per aggiornare la guida dal vivo)
   h+='<div oninput="updateBrief(\''+id+'\')" onchange="updateBrief(\''+id+'\')">';
-  const fld=(f,pp)=>{
-    if(locked && SENSITIVE_KEYS.indexOf(f.k)>=0){
-      if(f.t==="check") return '<label class="pcheck locked"><input type="checkbox" disabled><span>🔒 '+f.l+' (cifrato)</span></label>';
-      return '<input disabled placeholder="🔒 dato cifrato" value="">';
-    }
-    return f.t==="check"?checkField(f,pp):profileField(f,pp);
-  };
   let i=0;
   while(i<PROFILE.length){
     const f=PROFILE[i];
     if(f.sec){ h+='<div class="psec">'+f.sec+'</div>'; i++; continue; }
-    if(f.t==="note"){ h+='<div class="gnote" style="margin:2px 0 12px">'+f.txt+'</div>'; i++; continue; }
     // accoppia due campi "half" consecutivi
     const next=PROFILE[i+1];
     if(f.half && next && next.half && !next.sec){
-      h+='<div class="row2"><div><label class="fl">'+f.l+'</label>'+fld(f,p)+'</div>'+
-         '<div><label class="fl">'+next.l+'</label>'+fld(next,p)+'</div></div>';
+      h+='<div class="row2"><div><label class="fl">'+f.l+'</label>'+profileField(f,p)+'</div>'+
+         '<div><label class="fl">'+next.l+'</label>'+profileField(next,p)+'</div></div>';
       i+=2;
     } else if(f.t==="check"){
-      h+=fld(f,p); i++;
+      h+=checkField(f,p); i++;
     } else {
-      h+='<label class="fl">'+f.l+'</label>'+(f.k==="role"?roleInput(p,kb,id):fld(f,p)); i++;
+      h+='<label class="fl">'+f.l+'</label>'+(f.k==="role"?roleInput(p,kb,id):profileField(f,p)); i++;
     }
   }
   h+='</div>';
@@ -1797,46 +1960,274 @@ async function openAthlete(id, isNew){
   h+='<div class="psec" style="color:var(--accent);border-color:var(--line2);margin-top:24px">📋 Guida preparazione & percorso — '+kb.label+'</div>'+
      '<div id="briefBox">'+briefBody(kb, p.role||"", p)+'</div>';
   h+='<div style="height:18px"></div>'+
-    (locked?'<input type="hidden" id="secLocked" value="1">':'')+
     '<button class="btn primary" style="width:100%" onclick="saveAthleteEdit(\''+id+'\')">'+(isNew?"Salva anamnesi":"Salva scheda")+'</button>'+
     (isNew
       ? '<button class="btn" style="width:100%;margin-top:8px" onclick="closeM()">Più tardi</button>'
-      : '<div class="dz"><span style="color:var(--muted);font-size:12px">Elimina atleta e dati</span>'+
+      : '<button class="btn sm" style="width:100%;margin-top:8px" onclick="anamLink(\''+id+'\')">🔗 Manda link per far compilare l\'anamnesi</button>'+
+        '<button class="btn sm" style="width:100%;margin-top:8px" onclick="openScreenEntry(\''+id+'\')">🧍 Valutazione posturale e funzionale</button>'+
+        '<button class="btn sm" style="width:100%;margin-top:8px" onclick="openLVEntry(\''+id+'\')">📈 Curva carico-velocità</button>'+
+        '<button class="btn sm" style="width:100%;margin-top:8px" onclick="openBoscoEntry(\''+id+'\')">🏃 Test di Bosco</button>'+
+        '<div class="dz"><span style="color:var(--muted);font-size:12px">Elimina atleta e dati</span>'+
         '<button class="danger" onclick="delAthlete(\''+id+'\')">Elimina</button></div>');
   modal(h);
 }
-async function saveAthleteEdit(id){
+function saveAthleteEdit(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   const n=document.getElementById("eN").value.trim(); if(!n){ toast("Inserisci un nome"); return; }
   a.name=n; a.team=document.getElementById("eT").value||null; a.sex=document.getElementById("eS").value;
-  const locked=!!document.getElementById("secLocked");
-  const raw=a.profile||{};
   const p={};
-  // metadati che non sono campi del form: si preservano sempre
-  Object.keys(raw).forEach(k=>{ if(k.indexOf("_")===0) p[k]=raw[k]; });
-  const sensitive={};
   PROFILE.forEach(f=>{ if(f.sec) return; const el=document.getElementById("p_"+f.k); if(!el) return;
-    const isSens=SENSITIVE_KEYS.indexOf(f.k)>=0;
-    if(isSens && locked) return; // campi bloccati: non toccarli, restano cifrati come prima
-    if(f.t==="check"){ if(el.checked){ if(isSens) sensitive[f.k]=true; else p[f.k]=true; } }
-    else { const v=el.value.trim(); if(v){ if(isSens) sensitive[f.k]=v; else p[f.k]=v; } }
+    if(f.t==="check"){ if(el.checked) p[f.k]=true; }
+    else { const v=el.value.trim(); if(v) p[f.k]=v; }
   });
-  if(locked){
-    p._sec=raw._sec; p._flagInjury=raw._flagInjury; p._flagScreen=raw._flagScreen;
-  } else if(Object.keys(sensitive).length){
-    p._sec=await encField(sensitive);
-    p._flagInjury=!!(sensitive.injuriesCurrent && String(sensitive.injuriesCurrent).trim());
-    p._flagScreen=SCREEN_KEYS.some(k=>sensitive[k]);
-  }
   a.profile=p;
-  save(); closeM(); render(); toast("Scheda salvata"+(locked?"":Object.keys(sensitive).length?" · dati sanitari cifrati":""));
+  save(); closeM(); render(); toast("Scheda salvata");
 }
 function delAthlete(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
-  if(!confirm("Eliminare "+a.name+" e tutti i suoi dati?")) return;
-  snapshotBeforeRisk("eliminazione di "+a.name);
-  S.athletes=S.athletes.filter(x=>x.id!==id); delete S.data[id];
-  save(); closeM(); render(); toast("Atleta eliminato");
+  if(!confirm("Eliminare "+a.name+" e TUTTI i suoi dati?\n\nVengono cancellati anche anamnesi, check-in di readiness e carichi. L'operazione è definitiva.")) return;
+  S.athletes=S.athletes.filter(x=>x.id!==id);
+  // Prima restavano readiness[id] e load[id]: dati sanitari di una persona
+  // cancellata continuavano a vivere nel cloud.
+  delete S.data[id];
+  if(S.readiness) delete S.readiness[id];
+  if(S.load) delete S.load[id];
+  if(S.screen) delete S.screen[id];
+  if(S.lv) delete S.lv[id];
+  tombSet("ath:"+id);   // impedisce che il merge lo resusciti
+  save(); closeM(); render(); toast("Atleta e dati eliminati");
+}
+
+/* ═══════════════ TEST DI BOSCO (15/30/60s, potenza anaerobica) ═══════════════
+   Formula originale: Bosco C, Luhtanen P, Komi PV (1983) "A simple method for
+   measurement of mechanical power in jumping", Eur J Appl Physiol 50:273-282.
+   P (W/kg) = g² · Tvolo_totale · Tdurata / (4 · n_salti · (Tdurata − Tvolo_totale))
+   La formula normalizza già per la massa corporea: non serve il peso. */
+function boscoPower(durationS, nJumps, flightTotalS){
+  const G=9.81;
+  if(!nJumps || nJumps<=0) return null;
+  if(!flightTotalS || flightTotalS<=0 || flightTotalS>=durationS) return null;
+  return (G*G*flightTotalS*durationS) / (4*nJumps*(durationS-flightTotalS));
+}
+function openBoscoEntry(aid){
+  const a=S.athletes.find(x=>x.id===aid); if(!a) return;
+  let h='<div class="mh"><div><div class="mt">Test di Bosco</div><div class="ms">'+esc(a.name)+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="gnote" style="margin-top:0">Salti ripetuti, mani sui fianchi, ginocchia estese in volo. Inserisci il numero di salti e il tempo di volo TOTALE (somma dei singoli tempi di volo) misurati nella durata scelta.</div>'+
+    '<label class="fl">Data</label><input id="bscD" type="date" value="'+todayISO()+'">'+
+    '<label class="fl">Durata del test</label><select id="bscDur"><option value="15">15 secondi</option><option value="30">30 secondi</option><option value="60">60 secondi</option></select>'+
+    '<label class="fl">Numero di salti eseguiti</label><input id="bscN" type="number" inputmode="numeric" placeholder="es. 24">'+
+    '<label class="fl">Tempo di volo totale (secondi)</label><input id="bscTf" type="number" inputmode="decimal" step="any" placeholder="es. 9.6">'+
+    '<div id="bscErr" class="login-err"></div>'+
+    '<div id="bscResult" class="pf" style="display:none"></div>'+
+    '<button class="btn sm" style="width:100%;margin-top:10px" onclick="previewBosco()">Calcola</button>'+
+    '<button class="btn primary" style="width:100%;margin-top:8px" id="bscSaveBtn" onclick="saveBosco(\''+aid+'\')" disabled>Salva</button>';
+  modal(h);
+}
+function previewBosco(){
+  const dur=parseFloat(document.getElementById("bscDur").value);
+  const n=parseFloat(document.getElementById("bscN").value);
+  const tf=parseFloat(document.getElementById("bscTf").value);
+  const err=document.getElementById("bscErr"), res=document.getElementById("bscResult"), btn=document.getElementById("bscSaveBtn");
+  const p=boscoPower(dur,n,tf);
+  if(p==null || !isFinite(p) || p<=0){
+    err.textContent="Valori non validi: controlla che il tempo di volo totale sia minore della durata del test.";
+    res.style.display="none"; btn.disabled=true; return;
+  }
+  err.textContent="";
+  res.style.display="block";
+  res.innerHTML='<b>Potenza media:</b> '+fmtNum(Math.round(p*100)/100)+' W/kg';
+  btn.disabled=false;
+  btn.dataset.p=p; btn.dataset.dur=dur; btn.dataset.n=n; btn.dataset.tf=tf;
+}
+function saveBosco(aid){
+  const btn=document.getElementById("bscSaveBtn"); const p=parseFloat(btn.dataset.p);
+  if(!p||!isFinite(p)) return;
+  const d=document.getElementById("bscD").value||todayISO();
+  const dur=btn.dataset.dur, tid="bosco"+dur;
+  if(!S.data[aid]) S.data[aid]={}; if(!S.data[aid][tid]) S.data[aid][tid]=[];
+  const arr=S.data[aid][tid]; const ex=arr.find(e=>e.d===d);
+  const entry={d, v:Math.round(p*1000)/1000, n:parseFloat(btn.dataset.n), tf:parseFloat(btn.dataset.tf)};
+  if(ex) Object.assign(ex,entry); else arr.push(entry);
+  arr.sort((x,y)=>x.d<y.d?-1:1);
+  save(); closeM(); render(); toast("Test di Bosco "+dur+"s salvato");
+}
+
+/* ═══════════════ VALUTAZIONE POSTURALE E FUNZIONALE ═══════════════
+   Pass/fail con note sui compensi, come da indicazione del coach.
+   Una voce per data: la valutazione si fa in un'unica sessione. */
+const POSTURE_ITEMS={
+  ant:["Capo inclinato/ruotato","Spalle asimmetriche","Bacino asimmetrico","Ginocchio valgo","Ginocchio varo","Piede pronato","Piede supinato"],
+  lat:["Iperlordosi lombare","Ipercifosi dorsale","Capo anteposto","Spalle anteposte","Anteversione del bacino","Retroversione del bacino","Ginocchio recurvato"],
+  post:["Scapole alate","Asimmetria scapolare","Scoliosi apparente","Asimmetria pieghe glutee","Tallone valgo","Tallone varo"]
+};
+const POSTURE_SECS=[{k:"ant",l:"Vista anteriore"},{k:"lat",l:"Vista laterale"},{k:"post",l:"Vista posteriore"}];
+const SCREEN_ITEMS=[
+  {k:"squatGlobal",   l:"Squat test globale",              sides:false},
+  {k:"oneLegSquat",   l:"1 Leg Squat Test",                 sides:true},
+  {k:"yAnt",          l:"Y Balance — reach anteriore",      sides:true},
+  {k:"yPM",           l:"Y Balance — reach postero-mediale",sides:true},
+  {k:"yPL",           l:"Y Balance — reach postero-laterale",sides:true},
+  {k:"bridgeMono",    l:"Core stability — bridge monolaterale", sides:true},
+  {k:"sidePlankAbd",  l:"Core stability — side plank (abduttori)", sides:true},
+  {k:"sidePlankAdd",  l:"Core stability — side plank (adduttori)", sides:true}
+];
+
+function openScreenEntry(aid){
+  const a=S.athletes.find(x=>x.id===aid); if(!a) return;
+  const arr=(S.screen&&S.screen[aid])||[];
+  const last=arr.length?arr[arr.length-1]:null;
+  const e=last&&last.d===todayISO() ? last : {d:todayISO(), posture:{}, items:{}};
+
+  let h='<div class="mh"><div><div class="mt">Valutazione posturale e funzionale</div><div class="ms">'+esc(a.name)+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<label class="fl">Data</label><input id="scrD" type="date" value="'+esc(e.d)+'">';
+
+  POSTURE_SECS.forEach(sec=>{
+    h+='<div class="psec">Postura statica — '+sec.l+'</div>';
+    (POSTURE_ITEMS[sec.k]||[]).forEach((label,i)=>{
+      const key="p_"+sec.k+"_"+i;
+      const on=!!(e.posture[sec.k]&&e.posture[sec.k].devs&&e.posture[sec.k].devs.indexOf(i)>=0);
+      h+='<label class="pcheck"><input type="checkbox" id="'+key+'"'+(on?' checked':'')+'><span>'+esc(label)+'</span></label>';
+    });
+    h+='<textarea id="pn_'+sec.k+'" placeholder="Note su questa vista">'+esc((e.posture[sec.k]&&e.posture[sec.k].note)||"")+'</textarea>';
+  });
+
+  h+='<div class="psec">Movimento & core stability</div>';
+  SCREEN_ITEMS.forEach(it=>{
+    const cur=e.items[it.k]||{};
+    h+='<div class="pf-field"><label class="pf-l">'+esc(it.l)+'</label>';
+    if(it.sides){
+      h+='<div style="display:flex;gap:8px">'+
+         '<select id="i_'+it.k+'_l" style="flex:1"><option value="">Sx —</option><option value="pass"'+(cur.l==="pass"?" selected":"")+'>Sx: Pass</option><option value="fail"'+(cur.l==="fail"?" selected":"")+'>Sx: Fail</option></select>'+
+         '<select id="i_'+it.k+'_r" style="flex:1"><option value="">Dx —</option><option value="pass"'+(cur.r==="pass"?" selected":"")+'>Dx: Pass</option><option value="fail"'+(cur.r==="fail"?" selected":"")+'>Dx: Fail</option></select>'+
+         '</div>';
+    } else {
+      h+='<select id="i_'+it.k+'"><option value="">—</option><option value="pass"'+(cur.v==="pass"?" selected":"")+'>Pass</option><option value="fail"'+(cur.v==="fail"?" selected":"")+'>Fail</option></select>';
+    }
+    h+='<textarea id="in_'+it.k+'" placeholder="Note sui compensi">'+esc(cur.note||"")+'</textarea></div>';
+  });
+
+  h+='<button class="btn primary" style="width:100%;margin-top:14px" onclick="saveScreenEntry(\''+aid+'\')">Salva valutazione</button>';
+  modal(h);
+}
+function saveScreenEntry(aid){
+  const d=document.getElementById("scrD").value||todayISO();
+  const posture={};
+  POSTURE_SECS.forEach(sec=>{
+    const devs=[];
+    (POSTURE_ITEMS[sec.k]||[]).forEach((label,i)=>{ if(document.getElementById("p_"+sec.k+"_"+i).checked) devs.push(i); });
+    const note=document.getElementById("pn_"+sec.k).value.trim();
+    if(devs.length||note) posture[sec.k]={devs, note};
+  });
+  const items={};
+  SCREEN_ITEMS.forEach(it=>{
+    const note=document.getElementById("in_"+it.k).value.trim();
+    if(it.sides){
+      const l=document.getElementById("i_"+it.k+"_l").value, r=document.getElementById("i_"+it.k+"_r").value;
+      if(l||r||note) items[it.k]={l:l||null, r:r||null, note};
+    } else {
+      const v=document.getElementById("i_"+it.k).value;
+      if(v||note) items[it.k]={v:v||null, note};
+    }
+  });
+  if(!S.screen) S.screen={}; if(!S.screen[aid]) S.screen[aid]=[];
+  const arr=S.screen[aid]; const ex=arr.find(e=>e.d===d);
+  const entry={d, posture, items};
+  if(ex) Object.assign(ex,entry); else arr.push(entry);
+  arr.sort((x,y)=>x.d<y.d?-1:1);
+  save(); closeM(); render(); toast("Valutazione salvata");
+}
+
+/* ═══════════════ CURVA CARICO-VELOCITÀ ═══════════════
+   Regressione lineare v = m·carico + b sui punti inseriti (dati da dispositivo
+   VBT). Stima 1RM come il carico al quale v = soglia di velocità minima (MVT),
+   configurabile in cfg.lvMVT — NON un valore assoluto di letteratura, va
+   tarato per esercizio ed è modificabile dalle Soglie. */
+function linRegLV(points){
+  const n=points.length;
+  if(n<2) return null;
+  let sx=0,sy=0,sxy=0,sxx=0;
+  points.forEach(p=>{ sx+=p.load; sy+=p.v; sxy+=p.load*p.v; sxx+=p.load*p.load; });
+  const denom=(n*sxx-sx*sx);
+  if(!denom) return null;
+  const m=(n*sxy-sx*sy)/denom;
+  const b=(sy-m*sx)/n;
+  const meanY=sy/n;
+  let ssTot=0, ssRes=0;
+  points.forEach(p=>{ const pred=m*p.load+b; ssTot+=(p.v-meanY)*(p.v-meanY); ssRes+=(p.v-pred)*(p.v-pred); });
+  const r2 = ssTot>0 ? 1-ssRes/ssTot : (ssRes===0?1:0);
+  return {m,b,r2};
+}
+function lvEstimate(reg, mvt){
+  if(!reg || reg.m>=0) return null;   // la velocità deve calare all'aumentare del carico
+  const load1RM=(mvt-reg.b)/reg.m;
+  return load1RM>0 ? load1RM : null;
+}
+let LV_ROWS=[], CUR_LV_AID=null;
+function openLVEntry(aid){
+  const a=S.athletes.find(x=>x.id===aid); if(!a) return;
+  CUR_LV_AID=aid;
+  LV_ROWS=[{load:"",v:""},{load:"",v:""},{load:"",v:""}];
+  let h='<div class="mh"><div><div class="mt">Curva carico-velocità</div><div class="ms">'+esc(a.name)+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<label class="fl">Data</label><input id="lvD" type="date" value="'+todayISO()+'">'+
+    '<label class="fl">Esercizio</label><input id="lvEx" type="text" placeholder="es. Back Squat">'+
+    '<label class="fl">Soglia di velocità minima — MVT (m/s)</label><input id="lvMvt" type="number" inputmode="decimal" step="any" value="'+S.cfg.lvMVT+'">'+
+    '<div class="gnote" style="margin-top:0">Soglia modificabile qui e nelle Soglie generali. Non è un valore universale: dipende dall\'esercizio.</div>'+
+    '<label class="fl">Punti carico (kg) / velocità media (m/s)</label>'+
+    '<div id="lvRows"></div>'+
+    '<button class="btn sm" style="width:100%;margin-top:6px" onclick="addLVRow()">+ Aggiungi punto</button>'+
+    '<div id="lvErr" class="login-err"></div>'+
+    '<div id="lvResult" class="pf" style="display:none"></div>'+
+    '<button class="btn sm" style="width:100%;margin-top:10px" onclick="previewLV()">Calcola</button>'+
+    '<button class="btn primary" style="width:100%;margin-top:8px" id="lvSaveBtn" onclick="saveLV(\''+aid+'\')" disabled>Salva</button>';
+  modal(h);
+  renderLVRows();
+}
+function renderLVRows(){
+  const el=document.getElementById("lvRows"); if(!el) return;
+  el.innerHTML=LV_ROWS.map((r,i)=>
+    '<div style="display:flex;gap:8px;margin-bottom:6px">'+
+    '<input type="number" inputmode="decimal" step="any" placeholder="carico kg" value="'+esc(r.load)+'" oninput="LV_ROWS['+i+'].load=this.value" style="flex:1">'+
+    '<input type="number" inputmode="decimal" step="any" placeholder="velocità m/s" value="'+esc(r.v)+'" oninput="LV_ROWS['+i+'].v=this.value" style="flex:1">'+
+    '</div>').join("");
+}
+function addLVRow(){ LV_ROWS.push({load:"",v:""}); renderLVRows(); }
+function previewLV(){
+  const pts=LV_ROWS.map(r=>({load:parseFloat(r.load), v:parseFloat(r.v)})).filter(p=>isFinite(p.load)&&isFinite(p.v)&&p.load>=0&&p.v>0);
+  const err=document.getElementById("lvErr"), res=document.getElementById("lvResult"), btn=document.getElementById("lvSaveBtn");
+  const mvt=parseFloat(document.getElementById("lvMvt").value);
+  if(pts.length<2){ err.textContent="Servono almeno 2 punti validi."; res.style.display="none"; btn.disabled=true; return; }
+  const reg=linRegLV(pts);
+  if(!reg || reg.m>=0){ err.textContent="I dati non mostrano una relazione carico-velocità coerente (la velocità dovrebbe calare col carico)."; res.style.display="none"; btn.disabled=true; return; }
+  const est=lvEstimate(reg, mvt);
+  if(est==null){ err.textContent="Impossibile stimare l'1RM con questi dati (estrapolazione fuori range o negativa)."; res.style.display="none"; btn.disabled=true; return; }
+  err.textContent="";
+  const bw=parseFloat((S.athletes.find(a=>a.id===CUR_LV_AID)||{}).profile && S.athletes.find(a=>a.id===CUR_LV_AID).profile.weight);
+  const rel = (bw&&bw>0) ? est/bw : null;
+  res.style.display="block";
+  res.innerHTML='<b>1RM stimato:</b> '+fmtNum(Math.round(est*10)/10)+' kg &nbsp;·&nbsp; <b>R²:</b> '+fmtNum(Math.round(reg.r2*1000)/1000)+
+    (reg.r2<0.9?' <span style="color:var(--down)">(bassa linearità: verifica i dati)</span>':'')+
+    (rel!=null?'<br><b>Forza relativa:</b> '+fmtNum(Math.round(rel*100)/100)+'× peso corporeo — '+
+      (rel>=S.cfg.lvRelStrengthGate?'sopra la soglia impostata ('+S.cfg.lvRelStrengthGate+'×): forza relativa sufficiente per considerare il profilo balistico.':'sotto la soglia impostata ('+S.cfg.lvRelStrengthGate+'×): prima lavoro di forza.')
+      :'');
+  btn.disabled=false;
+  btn.dataset.est=est; btn.dataset.r2=reg.r2; btn.dataset.m=reg.m; btn.dataset.b=reg.b;
+}
+function saveLV(aid){
+  const btn=document.getElementById("lvSaveBtn");
+  const est=parseFloat(btn.dataset.est); if(!est) return;
+  const d=document.getElementById("lvD").value||todayISO();
+  const ex=document.getElementById("lvEx").value.trim()||"Esercizio";
+  const mvt=parseFloat(document.getElementById("lvMvt").value);
+  const pts=LV_ROWS.map(r=>({load:parseFloat(r.load), v:parseFloat(r.v)})).filter(p=>isFinite(p.load)&&isFinite(p.v));
+  if(!S.lv) S.lv={}; if(!S.lv[aid]) S.lv[aid]=[];
+  const arr=S.lv[aid]; const exist=arr.find(e=>e.d===d && e.exercise===ex);
+  const entry={d, exercise:ex, points:pts, mvt, est1RM:Math.round(est*10)/10, m:parseFloat(btn.dataset.m), b:parseFloat(btn.dataset.b), r2:parseFloat(btn.dataset.r2)};
+  if(exist) Object.assign(exist,entry); else arr.push(entry);
+  arr.sort((x,y)=>x.d<y.d?-1:1);
+  save(); closeM(); render(); toast("Curva carico-velocità salvata — 1RM stimato "+entry.est1RM+" kg");
 }
 
 /* ═══════════════ KNOWLEDGE BASE SPORT + RUOLO ═══════════════ */
@@ -2077,99 +2468,9 @@ function briefBody(kb, role, p){
   }
   return h;
 }
-/* ═══════════════ REPORT ANDAMENTO (per invio all'atleta) ═══════════════ */
-// Report volutamente SENZA dati sanitari sensibili: pensato per essere condiviso
-// con l'atleta o la famiglia, mostra solo l'andamento nei test.
-function reportSpark(arr,dir){
-  const vals=arr.map(e=>e.v);
-  const min=Math.min(...vals), max=Math.max(...vals), rng=(max-min)||1;
-  const W=200,H=44,pad=6;
-  const pts=vals.map((v,i)=>{
-    const x=(i/(vals.length-1))*W;
-    const y=pad+(1-(v-min)/rng)*(H-pad*2);
-    return x.toFixed(1)+","+y.toFixed(1);
-  }).join(' ');
-  const lastImproved=vals.length<2?true:((vals[vals.length-1]-vals[0])*dir>=0);
-  const stroke=lastImproved?"#639922":"#E24B4A";
-  const dotFill=lastImproved?"#3B6D11":"#A32D2D";
-  const lastPt=pts.split(' ').pop().split(',');
-  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:38px;display:block" preserveAspectRatio="none">'+
-    '<polyline points="'+pts+'" fill="none" stroke="'+stroke+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'+
-    '<circle cx="'+lastPt[0]+'" cy="'+lastPt[1]+'" r="3.2" fill="'+dotFill+'"/>'+
-    '</svg>';
-}
-function buildProgressReport(id){
-  const a=S.athletes.find(x=>x.id===id); if(!a) return null;
-  const team=S.teams.find(t=>t.id===a.team);
-  const rows=TESTS.map(t=>{
-    const arr=series(id,t.id); if(arr.length<2) return null;
-    const first=arr[0], last=arr[arr.length-1];
-    if(first.d===last.d) return null;
-    const delta=last.v-first.v;
-    const pct=first.v?Math.round(delta/Math.abs(first.v)*1000)/10:null;
-    const better=(t.dir>0)===(delta>0);
-    return {t, arr, first, last, delta, pct, better: delta===0?null:better};
-  }).filter(Boolean);
-  let h='<div class="pdoc">';
-  h+='<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:9px">'+
-     '<div><div class="pbrand">Iron Performance</div><h1 style="font-size:22px;margin:6px 0 0;color:#111">'+esc(a.name)+'</h1>'+
-     '<div class="pmeta">'+(team?esc(team.name)+' · ':'')+'Report andamento</div></div>'+
-     '<div class="pmeta">'+fmtDate(todayISO())+'</div></div>';
-  if(!rows.length){
-    h+='<div class="pf" style="margin-top:16px">Non ci sono ancora abbastanza rilevazioni per mostrare un andamento (serve almeno un test ripetuto in due date diverse).</div>';
-  } else {
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:16px">';
-    rows.forEach(r=>{
-      const sign=r.delta>0?"+":""; const cls=r.better===null?"#888":r.better?"#3B6D11":"#A32D2D";
-      const arrow=r.better===null?"→":r.better?"↑":"↓";
-      h+='<div style="border:0.5px solid #e3e1d8;border-radius:9px;padding:11px 12px;break-inside:avoid">'+
-        '<div style="font-size:10.5px;color:#888;margin-bottom:1px">'+esc(r.t.name)+'</div>'+
-        '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:5px">'+
-        '<span style="font-size:17px;font-weight:700;color:#111">'+fmtNum(r.last.v)+' <span style="font-size:10px;font-weight:400;color:#999">'+esc(r.t.unit)+'</span></span>'+
-        '<span style="font-size:11px;font-weight:700;color:'+cls+'">'+arrow+' '+sign+fmtNum(r.delta)+(r.pct!=null?' ('+sign+r.pct+'%)':'')+'</span></div>'+
-        reportSpark(r.arr, r.t.dir)+
-        '<div style="display:flex;justify-content:space-between;font-size:9px;color:#bbb;margin-top:2px">'+
-        '<span>'+fmtDate(r.first.d)+'</span><span>'+fmtDate(r.last.d)+'</span></div></div>';
-    });
-    h+='</div>';
-  }
-  const rarr=(S.readiness&&S.readiness[id])||[]; const rlast=rarr[rarr.length-1];
-  if(rlast) h+='<div class="psc">Stato attuale</div><div class="pf"><b>Readiness:</b> '+readinessScore(rlast)+'/100 · ultimo check-in '+fmtDate(rlast.d)+'</div>';
-  h+='<div class="pfoot">Iron Performance · report riepilogativo, non sostituisce la scheda clinica'+((AUTH&&AUTH.email)?' · '+esc(AUTH.email):'')+'</div></div>';
-  return h;
-}
-function sendReport(id){
+function printAthlete(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
-  const html=buildProgressReport(id); if(!html) return;
-  let pa=document.getElementById("printArea");
-  if(!pa){ pa=document.createElement("div"); pa.id="printArea"; document.body.appendChild(pa); }
-  pa.innerHTML=html;
-  const email=(a.profile&&a.profile.email)||"";
-  function done(){
-    document.body.classList.remove("printing");
-    window.removeEventListener("afterprint",done); window.removeEventListener("focus",done);
-    setTimeout(()=>{
-      if(email){
-        const subj=encodeURIComponent("Il tuo andamento — "+a.name);
-        const body=encodeURIComponent("Ciao "+a.name.split(" ")[0]+",\n\nin allegato trovi il tuo report andamento.\nHai appena salvato il PDF: ricordati di allegarlo qui prima di inviare.\n\nA presto.");
-        window.location.href="mailto:"+encodeURIComponent(email)+"?subject="+subj+"&body="+body;
-        toast("PDF salvato — allega il file nell'email che si è aperta");
-      } else {
-        toast("PDF salvato. Aggiungi l'email dell'atleta nella scheda per pre-compilare l'invio");
-      }
-    }, 400);
-  }
-  window.addEventListener("afterprint",done);
-  window.addEventListener("focus",done);
-  document.body.classList.add("printing");
-  setTimeout(()=>{ window.print(); }, 80);
-}
-async function printAthlete(id){
-  const a=S.athletes.find(x=>x.id===id); if(!a) return;
-  const raw=a.profile||{};
-  const p=Object.assign({}, raw);
-  let locked=false;
-  if(raw._sec){ if(hasSecKey()){ const dec=await decField(raw._sec); if(dec) Object.assign(p,dec); else locked=true; } else locked=true; }
+  const p=a.profile||{};
   const team=S.teams.find(t=>t.id===a.team); const sport=(team&&team.sport)||"generale";
   const kb=SPORTKB[sport]||SPORTKB.generale; const age=ageFrom(p.birth);
   const L=["Base","Discreto","Buono","Ottimo","Elite"];
@@ -2180,9 +2481,8 @@ async function printAthlete(id){
      ' · '+(team?esc(team.name):'Senza squadra')+' · '+sportMeta(sport).label+'</div></div>'+
      '<div class="pmeta">Generato il '+fmtDate(todayISO())+'</div></div>';
   const flagLab={scHeart:"Problemi cardiaci",scChest:"Dolore al petto sotto sforzo",scDizzy:"Vertigini/svenimenti",scBreath:"Affanno anomalo",scJoint:"Problema osteo-articolare aggravato dall'attività",scFamily:"Familiarità eventi cardiaci precoci",scMedsHeart:"Farmaci cuore/pressione"};
-  const flags=p._flagScreen?["x"]:[];  // solo per il conteggio; il dettaglio è cifrato
+  const flags=SCREEN_KEYS.filter(k=>p[k]);
   if(flags.length) h+='<div class="palert"><b>⚠ Screening: '+flags.length+' voce/i positive.</b> '+flags.map(k=>flagLab[k]).join(" · ")+'. Verifica medica consigliata prima di carichi intensi.</div>';
-  if(locked) h+='<div class="palert">🔒 Dati sanitari cifrati non disponibili su questo dispositivo: infortuni, patologie e farmaci non compaiono in questo documento.</div>';
   // profilo (solo campi compilati)
   let secName="", buf="", body="";
   function flush(){ if(secName && buf) body+='<div class="psc">'+secName+'</div>'+buf; buf=""; }
@@ -2207,8 +2507,9 @@ async function printAthlete(id){
   const rarr=(S.readiness&&S.readiness[a.id])||[]; const rlast=rarr[rarr.length-1];
   const ac=(typeof acwr==="function")?acwr(a.id):null;
   if(rlast||ac){ h+='<div class="psc">Stato attuale</div>';
-    if(rlast) h+='<div class="pf"><b>Readiness:</b> '+readinessScore(rlast)+'/100 · check-in '+fmtDate(rlast.d)+'</div>';
-    if(ac) h+='<div class="pf"><b>ACWR (carico acuto:cronico):</b> '+fmtNum(Math.round(ac.acwr*100)/100)+'</div>';
+    if(rlast){ const ev=readinessEval(a.id,rlast);
+      if(ev.pc!=null) h+='<div class="pf"><b>Readiness:</b> '+rdLabel(ev)+'/100 · check-in '+fmtDate(rlast.d)+(ev.mode==="abs"?' · baseline non ancora disponibile':'')+'</div>'; }
+    if(ac && ac.acwr!=null) h+='<div class="pf"><b>ACWR (carico acuto:cronico):</b> '+fmtNum(Math.round(ac.acwr*100)/100)+(ac.provisional?' (provvisorio)':'')+'</div>';
   }
   // guida
   h+='<div class="psc">Guida preparazione &amp; percorso — '+kb.label+'</div><div class="pbrief">'+briefBody(kb, p.role||"", p)+'</div>';
@@ -2232,21 +2533,106 @@ function updateBrief(id){
   const live={role:g("role"), seasonPhase:g("seasonPhase"), goal:g("goal"), experience:g("experience")};
   const box=document.getElementById("briefBox"); if(box) box.innerHTML=briefBody(kb, live.role, live);
 }
-/* ═══════════════ FATICA / READINESS ═══════════════ */
-function readinessScore(e){
-  // sonno: alto=meglio; dolori/fatica/stress: alto=peggio
-  const g = (e.sl||0) + (6-(e.so||0)) + (6-(e.fa||0)) + (6-(e.st||0));
-  return Math.round((g-4)/16*100);
+function openCoachBrief(id){
+  const a=S.athletes.find(x=>x.id===id); if(!a) return;
+  const team=S.teams.find(t=>t.id===a.team);
+  const sport=(team&&team.sport)||"generale";
+  const kb=SPORTKB[sport]||SPORTKB.generale;
+  let role=""; const rin=document.getElementById("p_role");
+  if(rin) role=rin.value.trim(); else role=(a.profile&&a.profile.role)||"";
+  const sp=SPORTS.find(s=>s.id===sport);
+  let h='<button class="gback" onclick="openAthlete(\''+id+'\')">‹ Scheda atleta</button>'+
+    '<div class="mh"><div><div class="eyebrow">Preparazione fisica</div>'+
+    '<div class="mt">'+(sp?sp.icon+' ':'')+kb.label+'</div>'+
+    '<div class="ms">'+esc(a.name)+(role?' · '+esc(role):'')+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  h+=kbSection("Richieste dello sport", kb.demands);
+  h+=kbSection("Gesto specifico", kb.gesture);
+  h+=kbSection("Direttive di allenamento", kb.training);
+  h+=kbSection("Prevenzione infortuni", kb.prevention);
+  h+=kbSection("Monitoraggio &amp; carichi", kb.monitoring);
+  if(kb.roles && Object.keys(kb.roles).length){
+    if(role){
+      const rk=matchRole(kb, role);
+      if(rk) h+=kbSection("Ruolo: "+esc(role), rk);
+      else h+='<div class="gnote">Nessuna scheda specifica per il ruolo «'+esc(role)+'»: mostrate le indicazioni generali dello sport.</div>';
+    } else {
+      h+='<div class="gnote">Imposta il <b>ruolo</b> nella scheda atleta per vedere le indicazioni specifiche di ruolo.</div>';
+    }
+  }
+  h+='<div class="gnote">Indicazioni generali a scopo di preparazione fisica: adattale sempre al singolo atleta e alla sua anamnesi.</div>';
+  modal(h);
 }
-function readinessColor(pc){ const c=S.cfg; return pc>=c.rdGreen?"up":pc>=c.rdAmber?"amber":"down"; }
+
+/* ═══════════════ FATICA / READINESS ═══════════════ */
+/* Il punteggio precedente usava (e.sl||0): un item mancante valeva 0 e
+   affondava il totale senza segnalarlo. Qui si media solo su ciò che c'è. */
+function readinessScore(e){
+  if(!e) return null;
+  const p=[];
+  if(e.sl!=null) p.push((e.sl-1)/4);        // sonno: alto = meglio
+  if(e.so!=null) p.push((5-e.so)/4);        // dolori: alto = peggio
+  if(e.fa!=null) p.push((5-e.fa)/4);
+  if(e.st!=null) p.push((5-e.st)/4);
+  if(!p.length) return null;
+  return Math.round(p.reduce((a,b)=>a+b,0)/p.length*100);
+}
+
+/* Le scale di wellness non hanno significato assoluto: chi risponde sempre 3
+   sarebbe cronicamente "ambra" e chi risponde sempre 5 non entrerebbe mai in
+   rosso. Il segnale utile è lo scostamento dalla baseline del singolo atleta
+   (z-score). Sotto i rdBaseMin check-in la baseline non esiste ancora e si
+   ripiega sulle soglie assolute, dichiarandolo. */
+function readinessBaseline(aid, beforeDate){
+  const arr=(S.readiness&&S.readiness[aid])||[];
+  const vals=[];
+  for(let i=0;i<arr.length;i++){
+    if(beforeDate && arr[i].d>=beforeDate) continue;
+    if(daysAgo(arr[i].d)>56) continue;             // finestra 8 settimane
+    const s=readinessScore(arr[i]); if(s!=null) vals.push(s);
+  }
+  const v=vals.slice(-28);
+  if(v.length<(S.cfg.rdBaseMin||7)) return null;
+  const m=v.reduce((a,b)=>a+b,0)/v.length;
+  let sd=Math.sqrt(v.reduce((a,b)=>a+(b-m)*(b-m),0)/(v.length-1));
+  if(!isFinite(sd)||sd<3) sd=3;                    // evita z esplosivi su risposte piatte
+  return {mean:m, sd:sd, n:v.length};
+}
+function readinessEval(aid, entry){
+  const pc=readinessScore(entry);
+  if(pc==null) return {pc:null, color:"flat", mode:"none"};
+  const b=readinessBaseline(aid, entry&&entry.d);
+  if(!b) return {pc, color:readinessColorAbs(pc), mode:"abs"};
+  const z=(pc-b.mean)/b.sd;
+  const c=S.cfg;
+  const color = z<=(c.rdZRed!=null?c.rdZRed:-1.5) ? "down"
+              : z<=(c.rdZAmber!=null?c.rdZAmber:-1.0) ? "amber" : "up";
+  return {pc, z, color, mode:"z", mean:Math.round(b.mean), n:b.n};
+}
+function readinessColorAbs(pc){ const c=S.cfg; return pc==null?"flat":pc>=c.rdGreen?"up":pc>=c.rdAmber?"amber":"down"; }
+function readinessColor(pc){ return readinessColorAbs(pc); }   // compatibilità
+function rdLabel(ev){
+  if(!ev||ev.pc==null) return "—";
+  return ev.mode==="z" ? (ev.pc+" (z "+(ev.z>0?"+":"")+ev.z.toFixed(1)+")") : (ev.pc+"");
+}
+
+/* Il CV tipico del CMJ è 2-5%: una soglia fissa al 5% segnalava "fatica"
+   dentro l'errore di misura, e la baseline poteva essere una sola rilevazione.
+   Ora servono almeno cmjMinBase misure e la soglia non scende mai sotto
+   cmjNoise volte il CV osservato. */
 function cmjFatigue(aid){
-  const arr=series(aid,"cmj"); if(arr.length<2) return null;
+  const arr=series(aid,"cmj");
+  const need=(S.cfg.cmjMinBase||5)+1;
+  if(arr.length<need) return {insufficient:true, have:arr.length, need:need};
   const latest=arr[arr.length-1].v;
-  const prev=arr.slice(Math.max(0,arr.length-4), arr.length-1);
-  const base=prev.reduce((s,e)=>s+e.v,0)/prev.length;
-  if(!base) return null;
+  const prev=arr.slice(Math.max(0,arr.length-1-10), arr.length-1).map(e=>e.v);
+  const base=prev.reduce((a,b)=>a+b,0)/prev.length;
+  if(!base) return {insufficient:true, have:arr.length, need:need};
+  let sd=Math.sqrt(prev.reduce((a,b)=>a+(b-base)*(b-base),0)/Math.max(1,prev.length-1));
+  const cv = base ? sd/base*100 : 0;
+  const thr = Math.max(S.cfg.cmjDrop||5, (S.cfg.cmjNoise||1.5)*cv);
   const pct=(latest-base)/base*100;
-  return {pct, fatigued: pct<=-(S.cfg.cmjDrop)};
+  return {pct, cv, thr, nBase:prev.length, fatigued: pct<=-thr};
 }
 function tstat(v,l,cls){ return '<div class="tstat"><div class="tsv '+(cls||"")+'">'+v+'</div><div class="tsl">'+l+'</div></div>'; }
 function renderToday(){
@@ -2254,49 +2640,43 @@ function renderToday(){
   const ath=teamAthletes();
   if(!ath.length){ grid.innerHTML=emptyTeam(); return; }
   const today=todayISO();
-  let battBanner="";
-  const teamsToWatch=(S.activeTeam&&S.activeTeam!=="all"&&S.activeTeam!=="none")?S.teams.filter(t=>t.id===S.activeTeam):S.teams;
-  teamsToWatch.forEach(t=>{
-    if(!t.nextBattery) return;
-    const days=Math.round((new Date(t.nextBattery)-new Date(today))/86400000);
-    if(days<0 && days>=-3) battBanner+='<div class="alert danger" style="margin-bottom:10px"><span class="ai">📅</span><span><b>'+esc(t.name)+'</b>: batteria di test in programma il '+fmtDate(t.nextBattery)+' — non ancora registrata.</span></div>';
-    else if(days>=0 && days<=14) battBanner+='<div class="alert info" style="margin-bottom:10px"><span class="ai">📅</span><span><b>'+esc(t.name)+'</b>: batteria di test tra '+(days===0?"oggi":days+" giorni")+' ('+fmtDate(t.nextBattery)+').</span></div>';
-  });
   const items=ath.map(a=>{
     const p=a.profile||{}; const flags=[]; let sev=0;
     const pain=parseFloat(p.painLevel);
-    if(p._flagInjury){ flags.push({t:"⚠ Infortunio/dolore",c:"down"}); sev+=5; }
+    if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()){ flags.push({t:"⚠ Infortunio/dolore",c:"down"}); sev+=5; }
     else if(!isNaN(pain) && pain>=S.cfg.painCut){ flags.push({t:"⚠ Dolore "+pain+"/10",c:"down"}); sev+=4; }
-    const sc=p._flagScreen?1:0;
+    const sc=SCREEN_KEYS.filter(k=>p[k]).length;
     if(sc){ flags.push({t:"🚩 Screening "+sc,c:"down"}); sev+=5; }
     const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1]; let rToday=false;
-    if(rl){ const pc=readinessScore(rl); rToday=(rl.d===today);
-      if(pc<S.cfg.rdCrit){ flags.push({t:"🔋 Readiness "+pc,c:"down"}); sev+=4; }
-      else if(pc<S.cfg.rdAmber){ flags.push({t:"🔋 Readiness "+pc,c:"amber"}); sev+=2; } }
+    let rEv=null;
+    if(rl){ rEv=readinessEval(a.id,rl); rToday=(rl.d===today);
+      if(rEv.color==="down"){ flags.push({t:"🔋 Readiness "+rdLabel(rEv),c:"down"}); sev+=4; }
+      else if(rEv.color==="amber"){ flags.push({t:"🔋 Readiness "+rdLabel(rEv),c:"amber"}); sev+=2; } }
     const ac=acwr(a.id);
-    if(ac){ const r=ac.acwr;
+    if(ac && ac.acwr!=null){ const r=ac.acwr;
       if(r>S.cfg.acwrCritHigh||r<S.cfg.acwrCritLow){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"down"}); sev+=3; }
       else if(r>S.cfg.acwrHigh||r<S.cfg.acwrLow){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"amber"}); sev+=1; } }
     const cf=cmjFatigue(a.id);
     if(cf&&cf.fatigued){ flags.push({t:"⬇️ CMJ "+fmtNum(Math.round(cf.pct*10)/10)+"%",c:"down"}); sev+=2; }
-    let vDown=false;
-    vitalsInfo(a.id).forEach(x=>{ if(x.cls==="down"){ vDown=true; flags.push({t:(x.k==="HRV"?"❤️ HRV ":"🫀 FC ")+(x.pct>0?"+":"")+Math.round(x.pct)+"%",c:"amber"}); sev+=2; } });
-    let sug=""; const rpc=rl?readinessScore(rl):null;
-    if(p._flagInjury) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
+    let sug=""; const rpc=(rEv&&rEv.pc!=null)?rEv.pc:null; const rCol=rEv?rEv.color:null;
+    if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
     else if(!isNaN(pain) && pain>=S.cfg.painCut) sug="Dolore presente: resta sotto soglia, non peggiorare nelle 24h.";
     else if(sc) sug="Verifica medica prima di proporre carichi intensi.";
-    else if(rpc!=null && rpc<S.cfg.rdCrit) sug="Priorità recupero: riduci volume e intensità oggi.";
-    else if(ac && (ac.acwr>S.cfg.acwrCritHigh||ac.acwr<S.cfg.acwrCritLow)) sug=(ac.acwr>S.cfg.acwrCritHigh?"Carico acuto alto: attenua — o conferma che è un picco pianificato.":"Carico molto basso: reintroduci gradualmente (rischio detraining).");
-    else if(vDown) sug="Parametri fuori baseline (HRV/FC): considera una seduta più leggera e ricontrolla domani.";
-    else if(rpc!=null && rpc<S.cfg.rdAmber) sug="Modula il volume, evita massimali; cura il recupero.";
-    else if(ac && (ac.acwr>S.cfg.acwrHigh||ac.acwr<S.cfg.acwrLow)) sug="ACWR in zona di attenzione: monitora il carico.";
+    else if(rCol==="down") sug="Priorità recupero: riduci volume e intensità oggi.";
+    else if(ac && ac.acwr!=null && (ac.acwr>S.cfg.acwrCritHigh||ac.acwr<S.cfg.acwrCritLow)) sug=(ac.acwr>S.cfg.acwrCritHigh?"Carico acuto alto: attenua — o conferma che è un picco pianificato.":"Carico molto basso: reintroduci gradualmente (rischio detraining).");
+    else if(rCol==="amber") sug="Modula il volume, evita massimali; cura il recupero.";
+    else if(ac && ac.acwr!=null && (ac.acwr>S.cfg.acwrHigh||ac.acwr<S.cfg.acwrLow)) sug="ACWR in zona di attenzione: monitora il carico.";
     else if(cf&&cf.fatigued) sug="Riduci pliometria/alta intensità; monitora il CMJ.";
     return {a, flags, sev, rl, rToday, sug};
   });
   const manage=items.filter(x=>x.flags.length).sort((x,y)=>y.sev-x.sev);
   const ready=items.filter(x=>!x.flags.length);
   const checkinToday=items.filter(x=>x.rToday).length;
-  let h='<div class="today">'+battBanner+'<div class="tstats">'+
+  const _gaps=consentGaps();
+  let h='<div class="today">'+
+     (_gaps.length?'<div class="alert danger" style="margin-bottom:12px"><span class="ai">🛡</span><span><b>'+_gaps.length+
+       (_gaps.length===1?' atleta ha':' atleti hanno')+' dati clinici senza consenso tracciato.</b> <span onclick="openPrivacy()" style="text-decoration:underline;cursor:pointer">Verifica</span></span></div>':'')+
+     '<div class="tstats">'+
      tstat(ath.length,"Atleti")+
      tstat(checkinToday+"/"+ath.length,"Check-in oggi")+
      tstat(manage.length,"Da gestire", manage.length?"down":"up")+
@@ -2315,6 +2695,7 @@ function renderToday(){
   if(ready.length){
     h+='<div class="tsec">Pronti ('+ready.length+')</div><div class="treadywrap">';
     ready.forEach(x=>{ const pc=x.rl?readinessScore(x.rl):null;
+      /* punteggio grezzo: qui serve solo come etichetta */
       h+='<span class="tready" onclick="openAthlete(\''+x.a.id+'\')">'+esc(x.a.name)+(pc!=null?' <b>'+pc+'</b>':'')+'</span>'; });
     h+='</div>';
   }
@@ -2336,11 +2717,14 @@ function renderReadiness(){
   scored.forEach(function(o){ const a=o.a;
     const arr=(S.readiness&&S.readiness[a.id])||[];
     const last=arr[arr.length-1];
-    const flag=(a.profile&&a.profile._flagInjury)?'<span class="medflag">⚠ </span>':"";
+    const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag">⚠ </span>':"";
     let scoreHtml, sub;
     if(last){
-      const pc=readinessScore(last);
-      scoreHtml='<div class="rd-score '+readinessColor(pc)+'">'+pc+'</div>';
+      const ev=readinessEval(a.id,last); const pc=ev.pc;
+      scoreHtml='<div class="rd-score '+ev.color+'" title="'+(ev.mode==="z"
+        ? "Scostamento dalla baseline personale (media "+ev.mean+" su "+ev.n+" check-in)"
+        : "Baseline personale non ancora disponibile: soglie generiche")+'">'+(pc==null?"—":pc)+
+        (ev.mode==="z"?'<span style="font-size:9px;display:block;opacity:.8">z '+(ev.z>0?"+":"")+ev.z.toFixed(1)+'</span>':'')+'</div>';
       sub='<div class="rd-sub"><span class="rd-chip">😴 '+last.sl+'</span>'+
           '<span class="rd-chip">💪 '+last.so+'</span>'+
           '<span class="rd-chip">🔋 '+last.fa+'</span>'+
@@ -2351,50 +2735,40 @@ function renderReadiness(){
       sub='<div class="rd-sub"><span class="rd-chip">nessun check-in</span></div>';
     }
     const cf=cmjFatigue(a.id); let cmjHtml="";
-    if(cf){ const cls=cf.pct<=-(S.cfg.cmjDrop)?"down":cf.pct>=2?"up":"flat";
-      cmjHtml='<span class="rd-cmj '+cls+'">CMJ '+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%'+(cf.fatigued?' ⚠':'')+'</span>'; }
+    if(cf && !cf.insufficient){ const cls=cf.fatigued?"down":cf.pct>=cf.thr?"up":"flat";
+      cmjHtml='<span class="rd-cmj '+cls+'" title="soglia '+fmtNum(Math.round(cf.thr*10)/10)+'% · CV '+fmtNum(Math.round(cf.cv*10)/10)+'%">CMJ '+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%'+(cf.fatigued?' ⚠':'')+'</span>'; }
+    else if(cf && cf.insufficient) cmjHtml='<span class="rd-cmj flat" title="servono almeno '+cf.need+' misurazioni di CMJ per una baseline attendibile">CMJ '+cf.have+'/'+cf.need+'</span>';
     const ac=acwr(a.id); let acHtml="";
-    if(ac){ const cls=acwrColor(ac.acwr); acHtml='<span class="rd-cmj '+cls+'">ACWR '+fmtNum(Math.round(ac.acwr*100)/100)+(cls==="down"?' ⚠':'')+'</span>'; }
-    let viHtml=""; vitalsInfo(a.id).forEach(x=>{ if(x.cls!=="flat") viHtml+='<span class="rd-cmj '+x.cls+'">'+(x.k==="HRV"?"❤️":"🫀")+' '+(x.pct>0?"+":"")+Math.round(x.pct)+'%</span> '; });
+    if(ac && ac.acwr!=null){ const cls=acwrColor(ac.acwr); acHtml='<span class="rd-cmj '+cls+'">ACWR '+fmtNum(Math.round(ac.acwr*100)/100)+(ac.provisional?'*':'')+(cls==="down"?' ⚠':'')+'</span>'; }
+    else if(ac && ac.insufficient) acHtml='<span class="rd-cmj flat" title="servono almeno '+ac.needDays+' giorni di carico registrato">ACWR '+ac.haveDays+'/'+ac.needDays+'gg</span>';
     h+='<div class="rd-row" onclick="openReadinessHistory(\''+a.id+'\')">'+scoreHtml+
-       '<div class="rd-main"><div class="rd-name">'+flag+esc(a.name)+' '+cmjHtml+' '+acHtml+' '+viHtml+'</div>'+sub+'</div></div>';
+       '<div class="rd-main"><div class="rd-name">'+flag+esc(a.name)+' '+cmjHtml+' '+acHtml+'</div>'+sub+'</div></div>';
   });
   grid.innerHTML=h;
 }
 function openCheckin(){
   const ath=teamAthletes(); if(ath.length===0){ addAthlete(); return; }
   const sel=(k,def)=>{ let o=""; for(let i=1;i<=5;i++) o+='<option value="'+i+'"'+(i===def?" selected":"")+'>'+i+'</option>'; return '<select data-k="'+k+'">'+o+'</select>'; };
-  let cards="";
+  let rows="";
   ath.forEach(a=>{ const arr=(S.readiness&&S.readiness[a.id])||[]; const l=arr[arr.length-1]||{};
-    cards+='<div class="ci-card" data-a="'+a.id+'"><div class="ci-nm">'+esc(a.name)+'</div>'+
-      '<div class="ci-grid">'+
-      '<label>😴<span>Sonno</span>'+sel("sl",l.sl||3)+'</label>'+
-      '<label>💪<span>Dolori</span>'+sel("so",l.so||2)+'</label>'+
-      '<label>🔋<span>Fatica</span>'+sel("fa",l.fa||2)+'</label>'+
-      '<label>🧠<span>Stress</span>'+sel("st",l.st||2)+'</label>'+
-      '</div>'+
-      '<div class="ci-vit">'+
-      '<label>❤️ HRV <input type="number" inputmode="numeric" step="any" data-k="hrv" placeholder="ms" value="'+(l.hrv!=null?l.hrv:"")+'"></label>'+
-      '<label>🫀 FC riposo <input type="number" inputmode="numeric" step="any" data-k="rhr" placeholder="bpm" value="'+(l.rhr!=null?l.rhr:"")+'"></label>'+
-      '</div></div>';
-  });
+    rows+='<div class="ci-row" data-a="'+a.id+'"><span class="ci-n">'+esc(a.name)+'</span>'+
+      sel('sl',l.sl||3)+sel('so',l.so||2)+sel('fa',l.fa||2)+sel('st',l.st||2)+'</div>'; });
   modal('<div class="mh"><div><div class="mt">Check-in fatica</div>'+
-    '<div class="ms">Squadra · soggettivo 1-5 + parametri</div></div>'+
+    '<div class="ms">Squadra · valori 1-5</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>'+
     '<label class="fl">Data</label><input id="ciD" type="date" value="'+todayISO()+'">'+
     '<div class="alert info" style="margin-top:10px"><span class="ai">ℹ️</span><span>'+
-    'Soggettivi 1-5: 😴 Sonno 1 pessimo→5 ottimo · 💪 Dolori 1 nessuno→5 forti · 🔋 Fatica 1 fresco→5 esausto · 🧠 Stress 1 calmo→5 stress. '+
-    '<b>HRV</b> e <b>FC a riposo</b> mattutine (dallo smartwatch, opzionali) contano come <b>tendenza</b> sulla baseline dell\'atleta, non come valore singolo.</span></div>'+
-    '<div class="ci-list">'+cards+'</div>'+
+    '😴 <b>Sonno</b> 1 pessimo→5 ottimo · 💪 <b>Dolori</b> 1 nessuno→5 forti · 🔋 <b>Fatica</b> 1 fresco→5 esausto · 🧠 <b>Stress</b> 1 calmo→5 stress</span></div>'+
+    '<div class="ci-head"><span class="ci-n"></span><span>😴</span><span>💪</span><span>🔋</span><span>🧠</span></div>'+
+    '<div class="sess-list">'+rows+'</div>'+
     '<div style="height:14px"></div>'+
     '<button class="btn primary" style="width:100%" onclick="saveCheckin()">Salva check-in</button>');
 }
 function saveCheckin(){
   const d=document.getElementById("ciD").value||todayISO(); let n=0;
-  document.querySelectorAll(".ci-card").forEach(card=>{
-    const aid=card.getAttribute("data-a"); const e={d:d};
-    card.querySelectorAll("select[data-k]").forEach(s=>{ e[s.getAttribute("data-k")]=parseInt(s.value,10); });
-    card.querySelectorAll("input[data-k]").forEach(inp=>{ const v=parseFloat(inp.value); if(!isNaN(v)) e[inp.getAttribute("data-k")]=v; });
+  document.querySelectorAll(".ci-row").forEach(row=>{
+    const aid=row.getAttribute("data-a"); const e={d:d};
+    row.querySelectorAll("select").forEach(s=>{ e[s.getAttribute("data-k")]=parseInt(s.value,10); });
     if(!S.readiness) S.readiness={}; if(!S.readiness[aid]) S.readiness[aid]=[];
     const arr=S.readiness[aid]; const ex=arr.find(x=>x.d===d);
     if(ex) Object.assign(ex,e); else arr.push(e);
@@ -2402,61 +2776,31 @@ function saveCheckin(){
   });
   save(); closeM(); render(); toast("Check-in salvato ("+n+")");
 }
-/* ── Parametri (HRV / FC riposo): lettura per tendenza sulla baseline ── */
-function vitalBaseline(aid, key){
-  const arr=(S.readiness&&S.readiness[aid])||[];
-  const vals=arr.filter(e=>e[key]!=null).map(e=>e[key]);
-  if(vals.length<3) return null;
-  const latest=vals[vals.length-1];
-  const hist=vals.slice(0,-1).slice(-7);
-  if(!hist.length) return null;
-  const mean=hist.reduce((s,x)=>s+x,0)/hist.length;
-  if(!mean) return null;
-  return {latest, mean, pct:(latest-mean)/mean*100, n:hist.length};
-}
-function vitalsInfo(aid){
-  const out=[];
-  const hrv=vitalBaseline(aid,"hrv");
-  if(hrv){ const cls=hrv.pct<=-8?"down":hrv.pct>=5?"up":"flat";
-    out.push({k:"HRV", v:Math.round(hrv.latest), unit:"ms", pct:hrv.pct, cls,
-      note: hrv.pct<=-8?"sotto baseline — recupero ridotto":(hrv.pct>=5?"sopra baseline — buon recupero":"in linea con la baseline")}); }
-  const rhr=vitalBaseline(aid,"rhr");
-  if(rhr){ const cls=rhr.pct>=7?"down":rhr.pct<=-3?"up":"flat";
-    out.push({k:"FC", v:Math.round(rhr.latest), unit:"bpm", pct:rhr.pct, cls,
-      note: rhr.pct>=7?"sopra baseline — possibile fatica/stress":"in linea con la baseline"}); }
-  return out;
-}
 function openReadinessHistory(aid){
   const a=S.athletes.find(x=>x.id===aid); const arr=(S.readiness&&S.readiness[aid])||[];
   let h='<div class="mh"><div><div class="mt">'+esc(a.name)+'</div><div class="ms">Storico readiness</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
   const cf=cmjFatigue(aid);
-  if(cf) h+='<div class="alert '+(cf.fatigued?'danger':'info')+'"><span class="ai">'+(cf.fatigued?'⚠️':'ℹ️')+'</span>'+
-    '<span>CMJ vs baseline recente: <b>'+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%</b>'+
-    (cf.fatigued?' — possibile fatica neuromuscolare':'')+'</span></div>';
+  if(cf && cf.insufficient) h+='<div class="alert info"><span class="ai">ℹ️</span><span>CMJ: <b>'+cf.have+'/'+cf.need+'</b> misurazioni. Sotto questa soglia la baseline non distingue la fatica dall\'errore di misura.</span></div>';
+  else if(cf) h+='<div class="alert '+(cf.fatigued?'danger':'info')+'"><span class="ai">'+(cf.fatigued?'⚠️':'ℹ️')+'</span>'+
+    '<span>CMJ vs baseline (<b>'+cf.nBase+'</b> misure): <b>'+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%</b>'+
+    (cf.fatigued?' — possibile fatica neuromuscolare':'')+
+    '<br><span style="font-size:11px;opacity:.8">Variabilità dell\'atleta (CV) '+fmtNum(Math.round(cf.cv*10)/10)+'% → soglia di segnalazione '+fmtNum(Math.round(cf.thr*10)/10)+'%</span></span></div>';
   if(arr.length){
     h+='<label class="fl">Check-in ('+arr.length+')</label><div class="hist">';
-    for(let i=arr.length-1;i>=0;i--){ const e=arr[i], pc=readinessScore(e);
+    for(let i=arr.length-1;i>=0;i--){ const e=arr[i], ev=readinessEval(aid,e), pc=ev.pc;
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
-         '<span class="hv"><span class="rd-cmj '+readinessColor(pc)+'">'+pc+'</span> '+
-         '<span style="color:var(--muted2);font-size:10px;font-family:var(--mono)">😴'+e.sl+' 💪'+e.so+' 🔋'+e.fa+' 🧠'+e.st+(e.hrv!=null?' ❤️'+e.hrv:'')+(e.rhr!=null?' 🫀'+e.rhr:'')+'</span></span>'+
+         '<span class="hv"><span class="rd-cmj '+ev.color+'">'+(pc==null?"—":pc)+'</span> '+
+         '<span style="color:var(--muted2);font-size:10px;font-family:var(--mono)">😴'+e.sl+' 💪'+e.so+' 🔋'+e.fa+' 🧠'+e.st+'</span></span>'+
          '<span class="hdl" onclick="delCheckin(\''+aid+'\','+i+')">🗑</span></div>';
     }
     h+='</div>';
   } else h+='<p class="hint">Nessun check-in ancora. Usa "+ Check-in di oggi".</p>';
-  // ── parametri smartwatch (HRV / FC riposo) ──
-  const vi=vitalsInfo(aid);
-  if(vi.length){
-    h+='<div class="psec" style="color:var(--accent)">Parametri (HRV / FC riposo)</div>';
-    vi.forEach(x=>{ h+='<div class="bgrp"><div style="display:flex;justify-content:space-between;align-items:center">'+
-      '<div><div class="bt">'+x.k+' <span class="rd-cmj '+x.cls+'" style="font-size:15px">'+x.v+' '+x.unit+'</span></div>'+
-      '<div class="bw">vs baseline '+(x.pct>0?"+":"")+fmtNum(Math.round(x.pct*10)/10)+'% · '+x.note+'</div></div></div></div>'; });
-    h+='<div class="gnote">HRV e FC a riposo vanno lette come <b>tendenza</b> sulla baseline individuale, sempre nelle stesse condizioni (mattina, a riposo). Un valore singolo dice poco: conta lo scostamento ripetuto.</div>';
-  }
   // ── carico interno + ACWR ──
   const ac=acwr(aid), ws=weekStats(aid), larr=(S.load&&S.load[aid])||[];
   h+='<div class="psec" style="color:var(--accent)">Carico interno & ACWR</div>';
-  if(ac){
+  if(ac && ac.insufficient) h+='<div class="alert info"><span class="ai">ℹ️</span><span>ACWR non calcolabile: <b>'+ac.haveDays+'</b> giorni di storico su <b>'+ac.needDays+'</b> minimi. Con meno dati il carico cronico risulta sottostimato e l\'indice esce falsamente alto.</span></div>';
+  if(ac && ac.acwr!=null){
     const cls=acwrColor(ac.acwr);
     h+='<div class="bgrp"><div style="display:flex;justify-content:space-between;align-items:center">'+
        '<div><div class="bt">ACWR <span class="rd-cmj '+cls+'" style="font-size:15px">'+fmtNum(Math.round(ac.acwr*100)/100)+'</span></div>'+
@@ -2465,7 +2809,9 @@ function openReadinessHistory(aid){
        '<span class="rd-chip">Monotonia: '+fmtNum(Math.round(ws.monotony*100)/100)+'</span>'+
        '<span class="rd-chip">Strain: '+ws.strain+'</span></div></div>';
     h+='<div class="gnote">Zona di comfort ~0.8-1.3; sopra ~1.5 carico acuto elevato; sotto ~0.8 possibile detraining. La <b>monotonia</b> alta (poco variata) aumenta il rischio.</div>';
+    if(ac.provisional) h+='<div class="gnote">⏳ Valore <b>provvisorio</b>: la finestra cronica copre '+ac.haveDays+' giorni invece di 28. Si stabilizza col passare delle settimane.</div>';
     h+='<div class="gnote">⚠️ Un ACWR alto <b>non è automaticamente pericoloso</b>: in un sovraccarico pianificato (block periodization) è atteso. Leggi il dato nel contesto del tuo programma, non come allarme assoluto.</div>';
+    h+='<div class="gnote">📚 L\'ACWR è un <b>descrittore del carico</b>, non un predittore di infortunio: la sua validità è contestata in letteratura (Impellizzeri et al., 2020). Usalo per vedere come varia il carico, non per decidere da solo chi si allena.</div>';
   } else {
     h+='<p class="hint">Servono almeno ~1-4 settimane di carichi per un ACWR sensato. Usa "+ Carico seduta".</p>';
   }
@@ -2480,19 +2826,42 @@ function openReadinessHistory(aid){
   }
   modal(h);
 }
-function delCheckin(aid,i){ const arr=S.readiness[aid]; arr.splice(i,1); if(!arr.length) delete S.readiness[aid]; save(); openReadinessHistory(aid); render(); }
+function delCheckin(aid,i){
+  const arr=S.readiness[aid]; const gone=arr[i]; arr.splice(i,1);
+  if(gone&&gone.d) tombSet("r:"+aid+":"+gone.d);
+  if(!arr.length) delete S.readiness[aid];
+  save(); openReadinessHistory(aid); render();
+}
 
 /* ── Carico interno (sRPE) + ACWR ── */
 function dayLoad(e){ return (e.rpe||0)*(e.min||0); }
+/* Prima il carico cronico era diviso per 4 anche con pochi giorni di storico:
+   nelle prime settimane il denominatore era artificialmente basso e l'ACWR
+   schizzava sopra 1.5, producendo allarmi rossi sistematici. Inoltre la
+   finestra acuta era contenuta nella cronica (versione "coupled"), che
+   introduce la correlazione spuria descritta da Windt & Gabbett.
+   Qui: finestra cronica disaccoppiata (giorni 7-27), divisa per le settimane
+   effettivamente coperte, e nessun valore prima di acwrMinDays di storico. */
 function acwr(aid){
-  const arr=(S.load&&S.load[aid])||[]; if(!arr.length) return null;
-  const now=new Date(todayISO()); let acute=0, chronic=0;
-  arr.forEach(e=>{ const days=(now-new Date(e.d))/86400000; const L=dayLoad(e);
-    if(days>=0&&days<7) acute+=L;
-    if(days>=0&&days<28) chronic+=L; });
-  chronic=chronic/4;                       // media settimanale sulle 4 settimane
-  if(chronic<=0) return null;
-  return {acwr:acute/chronic, acute:Math.round(acute), chronic:Math.round(chronic)};
+  const arr=(S.load&&S.load[aid])||[];
+  if(!arr.length) return null;
+  let acute=0, chronicSum=0, oldest=-1;
+  arr.forEach(e=>{
+    const d=daysAgo(e.d); if(!isFinite(d)||d<0) return;
+    if(d>oldest) oldest=d;
+    const L=dayLoad(e);
+    if(d<7) acute+=L; else if(d<28) chronicSum+=L;
+  });
+  if(oldest<0) return null;
+  const minD=(S.cfg.acwrMinDays||14);
+  const chronicDays=Math.min(21, oldest-6);          // giorni coperti in 7..27
+  if(oldest+1<minD || chronicDays<7){
+    return {acwr:null, insufficient:true, haveDays:oldest+1, needDays:minD, acute:Math.round(acute)};
+  }
+  const chronic=chronicSum/(chronicDays/7);          // AU per settimana, reali
+  if(chronic<=0) return {acwr:null, insufficient:true, haveDays:oldest+1, needDays:minD, acute:Math.round(acute)};
+  return {acwr:acute/chronic, acute:Math.round(acute), chronic:Math.round(chronic),
+          provisional: oldest<27, haveDays:oldest+1};
 }
 function acwrColor(r){ if(r==null) return "flat"; const c=S.cfg; if(r>=c.acwrLow&&r<=c.acwrHigh) return "up"; if(r>c.acwrCritHigh||r<c.acwrCritLow) return "down"; return "amber"; }
 function weekStats(aid){
@@ -2537,7 +2906,12 @@ function saveLoad(){
   });
   save(); closeM(); render(); toast("Carico salvato ("+n+")");
 }
-function delLoad(aid,i){ const arr=S.load[aid]; arr.splice(i,1); if(!arr.length) delete S.load[aid]; save(); openReadinessHistory(aid); render(); }
+function delLoad(aid,i){
+  const arr=S.load[aid]; const gone=arr[i]; arr.splice(i,1);
+  if(gone&&gone.d) tombSet("l:"+aid+":"+gone.d);
+  if(!arr.length) delete S.load[aid];
+  save(); openReadinessHistory(aid); render();
+}
 
 /* ═══════════════ CELLA: STORICO + INSERIMENTO ═══════════════ */
 let CUR={a:null,t:null};
@@ -2614,7 +2988,9 @@ function addMeasure(){
   save(); drawCell(); render(); toast("Misurazione salvata");
 }
 function delMeasure(i){
-  const arr=series(CUR.a,CUR.t); arr.splice(i,1);
+  const arr=series(CUR.a,CUR.t);
+  const gone=arr[i]; arr.splice(i,1);
+  if(gone&&gone.d) tombSet("m:"+CUR.a+":"+CUR.t+":"+gone.d);
   if(arr.length===0) delete S.data[CUR.a][CUR.t];
   save(); drawCell(); render();
 }
@@ -2670,6 +3046,7 @@ function closeM(){ document.getElementById("ov").classList.remove("on"); }
 document.getElementById("ov").addEventListener("click",e=>{ if(e.target.id==="ov") closeM(); });
 
 /* ═══════════════ MENU / EXPORT / IMPORT ═══════════════ */
+function toggleMenu(e){ e.stopPropagation(); document.getElementById("menu").classList.toggle("on"); }
 function openSettings(){
   const team=S.teams.find(t=>t.id===S.activeTeam);
   const nTests=(team&&team.tests&&team.tests.length)?team.tests.length:0;
@@ -2689,16 +3066,13 @@ function openSettings(){
   h+='<div class="set-sec">Monitoraggio</div><div class="set-group">'+
     row("⚙️","Soglie","Readiness, ACWR, calo CMJ, dolore","openThresholds()")+
     row("👥","Squadre","Rinomina, sport, batteria, elimina","manageTeams()", S.teams.length)+
-    row("🔐","Chiave di cifratura","Protegge infortuni, patologie, farmaci","openSecKey()", hasSecKey()?"attiva":"—")+
     '</div>';
 
   h+='<div class="set-sec">Dati</div><div class="set-group">'+
-    row("🔄","Aggiorna dal cloud","Scarica le schede compilate dalle atlete","refreshFromCloud()")+
     row("⬇️","Esporta backup","File JSON completo","exportJSON()")+
     row("📄","Esporta tabella","File CSV","exportCSV()")+
     row("⬆️","Importa backup","Ripristina da un file JSON","importJSON()")+
     row("✨","Carica dati di esempio","Per provare l'app","loadDemo()")+
-    row("↩️","Ripristina ultimo stato","Rete di sicurezza prima di eliminazioni o import","restoreSnapshot()")+
     '</div>';
 
   h+='<div class="set-sec">Account</div><div class="set-group">'+
@@ -2708,22 +3082,13 @@ function openSettings(){
     '</div><div style="height:8px"></div>';
   modal(h);
 }
+document.addEventListener("click",()=>document.getElementById("menu").classList.remove("on"));
+
 function dl(name,content,type){
   const b=new Blob([content],{type}); const u=URL.createObjectURL(b);
   const a=document.createElement("a"); a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
 }
 function exportJSON(){ dl("iron-performance-"+todayISO()+".json", JSON.stringify(S,null,2), "application/json"); toast("Backup esportato"); }
-// Rete di sicurezza: salva uno snapshot silenzioso prima di ogni operazione che può perdere dati.
-function snapshotBeforeRisk(label){
-  try{ localStorage.setItem("ip_snapshot", JSON.stringify({at:new Date().toISOString(), label, data:S})); }catch(e){}
-}
-function restoreSnapshot(){
-  let snap; try{ snap=JSON.parse(localStorage.getItem("ip_snapshot")||"null"); }catch(e){ snap=null; }
-  if(!snap){ toast("Nessuno snapshot disponibile"); return; }
-  const when=new Date(snap.at).toLocaleString("it-IT");
-  if(!confirm("Ripristinare lo stato di prima di \""+snap.label+"\" ("+when+")? Le modifiche fatte dopo andranno perse.")) return;
-  S=snap.data; normalize(); save(); render(); closeM(); toast("Stato ripristinato");
-}
 function exportCSV(){
   let rows=[["Squadra","Atleta","Sesso","Test","Unità","Data","Valore"]];
   S.athletes.forEach(a=>{ const tm=S.teams.find(t=>t.id===a.team);
@@ -2734,18 +3099,443 @@ function exportCSV(){
   dl("iron-performance-"+todayISO()+".csv", csv, "text/csv"); toast("CSV esportato");
 }
 function importJSON(){ document.getElementById("fileIn").click(); }
+/* Prima qualunque JSON con due chiavi diventava lo stato dell'app: gli id
+   importati finivano dentro attributi onclick, aprendo la porta a codice
+   iniettato tramite un file di backup manomesso. Ora si valida tutto. */
+function sanitizeImport(o){
+  if(!o||typeof o!=="object"||Array.isArray(o)) throw new Error("struttura non valida");
+  if(!Array.isArray(o.athletes)||typeof o.data!=="object"||o.data===null) throw new Error("manca atleti o dati");
+  if(o.athletes.length>500) throw new Error("troppi atleti");
+  const str=(v,max)=>String(v==null?"":v).slice(0,max||300);
+  const num=v=>{ const n=parseFloat(v); return isFinite(n)?n:null; };
+  const isDate=d=>/^\d{4}-\d{2}-\d{2}$/.test(String(d||""));
+  // screen e lv erano assenti da questa struttura: l'export li scriveva,
+  // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
+  // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
+  // senza un errore e senza un avviso.
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},tomb:{}};
+
+  (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
+    if(!t||!idOk(t.id)) return;
+    out.teams.push({id:t.id, name:str(t.name,80)||"Squadra", sport:str(t.sport,40)});
+  });
+  const seen={};
+  o.athletes.forEach(a=>{
+    if(!a||!idOk(a.id)||seen[a.id]) return; seen[a.id]=1;
+    const at={id:a.id, name:str(a.name,80)||"Senza nome", sex:(a.sex==="F"?"F":"M")};
+    if(idOk(a.team)) at.team=a.team;
+    if(a.profile&&typeof a.profile==="object"&&!Array.isArray(a.profile)){
+      const p={}; let k=0;
+      for(const key in a.profile){
+        if(!/^[A-Za-z0-9_]{1,30}$/.test(key)||k++>80) continue;
+        const v=a.profile[key];
+        p[key] = (typeof v==="boolean") ? v : str(v,2000);
+      }
+      at.profile=p;
+    }
+    out.athletes.push(at);
+  });
+  const live={}; out.athletes.forEach(a=>live[a.id]=1);
+
+  Object.keys(o.data||{}).forEach(aid=>{
+    if(!live[aid]) return;
+    const src=o.data[aid]; if(!src||typeof src!=="object") return;
+    const dst={};
+    Object.keys(src).slice(0,200).forEach(tid=>{
+      if(!/^[A-Za-z0-9_-]{1,40}$/.test(tid)||!Array.isArray(src[tid])) return;
+      dst[tid]=src[tid].slice(0,2000).filter(e=>e&&isDate(e.d)&&num(e.v)!=null)
+                       .map(e=>({d:e.d, v:num(e.v)}));
+    });
+    out.data[aid]=dst;
+  });
+  ["readiness","load"].forEach(k=>{
+    Object.keys(o[k]||{}).forEach(aid=>{
+      if(!live[aid]||!Array.isArray(o[k][aid])) return;
+      out[k][aid]=o[k][aid].slice(0,2000).filter(e=>e&&isDate(e.d)).map(e=>{
+        const r={d:e.d};
+        (k==="readiness"?["sl","so","fa","st"]:["rpe","min"]).forEach(f=>{
+          const n=num(e[f]); if(n!=null) r[f]=n; });
+        return r;
+      });
+    });
+  });
+  // Valutazioni posturali e funzionali: una voce per data, con le deviazioni
+  // posturali (indici nelle liste POSTURE_ITEMS) e gli esiti degli item.
+  Object.keys(o.screen||{}).forEach(aid=>{
+    if(!live[aid]||!Array.isArray(o.screen[aid])) return;
+    out.screen[aid]=o.screen[aid].slice(0,2000).filter(e=>e&&isDate(e.d)).map(e=>{
+      const r={d:e.d, posture:{}, items:{}};
+      const src=(e.posture&&typeof e.posture==="object")?e.posture:{};
+      ["ant","lat","post"].forEach(k=>{
+        const s=src[k]; if(!s||typeof s!=="object") return;
+        const devs=Array.isArray(s.devs)
+          ? s.devs.filter(i=>Number.isInteger(i)&&i>=0&&i<50).slice(0,50) : [];
+        const note=str(s.note,500);
+        if(devs.length||note) r.posture[k]={devs, note};
+      });
+      const it=(e.items&&typeof e.items==="object")?e.items:{};
+      Object.keys(it).slice(0,50).forEach(k=>{
+        if(!/^[A-Za-z0-9_]{1,30}$/.test(k)) return;
+        const v=it[k]; if(!v||typeof v!=="object") return;
+        const pf=x=>(x==="pass"||x==="fail")?x:null;
+        const dst={};
+        if(pf(v.v)) dst.v=v.v;
+        if(pf(v.l)) dst.l=v.l;
+        if(pf(v.r)) dst.r=v.r;
+        const n=str(v.note,500); if(n) dst.note=n;
+        if(Object.keys(dst).length) r.items[k]=dst;
+      });
+      return r;
+    });
+  });
+
+  // Curve carico-velocità: stessa sorte dello screening.
+  Object.keys(o.lv||{}).forEach(aid=>{
+    if(!live[aid]||!Array.isArray(o.lv[aid])) return;
+    out.lv[aid]=o.lv[aid].slice(0,2000).filter(e=>e&&isDate(e.d)).map(e=>{
+      const r={d:e.d, exercise:str(e.exercise,80)||"Esercizio"};
+      r.points=(Array.isArray(e.points)?e.points:[]).slice(0,30)
+        .map(p=>({load:num(p&&p.load), v:num(p&&p.v)}))
+        .filter(p=>p.load!=null&&p.v!=null);
+      ["mvt","est1RM","m","b","r2"].forEach(f=>{ const n=num(e[f]); if(n!=null) r[f]=n; });
+      return r;
+    });
+  });
+
+  if(o.tomb&&typeof o.tomb==="object") Object.keys(o.tomb).slice(0,2000).forEach(k=>{ out.tomb[k]=str(o.tomb[k],40); });
+  if(o.cfg&&typeof o.cfg==="object"){ out.cfg={}; Object.keys(CFG_DEF).forEach(k=>{ const n=num(o.cfg[k]); if(n!=null) out.cfg[k]=n; }); }
+  out.sport=str(o.sport,40)||"pallavolo";
+  // "fatigue" era il vecchio nome della vista, rinominata "readiness" e mai
+  // aggiornata qui: chi importava un backup stando in Fatica finiva in Matrice.
+  out.view=["matrix","today","trend","readiness"].indexOf(o.view)>=0?o.view:"today";
+  out.activeTeam=idOk(o.activeTeam)?o.activeTeam:"all";
+  return out;
+}
 document.getElementById("fileIn").addEventListener("change",function(e){
   const f=e.target.files[0]; if(!f) return;
+  if(f.size>20*1024*1024){ toast("File troppo grande"); e.target.value=""; return; }
   const r=new FileReader();
-  r.onload=()=>{ try{ const o=JSON.parse(r.result);
-    if(!o.athletes||!o.data) throw 0;
-    snapshotBeforeRisk("importazione backup");
-    S=o; normalize(); save(); render(); toast("Backup importato");
-  }catch(err){ toast("File non valido"); } };
+  r.onload=()=>{
+    let o;
+    try{ o=sanitizeImport(JSON.parse(r.result)); }
+    catch(err){ toast("File non valido: "+(err.message||"formato sconosciuto")); return; }
+    // Il riepilogo elenca ogni tipo di dato, così se un backup è incompleto
+    // te ne accorgi PRIMA di sostituire quello che hai.
+    const cnt=obj=>Object.keys(obj||{}).reduce((n,k)=>n+((obj[k]||[]).length||0),0);
+    const nMis=Object.keys(o.data||{}).reduce((n,aid)=>n+cnt(o.data[aid]),0);
+    const msg="Importare questo backup?\n\n"+
+      "· "+o.athletes.length+" atleti, "+o.teams.length+" squadre\n"+
+      "· "+nMis+" misurazioni di test\n"+
+      "· "+cnt(o.readiness)+" check-in readiness, "+cnt(o.load)+" registrazioni di carico\n"+
+      "· "+cnt(o.screen)+" valutazioni posturali, "+cnt(o.lv)+" curve carico-velocità\n\n"+
+      (S.athletes&&S.athletes.length
+        ? "ATTENZIONE: i dati attuali ("+S.athletes.length+" atleti) verranno SOSTITUITI, non uniti."
+        : "");
+    if(!confirm(msg)) return;
+    S=o; normalize(); save(); render(); toast("Backup importato ("+o.athletes.length+" atleti)");
+  };
+  r.onerror=()=>toast("Impossibile leggere il file");
   r.readAsText(f); e.target.value="";
 });
+/* ═══════════════ IMPORT ANAMNESI DA GOOGLE MODULI ═══════════════
+   Il modulo deve contenere, in testa, l'informativa e una domanda di
+   consenso obbligatoria. Le righe senza consenso NON portano dentro dati
+   clinici: entra solo l'anagrafica. Non è una scelta di stile — senza
+   consenso quel trattamento non ha base giuridica.                        */
+
+function parseCSV(text){
+  text=String(text||"").replace(/^\uFEFF/,"").replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  // separatore: conta fuori dalle virgolette sulla prima riga
+  let q=false, c1=0, c2=0;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'){ q=!q; continue; }
+    if(q) continue;
+    if(ch==="\n") break;
+    if(ch===",") c1++; else if(ch===";") c2++;
+  }
+  const SEP = c2>c1 ? ";" : ",";
+  const rows=[]; let row=[], cur=""; q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){ cur+='"'; i++; } else q=false; }
+      else cur+=ch;
+    } else {
+      if(ch==='"') q=true;
+      else if(ch===SEP){ row.push(cur); cur=""; }
+      else if(ch==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }
+      else cur+=ch;
+    }
+  }
+  if(cur!==""||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.some(c=>String(c).trim()!==""));
+}
+
+function normHdr(s){
+  return String(s||"").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+}
+function normName(s){
+  return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z ]/g," ").replace(/\s+/g," ").trim().split(" ").sort().join(" ");
+}
+function truthy(v){
+  const s=String(v||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+  if(!s) return false;
+  return ["si","s","yes","y","true","vero","x","1","ok","acconsento","autorizzo","presente","positivo"].indexOf(s)>=0
+      || /^si\b/.test(s) || /^acconsent/.test(s) || /^autorizz/.test(s) || /^confermo/.test(s);
+}
+function falsy(v){
+  const s=String(v||"").toLowerCase().trim();
+  return ["no","n","false","falso","0","nessuno","negativo","assente"].indexOf(s)>=0;
+}
+function toISODate(v){
+  const s=String(v||"").trim(); if(!s) return "";
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return m[1]+"-"+m[2]+"-"+m[3];
+  m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);            // gg/mm/aaaa
+  if(m) return m[3]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[1]).padStart(2,"0");
+  m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2})\b/);
+  if(m) return "20"+m[3]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[1]).padStart(2,"0");
+  return "";
+}
+
+/* Campi importabili. clin:true = bloccato senza consenso. */
+const FORM_FIELDS=[
+  {k:"name",   l:"Nome e cognome", req:true, kw:["nome cognome","nome e cognome","cognome nome","nominativo","atleta","nome"]},
+  {k:"team",   l:"Squadra / gruppo", kw:["squadra","team","gruppo","categoria"]},
+  {k:"sex",    l:"Sesso", kw:["sesso","genere"]},
+  {k:"birth",  l:"Data di nascita", clin:true, kw:["data di nascita","nascita","nato il","compleanno"]},
+  {k:"height", l:"Altezza (cm)", clin:true, kw:["altezza","statura"]},
+  {k:"weight", l:"Peso (kg)", clin:true, kw:["peso"]},
+  {k:"role",   l:"Ruolo", kw:["ruolo","posizione"]},
+  {k:"conditions",    l:"Patologie / condizioni croniche", clin:true, kw:["patologie","condizioni","malattie","croniche","diagnosi"]},
+  {k:"surgeries",     l:"Interventi chirurgici", clin:true, kw:["interventi","operazioni","chirurg","ricoveri","ospedal"]},
+  {k:"familyHistory", l:"Familiarità", clin:true, kw:["familiarita","famiglia","parenti"]},
+  {k:"injuriesCurrent", l:"Infortuni/dolori attuali", clin:true, kw:["infortuni attuali","dolori attuali","attualmente","in corso","dolore attuale"]},
+  {k:"painLevel",     l:"Dolore 0-10", clin:true, kw:["dolore 0","scala del dolore","intensita del dolore","quanto dolore","dolore da 0"]},
+  {k:"painContext",   l:"Quando compare il dolore", clin:true, kw:["quando compare","il dolore compare","in che momento"]},
+  {k:"injuriesPast",  l:"Infortuni passati", clin:true, kw:["infortuni passati","infortuni precedenti","in passato","pregress","storico infortuni"]},
+  {k:"recurrent",     l:"Zone fragili / recidive", clin:true, kw:["recidive","zone fragili","ricorrenti","punti deboli"]},
+  {k:"meds",          l:"Farmaci in uso", clin:true, kw:["farmaci","medicinali","terapia","assume"]},
+  {k:"supplements",   l:"Integratori", clin:true, kw:["integratori","supplement"]},
+  {k:"allergies",     l:"Allergie / intolleranze", clin:true, kw:["allergie","intolleranze"]},
+  {k:"medical",       l:"Idoneità medica", clin:true, kw:["idoneita","certificato medico","visita medica"]},
+  {k:"medicalExpiry", l:"Scadenza certificato", clin:true, kw:["scadenza"]},
+  {k:"notes",         l:"Note", kw:["note","altro","aggiungere","segnalare"]}
+];
+const FORM_SCREEN=[
+  {k:"scHeart",    l:"Problemi cardiaci", kw:["cuore","cardiac","cardiopat"]},
+  {k:"scChest",    l:"Dolore al petto", kw:["petto","toracic","torace"]},
+  {k:"scDizzy",    l:"Vertigini / svenimenti", kw:["vertigin","sveniment","capogir","sincope"]},
+  {k:"scBreath",   l:"Affanno anomalo", kw:["affanno","respir","fiato","dispnea"]},
+  {k:"scJoint",    l:"Problema osseo/articolare", kw:["articolar","osseo","ossa","ginocchio","schiena"]},
+  {k:"scFamily",   l:"Familiarità cardiaca precoce", kw:["familiarita cardiac","morte improvvisa","eventi cardiaci"]},
+  {k:"scMedsHeart",l:"Farmaci cuore/pressione", kw:["pressione","antipertensiv","farmaci per il cuore"]}
+];
+const FORM_CONSENT=[
+  {k:"consent",     l:"Consenso al trattamento (obbligatorio)", kw:["consenso","acconsento","autorizzo","privacy","trattamento dei dati","informativa"]},
+  {k:"consentBy",   l:"Chi ha prestato il consenso", kw:["genitore","tutore","responsabilita genitoriale","chi compila","compilato da"]},
+  {k:"consentDate", l:"Data del consenso", kw:["informazioni cronologiche","timestamp","data e ora","marca temporale"]},
+  {k:"consentDoc",  l:"Versione informativa", kw:["versione","informativa v"]}
+];
+const FORM_ALL=FORM_FIELDS.concat(FORM_SCREEN, FORM_CONSENT);
+
+let FORM_CSV=null;   // {hdr:[], rows:[[]]}
+
+function importForms(){
+  document.getElementById("menu").classList.remove("on");
+  document.getElementById("formIn").click();
+}
+document.getElementById("formIn").addEventListener("change",function(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  if(f.size>10*1024*1024){ toast("File troppo grande"); ev.target.value=""; return; }
+  const r=new FileReader();
+  r.onload=()=>{
+    let rows;
+    try{ rows=parseCSV(r.result); }catch(e){ toast("CSV illeggibile"); return; }
+    if(rows.length<2){ toast("Il CSV non contiene righe di risposta"); return; }
+    FORM_CSV={hdr:rows[0].map(h=>String(h).trim()), rows:rows.slice(1)};
+    openFormMap();
+  };
+  r.onerror=()=>toast("Impossibile leggere il file");
+  r.readAsText(f,"UTF-8"); ev.target.value="";
+});
+
+function guessCol(field, hdr, used){
+  const H=hdr.map(normHdr);
+  let best=-1, bestScore=0;
+  for(let i=0;i<H.length;i++){
+    if(used[i]) continue;
+    let sc=0;
+    field.kw.forEach(k=>{ const n=normHdr(k);
+      if(H[i]===n) sc=Math.max(sc,100);
+      else if(H[i].indexOf(n)>=0) sc=Math.max(sc, 50+n.length); });
+    if(sc>bestScore){ bestScore=sc; best=i; }
+  }
+  return bestScore>=50 ? best : -1;
+}
+
+function openFormMap(){
+  const hdr=FORM_CSV.hdr, used={};
+  const guess={};
+  FORM_ALL.forEach(f=>{ const i=guessCol(f,hdr,used); if(i>=0){ guess[f.k]=i; used[i]=1; } });
+
+  const opts=(sel)=>{ let o='<option value="-1">— non importare —</option>';
+    hdr.forEach((h,i)=>{ o+='<option value="'+i+'"'+(sel===i?" selected":"")+'>'+esc(h.slice(0,70))+'</option>'; });
+    return o; };
+  const rowFor=f=>'<div class="thr"><label>'+esc(f.l)+(f.req?' <span style="color:var(--accent)">*</span>':'')+
+    (f.clin?' <span style="color:var(--muted2);font-size:10px">clinico</span>':'')+'</label>'+
+    '<select id="fm_'+f.k+'">'+opts(guess[f.k]!=null?guess[f.k]:-1)+'</select></div>';
+
+  const teamOpts=(S.teams||[]).map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join("");
+
+  let h='<div class="mh"><div><div class="mt">Importa anamnesi</div>'+
+    '<div class="ms">'+FORM_CSV.rows.length+' risposte · '+hdr.length+' colonne</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="alert danger"><span class="ai">🛡</span><span>Le righe <b>senza consenso</b> importano solo nome e squadra: nessun dato clinico. Mappa la colonna del consenso, altrimenti l\'intera importazione resta anagrafica.</span></div>';
+  h+='<label class="fl">Squadra di destinazione per i nuovi atleti</label>'+
+     '<select id="fmTeam"><option value="">— crea "Da modulo" —</option>'+teamOpts+'</select>';
+  h+='<div class="psec">Consenso</div>'+FORM_CONSENT.map(rowFor).join("");
+  h+='<div class="psec">Anagrafica e anamnesi</div>'+FORM_FIELDS.map(rowFor).join("");
+  h+='<div class="psec">Screening — colonne dedicate</div>'+FORM_SCREEN.map(rowFor).join("");
+  h+='<label class="fl">…oppure una sola colonna a scelta multipla</label>'+
+     '<select id="fm_screenMulti">'+opts(-1)+'</select>'+
+     '<div class="thrh">Se il modulo usa una casella di controllo con più opzioni, indicala qui: le voci selezionate vengono riconosciute per parola chiave.</div>';
+  h+='<div class="thr-act"><button class="btn sm" onclick="closeM()">Annulla</button>'+
+     '<button class="btn primary" onclick="previewForms()">Anteprima</button></div>';
+  modal(h);
+}
+
+function readFormMapping(){
+  const m={};
+  FORM_ALL.forEach(f=>{ const el=document.getElementById("fm_"+f.k); m[f.k]=el?parseInt(el.value,10):-1; });
+  m._screenMulti=parseInt((document.getElementById("fm_screenMulti")||{value:-1}).value,10);
+  m._team=(document.getElementById("fmTeam")||{value:""}).value;
+  return m;
+}
+
+function buildFormPlan(m){
+  const cell=(row,i)=>(i>=0&&i<row.length)?String(row[i]||"").trim():"";
+  const existing={}; (S.athletes||[]).forEach(a=>{ const n=normName(a.name); if(n) (existing[n]=existing[n]||[]).push(a); });
+  const plan={rows:[], newCount:0, updCount:0, noConsent:0, skipped:0, dupes:0};
+  const seen={};
+
+  FORM_CSV.rows.forEach((row,idx)=>{
+    const name=cell(row,m.name).replace(/\s+/g," ").trim();
+    if(!name){ plan.skipped++; return; }
+    const key=normName(name);
+    if(seen[key]){ plan.dupes++; }           // più invii della stessa persona: vince l'ultimo
+    seen[key]=1;
+
+    const consentRaw=cell(row,m.consent);
+    const consent = m.consent>=0 ? truthy(consentRaw) : false;
+    if(!consent) plan.noConsent++;
+
+    const p={};
+    FORM_FIELDS.forEach(f=>{
+      if(f.k==="name"||f.k==="team") return;
+      if(f.clin && !consent) return;          // ← il vincolo, applicato qui
+      const v=cell(row,m[f.k]); if(!v) return;
+      if(f.k==="sex") p.sex=/^f/i.test(v)?"F":"M";
+      else if(f.k==="birth"||f.k==="medicalExpiry"){ const d=toISODate(v); if(d) p[f.k]=d; }
+      else if(f.k==="painLevel"){ const n=parseFloat(String(v).replace(",",".")); if(isFinite(n)) p[f.k]=String(Math.max(0,Math.min(10,n))); }
+      else if(f.k==="height"||f.k==="weight"){ const n=parseFloat(String(v).replace(",",".")); if(isFinite(n)) p[f.k]=String(n); }
+      else p[f.k]=v.slice(0,2000);
+    });
+
+    if(consent){
+      FORM_SCREEN.forEach(f=>{ const v=cell(row,m[f.k]);
+        if(m[f.k]>=0 && v){ if(truthy(v)) p[f.k]=true; else if(!falsy(v)) p[f.k]=true; } });
+      if(m._screenMulti>=0){
+        const raw=normHdr(cell(row,m._screenMulti));
+        if(raw) FORM_SCREEN.forEach(f=>{ if(f.kw.some(k=>raw.indexOf(normHdr(k))>=0)) p[f.k]=true; });
+      }
+      p.consent=true;
+      const cd=toISODate(cell(row,m.consentDate)); p.consentDate=cd||todayISO();
+      const by=cell(row,m.consentBy);
+      p.consentBy = by ? (/genitor|tutor|madre|padre|responsabil/i.test(by)
+                          ? "Chi esercita la responsabilità genitoriale" : "L'atleta (maggiorenne)")
+                       : "";
+      const doc=cell(row,m.consentDoc); if(doc) p.consentDoc=doc.slice(0,200);
+    }
+
+    const sex=p.sex; delete p.sex;
+    const match=(existing[key]||[])[0];
+    if(match) plan.updCount++; else plan.newCount++;
+    plan.rows.push({name, key, sex:sex||"M", team:cell(row,m.team), profile:p, consent, match, line:idx+2});
+  });
+  return plan;
+}
+
+function previewForms(){
+  const m=readFormMapping();
+  if(m.name<0){ toast("Mappa almeno la colonna del nome"); return; }
+  FORM_MAP_CACHE=m;
+  const plan=buildFormPlan(m);
+  FORM_PLAN_CACHE=plan;
+
+  let h='<div class="mh"><div><div class="mt">Anteprima importazione</div>'+
+    '<div class="ms">'+plan.rows.length+' righe valide</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="tstats" style="margin-bottom:12px">'+
+     tstat(plan.newCount,"Nuovi")+tstat(plan.updCount,"Aggiornati")+
+     tstat(plan.noConsent,"Senza consenso", plan.noConsent?"down":"up")+
+     tstat(plan.skipped+plan.dupes,"Scartati")+'</div>';
+  if(m.consent<0){
+    h+='<div class="alert danger"><span class="ai">⚠️</span><span>Nessuna colonna di consenso mappata: verranno importati <b>solo nome e squadra</b>. Aggiungi la domanda di consenso al modulo e riesporta.</span></div>';
+  } else if(plan.noConsent){
+    h+='<div class="alert danger"><span class="ai">🛡</span><span><b>'+plan.noConsent+'</b> righe senza consenso: entra solo l\'anagrafica, i dati clinici vengono scartati.</span></div>';
+  }
+  if(plan.dupes) h+='<div class="alert info"><span class="ai">ℹ️</span><span><b>'+plan.dupes+'</b> invii ripetuti dallo stesso nome: viene tenuto l\'ultimo.</span></div>';
+
+  h+='<label class="fl">Dettaglio</label><div class="hist" style="max-height:280px">';
+  plan.rows.slice(0,120).forEach(r=>{
+    const nf=Object.keys(r.profile).length;
+    h+='<div class="hrow"><span class="hd">'+esc(r.name)+'</span>'+
+       '<span class="hv"><span class="rd-cmj '+(r.match?"flat":"up")+'">'+(r.match?"aggiorna":"nuovo")+'</span> '+
+       '<span class="rd-cmj '+(r.consent?"up":"down")+'">'+(r.consent?"consenso ✓":"no consenso")+'</span> '+
+       '<span style="color:var(--muted2);font-size:10px">'+nf+' campi</span></span></div>';
+  });
+  if(plan.rows.length>120) h+='<div class="hrow"><span class="hd">…e altre '+(plan.rows.length-120)+'</span></div>';
+  h+='</div>';
+  h+='<div class="gnote">L\'importazione <b>non cancella nulla</b>: i campi già compilati e non presenti nel modulo restano come sono.</div>';
+  h+='<div class="thr-act"><button class="btn sm" onclick="openFormMap()">← Correggi mappatura</button>'+
+     '<button class="btn primary" onclick="applyForms()">Importa '+plan.rows.length+' anamnesi</button></div>';
+  modal(h);
+}
+let FORM_MAP_CACHE=null, FORM_PLAN_CACHE=null;
+
+function applyForms(){
+  const plan=FORM_PLAN_CACHE, m=FORM_MAP_CACHE;
+  if(!plan||!m){ toast("Rifai l'anteprima"); return; }
+  let teamId=m._team;
+  if(!teamId){
+    const ex=(S.teams||[]).find(t=>t.name==="Da modulo");
+    if(ex) teamId=ex.id;
+    else { teamId=uid(); S.teams.push({id:teamId, name:"Da modulo", sport:S.sport}); }
+  }
+  let created=0, updated=0;
+  plan.rows.forEach(r=>{
+    let a=r.match;
+    if(!a){
+      a={id:uid(), name:r.name, sex:r.sex, team:teamId, profile:{}};
+      S.athletes.push(a); created++;
+    } else { updated++; if(!a.profile) a.profile={}; }
+    // merge non distruttivo: sovrascrive solo i campi che il modulo porta
+    Object.keys(r.profile).forEach(k=>{ a.profile[k]=r.profile[k]; });
+    if(r.team && !r.match){
+      const t=(S.teams||[]).find(x=>normHdr(x.name)===normHdr(r.team));
+      if(t) a.team=t.id;
+    }
+  });
+  save(); closeM(); render();
+  toast("Importate "+plan.rows.length+" anamnesi · "+created+" nuovi, "+updated+" aggiornati");
+  FORM_CSV=null; FORM_PLAN_CACHE=null; FORM_MAP_CACHE=null;
+}
+
 function wipe(){ if(!confirm("Cancellare TUTTI gli atleti, le squadre e i dati? Esporta prima un backup se vuoi conservarli.")) return;
-  snapshotBeforeRisk("cancellazione totale");
   S={athletes:[],data:{},teams:[],sport:S.sport,view:S.view,activeTeam:"all"}; save(); render(); toast("Tutto cancellato"); }
 
 /* ═══════════════ DATI DI ESEMPIO ═══════════════ */
@@ -2772,7 +3562,7 @@ function loadDemo(){
 }
 
 /* ═══════════════ GUIDA AI TEST (protocolli) ═══════════════ */
-const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",nordic:"🦵",cmj:"⬆️",sj:"🔽",dj:"⬇️",eur:"🔁",
+const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆️",sj:"🔽",dj:"⬇️",eur:"🔁",
   spr10:"⏱️",spr30:"🏁",rsa:"🔄",sdec:"📉",vo2:"🫁",mas:"🏃",yoyo1:"🪀",yoyo2:"🪀",
   fvdef:"📈",cod505:"🔀",ttest:"✖️",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
   shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶",
@@ -3225,16 +4015,7 @@ const PROTO={
       {t:"Registra",d:"Potenza dell'ultimo step completato (W). Normalizzala al peso (W/kg) per confronti tra atleti."}],
     interpret:["Più specifico del tapis per il combattimento: <b>coinvolge la parte alta</b>, che nel fight è sempre sotto carico.","È anche un ottimo mezzo di condizionamento, non solo un test: ma allora tienilo separato dal test."],
     advice:["Usa la potenza finale per prescrivere gli intervalli (es. % della potenza massimale raggiunta).","Confronta i due test aerobici: se il tapis va bene ma l'air bike no, il limite è la <b>parte alta</b>, non il cuore — e nel combattimento conta."],
-    note:"Le air bike non sono calibrate tra loro: usa <b>sempre la stessa macchina</b>."},
-
-  nordic:{eyebrow:"Prevenzione — forza eccentrica ischiocrurali",
-    what:"<b>Nordic hamstring test</b>: in ginocchio con le caviglie bloccate, l'atleta si abbassa in avanti resistendo il più a lungo possibile. Misura la <b>forza eccentrica</b> dei flessori — il fattore modificabile con più evidenza per ridurre l'infortunio n.1 nel calcio e nella corsa veloce.",
-    steps:[{t:"Setup",d:"In ginocchio su superficie morbida, caviglie ancorate (NordBord, o partner + dinamometro con cinghia)."},
-      {t:"Esecuzione",d:"Tronco rigido, scendi in avanti il più lentamente possibile resistendo con gli ischiocrurali."},
-      {t:"Registra",d:"Picco di forza per gamba (N) e soprattutto l'<b>asimmetria destra/sinistra</b>. Senza device: usa l'angolo di rottura o le ripetizioni controllate."}],
-    interpret:["Forza più alta = meglio. Il segnale preventivo chiave è l'<b>asimmetria &gt;~10-15%</b> tra le gambe e/o un valore assoluto basso.","La forza eccentrica cala con la fatica: un test a fine settimana intensa può sottostimare il valore reale."],
-    advice:["Il test e la <b>cura</b> coincidono: il Nordic curl come esercizio è l'intervento con l'evidenza più forte. Programma il volume gradualmente (DOMS marcati all'inizio).","Asimmetria alta → lavoro unilaterale mirato e progressione eccentrica sull'arto debole."],
-    note:"Con NordBord ottieni forza + asimmetria; senza, ripiega su angolo di rottura o ripetizioni controllate. L'intervento (Nordic curl) conta più del test in sé."}
+    note:"Le air bike non sono calibrate tra loro: usa <b>sempre la stessa macchina</b>."}
 };
 
 const PROTO_EXTRA={
@@ -3302,7 +4083,6 @@ const BATTERY={
       {t:"Velocità & RSA", w:"Periodico", y:"Accelerazione, velocità e ripetibilità degli sprint.", tests:["spr10","spr30","rsa","sdec"]},
       {t:"Cambio direzione", w:"Periodico", y:"Decelerazione e agilità.", tests:["cod505","ttest"]},
       {t:"Forza / potenza", w:"Baseline · metà", y:"Base di forza ed esplosività.", tests:["imtp","cmj"]},
-      {t:"Prevenzione ischiocrurali", w:"Baseline · periodico", y:"Forza eccentrica dei flessori: è l'infortunio n.1 nel calcio, con forte evidenza preventiva. Su tutti, non solo sugli infortunati.", tests:["nordic"]},
       {t:"Funzionale / RTS", w:"Storia infortuni (hamstring)", y:"Asimmetrie e return-to-sport.", tests:["hopLSI","ybtLow","cmjAsym"]}
     ]},
   basket:{
@@ -3321,7 +4101,7 @@ const BATTERY={
     groups:[
       {t:"Velocità & salti", w:"Baseline · periodico", y:"Esplosività, reattività e profilo F-V.", tests:["spr10","spr30","cmj","sj","dj","fvdef"]},
       {t:"Mezzofondo & fondo", w:"Baseline · metà · fine", y:"Capacità aerobica e soglia.", tests:["mas","vo2"]},
-      {t:"Prevenzione & funzionale", w:"Pre-season + periodico", y:"Forza eccentrica dei flessori (chiave per i velocisti), caviglia e simmetria monopodalica.", tests:["nordic","ankleDF","hopLSI"]}
+      {t:"Prevenzione & funzionale", w:"Pre-season + sintomi", y:"Caviglia e simmetria monopodalica.", tests:["ankleDF","hopLSI"]}
     ]},
   forza:{
     note:"Forza / palestra: la progressione del carico è il driver. Monitora la velocità in sala.",
@@ -3397,35 +4177,12 @@ function battView(sport){ const b=BATTERY[sport]||BATTERY.generale; const v=batt
   return v ? {b, v, note:v.note||b.note, groups:v.groups, core:v.core||b.core||[]}
            : {b, v:null, note:b.note, groups:b.groups, core:b.core||[]}; }
 function sportMeta(id){ return SPORTS.find(s=>s.id===id)||{icon:"",label:id}; }
-function stripHtml(s){ return (s||"").replace(/<[^>]*>/g,""); }
-let _tipEl=null;
-function testTip(id){
-  const t=TMAP[id]; if(!t) return "";
-  const dir = t.dir<0 ? "più basso = meglio" : "più alto = meglio";
-  let what=""; const pr=(typeof PROTO!=="undefined")?PROTO[id]:null;
-  if(pr && pr.what){ what=stripHtml(pr.what); if(what.length>170) what=what.slice(0,168)+"…"; }
-  else if(t.full){ what=t.full; }
-  return '<div class="tt-t">'+esc(t.full||t.name)+'</div>'+
-    '<div class="tt-m">'+esc(t.unit)+' · '+dir+' · '+esc(t.cat)+'</div>'+
-    (what?'<div class="tt-w">'+esc(what)+'</div>':'');
-}
-function showTip(ev, id){
-  const html=testTip(id); if(!html) return;
-  if(!_tipEl){ _tipEl=document.createElement("div"); _tipEl.className="tiptip"; document.body.appendChild(_tipEl); }
-  _tipEl.innerHTML=html; _tipEl.style.display="block"; _tipEl.style.left="-9999px";
-  const chip=ev.currentTarget; const r=chip.getBoundingClientRect();
-  const tw=_tipEl.offsetWidth, th=_tipEl.offsetHeight;
-  let left=r.left + r.width/2 - tw/2;
-  left=Math.max(8, Math.min(left, window.innerWidth-tw-8));
-  let top=r.top - th - 8; if(top<8) top=r.bottom+8;
-  _tipEl.style.left=left+"px"; _tipEl.style.top=top+"px";
-}
-function hideTip(){ if(_tipEl) _tipEl.style.display="none"; }
 function isCore(tid){ if(S.sport==="all") return false; const bv=battView(S.sport); return bv.core.indexOf(tid)>=0; }
 function openBattery(sp, vk){
   let sport=sp;
   if(!sport){ if(S.sport!=="all") sport=S.sport; else { const tm=S.teams.find(t=>t.id===S.activeTeam); sport=(tm&&tm.sport)||"pallavolo"; } }
   if(vk){ S.cvar=vk; save(); }
+  document.getElementById("menu").classList.remove("on");
   const bv=battView(sport); const b=bv.b; const sm=sportMeta(sport);
   let h='<div class="mh"><div><div class="eyebrow">Batteria consigliata</div>'+
     '<div class="mt">'+sm.icon+' '+sm.label+'</div>'+
@@ -3440,7 +4197,7 @@ function openBattery(sp, vk){
   bv.groups.forEach(function(g,gi){
     h+='<div class="bgrp"><div class="bt">'+g.t+'</div><div class="bw">⏱ '+g.w+'</div><div class="by">'+g.y+'</div><div class="btests">';
     g.tests.forEach(id=>{ const t=TMAP[id]; if(!t) return;
-      h+='<span class="btchip" onmouseenter="showTip(event,\''+id+'\')" onmouseleave="hideTip()" onclick="hideTip();openGuide(\''+id+'\')">'+(ICON[id]||"🔬")+' '+t.name+'</span>'; });
+      h+='<span class="btchip" onclick="openGuide(\''+id+'\')">'+(ICON[id]||"🔬")+' '+t.name+'</span>'; });
     h+='</div>';
     const enterable=g.tests.map(id=>TMAP[id]).filter(t=>t&&!t.derived).length;
     if(enterable) h+='<button class="btn sm" style="margin-top:11px" onclick="openBatterySession(\''+sport+'\','+gi+')">+ Crea sessione con questi test</button>';
@@ -3455,6 +4212,7 @@ function chooseTests(tid){
   if(!target || target==="all" || target==="none"){ toast("Seleziona prima una squadra dalla barra"); return; }
   const team=S.teams.find(t=>t.id===target); if(!team){ toast("Seleziona una squadra"); return; }
   CHOOSE_TEAM=team.id;
+  document.getElementById("menu").classList.remove("on");
   const sel={}; const custom=!!(team.tests&&team.tests.length);
   const base=custom?team.tests:TESTS.filter(t=>t.sports.includes(team.sport||"generale")).map(t=>t.id);
   base.forEach(id=>sel[id]=true);
@@ -3470,7 +4228,7 @@ function chooseTests(tid){
   cats.forEach(c=>{ const ts=TESTS.filter(t=>t.cat===c); if(!ts.length) return;
     h+='<div class="psec">'+c+'</div>';
     ts.forEach(t=>{
-      h+='<label class="tchk" onmouseenter="showTip(event,\''+t.id+'\')" onmouseleave="hideTip()"><input type="checkbox" onchange="chCount()" data-t="'+t.id+'"'+(sel[t.id]?" checked":"")+(t.derived?' data-d="1"':'')+'>'+
+      h+='<label class="tchk"><input type="checkbox" onchange="chCount()" data-t="'+t.id+'"'+(sel[t.id]?" checked":"")+(t.derived?' data-d="1"':'')+'>'+
          '<span>'+(ICON[t.id]||"🔬")+' '+t.name+' <i>'+t.unit+'</i>'+(t.derived?' <em>auto</em>':'')+'</span></label>';
     });
   });
@@ -3578,11 +4336,23 @@ function toast(m){ const e=document.getElementById("toast"); e.textContent=m; e.
   clearTimeout(_tt); _tt=setTimeout(()=>e.classList.remove("on"),1900); }
 
 /* ═══════════════ INIT ═══════════════ */
-(function(){
-  var t=anamToken();
-  if(t){ bootAnamnesi(t); return; }   // modalità modulo anamnesi: l'app non si inizializza
-  load(); render(); autoLogin();
-})();
+const _anamToken=anamToken();
+if(_anamToken){
+  // Un atleta che apre il link non deve mai vedere login, dati di altri
+  // atleti, o dover interagire in alcun modo con lo stato locale dell'app.
+  bootAnamnesi(_anamToken);
+} else {
+  load();
+  render();
+  (function checkResetLink(){
+    try{
+      const u=new URL(location.href);
+      const tok=u.searchParams.get("reset");
+      if(tok){ showLogin(); openResetCard(tok); return; }
+    }catch(e){}
+    autoLogin();
+  })();
+}
 </script>
 </body>
 </html>

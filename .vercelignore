@@ -1,0 +1,17 @@
+# File che restano nel repository ma NON devono finire sul sito pubblico.
+#
+# Vercel pubblica come pagina scaricabile qualunque file che riceve. Senza
+# questo elenco, chiunque conosca l'indirizzo puo' aprire:
+#   /ROADMAP.md   -> l'elenco scritto di tutte le debolezze non ancora corrette
+#   /schema.sql   -> la struttura completa del database
+#   /TRASLOCO.md  -> i nomi delle variabili d'ambiente e come e' fatto il setup
+#   /test/...     -> i casi limite del codice
+#
+# Nessuno di questi contiene password, ma insieme sono una mappa per chi
+# volesse cercare un punto debole. Nel repository privato servono; online no.
+
+*.md
+schema.sql
+test/
+.env.example
+_da_eliminare/

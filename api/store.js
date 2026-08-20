@@ -56,6 +56,32 @@ const FORM_LINK_HOURS = 48;        // scadenza del link anamnesi
 const FORM_MAX_PER_HOUR = 20;      // tentativi di lettura/invio pubblici, per IP
 const FORM_PROFILE_MAX_BYTES = 20000;
 
+/* ─────────────── Campi che il modulo anamnesi può scrivere ───────────────
+   Elenco chiuso: tutto ciò che non è qui dentro viene scartato, anche se
+   arriva nella richiesta. Corrisponde ai campi che l'atleta vede davvero nel
+   modulo (l'array PROFILE di index.html, meno quelli riservati al preparatore).
+
+   NON sono presenti, e non devono esserlo:
+     medical, medicalExpiry  l'idoneità medica la stabilisce il preparatore
+                             sulla base di un certificato, non chi compila
+     notes                   note private del preparatore
+     consent*                il consenso lo registra il server piu' sotto,
+                             non lo dichiara il client
+
+   Se aggiungi un campo a PROFILE in index.html e vuoi che l'atleta possa
+   compilarlo, va aggiunto anche qui. Il test test/anamnesi.mjs confronta le
+   due liste e fallisce se divergono: e' li' per non lasciare che si separino
+   in silenzio.                                                             */
+const FORM_ALLOWED_KEYS = [
+  "birth", "dominant", "height", "weight", "role", "experience", "daysWeek",
+  "seasonPhase", "sportYears", "prevSports", "goal", "equipment", "job",
+  "sleepHours", "sleepQuality", "smoke", "alcohol", "stressLife", "cycle",
+  "nutrition", "conditions", "surgeries", "familyHistory", "injuriesCurrent",
+  "painLevel", "painContext", "injuriesPast", "recurrent", "painAreas",
+  "orthoNotes", "scHeart", "scChest", "scDizzy", "scBreath", "scJoint",
+  "scFamily", "scMedsHeart", "meds", "supplements", "allergies",
+];
+
 /* ─────────────── Utility ─────────────── */
 const now = () => new Date();
 const addDays = (d, n) => new Date(d.getTime() + n * 864e5);
@@ -323,11 +349,20 @@ export default async function handler(req, res) {
       if (!token) return res.status(400).json({ error: "Link non valido" });
       await noteFail(kI);
       const { rows } = await sql`
-        SELECT athlete_name, used_at FROM form_links
+        SELECT coach_email, athlete_name, used_at FROM form_links
         WHERE token_hash = ${sha256(token)} AND expires_at > now()`;
       if (!rows.length) return res.status(401).json({ error: "Il link è scaduto o non è più valido." });
       if (rows[0].used_at) return res.status(410).json({ error: "Questa scheda è già stata inviata. Chiedi un nuovo link al tuo preparatore." });
-      return res.status(200).json({ athleteName: rows[0].athlete_name });
+
+      // L'informativa viaggia insieme al modulo: chi compila deve poterla
+      // leggere PRIMA di acconsentire, non dopo e non altrove. Senza questo,
+      // la casella "ho letto l'informativa" è una dichiarazione su un
+      // documento che non esiste — cioè un consenso che non prova nulla.
+      const pol = await sql`SELECT payload -> 'policy' AS policy FROM payloads WHERE email = ${rows[0].coach_email}`;
+      return res.status(200).json({
+        athleteName: rows[0].athlete_name,
+        policy: pol.rows[0]?.policy ?? null,
+      });
     }
 
     /* ── formSubmit: consuma il link e scrive SOLO il profilo di quell'atleta ── */
@@ -340,12 +375,38 @@ export default async function handler(req, res) {
       if (!token) return res.status(400).json({ error: "Link non valido" });
       await noteFail(kI);
 
-      const profile = body.profile;
-      if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
+      const raw = body.profile;
+      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
         return res.status(400).json({ error: "Dati non validi" });
       }
-      if (Buffer.byteLength(JSON.stringify(profile), "utf8") > FORM_PROFILE_MAX_BYTES) {
+      if (Buffer.byteLength(JSON.stringify(raw), "utf8") > FORM_PROFILE_MAX_BYTES) {
         return res.status(413).json({ error: "Dati troppo grandi" });
+      }
+
+      // Prima si accettava QUALSIASI chiave arrivasse. Il modulo nel browser
+      // nascondeva idoneità medica, scadenza del certificato e note del
+      // preparatore — ma nascondere un campo non è impedirne la scrittura:
+      // bastava una richiesta scritta a mano per sovrascriverli.
+      // La regola vera sta qui, e i campi del preparatore restano suoi.
+      const profile = {};
+      for (const k of FORM_ALLOWED_KEYS) {
+        if (Object.prototype.hasOwnProperty.call(raw, k)) profile[k] = raw[k];
+      }
+
+      // Il consenso non è una casella spuntata: è chi lo presta, quando, e su
+      // quale versione dell'informativa. Ruolo e nome arrivano dal modulo;
+      // data e versione le stabilisce il server, perché sono le due cose che
+      // in una contestazione non devono dipendere da ciò che dice il client.
+      const consentRole = String(body.consentRole || "");
+      const consentName = String(body.consentName || "").trim().slice(0, 120);
+      if (consentRole !== "athlete" && consentRole !== "guardian") {
+        return res.status(400).json({ error: "Indica chi presta il consenso." });
+      }
+      if (body.policyRead !== true || body.consentHealth !== true) {
+        return res.status(400).json({ error: "Servono entrambe le conferme: informativa letta e consenso al trattamento." });
+      }
+      if (consentRole === "guardian" && consentName.length < 3) {
+        return res.status(400).json({ error: "Serve il nome di chi esercita la responsabilità genitoriale." });
       }
 
       // Il link e il suo consumo stanno nella STESSA transazione del salvataggio:
@@ -383,11 +444,33 @@ export default async function handler(req, res) {
           return res.status(404).json({ error: "Scheda non trovata: forse è stata rimossa." });
         }
 
+        // Senza informativa configurata non si raccoglie niente. È il punto in
+        // cui il trattamento avrebbe una base giuridica solo dichiarata: meglio
+        // rifiutare l'invio che archiviare dati sanitari di un minore con un
+        // consenso che rimanda a un documento inesistente.
+        const policy = store.policy || null;
+        if (!policy || !Number(policy.version) || !String(policy.titolare || "").trim()) {
+          await client.query("ROLLBACK");
+          await audit(link.coach_email, "formSubmit", "denied", ip, "informativa non configurata");
+          return res.status(409).json({
+            error: "Il preparatore non ha ancora pubblicato l'informativa privacy. Avvisalo: il modulo non può essere inviato finché non lo fa.",
+          });
+        }
+
+        const consentBy = consentRole === "guardian"
+          ? "Chi esercita la responsabilità genitoriale"
+          : "L'atleta (maggiorenne)";
+
         // merge del solo profilo di QUESTO atleta — non tocca il resto dei dati
         ath.profile = Object.assign({}, ath.profile || {}, profile, {
           consent: true,
-          consentBy: "L'atleta (o chi ha compilato tramite il link)",
+          consentBy,
+          consentName: consentName || null,
+          consentRole,
           consentDate: now().toISOString().slice(0, 10),
+          consentAt: now().toISOString(),
+          consentDoc: "v" + policy.version + (policy.updatedAt ? " del " + policy.updatedAt : ""),
+          consentPolicyVersion: Number(policy.version),
         });
 
         const payloadStr = JSON.stringify(store);
@@ -398,7 +481,13 @@ export default async function handler(req, res) {
         await client.query(`UPDATE form_links SET used_at = now() WHERE token_hash = $1`, [sha256(token)]);
 
         await client.query("COMMIT");
-        await audit(link.coach_email, "formSubmit", "ok", ip, "atleta " + link.athlete_id);
+        // Il registro accessi è l'unica traccia in sola aggiunta che abbiamo:
+        // se un domani qualcuno chiede "chi ha autorizzato e su cosa", la
+        // risposta sta qui e non dentro un JSON che nel frattempo è cambiato.
+        await audit(link.coach_email, "formSubmit", "ok", ip,
+          "atleta " + link.athlete_id + " · consenso: " + consentBy +
+          (consentName ? " (" + consentName + ")" : "") +
+          " · informativa v" + policy.version);
         return res.status(200).json({ ok: true });
       } catch (e) {
         try { await client.query("ROLLBACK"); } catch (e2) {}

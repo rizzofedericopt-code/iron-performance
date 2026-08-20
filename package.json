@@ -10,10 +10,10 @@
   "dependencies": {
     "@vercel/postgres": "^0.10.0"
   },
+  "scripts": {
+    "test": "node test/roundtrip.mjs && node test/merge.mjs && node test/anamnesi.mjs && node test/concorrenza.mjs"
+  },
   "devDependencies": {
     "@electric-sql/pglite": "^0.2.17"
-  },
-  "scripts": {
-    "test": "node test/roundtrip.mjs && node test/merge.mjs && node test/concorrenza.mjs"
   }
 }

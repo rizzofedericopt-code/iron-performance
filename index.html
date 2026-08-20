@@ -51,6 +51,17 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .pf-check{display:flex;align-items:flex-start;gap:8px;font-size:13px;padding:6px 0;cursor:pointer}
 .pf-check input{margin-top:3px}
 .pf-consent{background:var(--surface);border:1px solid var(--line2);border-radius:12px;padding:12px;margin-top:16px;color:var(--muted2)}
+.pol{font-size:13px;line-height:1.55;color:var(--muted2)}
+.pol h4{margin:14px 0 4px;font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:var(--text)}
+.pol p{margin:0}
+.pol-v{font-size:11px;opacity:.7;margin-bottom:2px}
+.polbox{border:1px solid var(--line2);border-radius:12px;background:var(--surface);margin-top:16px;overflow:hidden}
+.polbox>summary{padding:12px 14px;cursor:pointer;font-weight:600;font-size:13px;color:var(--text);list-style:none}
+.polbox>summary::-webkit-details-marker{display:none}
+.polbox>summary::before{content:"▸ ";opacity:.6}
+.polbox[open]>summary::before{content:"▾ "}
+.polbox .pol{padding:0 14px 14px}
+.pf-who{margin-top:16px}
 .pf-err{color:var(--down);font-size:12px;margin-top:10px;min-height:14px}
 .pf-btn{width:100%;margin-top:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer}
 .pf-btn:disabled{opacity:.6}
@@ -719,6 +730,73 @@ const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acw
   // Curva carico-velocità: soglie MODIFICABILI dal coach, non valori assoluti di letteratura.
   lvMVT:0.30,               // velocità minima (m/s) usata per stimare l'1RM, regolabile per esercizio
   lvRelStrengthGate:1.5};   // 1RM stimato ÷ peso corporeo: sopra questa soglia si considera "forza relativa sufficiente"
+/* ═══════════════ INFORMATIVA PRIVACY ═══════════════
+   L'informativa è un DATO, non un testo fisso nel codice: cambia con i tuoi
+   recapiti, con i tempi di conservazione che decidi, con chi la riceve.
+   Ogni modifica alza `version`, e la versione viene registrata insieme al
+   consenso: così, a distanza di anni, si sa su quale testo qualcuno ha
+   acconsentito — che è l'unica cosa che rende il consenso dimostrabile.
+
+   version 0 = mai compilata. Con la versione a 0 il server rifiuta gli invii
+   del modulo anamnesi: meglio bloccare la raccolta che archiviare dati
+   sanitari di un minore con un consenso che rimanda al nulla.              */
+const POLICY_DEF={
+  version:0,
+  updatedAt:"",
+  titolare:"",        // nome e cognome, o ragione sociale
+  piva:"",
+  indirizzo:"",
+  email:"",
+  telefono:"",
+  finalita:"Valutazione funzionale, programmazione e monitoraggio dell'allenamento; tutela della salute durante l'attività sportiva.",
+  baseGiuridica:"Consenso esplicito dell'interessato, o di chi esercita la responsabilità genitoriale se minorenne (art. 6.1.a e art. 9.2.a GDPR).",
+  conservazione:"",   // es. "5 anni dalla fine del rapporto di collaborazione"
+  destinatari:"I dati sono trattati dal preparatore. Sono archiviati su server di Vercel Inc. e Neon Inc., fornitori del servizio, nominati responsabili del trattamento. Non vengono comunicati ad altri né usati per finalità commerciali.",
+  extra:"",
+};
+function policyReady(p){
+  p=p||{};
+  return !!(String(p.titolare||"").trim() && String(p.email||"").trim() && String(p.conservazione||"").trim());
+}
+
+/* Compone il testo dell'informativa dai dati inseriti. Usata in due punti:
+   nell'anteprima lato preparatore e dentro il modulo pubblico, dove il testo
+   arriva dal server insieme al link. Una sola funzione, così le due versioni
+   non possono divergere. */
+function policyText(p){
+  p=p||{};
+  const r=(k)=>esc(String(p[k]||"").trim());
+  const blocco=(titolo, corpo)=> corpo ? '<h4>'+titolo+'</h4><p>'+corpo+'</p>' : '';
+  const contatti=[r("indirizzo"), r("email"), r("telefono")].filter(Boolean).join(' · ');
+  let h='<div class="pol">';
+  h+='<p class="pol-v">Informativa versione '+(Number(p.version)||0)+
+     (p.updatedAt?' — aggiornata il '+esc(fmtDate(String(p.updatedAt))):'')+'</p>';
+  h+=blocco("Chi tratta i tuoi dati",
+      r("titolare")+(r("piva")?' — P.IVA/C.F. '+r("piva"):'')+(contatti?'<br>'+contatti:''));
+  h+=blocco("Quali dati raccogliamo",
+      "Dati anagrafici e di contatto, dati sull'attività sportiva, e <b>dati relativi alla salute</b>: "+
+      "patologie, infortuni, interventi, farmaci, allergie e risposte al questionario di idoneità. "+
+      "Sono dati particolari ai sensi dell'art. 9 del Regolamento UE 2016/679.");
+  h+=blocco("Perché li raccogliamo", r("finalita"));
+  h+=blocco("Su quale base", r("baseGiuridica"));
+  h+=blocco("Per quanto tempo li conserviamo", r("conservazione"));
+  h+=blocco("Chi li vede", r("destinatari"));
+  h+=blocco("I tuoi diritti",
+      "Puoi in ogni momento chiedere di vedere i tuoi dati, correggerli, cancellarli, limitarne l'uso, "+
+      "riceverne una copia, o opporti al trattamento (artt. 15-22 GDPR). "+
+      "<b>Il consenso si può ritirare quando vuoi</b>, senza dover dare spiegazioni e senza conseguenze "+
+      "su quanto è già stato fatto legittimamente prima. "+
+      (r("email")?"Per farlo, scrivi a "+r("email")+". ":"")+
+      "Se ritieni che i tuoi dati siano trattati in modo scorretto puoi rivolgerti al Garante per la "+
+      "protezione dei dati personali (garanteprivacy.it).");
+  h+=blocco("Se sei minorenne",
+      "Il consenso lo presta chi esercita la responsabilità genitoriale, che indica il proprio nome "+
+      "nel modulo. Gli stessi diritti elencati sopra possono essere esercitati da chi presta il consenso.");
+  if(r("extra")) h+=blocco("Altre informazioni", r("extra"));
+  h+='</div>';
+  return h;
+}
+
 function normalize(){
   if(!S.sport) S.sport="pallavolo";
   if(!S.view) S.view="today";
@@ -732,6 +810,8 @@ function normalize(){
   if(!S.cfg) S.cfg={};
   Object.keys(CFG_DEF).forEach(k=>{ if(typeof S.cfg[k]!=="number"||isNaN(S.cfg[k])) S.cfg[k]=CFG_DEF[k]; });
   if(!S.activeTeam) S.activeTeam="all";
+  if(!S.policy || typeof S.policy!=="object") S.policy=Object.assign({}, POLICY_DEF);
+  Object.keys(POLICY_DEF).forEach(k=>{ if(S.policy[k]==null) S.policy[k]=POLICY_DEF[k]; });
   pruneTombs();
   // migrazione: atleti senza squadra → crea una squadra di default
   if(S.athletes.length && S.teams.length===0){
@@ -1224,6 +1304,21 @@ function consentGaps(){
     return !(p.consent && p.consentDate);
   });
 }
+
+/* Consensi validi, ma prestati su una versione dell'informativa più vecchia
+   di quella attuale. Non è un errore: è una scadenza. Se hai cambiato le
+   finalità o i tempi di conservazione, quel consenso copre un testo che non
+   è più quello, e va richiesto di nuovo. Se la modifica era una virgola,
+   puoi ignorare l'avviso — ma devi sapere che c'è. */
+function consentOutdated(){
+  const cur=Number((S.policy||{}).version)||0;
+  if(!cur) return [];
+  return (S.athletes||[]).filter(a=>{
+    const p=a.profile||{};
+    if(!(p.consent&&p.consentDate)) return false;
+    return (Number(p.consentPolicyVersion)||0) < cur;
+  });
+}
 function openPrivacy(){
   document.getElementById("menu").classList.remove("on");
   const gaps=consentGaps();
@@ -1231,6 +1326,25 @@ function openPrivacy(){
   let h='<div class="mh"><div><div class="mt">Privacy e conformità</div>'+
     '<div class="ms">Dati sanitari · art. 9 GDPR</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
+
+  // L'informativa viene prima di tutto il resto: senza, i consensi raccolti
+  // rimandano a un documento che non esiste.
+  const pol=S.policy||{}, polOk=policyReady(pol)&&Number(pol.version);
+  h+='<div class="alert '+(polOk?'info':'danger')+'"><span class="ai">'+(polOk?'📄':'⚠️')+'</span><span>'+
+     (polOk
+       ? 'Informativa pubblicata, <b>versione '+pol.version+'</b>'+(pol.updatedAt?' del '+fmtDate(String(pol.updatedAt)):'')+'.'
+       : '<b>Nessuna informativa pubblicata.</b> Il modulo anamnesi resta bloccato finché non la compili: sono cinque minuti, una volta sola.')+
+     '</span></div>';
+  h+='<button class="btn'+(polOk?' sm':' primary')+'" style="width:100%;margin-bottom:10px" onclick="openPolicy()">'+
+     (polOk?'📄 Modifica l\'informativa':'Compila l\'informativa')+'</button>';
+
+  const old=consentOutdated();
+  if(old.length){
+    h+='<div class="alert warn"><span class="ai">🕓</span><span><b>'+old.length+
+       (old.length===1?' consenso è stato prestato':' consensi sono stati prestati')+
+       '</b> su una versione precedente dell\'informativa. Se hai cambiato finalità o tempi di conservazione, vanno richiesti di nuovo.</span></div>';
+  }
+
   h+='<div class="alert '+(gaps.length?'danger':'info')+'"><span class="ai">'+(gaps.length?'⚠️':'✅')+'</span><span>'+
      (gaps.length
        ? '<b>'+gaps.length+' atleti</b> hanno dati clinici registrati <b>senza consenso tracciato</b> (spunta + data). Finché manca, quel trattamento non ha base giuridica.'
@@ -1252,6 +1366,76 @@ function openPrivacy(){
   h+='<div class="gnote">Per cancellare un singolo atleta: aprilo e usa Elimina. Vengono rimossi anche readiness e carichi.</div>';
   modal(h);
 }
+function openPolicy(){
+  const p=S.policy||{};
+  const f=(k,lbl,hint,area)=>'<div class="thr"><label>'+lbl+'</label>'+
+    (area?'<textarea id="pol_'+k+'" rows="3">'+esc(p[k]||"")+'</textarea>'
+         :'<input type="text" id="pol_'+k+'" value="'+escAttr(p[k]||"")+'">')+
+    (hint?'<div class="thrh">'+hint+'</div>':'')+'</div>';
+  const pronta=policyReady(p);
+  let h='<div class="mh"><div><div class="mt">Informativa privacy</div>'+
+    '<div class="ms">'+(Number(p.version)?('versione '+p.version+(p.updatedAt?' del '+fmtDate(String(p.updatedAt)):'')):'non ancora pubblicata')+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+
+  h+='<div class="alert '+(pronta?'info':'warn')+'"><span class="ai">'+(pronta?'ℹ️':'⚠️')+'</span><span>'+
+     (pronta
+      ? 'L\'informativa è pubblicata: viene mostrata dentro il modulo anamnesi, e la sua versione resta registrata insieme a ogni consenso raccolto.'
+      : '<b>Finché non compili questa pagina, il modulo anamnesi non può essere inviato.</b> È voluto: raccogliere dati sanitari di un minore con un consenso che rimanda a un documento inesistente è peggio che non raccoglierli.')+
+     '</span></div>';
+
+  h+='<div class="alert warn"><span class="ai">📌</span><span>'+
+     'Questo è un <b>modello</b>, non un parere legale. La struttura e i riferimenti normativi ci sono; '+
+     '<b>i contenuti sono responsabilità tua</b> e vanno fatti leggere a chi se ne intende prima di mandare '+
+     'il primo link a una famiglia. Nessun software può renderti conforme al posto tuo.'+
+     '</span></div>';
+
+  h+=f("titolare","Titolare del trattamento *","Il tuo nome e cognome, o la ragione sociale se lavori con una società.");
+  h+=f("piva","Partita IVA o codice fiscale");
+  h+=f("indirizzo","Indirizzo");
+  h+=f("email","Email di contatto *","Qui arriveranno le richieste di accesso, correzione o cancellazione dei dati.");
+  h+=f("telefono","Telefono");
+  h+=f("finalita","Perché raccogli i dati *",null,true);
+  h+=f("baseGiuridica","Base giuridica",null,true);
+  h+=f("conservazione","Per quanto tempo li conservi *","Un periodo determinato, non «finché serve». Es.: «5 anni dalla fine del rapporto».");
+  h+=f("destinatari","Chi altro li vede",null,true);
+  h+=f("extra","Altre informazioni (facoltativo)",null,true);
+
+  h+='<div style="display:flex;gap:8px;margin-top:14px">'+
+     '<button class="btn primary" style="flex:1" onclick="savePolicy()">Pubblica informativa</button>'+
+     (Number(p.version)?'<button class="btn" style="flex:1" onclick="previewPolicy()">Anteprima</button>':'')+
+     '</div>'+
+     '<div class="gnote">Ogni volta che salvi una modifica la versione avanza di uno. I consensi già raccolti '+
+     'restano legati alla versione su cui sono stati prestati: se cambi qualcosa di sostanziale, quei consensi '+
+     'vanno richiesti di nuovo.</div>';
+  modal(h);
+}
+function savePolicy(){
+  const p=S.policy||(S.policy=Object.assign({},POLICY_DEF));
+  let cambiato=false;
+  Object.keys(POLICY_DEF).forEach(k=>{
+    if(k==="version"||k==="updatedAt") return;
+    const el=document.getElementById("pol_"+k); if(!el) return;
+    const v=el.value.trim().slice(0,2000);
+    if(v!==(p[k]||"")){ p[k]=v; cambiato=true; }
+  });
+  if(!policyReady(p)){
+    toast("Mancano i campi obbligatori: titolare, email, conservazione");
+    return;
+  }
+  if(cambiato||!Number(p.version)){
+    p.version=(Number(p.version)||0)+1;
+    p.updatedAt=todayISO();
+  }
+  save(); closeM(); render();
+  toast("Informativa pubblicata — versione "+p.version);
+}
+function previewPolicy(){
+  modal('<div class="mh"><div><div class="mt">Anteprima</div><div class="ms">Così la vede chi compila il modulo</div></div>'+
+    '<button class="mcl" onclick="openPolicy()">✕</button></div>'+
+    policyText(S.policy)+
+    '<button class="btn" style="width:100%;margin-top:14px" onclick="openPolicy()">‹ Torna a modificare</button>');
+}
+
 function openErase(){
   document.getElementById("menu").classList.remove("on");
   modal('<div class="mh"><div><div class="mt">Elimina account</div>'+
@@ -1815,7 +1999,7 @@ function bootAnamnesi(token){
   let el=document.getElementById("pubform");
   if(!el){ el=document.createElement("div"); el.id="pubform"; el.className="pubform"; document.body.appendChild(el); }
   el.innerHTML='<div class="pf-box"><div class="pf-load">Carico il modulo…</div></div>';
-  apiCall("formInfo",{token}).then(j=>renderAnamForm(token, j.athleteName))
+  apiCall("formInfo",{token}).then(j=>renderAnamForm(token, j.athleteName, j.policy))
     .catch(e=>{ el.innerHTML='<div class="pf-box"><div class="pf-err2">⚠️ '+esc(e.message)+'</div>'+
       '<p class="pf-p">Il link potrebbe essere scaduto o già usato. Chiedi al tuo preparatore un link nuovo.</p></div>'; });
 }
@@ -1823,7 +2007,11 @@ function bootAnamnesi(token){
 function anamFields(){
   // Il coach compila idoneità, scadenza certificato e note dal suo lato:
   // l'atleta non li vede né li può toccare da qui.
-  const skipKey={medical:1, medicalExpiry:1, notes:1, consentDate:1, consentDoc:1};
+  // consent e consentBy erano rimasti fuori da questa lista: comparivano nel
+  // modulo come campi normali, in aggiunta alla casella di consenso in fondo.
+  // Chi compilava vedeva due domande sul consenso, diverse fra loro.
+  const skipKey={medical:1, medicalExpiry:1, notes:1,
+                 consent:1, consentBy:1, consentDate:1, consentDoc:1};
   let active=true, out=[];
   PROFILE.forEach(f=>{
     if(f.sec){ active=true; out.push({sec:f.sec}); return; }
@@ -1833,7 +2021,7 @@ function anamFields(){
   return out;
 }
 
-function renderAnamForm(token, name){
+function renderAnamForm(token, name, policy){
   const fields=anamFields(); let body="";
   fields.forEach(f=>{
     if(f.sec){ body+='<div class="pf-sec">'+esc(f.sec)+'</div>'; return; }
@@ -1850,12 +2038,46 @@ function renderAnamForm(token, name){
     '<h1>Scheda anamnesi</h1><p class="pf-sub">'+(name?("Ciao <b>"+esc(name)+"</b>, "):"")+
     'compila con i dati che conosci: bastano pochi minuti. Il link funziona <b>una sola volta</b> ed è valido 48 ore.</p></div>'+
     '<div class="pf-fields">'+body+'</div>'+
-    '<label class="pf-check pf-consent"><input type="checkbox" data-k="consent"><span>Confermo di aver letto l\'informativa privacy e presto il consenso al trattamento dei dati, anche sanitari (art. 9 GDPR). Se sono minorenne, questo consenso lo presta chi esercita la responsabilità genitoriale.</span></label>'+
+
+    // L'informativa sta DENTRO il modulo, sopra il consenso, aperta con un
+    // clic. Non un link a un documento altrove: chi acconsente deve poterla
+    // leggere nel momento in cui acconsente.
+    (policy ? '<details class="polbox"><summary>Informativa privacy — leggila prima di acconsentere</summary>'+
+              policyText(policy)+'</details>' : '')+
+
+    '<div class="pf-who">'+
+      '<label class="pf-l">Chi sta compilando e presta il consenso *</label>'+
+      '<select id="pfRole" onchange="anamRoleChange()">'+
+        '<option value="">— scegli —</option>'+
+        '<option value="athlete">Sono l\'atleta e sono maggiorenne</option>'+
+        '<option value="guardian">Sono il genitore o chi esercita la responsabilità genitoriale</option>'+
+      '</select>'+
+    '</div>'+
+    '<div class="pf-field" id="pfNameWrap" style="display:none">'+
+      '<label class="pf-l">Nome e cognome di chi presta il consenso *</label>'+
+      '<input type="text" id="pfName" autocomplete="name">'+
+    '</div>'+
+
+    // Due caselle separate, non una. Prendere atto di un'informativa e
+    // acconsentire al trattamento di dati sanitari sono due atti distinti:
+    // accorparli rende il consenso contestabile.
+    '<label class="pf-check pf-consent"><input type="checkbox" id="pfRead">'+
+      '<span>Ho letto l\'informativa qui sopra.</span></label>'+
+    '<label class="pf-check pf-consent"><input type="checkbox" id="pfHealth">'+
+      '<span>Presto il consenso al trattamento dei <b>dati relativi alla salute</b> '+
+      '(art. 9.2.a GDPR) per le finalità indicate nell\'informativa. So che posso ritirarlo in qualsiasi momento.</span></label>'+
+
     '<div class="pf-err" id="pfErr"></div>'+
     '<button class="pf-btn" id="pfBtn">Invia la scheda</button>'+
     '<p class="pf-foot">Una volta inviata, la scheda resta riservata al tuo preparatore.</p>'+
     '</div>';
   document.getElementById("pfBtn").onclick=()=>submitAnam(token);
+}
+
+function anamRoleChange(){
+  const r=document.getElementById("pfRole").value;
+  const w=document.getElementById("pfNameWrap");
+  if(w) w.style.display = r==="guardian" ? "" : "none";
 }
 
 function submitAnam(token){
@@ -1866,9 +2088,22 @@ function submitAnam(token){
     if(el.type==="checkbox"){ if(el.checked) profile[k]=true; }
     else { const v=(el.value||"").trim(); if(v!=="") profile[k]=v; }
   });
-  if(!profile.consent){ err.textContent="Per inviare devi confermare il consenso in fondo al modulo."; return; }
+
+  const consentRole=(document.getElementById("pfRole")||{}).value||"";
+  const consentName=((document.getElementById("pfName")||{}).value||"").trim();
+  const policyRead=!!(document.getElementById("pfRead")||{}).checked;
+  const consentHealth=!!(document.getElementById("pfHealth")||{}).checked;
+
+  if(!consentRole){ err.textContent="Indica chi sta compilando il modulo."; return; }
+  if(consentRole==="guardian" && consentName.length<3){
+    err.textContent="Scrivi il nome e cognome di chi presta il consenso."; return;
+  }
+  if(!policyRead || !consentHealth){
+    err.textContent="Per inviare servono entrambe le conferme in fondo al modulo."; return;
+  }
+
   err.textContent=""; btn.disabled=true; btn.textContent="Invio…";
-  apiCall("formSubmit",{token, profile}).then(()=>{
+  apiCall("formSubmit",{token, profile, consentRole, consentName, policyRead, consentHealth}).then(()=>{
     box.innerHTML='<div class="pf-box pf-done"><div class="pf-ok">✓</div><h1>Scheda inviata</h1>'+
       '<p class="pf-p">Grazie! I dati sono stati inviati in modo sicuro al tuo preparatore. Puoi chiudere questa pagina.</p></div>';
   }).catch(e=>{
@@ -1881,6 +2116,24 @@ function submitAnam(token){
 function anamLink(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   if(!AUTH||!AUTH.token){ toast("Rientra per generare il link"); return; }
+
+  // Il blocco sta qui e anche sul server. Qui perché tu te ne accorga prima di
+  // mandare il link; sul server perché un blocco che vive solo nel browser
+  // non è un blocco.
+  if(!policyReady(S.policy)||!Number(S.policy.version)){
+    modal('<div class="mh"><div><div class="mt">Prima serve l\'informativa</div>'+
+      '<div class="ms">'+esc(a.name)+'</div></div>'+
+      '<button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="alert warn"><span class="ai">⚠️</span><span>'+
+      'Questo modulo raccoglie <b>dati sanitari</b>, e per una minorenne li raccoglie da un genitore. '+
+      'Chiedere di spuntare «ho letto l\'informativa» quando l\'informativa non esiste rende il consenso '+
+      'inutilizzabile: nel momento in cui servisse dimostrare qualcosa, non dimostra niente.'+
+      '</span></div>'+
+      '<p class="gnote">Si compila una volta sola, poi vale per tutti gli atleti.</p>'+
+      '<button class="btn primary" style="width:100%;margin-top:12px" onclick="openPolicy()">Compila l\'informativa</button>');
+    return;
+  }
+
   modal('<div class="mh"><div><div class="mt">Link anamnesi</div><div class="ms">'+esc(a.name)+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div><div class="pf-gen">Genero il link sicuro…</div>');
   apiCall("formLink",{athleteId:id, athleteName:a.name}).then(j=>{

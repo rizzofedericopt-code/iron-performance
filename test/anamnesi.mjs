@@ -36,7 +36,7 @@ const allowed = [...wlBlock[1].matchAll(/"([A-Za-z0-9_]+)"/g)].map(m => m[1]);
 /* ── campi che il preparatore compila da solo: non devono MAI essere scrivibili
       da chi ha il link ── */
 const RISERVATI = ["medical", "medicalExpiry", "notes",
-                   "consent", "consentBy", "consentDate", "consentDoc"];
+                   "consent", "consentBy", "consentName", "consentDate", "consentDoc"];
 
 prova("i campi riservati al preparatore non sono scrivibili dal modulo", () => {
   const bucati = RISERVATI.filter(k => allowed.includes(k));
@@ -66,7 +66,7 @@ prova("ogni campo del modulo e' ammesso dal server", () => {
 prova("il modulo nasconde i campi riservati", () => {
   const skip = html.match(/const skipKey=\{([^}]*)\}/);
   assert.ok(skip, "skipKey non trovato in anamFields");
-  ["medical", "medicalExpiry", "notes", "consent", "consentBy", "consentDate", "consentDoc"]
+  ["medical", "medicalExpiry", "notes", "consent", "consentBy", "consentName", "consentDate", "consentDoc"]
     .forEach(k => assert.ok(new RegExp(k + ":1").test(skip[1]), k + " non e' nascosto nel modulo"));
 });
 

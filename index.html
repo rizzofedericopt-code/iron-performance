@@ -441,8 +441,78 @@ ul.kb li b{color:#fff;font-weight:600}
   .tabbar button{flex:0 0 128px}
   .wrap{padding-left:8px;padding-right:8px}
 }
+/* ── Da 1024px in su: si smette di fingere che sia un telefono ──
+   Su desktop la barra in basso e' un residuo mobile: quattro icone minuscole
+   in fondo a una fascia vuota larga tutto lo schermo, mentre il contenuto sta
+   in una colonna da 1000px con centinaia di pixel di vuoto ai lati.
+   Qui la navigazione diventa una colonna a sinistra, con le etichette sempre
+   visibili, e il contenuto prende la larghezza che ha davvero.               */
+@media(min-width:1024px){
+  body{
+    display:grid;
+    grid-template-columns:228px minmax(0,1fr);
+    grid-template-rows:auto auto minmax(0,1fr);
+  }
+  .top    {grid-column:2;grid-row:1}
+  .legend {grid-column:2;grid-row:2}
+  .wrap   {grid-column:2;grid-row:3}
+
+  /* La barra in alto erano tre righe impilate — marchio+pulsanti, squadre,
+     sport — che si mangiavano 200px prima di far vedere un dato. Su un PC
+     c'e' larghezza da vendere e altezza no: marchio, squadre e pulsanti
+     vanno sulla stessa riga. `display:contents` fa partecipare i figli di
+     .top-row alla griglia di .top senza toccare l'HTML. */
+  .top{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+       align-items:center;column-gap:20px;padding-top:10px;padding-bottom:8px}
+  .top-row{display:contents}
+  .brand  {grid-column:1;grid-row:1}
+  .teams  {grid-column:2;grid-row:1;padding-bottom:0;justify-content:flex-start}
+  .actions{grid-column:3;grid-row:1}
+  .sports {grid-column:1 / -1;grid-row:2;padding-top:9px;padding-bottom:2px}
+
+  .tabbar{
+    grid-column:1;grid-row:1 / -1;
+    flex-direction:column;justify-content:flex-start;align-items:stretch;gap:3px;
+    padding:18px 12px;border-top:none;border-right:1px solid var(--line);
+    background:rgba(14,14,16,0.6);
+  }
+  .tabbar button{
+    flex:0 0 auto;flex-direction:row;justify-content:flex-start;align-items:center;
+    gap:13px;min-height:46px;padding:11px 13px;border-radius:11px;
+    font-size:13.5px;font-weight:600;letter-spacing:.1px;
+    transition:background .15s,color .15s;
+  }
+  .tabbar button svg{width:21px;height:21px;flex:0 0 auto}
+  .tabbar button.on{background:var(--surface2);color:var(--accent)}
+  .tabbar button:hover:not(.on){background:var(--surface);color:var(--text)}
+  .tabbar button:active{opacity:1}
+  /* Il contatore nel markup sta fra icona ed etichetta: sul telefono e'
+     sovrapposto e non si nota, in colonna finisce in mezzo alla riga.
+     Lo mando in fondo con l'ordine, senza toccare l'HTML. */
+  .tabbar button>svg{order:1}
+  .tabbar button>span:not(.tbadge){order:2}
+  .tabbar .tbadge{order:3;position:static;transform:none;margin-left:auto}
+
+  /* "A tutto schermo" non vuol dire tirare ogni cosa da un bordo all'altro.
+     La MATRICE e' una tabella e la larghezza le serve tutta: nessun tetto.
+     Le viste a elenco (Oggi, Andamento, Fatica) invece hanno il contenuto a
+     sinistra: stirarle a 1600px produce righe con due parole e un metro di
+     vuoto. Loro restano su una larghezza leggibile. */
+  .top-row,.sports,.teams,#bar{max-width:none;margin-left:0;margin-right:0}
+  #grid{max-width:1040px;margin-left:0;margin-right:0}
+  body[data-view="matrix"] #grid{max-width:none;margin:0}
+  .top{padding-left:24px;padding-right:24px}
+  .wrap{padding-left:24px;padding-right:24px}
+
+  /* Nella matrice c'e' spazio: i nomi non vanno tagliati a meta'. */
+  .cAth{min-width:210px;max-width:210px}
+
+  /* C'e' spazio: le squadre e gli sport vanno a capo invece di nascondersi
+     dietro uno scorrimento orizzontale che col mouse non si vede nemmeno. */
+  .sports,.teams{flex-wrap:wrap;overflow:visible}
+}
 @media(min-width:1120px){
-  body[data-view="matrix"] #grid{max-width:1400px;margin:0 auto}
+  body[data-view="matrix"] #grid{max-width:none;margin:0}
 }
 /* very small phones: evita che l'header rubi spazio */
 @media(max-width:400px){
@@ -838,6 +908,76 @@ function save(){
   S._dirty=true;
   try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("Memoria del dispositivo piena"); }
   if(AUTH&&AUTH.token) triggerCloud();
+}
+
+/* ═══════════════ RETE DI SICUREZZA ═══════════════
+   Una versione precedente dell'app scattava una copia dello stato prima di
+   ogni operazione distruttiva, e nelle impostazioni c'era "Ripristina ultimo
+   stato". La riscrittura l'ha persa per strada e non se n'era accorto nessuno.
+
+   Senza, un tocco sbagliato su "Carica dati di esempio" o "Svuota tutto"
+   cancella la stagione e non c'è modo di tornare indietro: il cloud riceve
+   diligentemente la cancellazione e la propaga a tutti i dispositivi.
+
+   Qui la copia è tripla e locale al dispositivo. Non sostituisce il backup
+   esportato — quello serve se perdi il telefono — ma copre l'errore di mano,
+   che è l'incidente di gran lunga più probabile.                            */
+const SNAPKEY="ip_snapshots", SNAP_MAX=3;
+function snapshots(){
+  try{ const a=JSON.parse(localStorage.getItem(SNAPKEY)||"[]"); return Array.isArray(a)?a:[]; }
+  catch(e){ return []; }
+}
+function snapshotBeforeRisk(label){
+  try{
+    const copia=JSON.parse(JSON.stringify(S)); delete copia._dirty;
+    const snap={at:new Date().toISOString(), label:String(label||"operazione"),
+                atleti:(S.athletes||[]).length, data:copia};
+    let list=[snap].concat(snapshots()).slice(0,SNAP_MAX);
+    while(list.length){
+      try{ localStorage.setItem(SNAPKEY, JSON.stringify(list)); return; }
+      catch(e){ list.pop(); }   // memoria piena: si tengono le più recenti
+    }
+  }catch(e){ /* una copia mancata non deve mai bloccare l'operazione */ }
+}
+function snapshotLabel(){
+  const l=snapshots(); if(!l.length) return "Nessuna copia disponibile";
+  return l.length+(l.length===1?" copia":" copie")+" · ultima: "+l[0].label;
+}
+function openRestore(){
+  const list=snapshots();
+  let h='<div class="mh"><div><div class="mt">Annulla un\'operazione</div>'+
+    '<div class="ms">Copie salvate su questo dispositivo</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  if(!list.length){
+    h+='<div class="alert info"><span class="ai">ℹ️</span><span>Nessuna copia disponibile. '+
+       'Ne viene creata una automaticamente <b>prima</b> di ogni operazione che cancella o sostituisce dati: '+
+       'eliminare un atleta o una squadra, importare un backup o delle anamnesi, caricare i dati di esempio, svuotare tutto.'+
+       '</span></div>';
+  } else {
+    h+='<div class="alert warn"><span class="ai">⚠️</span><span>Ripristinare sostituisce <b>tutto</b> lo stato attuale, '+
+       'non solo la parte cancellata. Anche il ripristino viene salvato come copia, quindi è a sua volta annullabile.</span></div>';
+    h+='<div class="hist">';
+    list.forEach((s,i)=>{
+      let when=s.at; try{ when=new Date(s.at).toLocaleString("it-IT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}); }catch(e){}
+      h+='<div class="hrow"><span class="hd">prima di «'+esc(s.label)+'»<br>'+
+         '<small style="color:var(--muted2)">'+esc(when)+' · '+(s.atleti||0)+' atleti</small></span>'+
+         '<span class="hv"><button class="btn sm" onclick="restoreSnapshot('+i+')">Ripristina</button></span></div>';
+    });
+    h+='</div>';
+  }
+  h+='<div class="gnote">Queste copie vivono <b>solo su questo dispositivo</b> e non vengono sincronizzate. '+
+     'Per una protezione vera contro telefono perso o rotto serve <b>Esporta backup</b>.</div>';
+  modal(h);
+}
+function restoreSnapshot(i){
+  const list=snapshots(), snap=list[i]; if(!snap||!snap.data) return;
+  let when=snap.at; try{ when=new Date(snap.at).toLocaleString("it-IT"); }catch(e){}
+  if(!confirm("Ripristinare lo stato di prima di «"+snap.label+"» ("+when+")?\n\n"+
+              "Tutto quello che hai fatto dopo verrà sostituito.")) return;
+  const target=JSON.parse(JSON.stringify(snap.data));
+  snapshotBeforeRisk("ripristino di «"+snap.label+"»");
+  S=target; normalize(); save(); render(); closeM();
+  toast("Ripristinato — "+(S.athletes||[]).length+" atleti");
 }
 
 /* ═══════════════ LOGIN + CLOUD ═══════════════ */
@@ -1858,6 +1998,7 @@ function delTeam(id){
   let msg="Eliminare la squadra «"+t.name+"»?";
   if(mem.length) msg+="\n\n"+mem.length+" atleti passeranno a «Senza squadra». I loro dati restano.";
   if(!confirm(msg)) return;
+  snapshotBeforeRisk("eliminazione squadra "+t.name);
   mem.forEach(a=>a.team=null);
   S.teams=S.teams.filter(x=>x.id!==id);
   tombSet("team:"+id);   // mergeState filtrava già su questa chiave; nessuno la scriveva
@@ -1956,6 +2097,7 @@ const PROFILE=[
   {k:"medicalExpiry",l:"Scadenza certificato", t:"date", half:true},
   {k:"consent",      l:"Consenso al trattamento dei dati raccolto", t:"check"},
   {k:"consentBy",    l:"Prestato da", t:"select", o:["","L'atleta (maggiorenne)","Chi esercita la responsabilità genitoriale"], half:true},
+  {k:"consentName",  l:"Nome di chi ha prestato il consenso", t:"text", half:true},
   {k:"consentDate",  l:"Data del consenso", t:"date", half:true},
   {k:"consentDoc",   l:"Versione dell'informativa firmata (es. v1.0 del 01/09/2026)", t:"text"},
   {k:"notes",        l:"Note libere del preparatore", t:"area"}
@@ -2011,7 +2153,7 @@ function anamFields(){
   // modulo come campi normali, in aggiunta alla casella di consenso in fondo.
   // Chi compilava vedeva due domande sul consenso, diverse fra loro.
   const skipKey={medical:1, medicalExpiry:1, notes:1,
-                 consent:1, consentBy:1, consentDate:1, consentDoc:1};
+                 consent:1, consentBy:1, consentName:1, consentDate:1, consentDoc:1};
   let active=true, out=[];
   PROFILE.forEach(f=>{
     if(f.sec){ active=true; out.push({sec:f.sec}); return; }
@@ -2239,6 +2381,7 @@ function saveAthleteEdit(id){
 function delAthlete(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   if(!confirm("Eliminare "+a.name+" e TUTTI i suoi dati?\n\nVengono cancellati anche anamnesi, check-in di readiness e carichi. L'operazione è definitiva.")) return;
+  snapshotBeforeRisk("eliminazione di "+a.name);
   S.athletes=S.athletes.filter(x=>x.id!==id);
   // Prima restavano readiness[id] e load[id]: dati sanitari di una persona
   // cancellata continuavano a vivere nel cloud.
@@ -3310,6 +3453,20 @@ function openSettings(){
     '<div class="ms">'+((AUTH&&AUTH.email)?esc(AUTH.email):'Iron Performance')+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
 
+  // La privacy stava solo nel menu principale, cioè non dove la si cerca.
+  // Una schermata che blocca il modulo anamnesi non può essere nascosta:
+  // se manca l'informativa, questa riga è la prima cosa che si vede.
+  const pol=S.policy||{}, polOk=policyReady(pol)&&Number(pol.version);
+  const gapsN=consentGaps().length;
+  h+='<div class="set-sec">Privacy e dati sanitari</div><div class="set-group">'+
+    row(polOk?"📄":"⚠️","Informativa privacy",
+        polOk ? ("Pubblicata — versione "+pol.version+(pol.updatedAt?" del "+fmtDate(String(pol.updatedAt)):""))
+              : "Da compilare — il modulo anamnesi è bloccato",
+        "openPolicy()", polOk?"":"!", polOk?"":"danger")+
+    row("🛡","Privacy e conformità","Consensi, minorenni, diritti degli atleti",
+        "openPrivacy()", gapsN?gapsN:"")+
+    '</div>';
+
   h+='<div class="set-sec">Test e batterie</div><div class="set-group">'+
     row("📖","Guida ai test","Esecuzione, interpretazione, consigli","guideIndex()")+
     row("🎯","Batteria consigliata","Quali test usare e quando","openBattery()")+
@@ -3325,6 +3482,7 @@ function openSettings(){
     row("⬇️","Esporta backup","File JSON completo","exportJSON()")+
     row("📄","Esporta tabella","File CSV","exportCSV()")+
     row("⬆️","Importa backup","Ripristina da un file JSON","importJSON()")+
+    row("↩️","Annulla un'operazione",snapshotLabel(),"openRestore()")+
     row("✨","Carica dati di esempio","Per provare l'app","loadDemo()")+
     '</div>';
 
@@ -3485,6 +3643,7 @@ document.getElementById("fileIn").addEventListener("change",function(e){
         ? "ATTENZIONE: i dati attuali ("+S.athletes.length+" atleti) verranno SOSTITUITI, non uniti."
         : "");
     if(!confirm(msg)) return;
+    snapshotBeforeRisk("importazione backup");
     S=o; normalize(); save(); render(); toast("Backup importato ("+o.athletes.length+" atleti)");
   };
   r.onerror=()=>toast("Impossibile leggere il file");
@@ -3762,6 +3921,7 @@ let FORM_MAP_CACHE=null, FORM_PLAN_CACHE=null;
 
 function applyForms(){
   const plan=FORM_PLAN_CACHE, m=FORM_MAP_CACHE;
+  snapshotBeforeRisk("importazione anamnesi da modulo");
   if(!plan||!m){ toast("Rifai l'anteprima"); return; }
   let teamId=m._team;
   if(!teamId){
@@ -3788,12 +3948,15 @@ function applyForms(){
   FORM_CSV=null; FORM_PLAN_CACHE=null; FORM_MAP_CACHE=null;
 }
 
-function wipe(){ if(!confirm("Cancellare TUTTI gli atleti, le squadre e i dati? Esporta prima un backup se vuoi conservarli.")) return;
-  S={athletes:[],data:{},teams:[],sport:S.sport,view:S.view,activeTeam:"all"}; save(); render(); toast("Tutto cancellato"); }
+function wipe(){ if(!confirm("Cancellare TUTTI gli atleti, le squadre e i dati?\n\nViene salvata una copia: potrai annullare da Impostazioni \u2192 Annulla un'operazione.")) return;
+  snapshotBeforeRisk("cancellazione totale");
+  S={athletes:[],data:{},teams:[],sport:S.sport,view:S.view,activeTeam:"all",policy:S.policy}; save(); render();
+  toast("Tutto cancellato \u2014 annullabile dalle Impostazioni"); }
 
 /* ═══════════════ DATI DI ESEMPIO ═══════════════ */
 function loadDemo(){
-  if(S.athletes.length && !confirm("Sostituire i dati attuali con quelli di esempio?")) return;
+  if(S.athletes.length && !confirm("Sostituire i "+S.athletes.length+" atleti attuali con quelli di esempio?\n\nViene salvata una copia: potrai annullare da Impostazioni \u2192 Annulla un'operazione.")) return;
+  if(S.athletes.length) snapshotBeforeRisk("caricamento dati di esempio");
   const tV=uid(), tC=uid();
   S.teams=[{id:tV,name:"Pallavolo U18",sport:"pallavolo"},{id:tC,name:"Calcio Allievi",sport:"calcio"}];
   const mk=(name,sex,team)=>({id:uid(),name,sex,team});

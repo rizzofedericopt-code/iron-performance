@@ -2617,16 +2617,59 @@ function lvEstimate(reg, mvt){
   return load1RM>0 ? load1RM : null;
 }
 let LV_ROWS=[], CUR_LV_AID=null;
+/* ─── Esercizi della curva carico-velocità ───────────────────────────────
+   L'MVT (minimum velocity threshold) è la velocità a cui si muove l'ultima
+   ripetizione possibile: è il punto a cui si estrapola l'1RM. NON è una
+   costante: dipende dall'esercizio, e di molto.
+
+   L'app usava 0,30 m/s per tutto. Su panca e stacco, dove l'MVT reale sta
+   fra 0,15 e 0,18, questo SOTTOSTIMA l'1RM del 14-16% — una ventina di chili
+   su uno stacco. Chi programma a percentuali fa allenare al 70% chi crede
+   di essere all'80%.
+
+   I valori qui sotto sono riferimenti di partenza, non verità: variano con
+   l'atleta, la tecnica e il range di movimento. Restano modificabili a mano
+   in ogni sessione, ed è giusto che lo siano.                              */
+const LV_EX=[
+  {n:"Back squat",        mvt:0.30, test:"rmSquat"},
+  {n:"Front squat",       mvt:0.30, test:"rmSquat"},
+  {n:"Panca piana",       mvt:0.17, test:"rmBench"},
+  {n:"Stacco da terra",   mvt:0.16, test:"rmDead"},
+  {n:"Hip thrust",        mvt:0.25, test:null},
+  {n:"Military press",    mvt:0.19, test:null},
+  {n:"Trazioni",          mvt:0.23, test:null},
+  {n:"Altro",             mvt:0.30, test:null},
+];
+function lvExInfo(nome){ return LV_EX.find(e=>e.n===nome) || LV_EX[LV_EX.length-1]; }
+function lvExChange(){
+  const sel=document.getElementById("lvEx"); if(!sel) return;
+  const info=lvExInfo(sel.value);
+  const alt=document.getElementById("lvExAltro");
+  if(alt) alt.style.display = sel.value==="Altro" ? "" : "none";
+  const mv=document.getElementById("lvMvt");
+  if(mv && !mv.dataset.tocco) mv.value=info.mvt;
+  const nota=document.getElementById("lvMvtNote");
+  if(nota) nota.innerHTML = sel.value==="Altro"
+    ? 'Nessun riferimento per questo esercizio: la soglia va decisa da te.'
+    : 'Riferimento di partenza per <b>'+esc(sel.value)+'</b>. Cambialo se sull\'atleta vedi altro: '+
+      'l\'MVT varia con tecnica ed escursione.';
+  previewLV();
+}
+
 function openLVEntry(aid){
   const a=S.athletes.find(x=>x.id===aid); if(!a) return;
   CUR_LV_AID=aid;
   LV_ROWS=[{load:"",v:""},{load:"",v:""},{load:"",v:""}];
+  const opt=LV_EX.map(e=>'<option value="'+esc(e.n)+'">'+esc(e.n)+'</option>').join("");
   let h='<div class="mh"><div><div class="mt">Curva carico-velocità</div><div class="ms">'+esc(a.name)+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>'+
     '<label class="fl">Data</label><input id="lvD" type="date" value="'+todayISO()+'">'+
-    '<label class="fl">Esercizio</label><input id="lvEx" type="text" placeholder="es. Back Squat">'+
-    '<label class="fl">Soglia di velocità minima — MVT (m/s)</label><input id="lvMvt" type="number" inputmode="decimal" step="any" value="'+S.cfg.lvMVT+'">'+
-    '<div class="gnote" style="margin-top:0">Soglia modificabile qui e nelle Soglie generali. Non è un valore universale: dipende dall\'esercizio.</div>'+
+    '<label class="fl">Esercizio</label><select id="lvEx" onchange="lvExChange()">'+opt+'</select>'+
+    '<input id="lvExAltro" type="text" placeholder="Nome dell\'esercizio" style="display:none;margin-top:8px">'+
+    '<label class="fl">Soglia di velocità minima — MVT (m/s)</label>'+
+    '<input id="lvMvt" type="number" inputmode="decimal" step="any" value="'+LV_EX[0].mvt+'" '+
+      'oninput="this.dataset.tocco=1;previewLV()">'+
+    '<div class="gnote" id="lvMvtNote" style="margin-top:0">Riferimento di partenza per <b>Back squat</b>.</div>'+
     '<label class="fl">Punti carico (kg) / velocità media (m/s)</label>'+
     '<div id="lvRows"></div>'+
     '<button class="btn sm" style="width:100%;margin-top:6px" onclick="addLVRow()">+ Aggiungi punto</button>'+
@@ -2656,14 +2699,42 @@ function previewLV(){
   const est=lvEstimate(reg, mvt);
   if(est==null){ err.textContent="Impossibile stimare l'1RM con questi dati (estrapolazione fuori range o negativa)."; res.style.display="none"; btn.disabled=true; return; }
   err.textContent="";
-  const bw=parseFloat((S.athletes.find(a=>a.id===CUR_LV_AID)||{}).profile && S.athletes.find(a=>a.id===CUR_LV_AID).profile.weight);
+  const atl=S.athletes.find(a=>a.id===CUR_LV_AID)||{};
+  const bw=parseFloat((atl.profile||{}).weight);
   const rel = (bw&&bw>0) ? est/bw : null;
+
+  /* Quanto è lunga l'estrapolazione. Una retta tirata da carichi leggeri fino
+     all'1RM è un'ipotesi, non una misura: se il punto più pesante sta al 60%
+     della stima, gli ultimi 40 kg se li inventa la matematica. Il numero da
+     guardare è questo, molto più dell'R², che resta alto anche su tre punti
+     tutti vicini fra loro. */
+  const maxLoad=Math.max.apply(null, pts.map(p=>p.load));
+  const cop=est>0 ? maxLoad/est : 0;
+  const nPunti=pts.length;
+  const avvisi=[];
+  if(cop<0.85) avvisi.push("il carico più pesante è al <b>"+Math.round(cop*100)+"%</b> della stima: "+
+    (cop<0.7?"estrapolazione lunga, il numero è indicativo":"per una stima solida conviene arrivare almeno all'85%"));
+  if(nPunti<4) avvisi.push("solo <b>"+nPunti+" punti</b>: con 4-5 carichi ben distanziati la retta è molto più affidabile");
+  if(reg.r2<0.95) avvisi.push("<b>R² "+fmtNum(Math.round(reg.r2*1000)/1000)+"</b>: i punti non sono ben allineati, ricontrolla le velocità");
+
   res.style.display="block";
-  res.innerHTML='<b>1RM stimato:</b> '+fmtNum(Math.round(est*10)/10)+' kg &nbsp;·&nbsp; <b>R²:</b> '+fmtNum(Math.round(reg.r2*1000)/1000)+
-    (reg.r2<0.9?' <span style="color:var(--down)">(bassa linearità: verifica i dati)</span>':'')+
-    (rel!=null?'<br><b>Forza relativa:</b> '+fmtNum(Math.round(rel*100)/100)+'× peso corporeo — '+
-      (rel>=S.cfg.lvRelStrengthGate?'sopra la soglia impostata ('+S.cfg.lvRelStrengthGate+'×): forza relativa sufficiente per considerare il profilo balistico.':'sotto la soglia impostata ('+S.cfg.lvRelStrengthGate+'×): prima lavoro di forza.')
-      :'');
+  res.innerHTML=
+    '<b>1RM stimato: '+fmtNum(Math.round(est*10)/10)+' kg</b>'+
+    '<div style="color:var(--muted2);font-size:11.5px;margin-top:3px">'+
+      'MVT '+fmtNum(mvt)+' m/s · R² '+fmtNum(Math.round(reg.r2*1000)/1000)+
+      ' · '+nPunti+' punti · massimo testato '+fmtNum(maxLoad)+' kg ('+Math.round(cop*100)+'% della stima)'+
+    '</div>'+
+    (avvisi.length
+      ? '<div class="alert warn" style="margin-top:9px"><span class="ai">⚠️</span><span>'+avvisi.join('<br>')+'</span></div>'
+      : '<div class="alert info" style="margin-top:9px"><span class="ai">✅</span><span>Estrapolazione breve e punti ben allineati: stima affidabile.</span></div>')+
+    (rel!=null
+      ? '<div style="margin-top:9px"><b>Forza relativa:</b> '+fmtNum(Math.round(rel*100)/100)+'× peso corporeo — '+
+        (rel>=S.cfg.lvRelStrengthGate
+          ? 'sopra la soglia impostata ('+S.cfg.lvRelStrengthGate+'×): ha senso passare al profilo balistico.'
+          : 'sotto la soglia impostata ('+S.cfg.lvRelStrengthGate+'×): prima lavoro di forza.')+
+        '</div>'
+      : '<div class="gnote" style="margin-top:8px">Peso corporeo non inserito nella scheda: senza, la forza relativa non si calcola '+
+        'ed è quella che decide se passare al lavoro balistico.</div>');
   btn.disabled=false;
   btn.dataset.est=est; btn.dataset.r2=reg.r2; btn.dataset.m=reg.m; btn.dataset.b=reg.b;
 }
@@ -2671,15 +2742,43 @@ function saveLV(aid){
   const btn=document.getElementById("lvSaveBtn");
   const est=parseFloat(btn.dataset.est); if(!est) return;
   const d=document.getElementById("lvD").value||todayISO();
-  const ex=document.getElementById("lvEx").value.trim()||"Esercizio";
+  const scelto=document.getElementById("lvEx").value;
+  const info=lvExInfo(scelto);
+  const ex = scelto==="Altro"
+    ? ((document.getElementById("lvExAltro")||{}).value||"").trim()||"Esercizio"
+    : scelto;
   const mvt=parseFloat(document.getElementById("lvMvt").value);
   const pts=LV_ROWS.map(r=>({load:parseFloat(r.load), v:parseFloat(r.v)})).filter(p=>isFinite(p.load)&&isFinite(p.v));
   if(!S.lv) S.lv={}; if(!S.lv[aid]) S.lv[aid]=[];
   const arr=S.lv[aid]; const exist=arr.find(e=>e.d===d && e.exercise===ex);
-  const entry={d, exercise:ex, points:pts, mvt, est1RM:Math.round(est*10)/10, m:parseFloat(btn.dataset.m), b:parseFloat(btn.dataset.b), r2:parseFloat(btn.dataset.r2)};
+  const val=Math.round(est*10)/10;
+  const entry={d, exercise:ex, points:pts, mvt, est1RM:val, m:parseFloat(btn.dataset.m), b:parseFloat(btn.dataset.b), r2:parseFloat(btn.dataset.r2)};
   if(exist) Object.assign(exist,entry); else arr.push(entry);
   arr.sort((x,y)=>x.d<y.d?-1:1);
-  save(); closeM(); render(); toast("Curva carico-velocità salvata — 1RM stimato "+entry.est1RM+" kg");
+
+  /* L'1RM stimato finiva qui dentro e non usciva più: non compariva nella
+     matrice, non aveva andamento, non entrava in nessun calcolo. Chi voleva
+     vederlo nello storico doveva reinserirlo a mano nel test 1RM — doppio
+     inserimento, e due numeri che col tempo divergono.
+     Ora la stima entra direttamente nella serie del test corrispondente,
+     marcata `fonte:"lv"` per distinguerla da un massimale fatto davvero. */
+  let inSerie="";
+  if(info.test){
+    if(!S.data[aid]) S.data[aid]={};
+    if(!S.data[aid][info.test]) S.data[aid][info.test]=[];
+    const serie=S.data[aid][info.test];
+    const gia=serie.find(e=>e.d===d);
+    if(gia && gia.fonte!=="lv"){
+      inSerie=" · nello storico c'era già un massimale misurato in questa data: non l'ho sostituito";
+    }else{
+      const rec={d, v:val, fonte:"lv"};
+      if(gia) Object.assign(gia,rec); else serie.push(rec);
+      serie.sort((x,y)=>x.d<y.d?-1:1);
+      inSerie=" · aggiunto allo storico di "+TMAP[info.test].name;
+    }
+  }
+  save(); closeM(); render();
+  toast("1RM stimato "+val+" kg"+inSerie);
 }
 
 /* ═══════════════ KNOWLEDGE BASE SPORT + RUOLO ═══════════════ */
@@ -3620,7 +3719,10 @@ function sanitizeImport(o){
     Object.keys(src).slice(0,200).forEach(tid=>{
       if(!/^[A-Za-z0-9_-]{1,40}$/.test(tid)||!Array.isArray(src[tid])) return;
       dst[tid]=src[tid].slice(0,2000).filter(e=>e&&isDate(e.d)&&num(e.v)!=null)
-                       .map(e=>({d:e.d, v:num(e.v)}));
+                       // `fonte` distingue una stima dalla curva da un massimale
+                       // fatto davvero: perderla nel ripristino significa non
+                       // sapere piu' quali numeri sono misurati.
+                       .map(e=>{ const r={d:e.d, v:num(e.v)}; if(e.fonte==="lv") r.fonte="lv"; return r; });
     });
     out.data[aid]=dst;
   });

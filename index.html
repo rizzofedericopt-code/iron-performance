@@ -9,7 +9,7 @@
 :root{
   --bg:#0A0A0A; --surface:#141416; --surface2:#1c1c1f; --surface3:#252528;
   --line:#2c2c30; --line2:#3a3a3f;
-  --text:#F4F5F7; --muted:#8A8A8E; --muted2:#6C757D;
+  --text:#F4F5F7; --muted:#8A8A8E; --muted2:#8A8A8E;   /* era #6C757D: 4,22:1 su nero, sotto la soglia AA di 4,5:1 */
   --accent:#E63946;
   --up:#34C759; --upbg:rgba(52,199,89,0.12);
   --down:#FF453A; --downbg:rgba(255,69,58,0.12);
@@ -30,7 +30,15 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .brand .logo{height:30px;width:auto;display:block;margin-bottom:3px}
 .sdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--up);margin-right:5px;vertical-align:middle;transition:.2s}
 .sdot.saving{background:#FFB340} .sdot.off{background:var(--down)}
-.login{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:22px}
+/* La card di registrazione e' piu' alta di uno schermo da 560px (misurata:
+   638px). Era centrata e senza scorrimento, quindi veniva tagliata SOPRA e
+   SOTTO insieme: il codice di invito in cima e il pulsante "Crea account" in
+   fondo erano entrambi irraggiungibili. `align-items:flex-start` + margin auto
+   sulla card la centra quando c'e' spazio e la lascia scorrere quando non c'e'. */
+.login{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;
+  align-items:flex-start;justify-content:center;padding:22px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch}
+.login .login-card{margin:auto}
 .login.hide{display:none}
 
 .pubform{position:fixed;inset:0;z-index:310;background:var(--bg);overflow-y:auto;padding:24px 16px 60px;display:flex;justify-content:center}
@@ -39,17 +47,17 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .pf-err2{color:var(--down)}
 .pf-p{color:var(--muted2);font-size:13px;text-align:center;margin-top:10px}
 .pf-head{text-align:center;margin-bottom:18px}
-.pf-brand{font-family:'Montserrat',var(--sans);font-weight:800;font-size:12px;letter-spacing:2px;color:var(--accent)}
+.pf-brand{font-family:var(--sans);font-weight:800;font-size:12px;letter-spacing:2px;color:var(--accent)}
 .pf-head h1{font-size:21px;margin:6px 0 8px}
 .pf-sub{color:var(--muted2);font-size:13px;line-height:1.5}
 .pf-fields{background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:16px}
-.pf-sec{font-family:'Montserrat',var(--sans);font-weight:700;font-size:11px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin:16px 0 8px}
+.pf-sec{font-family:var(--sans);font-weight:700;font-size:11px;letter-spacing:1px;color:var(--accent);text-transform:uppercase;margin:16px 0 8px}
 .pf-sec:first-child{margin-top:0}
 .pf-field{margin-bottom:10px}
 .pf-l{display:block;font-size:12px;color:var(--muted2);margin-bottom:4px}
 .pf-fields input,.pf-fields select,.pf-fields textarea{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:9px 10px;color:var(--text);font-size:14px;font-family:inherit}
 .pf-check{display:flex;align-items:flex-start;gap:8px;font-size:13px;padding:6px 0;cursor:pointer}
-.pf-check input{margin-top:3px}
+.pf-check input{width:20px;height:20px;flex:0 0 auto;padding:0;margin-top:2px;accent-color:var(--accent)}
 .modech{display:grid;gap:8px;margin-bottom:14px}
 .modech-on,.modech-alt{text-align:left;border-radius:12px;padding:11px 13px;font-family:var(--sans);
   border:1px solid var(--line);background:var(--surface);color:var(--text);display:block;width:100%}
@@ -73,6 +81,9 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .as-b{padding:4px 14px 14px}
 .as-b>.fl:first-child{margin-top:6px}
 .pf-consent{background:var(--surface);border:1px solid var(--line2);border-radius:12px;padding:12px;margin-top:16px;color:var(--muted2)}
+.cstim{color:var(--muted2);font-size:11px;margin-right:2px}
+.stima{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--muted2);border:1px solid var(--line2);border-radius:5px;padding:1px 4px;vertical-align:1px}
 .pol{font-size:13px;line-height:1.55;color:var(--muted2)}
 .pol h4{margin:14px 0 4px;font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:var(--text)}
 .pol p{margin:0}
@@ -92,7 +103,7 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .pf-ok{font-size:40px;color:var(--up);margin-bottom:10px}
 .pf-gen{color:var(--muted2);font-size:13px;padding:20px 0;text-align:center}
 .login-card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line2);border-radius:20px;padding:28px 22px 22px;text-align:center}
-.login-name{font-family:'Montserrat',var(--sans);font-weight:600;font-size:20px;letter-spacing:1px;color:var(--text);margin-top:2px}
+.login-name{font-family:var(--sans);font-weight:600;font-size:20px;letter-spacing:1px;color:var(--text);margin-top:2px}
 .login-name b{font-weight:800}
 .login-sub{color:var(--muted2);font-size:12.5px;margin:4px 0 18px}
 .login-card .fl{text-align:left}
@@ -141,7 +152,11 @@ thead th{position:sticky;top:0;z-index:20;background:var(--surface);border-botto
 th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center;vertical-align:middle}
 
 /* athlete column (sticky left) */
+/* Il padding orizzontale di .wrap non e' coperto dalla colonna sticky: nella
+   striscia a sinistra si vedevano scorrere frammenti delle celle. Un bordo
+   dello stesso colore dello sfondo la copre. */
 .cAth{position:sticky;left:0;z-index:25;background:var(--surface);text-align:left;
+  box-shadow:-26px 0 0 var(--bg);
   min-width:148px;max-width:148px;padding:10px 12px}
 thead .cAth{z-index:30}
 .cAth .nm{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:7px;white-space:nowrap}
@@ -204,7 +219,9 @@ tbody tr:hover .cAth{background:var(--surface2)}
 .mcl:hover{color:var(--text)}
 label.fl{display:block;font-size:11px;color:var(--muted);font-weight:600;margin:14px 0 6px;
   text-transform:uppercase;letter-spacing:0.4px}
-input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--line2);color:var(--text);
+/* Senza l'esclusione, questa regola dilata anche le checkbox: quelle del
+   consenso nel modulo pubblico misuravano 200x13 px invece di 20x20. */
+input:not([type=checkbox]):not([type=radio]),select,textarea{width:100%;background:var(--surface2);border:1px solid var(--line2);color:var(--text);
   font-family:var(--sans);font-size:15px;padding:11px 12px;border-radius:10px;outline:none}
 input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 textarea{min-height:62px;resize:vertical;line-height:1.45}
@@ -300,6 +317,10 @@ ul.kb li b{color:#fff;font-weight:600}
 .pdoc .pbrief .gnote{color:#555;background:#f5f5f5;border:1px solid #e0e0e0;padding:6px 9px;border-radius:5px;font-size:11px;margin:4px 0}
 .pdoc .pbrief b{color:#000}
 @media print{
+  /* html,body hanno height:100% e overflow:hidden fuori da ogni media query:
+     in stampa questo taglia tutto cio' che eccede la prima pagina invece di
+     impaginarlo. La scheda atleta e' di 3-5 pagine e ne usciva UNA. */
+  html,body{height:auto !important;overflow:visible !important;display:block !important}
   body.printing > *{display:none !important}
   body.printing > #printArea{display:block !important}
   @page{margin:14mm}
@@ -450,7 +471,9 @@ ul.kb li b{color:#fff;font-weight:600}
 .menu button:hover{background:var(--surface3)}
 .menu button.danger{color:var(--down)}
 .menu .sep{height:1px;background:var(--line);margin:5px 4px}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
+/* Stava a 20px dal fondo, cioe' sopra la barra di navigazione (52px) e dentro
+   l'area della gesture bar su iPhone. */
+.toast{position:fixed;bottom:calc(78px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(80px);
   background:var(--text);color:#0A0A0A;font-weight:600;font-size:13px;padding:11px 18px;border-radius:11px;
   z-index:200;opacity:0;transition:.25s;pointer-events:none}
 .toast.on{transform:translateX(-50%) translateY(0);opacity:1}
@@ -533,6 +556,7 @@ ul.kb li b{color:#fff;font-weight:600}
   body[data-view="matrix"] #grid{max-width:none;margin:0}
   .top{padding-left:24px;padding-right:24px}
   .wrap{padding-left:24px;padding-right:24px}
+  .legend{padding-left:24px;padding-right:24px}   /* era a 14px: bordo disallineato */
 
   /* Nella matrice c'e' spazio: i nomi non vanno tagliati a meta'. */
   .cAth{min-width:210px;max-width:210px}
@@ -666,7 +690,7 @@ ul.kb li b{color:#fff;font-weight:600}
         <polyline points="20,49 29,44 38,37 48,29" fill="none" stroke="#F4F5F7" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
         <polyline points="48,29 56,23" fill="none" stroke="#E63946" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
         <circle cx="56" cy="23" r="4.6" fill="#E63946"/>
-        <text x="86" y="36" font-family="'Montserrat','SF Pro Display',-apple-system,sans-serif" font-size="30" font-weight="800" letter-spacing="0.5" fill="#F4F5F7">IRON</text>
+        <text x="86" y="36" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif" font-size="30" font-weight="800" letter-spacing="0.5" fill="#F4F5F7">IRON</text>
         <text x="87" y="56" font-family="ui-monospace,'SF Mono','Roboto Mono',monospace" font-size="13" font-weight="600" letter-spacing="5" fill="#8A8A8E">PERFORMANCE</text>
       </svg>
       <small><span class="sdot" id="syncDot"></span><span id="syncTxt">@federizzo_trainer</span></small>
@@ -827,6 +851,7 @@ function load(){
 }
 const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acwrCritLow:0.5, acwrCritHigh:1.5, cmjDrop:5, painCut:4,
   rdBaseMin:7, rdZAmber:-1.0, rdZRed:-1.5, cmjMinBase:5, cmjNoise:1.5, acwrMinDays:14,
+  cmjBaseDays:42,           // finestra della baseline CMJ: oltre non e' fatica, e' altro
   // Curva carico-velocità: soglie MODIFICABILI dal coach, non valori assoluti di letteratura.
   lvMVT:0.30,               // velocità minima (m/s) usata per stimare l'1RM, regolabile per esercizio
   lvRelStrengthGate:1.5};   // 1RM stimato ÷ peso corporeo: sopra questa soglia si considera "forza relativa sufficiente"
@@ -934,8 +959,12 @@ function pruneTombs(){
   });
 }
 
+/* Contatore delle modifiche. Serve a `cloudSave` per sapere se lo stato è
+   cambiato MENTRE una richiesta era in volo: senza, un salvataggio partito
+   prima dichiarava salvato anche ciò che è arrivato dopo. */
+let _stateSeq=0;
 function save(){
-  S._dirty=true;
+  S._dirty=true; _stateSeq++;
   try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("Memoria del dispositivo piena"); }
   if(AUTH&&AUTH.token) triggerCloud();
 }
@@ -1108,6 +1137,12 @@ function mergeState(server, local){
     });
   });
 
+  /* `policy` non veniva mai unita: usciva sempre quella del server. Pubblicavi
+     l'informativa sul telefono, arrivava un conflitto, e l'informativa spariva.
+     Vince la versione piu' alta — il numero cresce solo quando si pubblica. */
+  const pl=local.policy||{}, ps=server.policy||{};
+  out.policy = (Number(pl.version)||0) >= (Number(ps.version)||0) ? pl : ps;
+  out.cvar=local.cvar||server.cvar;
   out.cfg=local.cfg||server.cfg; out.sport=local.sport||server.sport;
   out.view=local.view||server.view; out.activeTeam=local.activeTeam||server.activeTeam;
   return out;
@@ -1124,14 +1159,29 @@ function scheduleRetry(){
 }
 
 function cloudSave(){
-  if(!AUTH||!AUTH.token||_saving) return;
+  if(!AUTH||!AUTH.token) return;
+  // Una richiesta è già in volo: non se ne accodano due. Se ne è nata la
+  // necessità, chi sta salvando adesso se ne accorgerà dal contatore e
+  // riprogrammerà da solo. Prima qui si usciva e basta, e la modifica
+  // restava a terra.
+  if(_saving) return;
   if(!S._dirty){ setSync("ok"); return; }
   _saving=true; setSync("saving");
   const snap=JSON.parse(JSON.stringify(S)); delete snap._dirty;
+  const seq=_stateSeq;                     // stato fotografato
   apiCall("save",{data:snap, baseVersion:CLOUD_V}).then(j=>{
     _saving=false; _retryMs=0; CLOUD_V=j.version||CLOUD_V+1;
-    S._dirty=false; try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
-    setSync("ok");
+    if(_stateSeq===seq){
+      // Niente è cambiato durante l'invio: quello che c'è ora è al sicuro.
+      S._dirty=false;
+      try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
+      setSync("ok");
+    }else{
+      // È cambiato qualcosa mentre la richiesta era in volo. NON è salvato:
+      // si riparte subito, e il pallino resta giallo finché non lo è davvero.
+      S._dirty=true; setSync("saving");
+      clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSave,150);
+    }
   }).catch(e=>{
     _saving=false;
     if(e.status===401){ showLogin("Sessione scaduta, rientra"); return; }
@@ -1691,6 +1741,23 @@ function deltaInfo(arr,dir){
 }
 
 /* livello rispetto ai riferimenti (m/f): 0..4 */
+/* Le soglie Base→Elite di questo file sono riferimenti da popolazione ADULTA:
+   `lv:{m:[25,35,45,55]}` sul CMJ vale per un uomo adulto, non per una ragazza
+   di quattordici anni in piena crescita. Applicarle a una minorenne significa
+   scriverle "sotto Base" su una scheda che poi le consegni.
+
+   Non ho normative per fascia d'eta' affidabili per tutti i cinquanta test di
+   questo catalogo, e inventarle sarebbe peggio che non averle. Quindi sotto i
+   18 anni l'etichetta non si mostra: restano il valore, la variazione e
+   l'andamento personale, che a quell'eta' sono comunque l'unica lettura sensata.
+
+   Se un domani avrai normative per eta' della tua federazione, il punto in cui
+   agganciarle e' questo. */
+function eLevelApplicable(a){
+  const eta=ageFrom((a&&a.profile||{}).birth);
+  if(eta==null) return true;            // eta' sconosciuta: si mostra, come prima
+  return eta>=18;
+}
 function levelIdx(test,sex,v){
   if(!test.lv) return -1;
   const th=test.lv[sex==="F"?"f":"m"]; if(!th) return -1; let i=0;
@@ -1784,9 +1851,10 @@ function renderMatrix(){
       if(arr.length===0){ h+='<span class="empty">+</span>'; }
       else{
         const last=arr[arr.length-1], di=deltaInfo(arr,t.dir);
-        const li=levelIdx(t,a.sex,last.v);
+        const stim=(last.fonte==="lv")?'<span class="cstim" title="Stimato dalla curva carico-velocità">≈</span>':'';
+        const li=eLevelApplicable(a)?levelIdx(t,a.sex,last.v):-1;
         if(li>=0) h+='<span class="lvdot" title="'+["Base","Discreto","Buono","Ottimo","Elite"][li]+'" style="background:'+LVCOL[li]+'"></span>';
-        h+='<div class="val">'+fmtNum(last.v)+'</div>';
+        h+='<div class="val">'+stim+fmtNum(last.v)+'</div>';
         if(di) h+='<div class="delta '+di.cls+'">'+di.arrow+' '+di.txt+'</div>';
         else   h+='<div class="delta flat" style="opacity:.5">— prima</div>';
         h+=sparkline(arr,t.dir);
@@ -1798,6 +1866,14 @@ function renderMatrix(){
   h+='</tbody></table>';
   grid.innerHTML=h;
   requestAnimationFrame(updateMatrixNav);
+}
+/* Un valore che finisce dentro un letterale JavaScript in un attributo HTML
+   non si puo' proteggere con esc(): il browser decodifica le entita' PRIMA di
+   passare il contenuto al motore JS, quindi &#39; ridiventa un apice e chiude
+   la stringa. Qui si serializza come JSON (che neutralizza apici e barre) e
+   poi si proteggono i caratteri che romperebbero l'attributo HTML. */
+function jsStr(v){
+  return esc(JSON.stringify(String(v==null?"":v)));
 }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"'`]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;","`":"&#96;"}[c])); }
 function escAttr(s){ return esc(s); }
@@ -2177,6 +2253,9 @@ function bootAnamnesi(token){
       '<p class="pf-p">Il link potrebbe essere scaduto o già usato. Chiedi al tuo preparatore un link nuovo.</p></div>'; });
 }
 
+/* Le sezioni i cui campi sono TUTTI riservati al preparatore lasciavano
+   comunque la loro intestazione: nel modulo si leggeva "IDONEITÀ & CONSENSO"
+   e sotto non c'era niente. */
 function anamFields(){
   // Il coach compila idoneità, scadenza certificato e note dal suo lato:
   // l'atleta non li vede né li può toccare da qui.
@@ -2191,7 +2270,8 @@ function anamFields(){
     if(!active) return; if(skipKey[f.k]) return;
     out.push(f);
   });
-  return out;
+  // scarta le intestazioni che non hanno nessun campo sotto
+  return out.filter((f,i)=> !f.sec || (out[i+1] && !out[i+1].sec));
 }
 
 function renderAnamForm(token, name, policy){
@@ -2318,7 +2398,7 @@ function anamLink(id){
       '<input id="lnkF" readonly value="'+esc(link)+'" onclick="this.select()">'+
       '<div style="display:flex;gap:8px;margin-top:12px">'+
       '<button class="btn primary" style="flex:1" onclick="copyText(\'lnkF\')">📋 Copia link</button>'+
-      (navigator.share?'<button class="btn" style="flex:1" onclick="shareLink(document.getElementById(\'lnkF\').value,\''+esc(a.name).replace(/'/g,"")+'\')">↗ Condividi</button>':'')+
+      (navigator.share?'<button class="btn" style="flex:1" onclick="shareLink(document.getElementById(\'lnkF\').value,'+jsStr(a.name)+')">↗ Condividi</button>':'')+
       '</div>'+
       '<div class="gnote">Manda il link su un canale che sai essere del destinatario giusto — WhatsApp diretto, non un gruppo.</div>';
     modal(h);
@@ -2426,7 +2506,15 @@ function saveAthleteEdit(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   const n=document.getElementById("eN").value.trim(); if(!n){ toast("Inserisci un nome"); return; }
   a.name=n; a.team=document.getElementById("eT").value||null; a.sex=document.getElementById("eS").value;
+  /* Il profilo veniva RICOSTRUITO da zero sui soli campi di PROFILE. Ma il
+     server, quando un genitore invia il modulo, ci scrive anche
+     consentPolicyVersion, consentAt e consentRole — che in PROFILE non ci sono.
+     Risultato: bastava aprire la scheda e salvare per cancellare la prova del
+     consenso. Ora si conserva tutto cio' che il modulo non gestisce. */
+  const gestiti={};
+  PROFILE.forEach(f=>{ if(f.k) gestiti[f.k]=1; });
   const p={};
+  Object.keys(a.profile||{}).forEach(k=>{ if(!gestiti[k]) p[k]=a.profile[k]; });
   PROFILE.forEach(f=>{ if(f.sec) return; const el=document.getElementById("p_"+f.k); if(!el) return;
     if(f.t==="check"){ if(el.checked) p[f.k]=true; }
     else { const v=el.value.trim(); if(v) p[f.k]=v; }
@@ -2465,30 +2553,103 @@ function openBoscoEntry(aid){
   const a=S.athletes.find(x=>x.id===aid); if(!a) return;
   let h='<div class="mh"><div><div class="mt">Test di Bosco</div><div class="ms">'+esc(a.name)+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>'+
-    '<div class="gnote" style="margin-top:0">Salti ripetuti, mani sui fianchi, ginocchia estese in volo. Inserisci il numero di salti e il tempo di volo TOTALE (somma dei singoli tempi di volo) misurati nella durata scelta.</div>'+
+    '<div class="gnote" style="margin-top:0">Salti ripetuti, mani sui fianchi, ginocchia estese in volo, per tutta la durata scelta.</div>'+
     '<label class="fl">Data</label><input id="bscD" type="date" value="'+todayISO()+'">'+
-    '<label class="fl">Durata del test</label><select id="bscDur"><option value="15">15 secondi</option><option value="30">30 secondi</option><option value="60">60 secondi</option></select>'+
-    '<label class="fl">Numero di salti eseguiti</label><input id="bscN" type="number" inputmode="numeric" placeholder="es. 24">'+
-    '<label class="fl">Tempo di volo totale (secondi)</label><input id="bscTf" type="number" inputmode="decimal" step="any" placeholder="es. 9.6">'+
+    '<label class="fl">Durata del test</label><select id="bscDur" onchange="previewBosco()"><option value="15">15 secondi</option><option value="30">30 secondi</option><option value="60">60 secondi</option></select>'+
+    '<label class="fl">Numero di salti eseguiti</label><input id="bscN" type="number" inputmode="numeric" placeholder="es. 24" oninput="previewBosco()">'+
+
+    /* La formula vuole il tempo di volo TOTALE. Con una pedana ce l'hai;
+       con un'app da telefono hai le ALTEZZE, e il tempo di volo si ricava:
+         t = radice(8h/g)
+       Non e' un ripiego: sommando decine di salti gli errori casuali si
+       annullano, e la potenza risultante ha un margine del 2-5% — dieci volte
+       meglio di qualunque profilo estrapolato con lo stesso strumento. */
+    '<label class="fl">Cosa hai misurato</label>'+
+    '<select id="bscMode" onchange="boscoModeChange()">'+
+      '<option value="h">Le altezze dei salti (app da telefono)</option>'+
+      '<option value="t">Il tempo di volo totale (pedana)</option>'+
+    '</select>'+
+    '<div id="bscHwrap">'+
+      '<label class="fl">Altezze dei salti (cm)</label>'+
+      '<textarea id="bscH" rows="2" placeholder="Un solo numero = altezza media. Oppure incolla tutte le altezze: 21 20.5 19 18..." oninput="previewBosco()"></textarea>'+
+      '<div class="gnote" style="margin-top:4px" id="bscHnote">Se scrivi un solo valore lo uso come media su tutti i salti.</div>'+
+    '</div>'+
+    '<div id="bscTwrap" style="display:none">'+
+      '<label class="fl">Tempo di volo totale (secondi)</label>'+
+      '<input id="bscTf" type="number" inputmode="decimal" step="any" placeholder="es. 9.6" oninput="previewBosco()">'+
+    '</div>'+
     '<div id="bscErr" class="login-err"></div>'+
     '<div id="bscResult" class="pf" style="display:none"></div>'+
     '<button class="btn sm" style="width:100%;margin-top:10px" onclick="previewBosco()">Calcola</button>'+
     '<button class="btn primary" style="width:100%;margin-top:8px" id="bscSaveBtn" onclick="saveBosco(\''+aid+'\')" disabled>Salva</button>';
   modal(h);
 }
+function boscoModeChange(){
+  const m=(document.getElementById("bscMode")||{}).value;
+  const H=document.getElementById("bscHwrap"), T=document.getElementById("bscTwrap");
+  if(H) H.style.display = m==="t" ? "none" : "";
+  if(T) T.style.display = m==="t" ? "" : "none";
+  previewBosco();
+}
+
+/* Da altezza a tempo di volo: t = radice(8h/g).
+   Deriva direttamente dal moto uniformemente accelerato — h = g·t²/8 con t
+   il tempo di volo completo (salita + discesa). */
+function tVoloDaAltezza(h_m){ return Math.sqrt(8*h_m/9.81); }
+
+/* Accetta "21" (media) oppure "21 20.5 19 18" (tutti i salti). */
+function boscoAltezze(txt, n){
+  const v=String(txt||"").split(/[\s,;]+/).map(parseFloat).filter(x=>isFinite(x)&&x>0);
+  if(!v.length) return null;
+  if(v.length===1){
+    if(!n||n<=0) return null;
+    return {tf: n*tVoloDaAltezza(v[0]/100), media:v[0], quanti:1};
+  }
+  return {tf: v.reduce((s,h)=>s+tVoloDaAltezza(h/100),0),
+          media: v.reduce((s,h)=>s+h,0)/v.length, quanti:v.length};
+}
+
 function previewBosco(){
   const dur=parseFloat(document.getElementById("bscDur").value);
   const n=parseFloat(document.getElementById("bscN").value);
-  const tf=parseFloat(document.getElementById("bscTf").value);
+  const mode=(document.getElementById("bscMode")||{}).value||"h";
   const err=document.getElementById("bscErr"), res=document.getElementById("bscResult"), btn=document.getElementById("bscSaveBtn");
-  const p=boscoPower(dur,n,tf);
-  if(p==null || !isFinite(p) || p<=0){
-    err.textContent="Valori non validi: controlla che il tempo di volo totale sia minore della durata del test.";
-    res.style.display="none"; btn.disabled=true; return;
+  const spegni=(msg)=>{ err.textContent=msg||""; res.style.display="none"; btn.disabled=true; };
+
+  let tf=null, det="";
+  if(mode==="t"){
+    tf=parseFloat((document.getElementById("bscTf")||{}).value);
+  }else{
+    const alt=boscoAltezze((document.getElementById("bscH")||{}).value, n);
+    const nota=document.getElementById("bscHnote");
+    if(alt){
+      tf=alt.tf;
+      det = alt.quanti===1
+        ? "altezza media "+fmtNum(alt.media)+" cm su "+n+" salti"
+        : alt.quanti+" altezze inserite, media "+fmtNum(Math.round(alt.media*10)/10)+" cm";
+      if(nota) nota.textContent = alt.quanti===1
+        ? "Un solo valore: lo uso come media su tutti i salti."
+        : "Salti riconosciuti: "+alt.quanti+(n&&alt.quanti!==n?" — ma hai dichiarato "+n+" salti: controlla":"");
+    }
   }
+  if(!isFinite(tf)||tf<=0) return spegni("");
+  if(!n||n<=0) return spegni("Manca il numero di salti.");
+  if(tf>=dur) return spegni("Il tempo di volo totale ("+fmtNum(Math.round(tf*100)/100)+"s) non può superare la durata del test ("+dur+"s): controlla i dati.");
+
+  const p=boscoPower(dur,n,tf);
+  if(p==null||!isFinite(p)||p<=0) return spegni("Valori non validi.");
+
   err.textContent="";
   res.style.display="block";
-  res.innerHTML='<b>Potenza media:</b> '+fmtNum(Math.round(p*100)/100)+' W/kg';
+  res.innerHTML='<b>Potenza media: '+fmtNum(Math.round(p*100)/100)+' W/kg</b>'+
+    '<div style="color:var(--muted2);font-size:11.5px;margin-top:3px">'+
+      'tempo di volo totale '+fmtNum(Math.round(tf*100)/100)+'s · tempo di contatto medio '+
+      fmtNum(Math.round((dur-tf)/n*1000))+' ms'+(det?' · '+esc(det):'')+
+    '</div>'+
+    (n/dur<1.2||n/dur>3.2
+      ? '<div class="alert warn" style="margin-top:9px"><span class="ai">⚠️</span><span>'+
+        fmtNum(Math.round(n/dur*100)/100)+' salti al secondo: fuori dal ritmo tipico del test (1,5-2,5/s). Controlla il conteggio.</span></div>'
+      : '');
   btn.disabled=false;
   btn.dataset.p=p; btn.dataset.dur=dur; btn.dataset.n=n; btn.dataset.tf=tf;
 }
@@ -3049,7 +3210,7 @@ function printAthlete(id){
   if(withData.length){
     h+='<div class="psc">Quadro test</div><table><thead><tr><th>Test</th><th>Ultimo</th><th>Livello</th><th>Δ prec.</th><th>Data</th></tr></thead><tbody>';
     withData.forEach(t=>{ const arr=series(a.id,t.id); const last=arr[arr.length-1];
-      const li=levelIdx(t,a.sex,last.v); const di=deltaInfo(arr,t.dir);
+      const li=eLevelApplicable(a)?levelIdx(t,a.sex,last.v):-1; const di=deltaInfo(arr,t.dir);
       h+='<tr><td>'+t.name+' <span style="color:#888">('+t.unit+')</span></td><td>'+fmtNum(last.v)+'</td><td>'+(li>=0?L[li]:"—")+'</td><td>'+(di?(di.arrow+" "+di.txt):"—")+'</td><td>'+fmtDate(last.d)+'</td></tr>';
     });
     h+='</tbody></table>';
@@ -3171,12 +3332,29 @@ function rdLabel(ev){
    dentro l'errore di misura, e la baseline poteva essere una sola rilevazione.
    Ora servono almeno cmjMinBase misure e la soglia non scende mai sotto
    cmjNoise volte il CV osservato. */
+/* La baseline prendeva gli ultimi 10 CMJ QUALUNQUE fosse la loro data. Con
+   test ogni due mesi il confronto era fra oggi e una media che copriva venti
+   mesi — e l'app lo chiamava "fatica neuromuscolare". La fatica acuta si misura
+   contro un riferimento recente: quello che si vede su venti mesi e' crescita,
+   allenamento, o un'atleta diventata un'altra persona.
+   Finestra regolabile in cfg.cmjBaseDays; oltre, si dichiara insufficiente
+   invece di colorare di rosso una ragazza che e' semplicemente cresciuta. */
 function cmjFatigue(aid){
   const arr=series(aid,"cmj");
   const need=(S.cfg.cmjMinBase||5)+1;
   if(arr.length<need) return {insufficient:true, have:arr.length, need:need};
   const latest=arr[arr.length-1].v;
-  const prev=arr.slice(Math.max(0,arr.length-1-10), arr.length-1).map(e=>e.v);
+  const giorni=S.cfg.cmjBaseDays||42;
+  const dLatest=dayNum(arr[arr.length-1].d);
+  const recenti=arr.slice(0,arr.length-1).filter(e=>{
+    const d=dayNum(e.d);
+    return isFinite(d) && (dLatest-d)<=giorni;
+  });
+  if(recenti.length<(S.cfg.cmjMinBase||5)){
+    return {insufficient:true, have:recenti.length, need:(S.cfg.cmjMinBase||5),
+            fuoriFinestra:true, giorni:giorni};
+  }
+  const prev=recenti.slice(-10).map(e=>e.v);
   const base=prev.reduce((a,b)=>a+b,0)/prev.length;
   if(!base) return {insufficient:true, have:arr.length, need:need};
   let sd=Math.sqrt(prev.reduce((a,b)=>a+(b-base)*(b-base),0)/Math.max(1,prev.length-1));
@@ -3481,8 +3659,15 @@ function drawCell(){
   // riferimenti
   if(t.lv){
     const th=t.lv[a.sex==="F"?"f":"m"], last=arr.length?arr[arr.length-1].v:null;
-    const hit=last!=null?levelIdx(t,a.sex,last):-1;
+    const hit=(last!=null&&eLevelApplicable(a))?levelIdx(t,a.sex,last):-1;
     const labels=["Base","Discreto","Buono","Ottimo","Elite"];
+    if(!eLevelApplicable(a)){
+      h+='<div class="alert info"><span class="ai">📏</span><span>'+
+         '<b>'+esc(a.name)+' ha '+ageFrom((a.profile||{}).birth)+' anni.</b> '+
+         'Le fasce Base→Elite di questo test sono riferimenti da popolazione adulta: '+
+         'non le applico. Guarda la variazione rispetto alla volta prima e l\'andamento suo, '+
+         'che a questa età dicono molto di più.</span></div>';
+    }
     h+='<label class="fl">Livello di riferimento ('+(a.sex==="F"?"F":"M")+')</label><div class="lvbar">';
     labels.forEach((lb,i)=>{ h+='<div class="lvseg'+(hit===i?" hit":"")+'">'+lb+(i>0?'<br>≥'+th[i-1]:"")+'</div>'; });
     h+='</div>';
@@ -3511,8 +3696,11 @@ function drawCell(){
         const c=imp>0?"up":imp<0?"down":"flat";
         dl='<span class="delta '+c+'" style="margin:0 8px 0 0">'+(raw>0?"▲":raw<0?"▼":"=")+' '+(raw>0?"+":"")+fmtNum(raw)+'</span>'; }
       const pr=(arr.length>1 && e.v===best)?'<span class="star" title="Record personale">★</span> ':'';
+      // Un 1RM ricavato dalla curva non e' un massimale sollevato: senza questo
+      // segno, fra sei mesi non c'e' modo di distinguerli.
+      const stimato=(e.fonte==="lv")?'<span class="stima" title="Stimato dalla curva carico-velocità, non sollevato">stima</span> ':'';
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
-         '<span class="hv">'+pr+fmtNum(e.v)+' <span style="color:var(--muted2);font-size:10px">'+t.unit+'</span></span>'+
+         '<span class="hv">'+stimato+pr+fmtNum(e.v)+' <span style="color:var(--muted2);font-size:10px">'+t.unit+'</span></span>'+
          dl+(t.derived?'':'<span class="hdl" onclick="delMeasure('+i+')">🗑</span>')+'</div>';
     }
     h+='</div>';
@@ -3647,13 +3835,21 @@ function openSettings(){
     row("📄","Esporta tabella","File CSV","exportCSV()")+
     row("⬆️","Importa backup","Ripristina da un file JSON","importJSON()")+
     row("↩️","Annulla un'operazione",snapshotLabel(),"openRestore()")+
+    row("📋","Importa anamnesi da modulo","Da un CSV di Google Moduli","importForms()")+
     row("✨","Carica dati di esempio","Per provare l'app","loadDemo()")+
     '</div>';
 
+  /* Queste voci vivevano solo nel menu ⋯, che non si apre: il pulsante chiama
+     le Impostazioni e la classe che apriva il menu non veniva mai aggiunta.
+     "Elimina account e dati" era quindi irraggiungibile — cioe' il diritto di
+     cancellazione che l'informativa promette. */
   h+='<div class="set-sec">Account</div><div class="set-group">'+
     row("🔑","Cambia password","","changePassword()")+
-    row("🔒","Esci","","doLogout()")+
+    row("📱","Dispositivi collegati","Vedi e chiudi le sessioni aperte","openSessions()")+
+    row("🔒","Blocca schermo","Chiudi subito, senza uscire","lockNow()")+
+    row("↪️","Esci","","doLogout()")+
     row("🗑","Svuota tutto","Cancella ogni dato di questo account","wipe()","","danger")+
+    row("☠️","Elimina account e dati","Cancellazione definitiva — art. 17 GDPR","openErase()","","danger")+
     '</div><div style="height:8px"></div>';
   modal(h);
 }
@@ -3665,10 +3861,11 @@ function dl(name,content,type){
 }
 function exportJSON(){ dl("iron-performance-"+todayISO()+".json", JSON.stringify(S,null,2), "application/json"); toast("Backup esportato"); }
 function exportCSV(){
-  let rows=[["Squadra","Atleta","Sesso","Test","Unità","Data","Valore"]];
+  let rows=[["Squadra","Atleta","Sesso","Test","Unità","Data","Valore","Origine"]];
   S.athletes.forEach(a=>{ const tm=S.teams.find(t=>t.id===a.team);
     TESTS.forEach(t=>series(a.id,t.id).forEach(e=>{
-      rows.push([tm?tm.name:"—",a.name,a.sex||"M",t.full,t.unit,e.d,fmtNum(e.v)]);
+      rows.push([tm?tm.name:"—",a.name,a.sex||"M",t.full,t.unit,e.d,fmtNum(e.v),
+                 e.fonte==="lv"?"stima da curva carico-velocità":"misurato"]);
     })); });
   const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
   dl("iron-performance-"+todayISO()+".csv", csv, "text/csv"); toast("CSV esportato");
@@ -3688,7 +3885,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},tomb:{}};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},tomb:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -3780,6 +3977,16 @@ function sanitizeImport(o){
     });
   });
 
+  // L'export scrive l'informativa, l'import la scartava: ripristinare un backup
+  // azzerava il documento e ribloccava il modulo anamnesi.
+  if(o.policy&&typeof o.policy==="object"&&!Array.isArray(o.policy)){
+    out.policy=Object.assign({},POLICY_DEF);
+    Object.keys(POLICY_DEF).forEach(k=>{
+      const v=o.policy[k];
+      if(k==="version"){ const n=num(v); out.policy.version=(n!=null&&n>=0)?Math.floor(n):0; }
+      else out.policy[k]=str(v,2000);
+    });
+  }
   if(o.tomb&&typeof o.tomb==="object") Object.keys(o.tomb).slice(0,2000).forEach(k=>{ out.tomb[k]=str(o.tomb[k],40); });
   if(o.cfg&&typeof o.cfg==="object"){ out.cfg={}; Object.keys(CFG_DEF).forEach(k=>{ const n=num(o.cfg[k]); if(n!=null) out.cfg[k]=n; }); }
   out.sport=str(o.sport,40)||"pallavolo";
@@ -4117,13 +4324,32 @@ function applyForms(){
 
 function wipe(){ if(!confirm("Cancellare TUTTI gli atleti, le squadre e i dati?\n\nViene salvata una copia: potrai annullare da Impostazioni \u2192 Annulla un'operazione.")) return;
   snapshotBeforeRisk("cancellazione totale");
-  S={athletes:[],data:{},teams:[],sport:S.sport,view:S.view,activeTeam:"all",policy:S.policy}; save(); render();
+  // Senza tombstone il primo conflitto di sincronizzazione rimette dentro tutto
+  // quello che sta sul server: il messaggio dice "cancellato" e i dati tornano.
+  const t={}; Object.assign(t, S.tomb||{});
+  const ora=new Date().toISOString();
+  (S.athletes||[]).forEach(a=>{ t["ath:"+a.id]=ora; });
+  (S.teams||[]).forEach(x=>{ t["team:"+x.id]=ora; });
+  S={athletes:[],data:{},teams:[],sport:S.sport,view:S.view,activeTeam:"all",
+     policy:S.policy, cfg:S.cfg, cvar:S.cvar, tomb:t};   // soglie e informativa restano
+  save(); render();
   toast("Tutto cancellato \u2014 annullabile dalle Impostazioni"); }
 
 /* ═══════════════ DATI DI ESEMPIO ═══════════════ */
 function loadDemo(){
   if(S.athletes.length && !confirm("Sostituire i "+S.athletes.length+" atleti attuali con quelli di esempio?\n\nViene salvata una copia: potrai annullare da Impostazioni \u2192 Annulla un'operazione.")) return;
-  if(S.athletes.length) snapshotBeforeRisk("caricamento dati di esempio");
+  if(S.athletes.length){
+    snapshotBeforeRisk("caricamento dati di esempio");
+    // stessa ragione di wipe(): senza tombstone gli atleti veri tornerebbero,
+    // mescolati a quelli di esempio. E i loro dati sanitari vanno rimossi.
+    const ora=new Date().toISOString();
+    if(!S.tomb) S.tomb={};
+    S.athletes.forEach(a=>{
+      S.tomb["ath:"+a.id]=ora;
+      ["data","readiness","load","screen","lv"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
+    });
+    (S.teams||[]).forEach(x=>{ S.tomb["team:"+x.id]=ora; });
+  }
   const tV=uid(), tC=uid();
   S.teams=[{id:tV,name:"Pallavolo U18",sport:"pallavolo"},{id:tC,name:"Calcio Allievi",sport:"calcio"}];
   const mk=(name,sex,team)=>({id:uid(),name,sex,team});

@@ -49,7 +49,10 @@ const SESSION_DAYS = 30;
 const MIN_PW = 12;                 // 4 caratteri erano indifendibili
 const MAX_FAILS = 8;
 const LOCK_MINUTES = 15;
-const MAX_PAYLOAD_BYTES = 6 * 1024 * 1024;
+// Vercel rifiuta il corpo della richiesta oltre ~4,5 MB PRIMA di eseguire
+// questo codice: con 6 MB il messaggio gentile qui sotto non arrivava mai, e
+// al client tornava un errore della piattaforma che non sa interpretare.
+const MAX_PAYLOAD_BYTES = 4 * 1024 * 1024;
 const RESET_MINUTES = 30;          // finestra di validità del link
 const RESET_MAX_PER_HOUR = 3;      // richieste "forgot" per email/IP
 const FORM_LINK_HOURS = 48;        // scadenza del link anamnesi
@@ -92,9 +95,35 @@ function validEmail(e) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) && e.length <= 254;
 }
 
+/* Si leggeva il PRIMO valore di x-forwarded-for, che e' proprio la parte che
+   il client puo' scrivere: bastava un header diverso a ogni richiesta per
+   avere una chiave di rate limiting vergine ogni volta.
+   Su Vercel x-vercel-forwarded-for e' impostato dalla piattaforma e non e'
+   falsificabile. Come ripiego si prende l'ULTIMO valore di x-forwarded-for,
+   che e' quello aggiunto dal proxy piu' vicino a noi. */
 function clientIp(req) {
-  const f = req.headers["x-forwarded-for"];
-  return (Array.isArray(f) ? f[0] : String(f || "")).split(",")[0].trim() || "unknown";
+  const uno = (v) => (Array.isArray(v) ? v[0] : String(v || "")).trim();
+  const vercel = uno(req.headers["x-vercel-forwarded-for"]);
+  if (vercel) return vercel.split(",").pop().trim();
+  const real = uno(req.headers["x-real-ip"]);
+  if (real) return real;
+  const xff = uno(req.headers["x-forwarded-for"]);
+  if (xff) return xff.split(",").pop().trim();
+  return req.socket?.remoteAddress || "unknown";
+}
+
+/* Il confronto del codice di invito era `!==`, che esce al primo byte diverso
+   e quindi perde tempo in modo proporzionale a quanti caratteri sono giusti.
+   Altrove il file usa correttamente timingSafeEqual: qui no. */
+function codeOk(dato, atteso) {
+  const a = Buffer.from(String(dato || ""), "utf8");
+  const b = Buffer.from(String(atteso || ""), "utf8");
+  if (!b.length) return false;
+  // lunghezze diverse: si confronta comunque, per non rivelare la lunghezza
+  const pad = Buffer.alloc(Math.max(a.length, b.length));
+  const pa = Buffer.alloc(pad.length); a.copy(pa);
+  const pb = Buffer.alloc(pad.length); b.copy(pb);
+  return crypto.timingSafeEqual(pa, pb) && a.length === b.length;
 }
 
 async function hashPassword(pw) {
@@ -144,7 +173,12 @@ async function noteFail(key) {
                    THEN 1 ELSE login_attempts.fails + 1 END,
       first_fail = CASE WHEN login_attempts.first_fail < now() - interval '1 hour'
                         THEN now() ELSE login_attempts.first_fail END,
-      locked_until = CASE WHEN login_attempts.fails + 1 >= ${MAX_FAILS}
+      -- Il conteggio si azzera quando la finestra di un'ora e' scaduta, ma il
+      -- blocco veniva deciso su login_attempts.fails + 1, cioe' sul valore
+      -- VECCHIO: chi aveva sbagliato 8 volte ieri veniva bloccato oggi al
+      -- primo errore. Qui si ripete la stessa espressione del conteggio.
+      locked_until = CASE WHEN (CASE WHEN login_attempts.first_fail < now() - interval '1 hour'
+                                     THEN 1 ELSE login_attempts.fails + 1 END) >= ${MAX_FAILS}
                           THEN ${lock.toISOString()}::timestamptz ELSE NULL END`;
 }
 
@@ -210,6 +244,33 @@ async function sessionUser(req) {
   return { email: rows[0].email, token };
 }
 
+/* ─────────────── Manutenzione ───────────────
+   Nessuna tabella si potava da sola: le istruzioni in schema.sql erano
+   commenti, e audit_log prende una riga per OGNI salvataggio. La tabella che
+   contiene email e indirizzi IP cresceva senza fine — il contrario esatto
+   della minimizzazione dichiarata nell'informativa.
+
+   Non c'e' un cron, quindi la potatura viaggia in coda a una richiesta ogni
+   tanto: non viene attesa (nessuna latenza per l'utente) e se fallisce non
+   succede niente. Il giorno in cui aggiungerai un Vercel Cron, questa funzione
+   e' gia' quella da chiamare. */
+const PRUNE_ODDS = 0.02;                 // ~1 richiesta su 50
+const AUDIT_KEEP_MONTHS = 12;            // dichiaralo nell'informativa
+function pruneOccasionally() {
+  if (Math.random() >= PRUNE_ODDS) return;
+  (async () => {
+    try {
+      await sql`DELETE FROM sessions        WHERE expires_at < now()`;
+      await sql`DELETE FROM password_resets WHERE expires_at < now()`;
+      await sql`DELETE FROM form_links      WHERE expires_at < now() - interval '30 days'
+                                               OR (used_at IS NOT NULL AND used_at < now() - interval '30 days')`;
+      await sql`DELETE FROM login_attempts  WHERE first_fail < now() - interval '1 day'
+                                              AND (locked_until IS NULL OR locked_until < now())`;
+      await sql`DELETE FROM audit_log       WHERE at < now() - interval '1 month' * ${AUDIT_KEEP_MONTHS}`;
+    } catch { /* la manutenzione non deve mai disturbare una richiesta */ }
+  })();
+}
+
 /* ─────────────── Handler ─────────────── */
 export default async function handler(req, res) {
   const origin = process.env.IP_ALLOWED_ORIGIN;
@@ -227,13 +288,24 @@ export default async function handler(req, res) {
   const ip = clientIp(req);
   const body = req.body || {};
   const action = String(body.action || "");
+  pruneOccasionally();
 
   try {
     /* ── signup ── */
     if (action === "signup") {
       const email = normEmail(body.email);
       const pw = String(body.password || "");
-      if (String(body.code || "") !== process.env.IP_SIGNUP_CODE) {
+
+      // Era l'unica azione senza alcun limite: login, forgot, formInfo e
+      // formSubmit ce l'hanno tutte. Il codice di invito e' una stringa
+      // digitata a mano, quindi corta: senza limite si prova a raffica.
+      const kSignup = "signup:ip:" + ip;
+      if (await isLocked(kSignup)) {
+        await audit(email, "signup", "denied", ip, "bloccato");
+        return res.status(429).json({ error: `Troppi tentativi. Riprova tra ${LOCK_MINUTES} minuti.` });
+      }
+      if (!codeOk(String(body.code || ""), process.env.IP_SIGNUP_CODE)) {
+        await noteFail(kSignup);
         await audit(email, "signup", "denied", ip, "codice invito errato");
         return res.status(403).json({ error: "Codice di invito non valido" });
       }
@@ -241,11 +313,29 @@ export default async function handler(req, res) {
       if (pw.length < MIN_PW) {
         return res.status(400).json({ error: `Password troppo corta (minimo ${MIN_PW} caratteri)` });
       }
-      const exists = await sql`SELECT 1 FROM users WHERE email = ${email}`;
-      if (exists.rows.length) return res.status(409).json({ error: "Account già esistente" });
-
-      await sql`INSERT INTO users (email, pw_hash) VALUES (${email}, ${await hashPassword(pw)})`;
-      await sql`INSERT INTO payloads (email, payload, bytes) VALUES (${email}, '{}'::jsonb, 2)`;
+      // Prima era SELECT-poi-INSERT (due registrazioni simultanee finivano in un
+      // 500 per chiave duplicata) e i due INSERT non erano legati: se il secondo
+      // falliva restava un account senza riga dati, e al tentativo successivo
+      // l'utente leggeva "Account gia' esistente" senza capire perche'.
+      const hash = await hashPassword(pw);
+      const cl = await db.connect();
+      try {
+        await cl.query("BEGIN");
+        const ins = await cl.query(
+          `INSERT INTO users (email, pw_hash) VALUES ($1,$2)
+           ON CONFLICT (email) DO NOTHING RETURNING email`, [email, hash]);
+        if (ins.rowCount !== 1) {
+          await cl.query("ROLLBACK");
+          return res.status(409).json({ error: "Account già esistente" });
+        }
+        await cl.query(
+          `INSERT INTO payloads (email, payload, bytes) VALUES ($1,'{}'::jsonb,2)
+           ON CONFLICT (email) DO NOTHING`, [email]);
+        await cl.query("COMMIT");
+      } catch (e) {
+        try { await cl.query("ROLLBACK"); } catch (e2) {}
+        throw e;
+      } finally { cl.release(); }
       const token = await createSession(email, req.headers["user-agent"]);
       await audit(email, "signup", "ok", ip);
       return res.status(200).json({ token, email, expiresInDays: SESSION_DAYS });
@@ -255,9 +345,15 @@ export default async function handler(req, res) {
     if (action === "login") {
       const email = normEmail(body.email);
       const pw = String(body.password || "");
-      const kE = "email:" + email, kI = "ip:" + ip;
+      const kI = "ip:" + ip;
 
-      if (await isLocked(kE) || await isLocked(kI)) {
+      // Il blocco era anche sulla chiave "email:", che sta nel corpo della
+      // richiesta ed e' quindi scelta da chi la manda: otto richieste ogni
+      // quindici minuti — uno script banale — e il titolare dell'account
+      // restava fuori per sempre, senza che il suo IP c'entrasse nulla.
+      // Ora si blocca solo per origine. Contro un attacco distribuito resta
+      // scrypt su una password di almeno 12 caratteri, che e' la difesa vera.
+      if (await isLocked(kI)) {
         await audit(email, "login", "denied", ip, "bloccato");
         return res.status(429).json({ error: `Troppi tentativi. Riprova tra ${LOCK_MINUTES} minuti.` });
       }
@@ -269,11 +365,11 @@ export default async function handler(req, res) {
       const ok = rows.length ? await verifyPassword(pw, stored) : false;
 
       if (!ok) {
-        await noteFail(kE); await noteFail(kI);
+        await noteFail(kI);
         await audit(email, "login", "denied", ip);
         return res.status(401).json({ error: "Email o password non corretti" });
       }
-      await clearFails(kE); await clearFails(kI);
+      await clearFails(kI);
       const token = await createSession(email, req.headers["user-agent"]);
       await audit(email, "login", "ok", ip);
       return res.status(200).json({ token, email, expiresInDays: SESSION_DAYS });
@@ -315,6 +411,9 @@ export default async function handler(req, res) {
 
     /* ── reset_confirm: consuma il token e imposta la nuova password ── */
     if (action === "reset_confirm") {
+      // il reset ripulisce i blocchi per origine: chi ha appena dimostrato di
+      // controllare la casella email non deve restare chiuso fuori
+
       const token = String(body.token || "");
       const newPw = String(body.newPassword || "");
       if (!token) return res.status(400).json({ error: "Link non valido" });
@@ -329,11 +428,19 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Il link è scaduto o non è più valido. Richiedine uno nuovo." });
       }
       const email = rows[0].email;
-      await sql`UPDATE users SET pw_hash = ${await hashPassword(newPw)}, pw_changed_at = now()
-                WHERE email = ${email}`;
+      // Se l'account nel frattempo e' stato cancellato, questo UPDATE tocca
+      // zero righe: senza il controllo si proseguiva a creare una sessione
+      // valida per un utente che non esiste piu'.
+      const upd = await sql`UPDATE users SET pw_hash = ${await hashPassword(newPw)}, pw_changed_at = now()
+                            WHERE email = ${email}`;
+      if (upd.rowCount !== 1) {
+        await sql`DELETE FROM password_resets WHERE email = ${email}`;
+        await audit(email, "reset_confirm", "denied", ip, "account inesistente");
+        return res.status(400).json({ error: "Il link non è più valido." });
+      }
       await sql`DELETE FROM password_resets WHERE email = ${email}`;   // token monouso
       await sql`DELETE FROM sessions WHERE email = ${email}`;          // tutte le sessioni cadono
-      await clearFails("email:" + email); await clearFails("ip:" + ip);
+      await clearFails("ip:" + ip);
       const newToken = await createSession(email, req.headers["user-agent"]);
       await audit(email, "reset_confirm", "ok", ip);
       return res.status(200).json({ ok: true, token: newToken, email, expiresInDays: SESSION_DAYS });
@@ -609,7 +716,10 @@ export default async function handler(req, res) {
       }
       const { rows } = await sql`SELECT pw_hash FROM users WHERE email = ${me.email}`;
       if (!rows.length || !(await verifyPassword(oldPw, rows[0].pw_hash))) {
-        await noteFail("email:" + me.email);
+        // Prima faceva noteFail("email:"+...), che bloccava il LOGIN: sbagliare
+        // 8 volte la vecchia password dalle impostazioni chiudeva fuori
+        // dall'app chi era gia' dentro, senza spiegare perche'.
+        await noteFail("changepass:ip:" + ip);
         await audit(me.email, "changepass", "denied", ip);
         return res.status(401).json({ error: "Password attuale errata" });
       }
@@ -678,9 +788,32 @@ export default async function handler(req, res) {
         await audit(me.email, "erase", "denied", ip);
         return res.status(401).json({ error: "Password errata" });
       }
-      await sql`DELETE FROM payloads WHERE email = ${me.email}`;
-      await sql`DELETE FROM sessions WHERE email = ${me.email}`;
-      await sql`DELETE FROM users    WHERE email = ${me.email}`;
+      // Prima restavano fuori due tabelle, e non era un dettaglio:
+      //  · password_resets — un link di recupero ancora valido, aperto DOPO la
+      //    cancellazione, trovava la riga, aggiornava zero utenti senza che
+      //    nessuno controllasse, e creava comunque una sessione buona: da li'
+      //    il primo salvataggio ricreava i dati. L'account cancellato tornava.
+      //  · form_links — contiene athlete_name, cioe' nome e cognome di atleti
+      //    spesso minorenni, e l'endpoint pubblico formInfo continuava a
+      //    restituirli a chiunque avesse il link.
+      // Sei DELETE separati: se la funzione cade a meta' (timeout, connessione)
+      // resta uno stato indeterminato — dati cancellati e account vivo, o il
+      // contrario. Per un'operazione che devi poter DIMOSTRARE non va bene.
+      const cl = await db.connect();
+      try {
+        await cl.query("BEGIN");
+        await cl.query(`DELETE FROM payloads        WHERE email = $1`, [me.email]);
+        await cl.query(`DELETE FROM sessions        WHERE email = $1`, [me.email]);
+        await cl.query(`DELETE FROM password_resets WHERE email = $1`, [me.email]);
+        await cl.query(`DELETE FROM form_links      WHERE coach_email = $1`, [me.email]);
+        await cl.query(`DELETE FROM login_attempts  WHERE key = ANY($1)`,
+                       [["email:" + me.email, "forgot:email:" + me.email]]);
+        await cl.query(`DELETE FROM users           WHERE email = $1`, [me.email]);
+        await cl.query("COMMIT");
+      } catch (e) {
+        try { await cl.query("ROLLBACK"); } catch (e2) {}
+        throw e;
+      } finally { cl.release(); }
       // Nel registro resta l'evento, non i dati: serve a provare la cancellazione.
       await audit(me.email, "erase", "ok", ip, "account e dati cancellati");
       return res.status(200).json({ ok: true });

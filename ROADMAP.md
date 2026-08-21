@@ -1,134 +1,99 @@
 # Roadmap
 
-Stato al 19/08/2026. Ogni voce diventa un commit separato, così il `git log` racconta
-perché una cosa è stata fatta e non solo che è stata fatta.
+Aggiornata il 20/08/2026, dopo la revisione completa.
 
 ---
 
-## Fase 0 — Mettere in sicurezza il progetto ✅
+## ✅ Fatto
 
-- [x] Struttura corretta: `api/store.js`, `icons/`, `schema.sql`, `package.json`, `vercel.json`
-- [x] `schema.sql` ricostruito dalle query (non esisteva)
-- [x] Header di sicurezza, incluso `Referrer-Policy: no-referrer`
-      — i token di anamnesi e reset viaggiano nell'URL, senza questo header
-      finiscono nel `Referer` verso terzi
-- [x] Repo Git con commit di partenza
-- [ ] **Da verificare: la versione online e questa cartella sono diverse.**
-      Produzione ha `viewport ... maximum-scale=1, user-scalable=no`,
-      qui c'è `viewport-fit=cover`. Prima del primo deploy va deciso quale vince.
+**Il progetto è al sicuro** — repo Git collegato a Vercel, ogni versione è un punto
+di ritorno, `schema.sql` ricostruito, header di sicurezza, documentazione e test
+esclusi dal sito pubblico.
 
-## Fase 1 — I quattro bug che perdono dati in silenzio ✅
+**Trasloco da Airtable a Postgres** — la riscrittura ferma sul desktop da settimane
+è online. La versione precedente teneva la password in chiaro nel browser.
 
-Nessuno di questi produce un errore. È il motivo per cui vengono prima di tutto il resto.
-Ogni correzione ha un test verificato rosso sul codice precedente. `npm test` per rilanciarli.
+**Consenso dimostrabile** — informativa vera e versionata mostrata dentro il modulo,
+ruolo e nome di chi firma, data e versione stabilite dal server, evento in `audit_log`,
+campi del preparatore chiusi lato server.
 
-- [x] **`sanitizeImport` scarta `screen` e `lv`** (`index.html`)
-      L'export scrive tutto lo stato, l'import ne ricostruisce solo una parte:
-      ripristinare un backup cancella tutte le valutazioni posturali e le curve
-      carico-velocità, senza avviso.
-- [x] **`save` non è atomico** (`api/store.js`)
-      `SELECT version` e `UPDATE` in due query separate: due salvataggi concorrenti
-      con la stessa `baseVersion` passano entrambi. Da unire in un solo
-      `UPDATE ... WHERE version = $base` con controllo di `rowCount`.
-- [x] **`baseVersion` mancante salta il controllo** (`api/store.js`)
-      `Number.isFinite(base)` fa passare la richiesta se il campo manca o è `NaN`:
-      sovrascrittura cieca. Da rendere obbligatorio.
-- [x] **Tombstone solo per gli atleti** (`index.html`)
-      `mergeState` filtra le squadre su `tomb["team:"+id]`, chiave che nessuno scrive.
-      `delTeam`, `delMeasure`, `delCheckin`, `delLoad` non lasciano traccia:
-      sul percorso di merge i dati cancellati tornano dal server.
+**Rete di sicurezza** — copia automatica prima di ogni operazione distruttiva,
+`Impostazioni → Annulla un'operazione`. Era stata persa nella riscrittura.
 
-### Trovati scrivendo i test (corretti insieme ai quattro sopra)
+**Layout desktop** — navigazione a colonna, contenuto a tutta larghezza, barra in
+alto su una riga, scheda atleta a fisarmonica, una sola strada per registrare i test.
 
-- [x] `mergeByDate` indicizzava per sola data: due curve carico-velocità
-      registrate nello stesso giorno (es. Squat e Panca) si annullavano
-      a vicenda al primo merge, ne sopravviveva una
-- [x] Il 409 lato client faceva `(e.body.version) || CLOUD_V`, e `||` scarta
-      lo zero: con versione 0 il client restava disallineato e rimbalzava
-      in 409 all'infinito
-- [x] La whitelist delle viste conteneva `fatigue`, nome abbandonato dopo la
-      rinomina in `readiness`
+**Curva carico-velocità** — soglia di velocità per esercizio (usare 0,30 m/s su
+panca e stacco sottostimava l'1RM del 14-16%), indicatore di quanto è lunga
+l'estrapolazione, stima che entra nello storico marcata come tale.
 
-## Fase 2 — Sicurezza e conformità
+**Indice di Bosco dal telefono** — le altezze bastano, `t = √(8h/g)`. Simulato:
+±2-5% di errore contro il ±35% di un profilo estrapolato con lo stesso strumento.
 
-- [ ] **`@vercel/postgres` è deprecato.** npm avvisa che i database sono stati
-      migrati a Neon come integrazione nativa. Va pianificato il passaggio
-      a `@neondatabase/serverless` prima che il pacchetto smetta di funzionare.
+**Revisione completa** — 23 difetti corretti, ognuno con un test verificato rosso
+sul codice precedente. Fra i più seri: salvataggi persi sul wifi lento, menu ⋯ che
+non si apriva (cancellazione account irraggiungibile), scheda atleta che cancellava
+la prova del consenso, XSS nel pulsante Condividi, registrazione tagliata sui
+telefoni piccoli, caselle di consenso deformate, PDF troncato a una pagina.
 
-- [ ] **Whitelist server-side dei campi in `formSubmit`.** Oggi il server accetta
-      qualsiasi chiave: chi ha il link può scrivere `medical`, `medicalExpiry`, `notes`,
-      cioè l'idoneità medica. Il filtro esiste solo nel browser.
-- [ ] **Verifica dell'email allo signup.** Un'email sbagliata di una lettera crea un
-      account irrecuperabile: il reset password va nel vuoto.
-- [ ] **`clientIp` usa `x-vercel-forwarded-for`.** Oggi si fida del primo valore di
-      `x-forwarded-for`, che il client può scrivere: rate limit per IP aggirabile.
-- [ ] **Rate limit rivisti.** 20 chiamate/ora per IP e 2 chiamate per atleta:
-      dietro il wifi di una società il modulo si blocca dopo 10 atleti.
-      Stesso schema sul login: 8 tentativi falliti da un IP condiviso bloccano tutti.
-- [ ] **Pulizia delle tabelle** (sessioni, reset, link, tentativi, audit).
-      Nessuna si pota da sola; `audit_log` prende una riga per ogni salvataggio.
-- [ ] **Informativa privacy vera** nel modulo pubblico. Oggi l'atleta conferma di aver
-      letto un documento che non esiste e a cui non c'è link.
-- [ ] **Consenso tracciato**: chi lo presta, quando, su quale versione dell'informativa.
-      Oggi il server scrive `consentBy: "L'atleta (o chi ha compilato tramite il link)"`,
-      che in caso di contestazione non prova nulla.
+**Metodo** — la fatica CMJ ha una finestra di 42 giorni (prima confrontava oggi con
+misure di venti mesi prima); sotto i 18 anni non si applica la scala Base→Elite,
+che è tarata su popolazione adulta.
 
-## Fase 3 — Rendere il codice modificabile
+---
 
-- [ ] Split di `index.html` (4.225 righe, 296 KB, JS inline) in moduli ES.
-      Prerequisito pratico per tutto ciò che viene dopo: il motore di profilazione
-      da solo è 600-800 righe.
-- [ ] CSP stretta (via `vercel.json`) una volta rimosso il JS inline.
+## ⬜ Da fare — codice
 
-## Fase 4 — Screening quantitativo
+### Prossimo passo naturale
+- [ ] **Motore di profilazione** sulla catena che regge con gli strumenti attuali:
+      forza relativa (curva L-V) → cancelletto 1,5× → EUR → DJ-RSI → asimmetrie →
+      indice di Bosco → profilo. Output: **profilo + evidenza + confidenza + letture
+      possibili**, non una prescrizione. Ogni soglia dichiarata e modificabile.
+      Va costruito su dati veri, non su ipotesi: servono le prime misurazioni.
 
-Oggi squat, 1-leg squat, Y Balance e core stability sono `select` Pass/Fail.
-Un pass/fail non ha trend, non ha gradiente e non può alimentare un profilo.
+### Quando ci sarà una pedana a contatto
+- [ ] **Profilo F-V balistico (Samozino)** — F₀, V₀, Pmax, squilibrio F-V da SJ con
+      sovraccarichi. Serve la distanza di spinta h_PO, misurata una volta per atleta.
+      Con il telefono la pendenza F-V balla del ±35% anche col protocollo migliore:
+      non ci si prescrive sopra. Con la pedana scende al ±12% e ha senso.
 
-- [ ] Squat globale e 1-leg squat: punteggio 0-3 con compensi selezionabili
-- [ ] Y Balance: reach in cm × 3 direzioni × 2 lati, con **composite %** calcolato
-      (reach ÷ lunghezza arto) e asimmetria anteriore evidenziata sopra i 4 cm
-- [ ] Core stability (bridge monolaterale, side plank abduttori/adduttori):
-      tenuta in secondi + asimmetria destra/sinistra
-- [ ] Nuovo campo antropometrico: lunghezza arto inferiore (SIAS-malleolo),
-      necessaria al composite del Y Balance
-- [ ] Migrazione dei dati Pass/Fail già raccolti, conservati come storico
+### Screening quantitativo
+- [ ] Squat e 1-leg squat a punteggio 0-3 con i compensi selezionabili
+- [ ] Y Balance in cm × 3 direzioni × 2 lati, con composite % e asimmetria anteriore
+- [ ] Core stability in secondi, con asimmetria destra/sinistra
+- [ ] Nuovo campo: lunghezza arto inferiore (serve al composite dello Y Balance)
 
-## Fase 5 — Profilo Forza-Velocità (Samozino)
+### Infrastruttura
+- [ ] **`@vercel/postgres` è deprecato.** Passaggio a `@neondatabase/serverless`
+      da pianificare con calma, non sotto scadenza.
+- [ ] **Verifica dell'email alla registrazione** — un'email sbagliata di una lettera
+      crea un account da cui non si rientra.
+- [ ] **Rate limit del modulo anamnesi** — 20 chiamate/ora per IP e 2 per atleta:
+      dietro il wifi di una società il modulo si blocca dopo dieci ragazze.
+- [ ] Split di `index.html` in moduli, quando il file diventerà ingestibile.
 
-- [ ] Nuovi campi antropometrici: massa, **distanza di spinta h_PO**
-- [ ] Protocollo CMJ con sovraccarichi (3-5 carichi), altezza per carico
-- [ ] Calcolo di F₀, V₀, Pmax, Sfv e squilibrio F-V; alimenta il test `fvdef`
-      che oggi è solo una casella compilata a mano
-- [ ] **Indicatori di affidabilità visibili**: R² della regressione, ampiezza del range
-      di carico, data dell'ultima misura. Lo squilibrio F-V ha una ripetibilità
-      individuale discussa in letteratura (Lindberg et al. 2021): il numero va
-      mostrato con la sua incertezza, non da solo.
+---
 
-## Fase 6 — Motore di profilazione
+## ⬜ Da fare — Federico
 
-Collega dati che oggi vengono raccolti e mai riletti: `S.screen` e `S.lv` sono scritti
-e riletti solo dalla schermata che li ha creati. Nessun calcolo li usa.
+- [ ] **Compilare l'informativa** — Impostazioni → Informativa privacy
+- [ ] **Farla leggere a chi se ne intende** prima del primo link a una famiglia
+- [ ] **Un link di prova a te stesso**, per vedere cosa arriva davvero
+- [ ] **Registrare i primi test veri**
+- [ ] Sistemare la squadra "calcio", impostata come sport *pallavolo*
+- [ ] Cancellare `_da_eliminare/` e la vecchia `Desktop\Iron Performance`
+- [ ] Segnarti **il momento in cui ti innervosisci** durante la prima seduta:
+      vale più di qualsiasi nostra ipotesi sul design
 
-- [ ] Catena: forza relativa (da curva L-V) → gate → profilo balistico →
-      indice di Bosco → DJ-RSI, EUR, asimmetrie → profilo dell'atleta
-- [ ] Output: **profilo + evidenza + confidenza + 2-3 letture possibili.**
-      Non una prescrizione. Ogni soglia dichiarata, modificabile e con la sua fonte.
-- [ ] Gestione dei dati mancanti: la maggior parte degli atleti avrà 3 input su 8.
-      Il motore deve dire cosa manca, non tacere o inventare.
-- [ ] L'1RM stimato dalla curva L-V finisce nella serie storica del test,
-      così sparisce il doppio inserimento
-- [ ] Il profilo entra nella scheda stampata e nella vista Oggi
+---
 
 ## Debito riconosciuto, non pianificato
 
-- **Le soglie di livello (Base → Elite) ignorano l'età.** `levelIdx` usa solo il sesso:
-  un quattordicenne e un venticinquenne vengono giudicati sulla stessa scala,
-  e il giudizio finisce sulla scheda stampata.
 - **L'ACWR è mostrato con un semaforo.** L'implementazione è corretta (finestra
-  disaccoppiata, soglia minima di storico), ma la validità dell'ACWR come predittore
-  di infortunio è stata largamente contestata (Impellizzeri et al., 2020-2021).
-- **Il limite di payload è 6 MB, sopra il limite di body di Vercel (~4,5 MB):**
-  il 413 gestito con un messaggio gentile non arriverà mai da noi.
-- **`render()` ricostruisce l'intero DOM a ogni azione.** Regge oggi, non a 50 atleti
-  × 60 test con sparkline SVG.
+  disaccoppiata, soglia minima di storico), ma la sua validità come predittore di
+  infortunio è largamente contestata (Impellizzeri et al., 2020-2021).
+- **Non esistono normative per fascia d'età** nel catalogo test. Sotto i 18 anni
+  l'etichetta di livello è sospesa: è la scelta onesta, non una soluzione.
+  Il punto in cui agganciare normative federali è `eLevelApplicable`.
+- **`render()` ricostruisce tutto il DOM a ogni azione.** Regge oggi, non a 50 atleti.
+- **`ageFrom` sbaglia di un giorno a ovest di Greenwich.** In Italia è corretta.

@@ -356,5 +356,50 @@ prova("un'atleta cancellata dal preparatore non torna dal modulo", () => {
   assert.equal(out.athletes.length, 0, "la tombstone deve continuare a valere");
 });
 
+/* ═══════════ 8. Trovarlo ═══════════
+   Difetto di progetto, non di codice: il pulsante viveva SOLO dentro
+   «Gestisci squadre», due livelli sotto un nome che parla di rinominare ed
+   eliminare. Federico, che me lo aveva chiesto lui il modulo, non l'ha
+   trovato. Una funzione che non si trova non esiste.                        */
+
+prova("il modulo di squadra si raggiunge dal menu, non solo da Gestisci squadre", () => {
+  assert.match(html, /onclick="openTeamFormPicker\(\)"/,
+    "serve una voce di primo livello nel menu Impostazioni");
+  assert.match(html, /function openTeamFormPicker\(\)/);
+  assert.match(html, /if\(teams\.length===1\)\{ openTeamForm\(teams\[0\]\.id\); return; \}/,
+    "con una squadra sola non ha senso far scegliere fra una cosa");
+});
+
+prova("una squadra vuota propone il modulo, che e' il momento in cui serve", () => {
+  const f = html.match(/function emptyTeam\(\)[\s\S]*?\n}/);
+  assert.ok(f, "emptyTeam deve esistere");
+  assert.match(f[0], /openTeamForm\(/,
+    "squadra vuota = o appena creata, o schede appena cancellate: e' li' che serve il link");
+});
+
+prova("con la rosa vuota il primo consiglio e' il link, non l'inserimento a mano", () => {
+  // E' la schermata che si vede subito dopo aver cancellato le schede vecchie:
+  // il momento in cui serve far compilare l'anamnesi a tutta la squadra.
+  // Proponeva «aggiungi il primo atleta» e «carica dati di esempio».
+  const f = html.match(/if\(S\.athletes\.length===0\)\{[\s\S]*?\n    return;\n  \}/);
+  assert.ok(f, "lo stato «Nessun atleta» deve esistere");
+  assert.match(f[0], /openTeamFormPicker\(\)/,
+    "con almeno una squadra il consiglio principale deve essere il link");
+  const iLink = f[0].indexOf("openTeamFormPicker");
+  const iMano = f[0].indexOf("addAthlete");
+  assert.ok(iLink < iMano,
+    "il link va offerto PRIMA dell'inserimento a mano: e' quello che risolve quindici schede");
+  assert.match(f[0], /const t0=\(S\.teams\|\|\[\]\)\[0\]/,
+    "senza squadre il link non ha senso: si torna al testo di prima");
+});
+
+prova("resta raggiungibile anche da Gestisci squadre", () => {
+  const f = html.match(/function manageTeams\(\)[\s\S]*?\n}/);
+  assert.ok(f, "manageTeams deve esistere");
+  assert.match(f[0], /openTeamForm/,
+    "la strada vecchia non va tolta: chi l'ha imparata deve ritrovarla");
+  assert.match(f[0], /Modulo di squadra/);
+});
+
 console.log(failed ? "\n" + failed + " test falliti" : "\nTutti i test passati");
 process.exit(failed ? 1 : 0);

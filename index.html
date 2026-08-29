@@ -723,6 +723,7 @@ ul.kb li b{color:#fff;font-weight:600}
   <button onclick="openBattery()">🎯 Batteria consigliata</button>
   <button onclick="chooseTests()">🎚 Scegli test da monitorare</button>
   <button onclick="openThresholds()">⚙️ Soglie di monitoraggio</button>
+  <button onclick="openTeamFormPicker()">🔗 Modulo di squadra — un link per tutte</button>
   <button onclick="manageTeams()">👥 Gestisci squadre</button>
   <div class="sep"></div>
   <button onclick="exportJSON()">⬇️ Esporta backup (JSON)</button>
@@ -1899,10 +1900,22 @@ function render(){
   renderTabs();
   const grid=document.getElementById("grid");
   if(S.athletes.length===0){
+    /* Questa è la schermata che vedi subito dopo aver cancellato le schede
+       vecchie, cioè nel momento esatto in cui devi far compilare l'anamnesi a
+       tutta la squadra. Offriva «aggiungi il primo atleta» e «carica dati di
+       esempio»: ti mandava a inserire quindici persone a mano e non nominava
+       nemmeno il link. Non era difficile da trovare, era indicato male. */
+    const t0=(S.teams||[])[0];
     grid.innerHTML='<div class="empty-state"><h3>Nessun atleta</h3>'+
-      '<p>Aggiungi i membri della squadra, poi registra una sessione di test.<br>'+
-      'Ogni nuova misurazione si colora di verde o rosso in base al confronto con la precedente.</p>'+
-      '<button class="btn primary" onclick="addAthlete()">+ Aggiungi il primo atleta</button>'+
+      (t0
+        ? '<p>Il modo veloce: mandi <b>un link solo</b> alla squadra e le schede se le creano loro, '+
+          'anamnesi e consenso compresi. Oppure le aggiungi a mano, una per una.</p>'+
+          '<button class="btn primary" onclick="openTeamFormPicker()">🔗 Manda il modulo alla squadra</button>'+
+          '<div style="height:10px"></div>'+
+          '<button class="btn sm" onclick="addAthlete()">+ Aggiungi un atleta a mano</button>'
+        : '<p>Aggiungi i membri della squadra, poi registra una sessione di test.<br>'+
+          'Ogni nuova misurazione si colora di verde o rosso in base al confronto con la precedente.</p>'+
+          '<button class="btn primary" onclick="addAthlete()">+ Aggiungi il primo atleta</button>')+
       '<div style="height:10px"></div>'+
       '<button class="btn sm" onclick="loadDemo()">✨ oppure carica dati di esempio</button></div>';
     return;
@@ -2208,9 +2221,42 @@ function delTeam(id){
   save(); manageTeams(); render(); toast("Squadra eliminata");
 }
 function emptyTeam(){
+  // Una squadra vuota è il momento esatto in cui serve il modulo: o è appena
+  // nata, o hai appena cancellato le schede vecchie. Il pulsante va offerto
+  // qui, non solo dentro «Gestisci squadre» — che è un nome che parla di
+  // rinominare ed eliminare, e sotto cui nessuno va a cercare un link.
+  const t=(S.teams||[]).find(x=>x.id===S.activeTeam);
   return '<div class="empty-state"><h3>Squadra vuota</h3>'+
-    '<p>Questa squadra non ha ancora atleti.</p>'+
-    '<button class="btn primary" onclick="addAthlete()">+ Aggiungi atleta</button></div>';
+    '<p>Questa squadra non ha ancora atleti. Puoi aggiungerle a mano, oppure '+
+    'mandare un link solo a tutte: le schede se le creano loro.</p>'+
+    (t?'<button class="btn primary" onclick="openTeamForm(\''+t.id+'\')">🔗 Manda il modulo alla squadra</button>'+
+       '<div style="height:8px"></div>':'')+
+    '<button class="btn'+(t?'':' primary')+'" onclick="addAthlete()">+ Aggiungi atleta</button></div>';
+}
+
+/* Scorciatoia dal menu: con una squadra sola si va dritti, con più di una si
+   sceglie. Il pulsante viveva solo dentro «Gestisci squadre», due livelli sotto
+   un nome che non promette link, e infatti non si trovava. */
+function openTeamFormPicker(){
+  document.getElementById("menu").classList.remove("on");
+  const teams=S.teams||[];
+  if(!teams.length){
+    modal('<div class="mh"><div><div class="mt">Modulo di squadra</div></div>'+
+      '<button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="alert info"><span class="ai">ℹ️</span><span>Prima crea una squadra: il link è legato a quella, '+
+      'ed è così che le atlete finiscono nel posto giusto senza che tu debba spostarle.</span></div>'+
+      '<button class="btn primary" style="width:100%;margin-top:12px" onclick="addTeam()">+ Crea una squadra</button>');
+    return;
+  }
+  if(teams.length===1){ openTeamForm(teams[0].id); return; }
+  let h='<div class="mh"><div><div class="mt">Modulo di squadra</div>'+
+    '<div class="ms">Per quale squadra?</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  teams.forEach(t=>{ const c=S.athletes.filter(a=>a.team===t.id).length;
+    h+='<button class="btn" style="width:100%;margin-bottom:8px;text-align:left" '+
+       'onclick="openTeamForm(\''+t.id+'\')">🔗 '+esc(t.name)+
+       ' <span style="color:var(--muted2)">· '+c+(c===1?' atleta':' atlete')+'</span></button>'; });
+  modal(h);
 }
 
 /* ═══════════════ ATLETI ═══════════════ */

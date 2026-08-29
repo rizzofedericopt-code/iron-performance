@@ -89,12 +89,13 @@ const FORM_PROFILE_MAX_BYTES = 20000;
    due liste e fallisce se divergono: e' li' per non lasciare che si separino
    in silenzio.                                                             */
 const FORM_ALLOWED_KEYS = [
-  "birth", "dominant", "height", "weight", "role", "experience", "daysWeek",
-  "seasonPhase", "sportYears", "prevSports", "goal", "equipment", "job",
+  "birth", "dominant", "takeoffLeg", "growth", "height", "weight", "role",
+  "experience", "teamWeek", "daysWeek", "seasonPhase", "sportYears",
+  "prevSports", "goal", "equipment", "job",
   "sleepHours", "sleepQuality", "smoke", "alcohol", "stressLife", "cycle",
   "nutrition", "conditions", "surgeries", "familyHistory", "injuriesCurrent",
   "painLevel", "painContext", "injuriesPast", "recurrent", "painAreas",
-  "orthoNotes", "scHeart", "scChest", "scDizzy", "scBreath", "scJoint",
+  "scHeart", "scChest", "scDizzy", "scBreath", "scJoint",
   "scFamily", "scMedsHeart", "meds", "supplements", "allergies",
 ];
 

@@ -35,7 +35,10 @@ const allowed = [...wlBlock[1].matchAll(/"([A-Za-z0-9_]+)"/g)].map(m => m[1]);
 
 /* ── campi che il preparatore compila da solo: non devono MAI essere scrivibili
       da chi ha il link ── */
-const RISERVATI = ["medical", "medicalExpiry", "notes",
+// orthoNotes e' passato di qui: era nel modulo dell'atleta, che si trovava a
+// leggere "Note ortopediche / prehab (es. pre-operatorio)" e non sapeva cosa
+// scriverci. E' una nota del preparatore, e ora lo e' anche nel codice.
+const RISERVATI = ["medical", "medicalExpiry", "notes", "orthoNotes",
                    "consent", "consentBy", "consentName", "consentDate", "consentDoc"];
 
 prova("i campi riservati al preparatore non sono scrivibili dal modulo", () => {
@@ -66,8 +69,11 @@ prova("ogni campo del modulo e' ammesso dal server", () => {
 prova("il modulo nasconde i campi riservati", () => {
   const skip = html.match(/const skipKey=\{([^}]*)\}/);
   assert.ok(skip, "skipKey non trovato in anamFields");
-  ["medical", "medicalExpiry", "notes", "consent", "consentBy", "consentName", "consentDate", "consentDoc"]
-    .forEach(k => assert.ok(new RegExp(k + ":1").test(skip[1]), k + " non e' nascosto nel modulo"));
+  // si itera RISERVATI, non un secondo elenco scritto a mano: due elenchi
+  // della stessa cosa divergono, ed e' esattamente il difetto che questo file
+  // esiste per impedire
+  RISERVATI.forEach(k =>
+    assert.ok(new RegExp(k + ":1").test(skip[1]), k + " non e' nascosto nel modulo"));
 });
 
 /* ── il consenso ── */

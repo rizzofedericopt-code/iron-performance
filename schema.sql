@@ -60,8 +60,22 @@ CREATE TABLE IF NOT EXISTS password_resets (
 CREATE INDEX IF NOT EXISTS password_resets_email_idx      ON password_resets (email);
 CREATE INDEX IF NOT EXISTS password_resets_expires_at_idx ON password_resets (expires_at);
 
-/* ─────────────── Link anamnesi monouso ───────────────
-   used_at valorizzato = link consumato, non più riutilizzabile. */
+/* ─────────────── Link anamnesi ───────────────
+   Due tipi, distinti da kind:
+
+     'athlete'  link personale monouso, generato per un atleta già in rosa.
+                used_at valorizzato = consumato, non più riutilizzabile.
+
+     'single'   —  (riservato)
+
+     'team'     link di squadra, riutilizzabile: ogni atleta lo apre e crea
+                da sé la propria scheda. Non si consuma al primo invio, si
+                conta (uses) e si ferma al tetto (max_uses) o alla chiusura
+                manuale (closed_at). athlete_id resta vuoto: l'atleta non
+                esiste ancora nel momento in cui il link viene generato.
+
+   pass_hash è lo sha256 di una parola d'ordine facoltativa: serve a rendere
+   inutile un link inoltrato fuori dalla squadra. NULL = nessuna parola. */
 CREATE TABLE IF NOT EXISTS form_links (
   token_hash    text PRIMARY KEY,
   coach_email   text        NOT NULL,
@@ -73,6 +87,19 @@ CREATE TABLE IF NOT EXISTS form_links (
 );
 CREATE INDEX IF NOT EXISTS form_links_coach_idx      ON form_links (coach_email);
 CREATE INDEX IF NOT EXISTS form_links_expires_at_idx ON form_links (expires_at);
+
+/* Aggiunte per i link di squadra. Sono ALTER separate e idempotenti: su un
+   database già in uso si lanciano così com'è, senza toccare i link esistenti,
+   che restano 'athlete' per via del DEFAULT.
+   athlete_id perde NOT NULL perché un link di squadra non ha un atleta. */
+ALTER TABLE form_links ALTER COLUMN athlete_id DROP NOT NULL;
+ALTER TABLE form_links ADD COLUMN IF NOT EXISTS kind      text NOT NULL DEFAULT 'athlete';
+ALTER TABLE form_links ADD COLUMN IF NOT EXISTS team_id   text;
+ALTER TABLE form_links ADD COLUMN IF NOT EXISTS team_name text;
+ALTER TABLE form_links ADD COLUMN IF NOT EXISTS max_uses  integer;
+ALTER TABLE form_links ADD COLUMN IF NOT EXISTS uses      integer NOT NULL DEFAULT 0;
+ALTER TABLE form_links ADD COLUMN IF NOT EXISTS closed_at timestamptz;
+ALTER TABLE form_links ADD COLUMN IF NOT EXISTS pass_hash text;
 
 /* ─────────────── Registro accessi ───────────────
    Serve a dimostrare cosa è successo (art. 5.2 e 17 GDPR).
@@ -103,7 +130,8 @@ CREATE INDEX IF NOT EXISTS audit_log_email_idx ON audit_log (email, at DESC);
 --   DELETE FROM password_resets WHERE expires_at < now();
 -- Link anamnesi scaduti o già usati da più di 30 giorni
 --   DELETE FROM form_links      WHERE expires_at < now() - interval '30 days'
---                                  OR (used_at IS NOT NULL AND used_at < now() - interval '30 days');
+--                                  OR (used_at IS NOT NULL AND used_at < now() - interval '30 days')
+--                                  OR (closed_at IS NOT NULL AND closed_at < now() - interval '30 days');
 -- Contatori di rate limiting ormai freddi
 --   DELETE FROM login_attempts  WHERE first_fail < now() - interval '1 day'
 --                                AND (locked_until IS NULL OR locked_until < now());

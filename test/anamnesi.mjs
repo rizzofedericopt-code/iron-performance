@@ -95,14 +95,28 @@ prova("senza informativa pubblicata l'invio viene rifiutato", () => {
 });
 
 prova("il consenso raccolto finisce nel registro accessi", () => {
-  assert.match(store, /"formSubmit", "ok", ip,[\s\S]{0,200}consentBy/,
+  assert.match(store, /"formSubmit", "ok", ip,[\s\S]{0,600}consentBy/,
     "senza traccia in sola aggiunta, il consenso non e' dimostrabile");
 });
 
 prova("il modulo pubblico ha due conferme distinte, non una", () => {
   assert.match(html, /id="pfRead"/, "manca la conferma di lettura dell'informativa");
   assert.match(html, /id="pfHealth"/, "manca il consenso al trattamento dei dati sanitari");
-  assert.match(html, /id="pfRole"/, "manca la domanda su chi presta il consenso");
+  assert.match(html, /id="pfConsentRole"/, "manca il blocco che stabilisce chi presta il consenso");
+});
+
+// Prima qui si controllava la presenza di una tendina (id="pfRole") con
+// l'opzione "sono l'atleta e sono maggiorenne". Una ragazza di sedici anni la
+// sceglieva senza pensarci e il consenso risultava prestato da lei: invalido,
+// e invisibile. L'asserzione ora e' piu' forte, non piu' debole — chi presta
+// il consenso non e' piu' una risposta possibile, e' una conseguenza.
+prova("chi presta il consenso lo decide l'eta', non una tendina", () => {
+  assert.ok(!/id="pfRole"/.test(html),
+    "la tendina permetteva a una minorenne di dichiararsi maggiorenne");
+  assert.match(store, /eta\s*<\s*18\s*&&\s*consentRole\s*!==\s*"guardian"/,
+    "il server deve rifiutare un minorenne che firma da solo");
+  assert.match(store, /eta\s*>=\s*18\s*&&\s*consentRole\s*!==\s*"athlete"/,
+    "per un maggiorenne il consenso ai dati sanitari lo presta l'interessato");
 });
 
 prova("l'informativa viene mostrata dentro il modulo", () => {

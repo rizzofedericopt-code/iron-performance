@@ -40,6 +40,29 @@ telefoni piccoli, caselle di consenso deformate, PDF troncato a una pagina.
 misure di venti mesi prima); sotto i 18 anni non si applica la scala Base→Elite,
 che è tarata su popolazione adulta.
 
+**Modulo di squadra** — un link solo per tutta la squadra, al posto di quindici
+link personali mandati uno per uno. Chi lo apre scrive nome, cognome, sesso e
+data di nascita e la scheda nasce **all'invio**, non all'apertura. Con tetto di
+schede, chiusura manuale, parola d'ordine facoltativa, deduplica su
+nome+cognome+data e avviso via email che contiene solo nome e squadra.
+Vedi `MIGRAZIONE-modulo-squadra.md`: **prima il SQL, poi il push.**
+
+**Tre difetti trovati preparando il modulo di squadra**, tutti invisibili finché
+le schede arrivavano una alla volta:
+
+- *Il limite anti-abuso contava anche le richieste riuscite* — 20 all'ora per
+  indirizzo IP, e aprire il modulo più inviarlo fa due richieste. Una squadra
+  che compila insieme in palestra è un solo IP: dalla decima ragazza in poi il
+  modulo rispondeva «troppi tentativi». Ora il budget per IP lo consumano solo
+  i token sbagliati; il traffico legittimo pesa sul singolo link.
+- *Il merge teneva la copia locale dell'intero atleta* — con l'app aperta sul
+  portatile, al primo salvataggio in conflitto la copia vecchia sovrascriveva
+  l'anamnesi appena arrivata. Senza errore. Ora vince la scheda con `formAt`
+  più recente, tranne i campi che il modulo non può scrivere.
+- *Chi presta il consenso era una tendina* — «sono l'atleta e sono maggiorenne»
+  la sceglieva anche una sedicenne. Ora lo decide la data di nascita, e il
+  server rifiuta la combinazione sbagliata.
+
 ---
 
 ## ⬜ Da fare — codice
@@ -68,17 +91,19 @@ che è tarata su popolazione adulta.
       da pianificare con calma, non sotto scadenza.
 - [ ] **Verifica dell'email alla registrazione** — un'email sbagliata di una lettera
       crea un account da cui non si rientra.
-- [ ] **Rate limit del modulo anamnesi** — 20 chiamate/ora per IP e 2 per atleta:
-      dietro il wifi di una società il modulo si blocca dopo dieci ragazze.
 - [ ] Split di `index.html` in moduli, quando il file diventerà ingestibile.
 
 ---
 
 ## ⬜ Da fare — Federico
 
+- [ ] **Lanciare il SQL su Neon** prima del push — `MIGRAZIONE-modulo-squadra.md`
 - [ ] **Compilare l'informativa** — Impostazioni → Informativa privacy
 - [ ] **Farla leggere a chi se ne intende** prima del primo link a una famiglia
-- [ ] **Un link di prova a te stesso**, per vedere cosa arriva davvero
+- [ ] **Esportare il backup PRIMA di cancellare le 17 atlete** — non per i dati,
+      per l'elenco dei nomi: senza, non sai chi non ha ancora compilato
+- [ ] **Aprire tu il link di squadra** e compilarlo con un nome finto, prima di
+      mandarlo a chiunque
 - [ ] **Registrare i primi test veri**
 - [ ] Sistemare la squadra "calcio", impostata come sport *pallavolo*
 - [ ] Cancellare `_da_eliminare/` e la vecchia `Desktop\Iron Performance`

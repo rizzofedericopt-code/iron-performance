@@ -55,8 +55,21 @@ const LOCK_MINUTES = 15;
 const MAX_PAYLOAD_BYTES = 4 * 1024 * 1024;
 const RESET_MINUTES = 30;          // finestra di validità del link
 const RESET_MAX_PER_HOUR = 3;      // richieste "forgot" per email/IP
-const FORM_LINK_HOURS = 48;        // scadenza del link anamnesi
-const FORM_MAX_PER_HOUR = 20;      // tentativi di lettura/invio pubblici, per IP
+const FORM_LINK_HOURS = 48;        // scadenza del link personale
+const FORM_TEAM_DAYS = 14;         // scadenza del link di squadra
+const FORM_TEAM_MAX_USES = 30;     // tetto di invii predefinito su un link di squadra
+const FORM_TEAM_MAX_USES_CAP = 60; // tetto massimo impostabile dal preparatore
+
+// Il limite per IP vale SOLO per i tentativi con un token che non esiste o non
+// è più valido: è lì per chi tira a indovinare, non per chi ha il link giusto.
+// Contava anche le richieste riuscite, e questo bastava a rompere il caso più
+// normale che ci sia — una squadra che compila il modulo tutta insieme in
+// palestra, cioè quindici ragazze dietro un unico IP: dalla decima in poi il
+// modulo rispondeva "troppi tentativi". Il traffico legittimo ora pesa su un
+// budget legato al singolo link, non all'indirizzo da cui arriva.
+const FORM_BAD_PER_HOUR = 20;      // token sbagliati tollerati per IP, in un'ora
+const FORM_TOK_OVERHEAD = 30;      // richieste tollerate su un link, oltre agli invii previsti
+const FORM_TOK_PER_USE = 6;        // ...e quante per ogni invio previsto (apre, ricarica, sbaglia, reinvia)
 const FORM_PROFILE_MAX_BYTES = 20000;
 
 /* ─────────────── Campi che il modulo anamnesi può scrivere ───────────────
@@ -90,6 +103,35 @@ const now = () => new Date();
 const addDays = (d, n) => new Date(d.getTime() + n * 864e5);
 const sha256 = (s) => crypto.createHash("sha256").update(s).digest("hex");
 const normEmail = (e) => String(e || "").trim().toLowerCase();
+
+/* Chiave di identità di una persona dentro una squadra: nome, cognome e data
+   di nascita. Serve per il caso più frequente di tutti — "non sono sicura sia
+   partito, lo rifaccio" — che senza questo genera una seconda scheda identica.
+   Confronto tollerante: accenti, maiuscole, spazi doppi e punteggiatura non
+   devono decidere se Giulia è una o due persone. L'ordine nome/cognome invece
+   sì: si confrontano già separati, quindi non serve ordinarli. */
+const normPerson = (s) => String(s || "")
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+const cleanName = (s) => String(s || "").replace(/\s+/g, " ").trim().slice(0, 60);
+
+/* Età compiuta alla data di riferimento. Usata per una sola decisione: se sotto
+   i 18, il consenso non può prestarlo l'atleta. */
+function ageAt(birthISO, at) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(birthISO || ""));
+  if (!m) return null;
+  const y = +m[1], mo = +m[2], d = +m[3];
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const b = new Date(Date.UTC(y, mo - 1, d));
+  if (b.getUTCFullYear() !== y || b.getUTCMonth() !== mo - 1 || b.getUTCDate() !== d) return null;
+  const ref = at || now();
+  let a = ref.getUTCFullYear() - y;
+  const passato = (ref.getUTCMonth() + 1) > mo
+    || ((ref.getUTCMonth() + 1) === mo && ref.getUTCDate() >= d);
+  if (!passato) a -= 1;
+  return a;
+}
 
 function validEmail(e) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e) && e.length <= 254;
@@ -184,6 +226,119 @@ async function noteFail(key) {
 
 const clearFails = (key) => sql`DELETE FROM login_attempts WHERE key = ${key}`;
 
+/* Quante richieste tolleriamo su UN link, in un'ora. Un link personale è
+   monouso e non ha motivo di essere aperto trenta volte; un link di squadra
+   deve reggere l'intera rosa che compila nella stessa mezz'ora. */
+function tokBudget(link) {
+  const previsti = link && link.kind === "team"
+    ? Math.min(Number(link.max_uses) || FORM_TEAM_MAX_USES, FORM_TEAM_MAX_USES_CAP)
+    : 1;
+  return FORM_TOK_OVERHEAD + previsti * FORM_TOK_PER_USE;
+}
+
+/* ─────────────── Migrazione dei link di squadra ───────────────
+   Le colonne servono al codice qui sotto. La versione onesta sarebbe stata
+   "lancia questo SQL prima di pubblicare", ed è quello che avevo scritto: ma
+   è un ordine che si può sbagliare una volta sola e rompe il modulo anamnesi
+   per tutti, compresi i link personali già in mano alle atlete. Un passaggio
+   manuale con quella conseguenza non va lasciato a un passaggio manuale.
+
+   Costo a regime: una query su information_schema alla prima richiesta di
+   ogni istanza serverless, poi niente — l'esito resta in memoria. Le ALTER
+   girano una volta sola nella vita del database e sono idempotenti, quindi
+   due istanze che partono insieme non fanno danno.                          */
+let _linkSchema = null;
+async function ensureLinkSchema() {
+  if (_linkSchema) return _linkSchema;
+  _linkSchema = (async () => {
+    const { rows } = await sql`
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name = 'form_links' AND column_name = 'kind' LIMIT 1`;
+    if (rows.length) return true;
+    await sql`ALTER TABLE form_links ALTER COLUMN athlete_id DROP NOT NULL`;
+    await sql`ALTER TABLE form_links ADD COLUMN IF NOT EXISTS kind      text NOT NULL DEFAULT 'athlete'`;
+    await sql`ALTER TABLE form_links ADD COLUMN IF NOT EXISTS team_id   text`;
+    await sql`ALTER TABLE form_links ADD COLUMN IF NOT EXISTS team_name text`;
+    await sql`ALTER TABLE form_links ADD COLUMN IF NOT EXISTS max_uses  integer`;
+    await sql`ALTER TABLE form_links ADD COLUMN IF NOT EXISTS uses      integer NOT NULL DEFAULT 0`;
+    await sql`ALTER TABLE form_links ADD COLUMN IF NOT EXISTS closed_at timestamptz`;
+    await sql`ALTER TABLE form_links ADD COLUMN IF NOT EXISTS pass_hash text`;
+    return true;
+  })().catch((e) => {
+    // Non si memorizza un fallimento: la richiesta dopo deve poter riprovare,
+    // altrimenti un singolo intoppo di rete spegne i moduli fino al prossimo
+    // riavvio dell'istanza.
+    _linkSchema = null;
+    throw e;
+  });
+  return _linkSchema;
+}
+
+/* Guardia comune ai due endpoint pubblici del modulo.
+   L'ordine conta: prima il lucchetto sull'IP, che vale solo per chi arriva con
+   un token inesistente o scaduto; poi, se il token è buono, un budget legato al
+   link. Così una squadra intera dietro un solo IP non si autoblocca, e chi tira
+   a indovinare token si blocca comunque dopo pochi tentativi.
+   Restituisce { link } oppure { status, error }. */
+async function loadFormLink(token, ip) {
+  await ensureLinkSchema();
+  const kI = "form:ip:" + ip;
+  if (!(await underLimit(kI, FORM_BAD_PER_HOUR))) {
+    return { status: 429, error: "Troppi tentativi da questa connessione. Riprova più tardi." };
+  }
+  if (!token) { await noteFail(kI); return { status: 400, error: "Link non valido" }; }
+
+  const { rows } = await sql`
+    SELECT coach_email, athlete_id, athlete_name, kind, team_id, team_name,
+           max_uses, uses, closed_at, pass_hash, expires_at, used_at
+    FROM form_links WHERE token_hash = ${sha256(token)}`;
+  const link = rows[0];
+  if (!link || new Date(link.expires_at) <= now()) {
+    await noteFail(kI);
+    return { status: 401, error: "Il link è scaduto o non è più valido." };
+  }
+
+  // Il contatore sul link usa la stessa tabella del login con una chiave
+  // diversa. locked_until viene valorizzato anche qui, ma nessuno lo legge per
+  // queste chiavi: la decisione la prende underLimit sul conteggio.
+  const kT = "form:tok:" + sha256(token);
+  if (!(await underLimit(kT, tokBudget(link)))) {
+    return { status: 429, error: "Questo modulo ha ricevuto troppe richieste nell'ultima ora. Riprova fra poco." };
+  }
+  await noteFail(kT);
+  return { link };
+}
+
+/* Un link di squadra è aperto finché non scade, non viene chiuso a mano e non
+   raggiunge il tetto di schede. Le tre condizioni danno messaggi diversi
+   perché chi le incontra deve capire se aspettare o chiamare il preparatore. */
+function teamLinkClosed(link) {
+  if (link.closed_at) return "Il modulo di questa squadra è stato chiuso dal preparatore.";
+  if (link.max_uses != null && Number(link.uses || 0) >= Number(link.max_uses)) {
+    return "Il modulo ha già raccolto tutte le schede previste. Avvisa il tuo preparatore.";
+  }
+  return null;
+}
+
+function passOk(plain, hash) {
+  if (!hash) return true;
+  const a = Buffer.from(sha256(normPerson(plain)), "utf8");
+  const b = Buffer.from(String(hash), "utf8");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+/* Un id che non può collidere con quelli generati dal browser (7 caratteri da
+   Math.random) né con quelli già presenti, e che passa il controllo idOk del
+   client: /^[A-Za-z0-9_-]{1,40}$/. */
+function newAthleteId(store) {
+  const usati = new Set((store.athletes || []).map((a) => String(a && a.id)));
+  for (let i = 0; i < 50; i++) {
+    const id = "f" + crypto.randomBytes(9).toString("base64url").replace(/[^A-Za-z0-9]/g, "").slice(0, 11);
+    if (id.length >= 8 && !usati.has(id)) return id;
+  }
+  return "f" + Date.now().toString(36) + crypto.randomBytes(4).toString("hex");
+}
+
 // Riusa la stessa tabella di rate limiting del login, con chiavi separate,
 // invece di introdurre un secondo meccanismo da mantenere allineato.
 async function underLimit(key, max) {
@@ -218,6 +373,43 @@ async function sendResetEmail(email, token) {
     const j = await r.json().catch(() => ({}));
     throw new Error("Invio email fallito: " + (j.message || r.status));
   }
+}
+
+/* Avviso al preparatore quando arriva una scheda.
+
+   NEL MESSAGGIO CI VANNO SOLO NOME E SQUADRA. Nient'altro, mai.
+   L'email esce dall'applicazione e finisce in una casella di posta che è di
+   qualcun altro: tutto ciò che ci scriviamo dentro è materialmente fuori dal
+   controllo del titolare. Che Giulia giochi in una squadra non è un dato
+   sanitario; quello che ha scritto nel modulo lo è, e resta dentro l'app.
+
+   L'invio non deve mai far fallire la richiesta: la scheda è già salvata e in
+   transazione chiusa quando arriviamo qui. Se l'email non parte, il pallino
+   dentro l'app resta l'avviso buono. */
+async function sendNewSheetEmail(coachEmail, athleteName, teamName, aggiornata) {
+  const key = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM;
+  if (!key || !from) return;
+  const appUrl = String(process.env.IP_APP_URL || "").replace(/\/$/, "");
+  const esc = (s) => String(s || "").replace(/[<>&"]/g, (c) =>
+    ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+  const che = aggiornata ? "aggiornato la sua scheda" : "compilato la scheda";
+  const html = `
+    <p><b>${esc(athleteName)}</b> ha ${che}${teamName ? " — " + esc(teamName) : ""}.</p>
+    ${appUrl ? `<p><a href="${appUrl}">Apri Iron Performance</a></p>` : ""}
+    <p style="color:#6C757D;font-size:13px">Questo avviso contiene solo nome e squadra:
+    i dati della scheda restano nell'applicazione.</p>`;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from, to: [coachEmail],
+        subject: (aggiornata ? "Scheda aggiornata: " : "Nuova scheda: ") + athleteName,
+        html,
+      }),
+    });
+  } catch { /* l'avviso non è la cosa importante: il dato è già salvato */ }
 }
 
 /* ─────────────── Sessioni ─────────────── */
@@ -446,41 +638,51 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, token: newToken, email, expiresInDays: SESSION_DAYS });
     }
 
-    /* ── formInfo: mostra il nome atleta al titolare del link (pubblico, no login) ── */
+    /* ── formInfo: cosa mostrare a chi apre il link (pubblico, no login) ── */
     if (action === "formInfo") {
-      const token = String(body.token || "");
-      const kI = "form:ip:" + ip;
-      if (!(await underLimit(kI, FORM_MAX_PER_HOUR))) {
-        return res.status(429).json({ error: "Troppi tentativi. Riprova più tardi." });
+      const g = await loadFormLink(String(body.token || ""), ip);
+      if (g.error) return res.status(g.status).json({ error: g.error });
+      const link = g.link;
+
+      if (link.kind === "team") {
+        const chiuso = teamLinkClosed(link);
+        if (chiuso) return res.status(410).json({ error: chiuso });
+      } else if (link.used_at) {
+        return res.status(410).json({ error: "Questa scheda è già stata inviata. Chiedi un nuovo link al tuo preparatore." });
       }
-      if (!token) return res.status(400).json({ error: "Link non valido" });
-      await noteFail(kI);
-      const { rows } = await sql`
-        SELECT coach_email, athlete_name, used_at FROM form_links
-        WHERE token_hash = ${sha256(token)} AND expires_at > now()`;
-      if (!rows.length) return res.status(401).json({ error: "Il link è scaduto o non è più valido." });
-      if (rows[0].used_at) return res.status(410).json({ error: "Questa scheda è già stata inviata. Chiedi un nuovo link al tuo preparatore." });
 
       // L'informativa viaggia insieme al modulo: chi compila deve poterla
       // leggere PRIMA di acconsentire, non dopo e non altrove. Senza questo,
       // la casella "ho letto l'informativa" è una dichiarazione su un
       // documento che non esiste — cioè un consenso che non prova nulla.
-      const pol = await sql`SELECT payload -> 'policy' AS policy FROM payloads WHERE email = ${rows[0].coach_email}`;
+      const pol = await sql`SELECT payload -> 'policy' AS policy FROM payloads WHERE email = ${link.coach_email}`;
       return res.status(200).json({
-        athleteName: rows[0].athlete_name,
+        kind: link.kind,
+        // Su un link di squadra non esce NESSUN nome: l'elenco della rosa non
+        // deve poter essere letto da chi si limita ad aprire il link.
+        athleteName: link.kind === "team" ? null : link.athlete_name,
+        teamName: link.team_name || null,
+        needPass: !!link.pass_hash,
         policy: pol.rows[0]?.policy ?? null,
       });
     }
 
-    /* ── formSubmit: consuma il link e scrive SOLO il profilo di quell'atleta ── */
+    /* ── formSubmit: scrive la scheda ──────────────────────────────────────
+       Due strade, stesso endpoint:
+         link personale  aggiorna il profilo dell'atleta indicato dal link
+         link di squadra crea (o ritrova) l'atleta a partire da nome, cognome
+                         e data di nascita, e poi ne scrive il profilo         */
+
     if (action === "formSubmit") {
       const token = String(body.token || "");
-      const kI = "form:ip:" + ip;
-      if (!(await underLimit(kI, FORM_MAX_PER_HOUR))) {
-        return res.status(429).json({ error: "Troppi tentativi. Riprova più tardi." });
+      const g0 = await loadFormLink(token, ip);
+      if (g0.error) return res.status(g0.status).json({ error: g0.error });
+      const kind = g0.link.kind;
+
+      if (kind === "team" && !passOk(body.pass, g0.link.pass_hash)) {
+        await audit(g0.link.coach_email, "formSubmit", "denied", ip, "parola d'ordine errata");
+        return res.status(401).json({ error: "Parola d'ordine non corretta. Chiedila al tuo preparatore." });
       }
-      if (!token) return res.status(400).json({ error: "Link non valido" });
-      await noteFail(kI);
 
       const raw = body.profile;
       if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -504,6 +706,26 @@ export default async function handler(req, res) {
       // quale versione dell'informativa. Ruolo e nome arrivano dal modulo;
       // data e versione le stabilisce il server, perché sono le due cose che
       // in una contestazione non devono dipendere da ciò che dice il client.
+      // Identità: obbligatoria sul link di squadra, dove l'atleta non esiste
+      // ancora e queste tre informazioni sono l'unica cosa che la distingue.
+      let nome = "", cognome = "", sesso = "", nascita = "";
+      if (kind === "team") {
+        const a = (body.athlete && typeof body.athlete === "object") ? body.athlete : {};
+        nome = cleanName(a.first);
+        cognome = cleanName(a.last);
+        sesso = a.sex === "F" ? "F" : a.sex === "M" ? "M" : "";
+        nascita = String(a.birth || "").slice(0, 10);
+        if (normPerson(nome).length < 2) return res.status(400).json({ error: "Scrivi il tuo nome." });
+        if (normPerson(cognome).length < 2) return res.status(400).json({ error: "Scrivi il tuo cognome." });
+        if (!sesso) return res.status(400).json({ error: "Indica il sesso: i valori di riferimento dei test sono distinti." });
+        const et = ageAt(nascita);
+        if (et == null) return res.status(400).json({ error: "Controlla la data di nascita." });
+        if (et < 5 || et > 99) return res.status(400).json({ error: "La data di nascita non sembra corretta." });
+        profile.birth = nascita;   // la data resta anche nel profilo, dov'è sempre stata
+      } else {
+        nascita = String(profile.birth || "").slice(0, 10);
+      }
+
       const consentRole = String(body.consentRole || "");
       const consentName = String(body.consentName || "").trim().slice(0, 120);
       if (consentRole !== "athlete" && consentRole !== "guardian") {
@@ -516,23 +738,52 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Serve il nome di chi esercita la responsabilità genitoriale." });
       }
 
+      // Chi può prestare il consenso non è una scelta: lo decide l'età.
+      // Prima era una tendina, e una ragazza di sedici anni che sceglieva
+      // "sono maggiorenne" produceva un consenso invalido senza che nessuno
+      // se ne accorgesse — né lei, né il preparatore, né il server.
+      // Quando la data di nascita c'è, la tendina non serve più: è il server a
+      // decidere, e il modulo si limita a mostrare la parte giusta.
+      const eta = ageAt(nascita);
+      if (eta != null) {
+        if (eta < 18 && consentRole !== "guardian") {
+          return res.status(400).json({
+            error: "Per un minorenne il consenso lo presta chi esercita la responsabilità genitoriale.",
+          });
+        }
+        if (eta >= 18 && consentRole !== "athlete") {
+          return res.status(400).json({
+            error: "Per una persona maggiorenne il consenso ai dati sanitari lo presta l'interessato.",
+          });
+        }
+      }
+
       // Il link e il suo consumo stanno nella STESSA transazione del salvataggio:
       // due invii arrivati insieme non possono passare entrambi (FOR UPDATE blocca
       // il secondo finché il primo non ha finito, e a quel punto trova used_at valorizzato).
       const client = await db.connect();
+      let avviso = null;   // email da mandare DOPO il commit, mai dentro
       try {
         await client.query("BEGIN");
 
         const linkQ = await client.query(
-          `SELECT coach_email, athlete_id, expires_at, used_at FROM form_links
-           WHERE token_hash = $1 FOR UPDATE`, [sha256(token)]);
+          `SELECT coach_email, athlete_id, kind, team_id, team_name,
+                  max_uses, uses, closed_at, expires_at, used_at
+           FROM form_links WHERE token_hash = $1 FOR UPDATE`, [sha256(token)]);
         const link = linkQ.rows[0];
         if (!link || new Date(link.expires_at) <= now()) {
           await client.query("ROLLBACK");
           await audit(null, "formSubmit", "denied", ip, "link scaduto o inesistente");
           return res.status(401).json({ error: "Il link è scaduto o non è più valido." });
         }
-        if (link.used_at) {
+        const diSquadra = link.kind === "team";
+        if (diSquadra) {
+          // Riletto DENTRO la transazione e con FOR UPDATE: il tetto va contato
+          // qui, non sulla copia letta prima, altrimenti due invii simultanei
+          // all'ultimo posto disponibile passano entrambi.
+          const chiuso = teamLinkClosed(link);
+          if (chiuso) { await client.query("ROLLBACK"); return res.status(410).json({ error: chiuso }); }
+        } else if (link.used_at) {
           await client.query("ROLLBACK");
           return res.status(410).json({ error: "Questa scheda è già stata inviata. Chiedi un nuovo link al tuo preparatore." });
         }
@@ -545,11 +796,6 @@ export default async function handler(req, res) {
           return res.status(409).json({ error: "Dati non pronti: chiedi al preparatore di aprire l'app una volta." });
         }
         const store = prow.payload;
-        const ath = store.athletes.find(a => String(a.id) === String(link.athlete_id));
-        if (!ath) {
-          await client.query("ROLLBACK");
-          return res.status(404).json({ error: "Scheda non trovata: forse è stata rimossa." });
-        }
 
         // Senza informativa configurata non si raccoglie niente. È il punto in
         // cui il trattamento avrebbe una base giuridica solo dichiarata: meglio
@@ -564,11 +810,68 @@ export default async function handler(req, res) {
           });
         }
 
+        let ath = null, creata = false;
+        const nomeCompleto = nome + " " + cognome;
+
+        if (diSquadra) {
+          const teamId = String(link.team_id || "");
+          if (!(store.teams || []).some(t => t && String(t.id) === teamId)) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ error: "La squadra non esiste più. Avvisa il tuo preparatore." });
+          }
+
+          // Ritrovare la stessa persona invece di crearne una seconda.
+          // formKey è la corrispondenza esatta (stesso modulo, secondo invio);
+          // il confronto sul nome copre chi era già in rosa perché inserita a
+          // mano dal preparatore, e accetta l'ordine invertito perché "Rossi
+          // Giulia" e "Giulia Rossi" sono la stessa ragazza.
+          const chiave = normPerson(nome) + "|" + normPerson(cognome) + "|" + nascita;
+          const dritto = normPerson(nomeCompleto);
+          const rovescio = normPerson(cognome + " " + nome);
+          ath = store.athletes.find(a => {
+            if (!a || String(a.team || "") !== teamId) return false;
+            const p = a.profile || {};
+            if (p.formKey && String(p.formKey) === chiave) return true;
+            const n = normPerson(a.name);
+            if (n !== dritto && n !== rovescio) return false;
+            // stesso nome ma data di nascita diversa e nota: due persone diverse
+            return !p.birth || String(p.birth) === nascita;
+          }) || null;
+
+          if (!ath) {
+            if ((store.athletes || []).length >= 500) {
+              await client.query("ROLLBACK");
+              return res.status(409).json({ error: "L'archivio del preparatore è pieno. Avvisalo." });
+            }
+            ath = { id: newAthleteId(store), name: nomeCompleto, sex: sesso, team: teamId, profile: {} };
+            store.athletes.push(ath);
+            creata = true;
+          } else {
+            // seconda compilazione: il nome resta quello che l'atleta scrive oggi
+            ath.name = nomeCompleto;
+            ath.sex = sesso;
+          }
+          profile.formKey = chiave;
+        } else {
+          ath = store.athletes.find(a => String(a.id) === String(link.athlete_id)) || null;
+          if (!ath) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ error: "Scheda non trovata: forse è stata rimossa." });
+          }
+        }
+
         const consentBy = consentRole === "guardian"
           ? "Chi esercita la responsabilità genitoriale"
           : "L'atleta (maggiorenne)";
 
-        // merge del solo profilo di QUESTO atleta — non tocca il resto dei dati
+        // merge del solo profilo di QUESTO atleta — non tocca il resto dei dati.
+        // viaForm/formAt/formNew stanno DENTRO profile e non a fianco perché
+        // sanitizeImport ricostruisce l'atleta da un elenco chiuso di campi
+        // (id, name, sex, team, profile): qualunque campo nuovo messo accanto
+        // sparirebbe in silenzio al primo ripristino di un backup. Il profilo
+        // invece conserva le chiavi che non conosce.
+        // formAt serve anche al client per capire, in fase di merge, che il
+        // server ha una scheda che quel dispositivo non ha mai visto.
         ath.profile = Object.assign({}, ath.profile || {}, profile, {
           consent: true,
           consentBy,
@@ -578,30 +881,57 @@ export default async function handler(req, res) {
           consentAt: now().toISOString(),
           consentDoc: "v" + policy.version + (policy.updatedAt ? " del " + policy.updatedAt : ""),
           consentPolicyVersion: Number(policy.version),
+          // Da dove viene questo consenso. È l'unica differenza che conta:
+          // "form" vuol dire che data, versione e ruolo li ha stabiliti il
+          // server e che esiste una riga nel registro accessi. Un consenso
+          // importato da un foglio di calcolo dice le stesse cose, ma le dice
+          // il preparatore, e senza questo campo i due sono indistinguibili.
+          consentSource: "form",
+          viaForm: diSquadra ? true : !!(ath.profile || {}).viaForm,
+          formAt: now().toISOString(),
+          formNew: true,
         });
 
         const payloadStr = JSON.stringify(store);
+        if (Buffer.byteLength(payloadStr, "utf8") > MAX_PAYLOAD_BYTES) {
+          await client.query("ROLLBACK");
+          return res.status(413).json({ error: "L'archivio del preparatore è pieno. Avvisalo." });
+        }
         const nextV = Number(prow.version || 0) + 1;
         await client.query(
           `UPDATE payloads SET payload=$1::jsonb, version=$2, updated_at=now(), bytes=$3 WHERE email=$4`,
           [payloadStr, nextV, Buffer.byteLength(payloadStr, "utf8"), link.coach_email]);
-        await client.query(`UPDATE form_links SET used_at = now() WHERE token_hash = $1`, [sha256(token)]);
+
+        if (diSquadra) {
+          await client.query(
+            `UPDATE form_links SET uses = uses + 1, used_at = now() WHERE token_hash = $1`, [sha256(token)]);
+        } else {
+          await client.query(`UPDATE form_links SET used_at = now() WHERE token_hash = $1`, [sha256(token)]);
+        }
 
         await client.query("COMMIT");
+        avviso = { to: link.coach_email, name: ath.name, team: link.team_name, aggiornata: !creata };
+
         // Il registro accessi è l'unica traccia in sola aggiunta che abbiamo:
         // se un domani qualcuno chiede "chi ha autorizzato e su cosa", la
         // risposta sta qui e non dentro un JSON che nel frattempo è cambiato.
         await audit(link.coach_email, "formSubmit", "ok", ip,
-          "atleta " + link.athlete_id + " · consenso: " + consentBy +
+          (diSquadra ? (creata ? "atleta creata dal modulo " : "atleta aggiornata dal modulo ") : "atleta ") + ath.id +
+          (diSquadra ? " · squadra " + link.team_id : "") +
+          " · consenso: " + consentBy +
           (consentName ? " (" + consentName + ")" : "") +
           " · informativa v" + policy.version);
-        return res.status(200).json({ ok: true });
       } catch (e) {
         try { await client.query("ROLLBACK"); } catch (e2) {}
         throw e;
       } finally {
         client.release();
       }
+
+      // Fuori dalla transazione e fuori dal try: una chiamata di rete lenta a
+      // Resend non deve tenere aperta una riga bloccata dal FOR UPDATE.
+      if (avviso) await sendNewSheetEmail(avviso.to, avviso.name, avviso.team, avviso.aggiornata);
+      return res.status(200).json({ ok: true });
     }
 
     /* ── da qui in poi serve una sessione valida ── */
@@ -754,6 +1084,7 @@ export default async function handler(req, res) {
 
     /* ── formLink: genera un link anamnesi monouso per un atleta ── */
     if (action === "formLink") {
+      await ensureLinkSchema();
       const aid = String(body.athleteId || "");
       const aname = String(body.athleteName || "").slice(0, 80);
       if (!aid) return res.status(400).json({ error: "athleteId mancante" });
@@ -763,6 +1094,77 @@ export default async function handler(req, res) {
                         ${addDays(now(), FORM_LINK_HOURS / 24).toISOString()})`;
       await audit(me.email, "formLink", "ok", ip, "atleta " + aid);
       return res.status(200).json({ token, expiresHours: FORM_LINK_HOURS });
+    }
+
+    /* ── teamLink: un link solo per tutta la squadra ───────────────────────
+       Chi lo apre non trova una rosa da scegliere: scrive i propri dati e
+       crea la propria scheda. Il link vive giorni, non ore, perché va mandato
+       una volta sola in un gruppo e deve reggere chi compila la sera dopo. */
+    if (action === "teamLink") {
+      await ensureLinkSchema();
+      const teamId = String(body.teamId || "");
+      const teamName = cleanName(body.teamName).slice(0, 80);
+      if (!teamId) return res.status(400).json({ error: "Squadra mancante" });
+
+      let maxUses = Math.round(Number(body.maxUses));
+      if (!isFinite(maxUses) || maxUses < 1) maxUses = FORM_TEAM_MAX_USES;
+      maxUses = Math.min(maxUses, FORM_TEAM_MAX_USES_CAP);
+
+      let days = Math.round(Number(body.days));
+      if (!isFinite(days) || days < 1) days = FORM_TEAM_DAYS;
+      days = Math.min(days, 60);
+
+      const pass = String(body.pass || "").trim();
+      if (pass && normPerson(pass).length < 3) {
+        return res.status(400).json({ error: "La parola d'ordine è troppo corta: almeno 3 caratteri." });
+      }
+
+      // Un solo link aperto per squadra. Generarne uno nuovo chiude il vecchio:
+      // altrimenti restano in circolazione link che nessuno ricorda di aver dato
+      // e che continuano a creare schede.
+      await sql`UPDATE form_links SET closed_at = now()
+                WHERE coach_email = ${me.email} AND kind = 'team'
+                  AND team_id = ${teamId} AND closed_at IS NULL`;
+
+      const token = crypto.randomBytes(24).toString("base64url");
+      await sql`INSERT INTO form_links
+                  (token_hash, coach_email, athlete_id, kind, team_id, team_name,
+                   max_uses, expires_at, pass_hash)
+                VALUES (${sha256(token)}, ${me.email}, NULL, 'team', ${teamId}, ${teamName},
+                        ${maxUses}, ${addDays(now(), days).toISOString()},
+                        ${pass ? sha256(normPerson(pass)) : null})`;
+      await audit(me.email, "teamLink", "ok", ip,
+        "squadra " + teamId + " · tetto " + maxUses + " · " + days + " giorni" +
+        (pass ? " · con parola d'ordine" : ""));
+      return res.status(200).json({ token, maxUses, days, hasPass: !!pass });
+    }
+
+    /* ── teamLinks: stato dei moduli aperti ──────────────────────────────
+       Il token NON è qui e non può esserci: in tabella c'è solo il suo hash.
+       Se il preparatore perde il link, ne genera un altro — e il vecchio si
+       chiude da solo. È scomodo di proposito. */
+    if (action === "teamLinks") {
+      await ensureLinkSchema();
+      const { rows } = await sql`
+        SELECT team_id, team_name, max_uses, uses, expires_at, created_at,
+               (pass_hash IS NOT NULL) AS has_pass
+        FROM form_links
+        WHERE coach_email = ${me.email} AND kind = 'team'
+          AND closed_at IS NULL AND expires_at > now()
+        ORDER BY created_at DESC`;
+      return res.status(200).json({ links: rows });
+    }
+
+    /* ── closeTeamLink: il preparatore chiude il modulo quando ha finito ── */
+    if (action === "closeTeamLink") {
+      await ensureLinkSchema();
+      const teamId = String(body.teamId || "");
+      if (!teamId) return res.status(400).json({ error: "Squadra mancante" });
+      const r = await sql`UPDATE form_links SET closed_at = now()
+                          WHERE coach_email = ${me.email} AND kind = 'team'
+                            AND team_id = ${teamId} AND closed_at IS NULL`;
+      await audit(me.email, "closeTeamLink", "ok", ip, "squadra " + teamId);
+      return res.status(200).json({ ok: true, closed: r.rowCount || 0 });
     }
 
     /* ── export: art. 15 e 20 GDPR ── */

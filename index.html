@@ -99,6 +99,19 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .pf-btn{width:100%;margin-top:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer}
 .pf-btn:disabled{opacity:.6}
 .pf-foot{color:var(--muted2);font-size:11px;text-align:center;margin-top:12px}
+.pf-team{font-family:var(--sans);font-weight:700;font-size:12px;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--accent);margin:2px 0 6px}
+.pf-hint{color:var(--muted2);font-size:12px;line-height:1.5;margin:6px 0 4px}
+.pf-hint b{color:var(--text)}
+.pf-minor{border-left:3px solid var(--accent);padding-left:10px}
+.csrc{font-size:11px;line-height:1.5;color:var(--muted2);margin:-4px 0 12px;
+  padding:7px 10px;border-radius:9px;background:var(--surface2);border-left:3px solid var(--line2)}
+.csrc b{font-family:var(--sans);font-size:9px;letter-spacing:.7px}
+.csrc-ok{border-left-color:var(--up)} .csrc-ok b{color:var(--up)}
+.csrc-warn{border-left-color:var(--accent)} .csrc-warn b{color:var(--accent)}
+.newsheet{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;
+  background:var(--accent);color:#fff;font-family:var(--sans);font-weight:700;
+  font-size:9px;letter-spacing:.6px;text-transform:uppercase;vertical-align:middle}
 .pf-done{text-align:center;padding:40px 20px;background:var(--surface);border:1px solid var(--line2);border-radius:16px}
 .pf-ok{font-size:40px;color:var(--up);margin-bottom:10px}
 .pf-gen{color:var(--muted2);font-size:13px;padding:20px 0;text-align:center}
@@ -715,6 +728,7 @@ ul.kb li b{color:#fff;font-weight:600}
   <button onclick="exportJSON()">⬇️ Esporta backup (JSON)</button>
   <button onclick="exportCSV()">📄 Esporta tabella (CSV)</button>
   <button onclick="importJSON()">⬆️ Importa backup</button>
+  <button onclick="printAnamnesi()">🖨 Stampa il modulo anamnesi (carta)</button>
   <button onclick="importForms()">📋 Importa anamnesi da Google Moduli</button>
   <div class="sep"></div>
   <button onclick="openPrivacy()">🛡 Privacy e conformità</button>
@@ -1104,6 +1118,36 @@ function mergeByDate(a,b,tp,T){
     .sort()
     .map(k=>m[k]);
 }
+/* Campi del profilo che il modulo anamnesi NON può scrivere: sono decisioni del
+   preparatore e restano sue anche quando arriva una scheda nuova.
+   Rispecchia le esclusioni di FORM_ALLOWED_KEYS in api/store.js. */
+const COACH_ONLY=["medical","medicalExpiry","notes"];
+
+/* La copia locale vinceva sull'INTERO oggetto atleta. Finché le schede si
+   compilavano una alla volta, con il preparatore lontano dall'app, non si
+   vedeva. Con un link di squadra che raccoglie quindici schede in una sera,
+   mentre lui ha l'app aperta, succede questo: al primo salvataggio in
+   conflitto la sua copia vecchia dell'atleta — profilo vuoto — sovrascrive
+   l'anamnesi appena arrivata. Nessun errore, nessun avviso, il dato sparisce.
+
+   Regola: vince il locale, come sempre, TRANNE quando il server ha una scheda
+   con formAt più recente di quella già vista da questo dispositivo. In quel
+   caso vince il profilo compilato dall'atleta, meno i campi del preparatore. */
+function mergeAthlete(sv, lo){
+  if(!sv) return lo;
+  if(!lo) return sv;
+  const sp=sv.profile||{}, lp=lo.profile||{};
+  const sAt=String(sp.formAt||""), lAt=String(lp.formAt||"");
+  if(!(sAt && sAt>lAt)) return lo;
+  const out=Object.assign({}, lo);
+  const p=Object.assign({}, lp, sp);
+  COACH_ONLY.forEach(k=>{ if(Object.prototype.hasOwnProperty.call(lp,k)) p[k]=lp[k]; });
+  out.profile=p;
+  // atleta nata dal modulo: nome, sesso e squadra li ha scritti lei
+  if(sp.viaForm){ out.name=sv.name; out.sex=sv.sex; if(sv.team) out.team=sv.team; }
+  return out;
+}
+
 function mergeState(server, local){
   if(!server||typeof server!=="object") return local;
   const out=JSON.parse(JSON.stringify(server));
@@ -1113,8 +1157,9 @@ function mergeState(server, local){
   const byId=arr=>{ const m={}; (arr||[]).forEach(x=>{ if(x&&x.id) m[x.id]=x; }); return m; };
   const mt=Object.assign(byId(server.teams), byId(local.teams));
   out.teams=Object.keys(mt).filter(id=>!T["team:"+id]).map(id=>mt[id]);
-  const ma=Object.assign(byId(server.athletes), byId(local.athletes));
-  out.athletes=Object.keys(ma).filter(id=>!T["ath:"+id]).map(id=>ma[id]);
+  const sa=byId(server.athletes), la=byId(local.athletes);
+  const aid={}; Object.keys(sa).forEach(i=>aid[i]=1); Object.keys(la).forEach(i=>aid[i]=1);
+  out.athletes=Object.keys(aid).filter(id=>!T["ath:"+id]).map(id=>mergeAthlete(sa[id], la[id]));
 
   const live={}; out.athletes.forEach(a=>live[a.id]=1);
   ["data","readiness","load","screen","lv"].forEach(k=>{ if(!out[k]) out[k]={}; });
@@ -1530,6 +1575,35 @@ function consentGaps(){
    finalità o i tempi di conservazione, quel consenso copre un testo che non
    è più quello, e va richiesto di nuovo. Se la modifica era una virgola,
    puoi ignorare l'avviso — ma devi sapere che c'è. */
+/* Un consenso è DIMOSTRABILE solo se l'ha registrato il server: data presa dal
+   suo orologio, versione dell'informativa letta dall'archivio, ruolo verificato
+   contro la data di nascita, riga nel registro accessi che nessuno riscrive.
+
+   Tutto il resto — importato da un foglio, spuntato a mano nella scheda — è una
+   dichiarazione del preparatore. Può essere verissima: la mamma ha firmato in
+   palestra e lui ha messo la spunta. Ma è lui a dirlo, e in una contestazione
+   la differenza è tutta lì. Il punto non è impedirlo, è non confonderli. */
+function consentProven(p){
+  p=p||{};
+  return !!(p.consent && p.consentSource==="form" && Number(p.consentPolicyVersion));
+}
+function consentDeclared(){
+  return (S.athletes||[]).filter(a=>{
+    const p=a.profile||{};
+    return p.consent && p.consentDate && !consentProven(p);
+  });
+}
+function consentOrigine(p){
+  p=p||{};
+  if(!p.consent) return null;
+  if(consentProven(p)) return {t:"dimostrabile", c:"ok",
+    d:"Registrato dal server: data, versione dell'informativa e ruolo stabiliti da lui, con traccia nel registro accessi."};
+  if(p.consentSource==="import") return {t:"importato", c:"warn",
+    d:"Arrivato da un foglio di calcolo. Data e firmatario sono quelli che c'erano nel file: valgono quanto il file."};
+  return {t:"dichiarato", c:"warn",
+    d:"Spuntato a mano nella scheda. Se hai una firma su carta, conservala: è quella la prova, non la spunta."};
+}
+
 function consentOutdated(){
   const cur=Number((S.policy||{}).version)||0;
   if(!cur) return [];
@@ -1576,6 +1650,23 @@ function openPrivacy(){
       (idOk(a.id)?'<span class="hdl" onclick="closeM();openAthlete(\''+a.id+'\')">→</span>':'')+'</div>'; });
     h+='</div>';
   }
+  /* Consensi che ci sono, ma che li dichiari tu. Non è un errore da correggere:
+     è una distinzione da vedere. Un'atleta importata da un foglio e una che ha
+     compilato dal modulo mostravano lo stesso identico "consenso ✓". */
+  const dich=consentDeclared();
+  if(dich.length){
+    h+='<div class="alert warn"><span class="ai">✍️</span><span><b>'+dich.length+
+       (dich.length===1?' consenso è dichiarato':' consensi sono dichiarati')+
+       ', non registrato dal sistema.</b> Vale quanto vale la tua parola e la carta che hai in mano: '+
+       'per questi tieni da parte il foglio firmato.</span></div>'+
+       '<label class="fl">Consensi dichiarati</label><div class="hist">';
+    dich.forEach(a=>{ const o=consentOrigine(a.profile)||{t:"dichiarato"};
+      h+='<div class="hrow"><span class="hd">'+esc(a.name)+'</span>'+
+      '<span class="hv"><span class="rd-cmj down">'+esc(o.t)+'</span></span>'+
+      (idOk(a.id)?'<span class="hdl" onclick="closeM();openAthlete(\''+a.id+'\')">→</span>':'')+'</div>'; });
+    h+='</div>';
+  }
+
   h+='<div class="psec">Cosa tratti</div>';
   h+='<div class="pf"><b>'+(S.athletes||[]).length+'</b> atleti, di cui <b>'+minors.length+'</b> minorenni</div>';
   h+='<div class="pf">Categorie: anamnesi patologica, farmaci, infortuni, dolore, screening cardiologico, idoneità</div>';
@@ -1840,7 +1931,9 @@ function renderMatrix(){
     const team=S.teams.find(t=>t.id===a.team);
     const tl=(S.activeTeam==="all"&&team)?esc(team.name)+" · ":"";
     const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
-    h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+'<span class="nmt">'+esc(a.name)+'</span>'+
+    // scheda arrivata dal modulo e non ancora aperta: si spegne appena la guardi
+    const nuova=(a.profile&&a.profile.formNew)?'<span class="newsheet" title="Scheda arrivata dal modulo, non ancora letta">nuova</span>':"";
+    h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+'<span class="nmt">'+esc(a.name)+'</span>'+nuova+
        '<span class="sx">'+(a.sex||"M")+'</span>'+
        '<span class="del" onclick="event.stopPropagation();delAthlete(\''+a.id+'\')">✕</span></div>';
     const tot=tests.reduce((s,t)=>s+series(a.id,t.id).length,0);
@@ -2092,7 +2185,9 @@ function manageTeams(){
        '<select onchange="setTeamSport(\''+t.id+'\',this.value)">'+sportOptions(t.sport)+'</select>'+
        '<button class="tmdel" title="'+c+' atleti" onclick="delTeam(\''+t.id+'\')">🗑</button></div>'+
        '<div class="tmbat"><button class="btn sm'+(n?' on':'')+'" onclick="chooseTests(\''+t.id+'\')">🎚 Batteria test</button>'+
-       '<span>'+(n?n+' test monitorati':'automatici per sport')+'</span></div>'; });
+       '<span>'+(n?n+' test monitorati':'automatici per sport')+'</span></div>'+
+       '<div class="tmbat"><button class="btn sm" onclick="openTeamForm(\''+t.id+'\')">🔗 Modulo di squadra</button>'+
+       '<span>un link solo per tutte</span></div>'; });
   h+='<div style="height:12px"></div>'+
      '<button class="btn" style="width:100%" onclick="addTeam()">+ Aggiungi squadra</button>';
   modal(h);
@@ -2248,7 +2343,7 @@ function bootAnamnesi(token){
   let el=document.getElementById("pubform");
   if(!el){ el=document.createElement("div"); el.id="pubform"; el.className="pubform"; document.body.appendChild(el); }
   el.innerHTML='<div class="pf-box"><div class="pf-load">Carico il modulo…</div></div>';
-  apiCall("formInfo",{token}).then(j=>renderAnamForm(token, j.athleteName, j.policy))
+  apiCall("formInfo",{token}).then(j=>renderAnamForm(token, j))
     .catch(e=>{ el.innerHTML='<div class="pf-box"><div class="pf-err2">⚠️ '+esc(e.message)+'</div>'+
       '<p class="pf-p">Il link potrebbe essere scaduto o già usato. Chiedi al tuo preparatore un link nuovo.</p></div>'; });
 }
@@ -2274,23 +2369,103 @@ function anamFields(){
   return out.filter((f,i)=> !f.sec || (out[i+1] && !out[i+1].sec));
 }
 
-function renderAnamForm(token, name, policy){
-  const fields=anamFields(); let body="";
+/* Chi presta il consenso non è più una domanda: lo decide la data di nascita.
+   Era una tendina con "sono l'atleta e sono maggiorenne" — una ragazza di
+   sedici anni la sceglieva senza pensarci e produceva un consenso invalido
+   che nessuno avrebbe mai notato. Il server rifiuta comunque la combinazione
+   sbagliata; qui il modulo mostra direttamente la parte giusta, così la
+   domanda non viene proprio posta.                                          */
+let ANAM_ROLE="", ANAM_NAME="";
+
+/* type="date" accetta anche il 2098: senza questo controllo il modulo
+   lascerebbe premere Invia per poi farsi rifiutare dal server. */
+function anamAge(){
+  const e=ageFrom(anamBirthValue());
+  return (e==null || e<5 || e>99) ? null : e;
+}
+
+function anamBirthValue(){
+  const t=document.getElementById("pfBirth");
+  if(t) return t.value||"";
+  const f=document.querySelector('#pubform [data-k="birth"]');
+  return f ? (f.value||"") : "";
+}
+
+function anamConsent(){
+  const box=document.getElementById("pfConsentRole"); if(!box) return;
+  // Il nome del genitore va ricordato QUI e non letto dal campo: se si corregge
+  // la data e per un attimo l'atleta risulta maggiorenne, il campo sparisce e
+  // con lui quello che era gia' stato scritto. Chi compila lo riscriverebbe
+  // senza capire perche'.
+  const scritto=((document.getElementById("pfName")||{}).value||"").trim();
+  if(scritto) ANAM_NAME=scritto;
+  const prima=ANAM_NAME;
+  const eta=anamAge();
+  if(eta==null){
+    ANAM_ROLE="";
+    box.innerHTML='<div class="pf-hint">Compila la <b>data di nascita</b> qui sopra: da quella il modulo capisce chi deve prestare il consenso.</div>';
+  } else if(eta<18){
+    ANAM_ROLE="guardian";
+    box.innerHTML='<div class="pf-hint pf-minor"><b>'+eta+' anni.</b> Per un minorenne il consenso lo presta chi esercita la '+
+      'responsabilità genitoriale: da qui in giù deve compilare un genitore.</div>'+
+      '<div class="pf-field"><label class="pf-l">Nome e cognome del genitore che presta il consenso *</label>'+
+      '<input type="text" id="pfName" autocomplete="name" value="'+esc(prima)+'"></div>';
+  } else {
+    ANAM_ROLE="athlete";
+    box.innerHTML='<div class="pf-hint"><b>'+eta+' anni.</b> Sei maggiorenne: il consenso lo presti tu.</div>';
+  }
+}
+
+function renderAnamForm(token, info){
+  info=info||{};
+  const squadra = info.kind==="team";
+  const policy = info.policy;
+  // Su un link di squadra la data di nascita è già chiesta nell'anagrafica in
+  // cima: lasciarla anche qui la farebbe scrivere due volte in due posti.
+  const fields=anamFields().filter(f=> !(squadra && f.k==="birth"));
+  let body="";
   fields.forEach(f=>{
     if(f.sec){ body+='<div class="pf-sec">'+esc(f.sec)+'</div>'; return; }
     if(f.t==="check"){ body+='<label class="pf-check"><input type="checkbox" data-k="'+f.k+'"><span>'+esc(f.l)+'</span></label>'; return; }
     let inp;
     if(f.t==="select") inp='<select data-k="'+f.k+'">'+f.o.map(o=>'<option value="'+esc(o)+'">'+(o?esc(o):"—")+'</option>').join("")+'</select>';
     else if(f.t==="area") inp='<textarea data-k="'+f.k+'" rows="2"></textarea>';
-    else inp='<input type="'+(f.t==="number"?"number":f.t==="date"?"date":"text")+'" data-k="'+f.k+'"'+(f.t==="number"?' inputmode="decimal"':'')+'>';
+    else inp='<input type="'+(f.t==="number"?"number":f.t==="date"?"date":"text")+'" data-k="'+f.k+'"'+
+             (f.t==="number"?' inputmode="decimal"':'')+
+             (f.k==="birth"?' id="pfBirth" onchange="anamConsent()" oninput="anamConsent()"':'')+'>';
     body+='<div class="pf-field"><label class="pf-l">'+esc(f.l)+'</label>'+inp+'</div>';
   });
+
+  // Anagrafica: solo sul link di squadra, dove l'atleta non esiste ancora e
+  // queste quattro risposte sono tutto ciò che la distingue.
+  const anagrafica = !squadra ? "" :
+    '<div class="pf-sec">Chi sei</div>'+
+    '<div class="pf-field"><label class="pf-l">Nome *</label>'+
+      '<input type="text" id="pfFirst" autocomplete="given-name"></div>'+
+    '<div class="pf-field"><label class="pf-l">Cognome *</label>'+
+      '<input type="text" id="pfLast" autocomplete="family-name"></div>'+
+    '<div class="pf-field"><label class="pf-l">Sesso *</label>'+
+      '<select id="pfSex"><option value="">— scegli —</option>'+
+      '<option value="F">Femminile</option><option value="M">Maschile</option></select></div>'+
+    '<div class="pf-field"><label class="pf-l">Data di nascita *</label>'+
+      '<input type="date" id="pfBirth" onchange="anamConsent()" oninput="anamConsent()"></div>'+
+    (info.needPass ? '<div class="pf-field"><label class="pf-l">Parola d\'ordine della squadra *</label>'+
+      '<input type="text" id="pfPass" autocomplete="off">'+
+      '<div class="pf-hint">Te l\'ha detta il preparatore.</div></div>' : "");
+
+  const sottotitolo = squadra
+    ? 'Compila i tuoi dati e la tua scheda: bastano pochi minuti. '+
+      'La scheda arriva direttamente al tuo preparatore.'
+    : (info.athleteName?("Ciao <b>"+esc(info.athleteName)+"</b>, "):"")+
+      'compila con i dati che conosci: bastano pochi minuti. Il link funziona <b>una sola volta</b> ed è valido 48 ore.';
+
   document.getElementById("pubform").innerHTML=
     '<div class="pf-box">'+
     '<div class="pf-head"><div class="pf-brand">IRON PERFORMANCE</div>'+
-    '<h1>Scheda anamnesi</h1><p class="pf-sub">'+(name?("Ciao <b>"+esc(name)+"</b>, "):"")+
-    'compila con i dati che conosci: bastano pochi minuti. Il link funziona <b>una sola volta</b> ed è valido 48 ore.</p></div>'+
-    '<div class="pf-fields">'+body+'</div>'+
+    '<h1>Scheda atleta</h1>'+
+    (squadra && info.teamName ? '<div class="pf-team">'+esc(info.teamName)+'</div>' : '')+
+    '<p class="pf-sub">'+sottotitolo+'</p></div>'+
+    '<div class="pf-fields">'+anagrafica+body+'</div>'+
 
     // L'informativa sta DENTRO il modulo, sopra il consenso, aperta con un
     // clic. Non un link a un documento altrove: chi acconsente deve poterla
@@ -2298,18 +2473,7 @@ function renderAnamForm(token, name, policy){
     (policy ? '<details class="polbox"><summary>Informativa privacy — leggila prima di acconsentere</summary>'+
               policyText(policy)+'</details>' : '')+
 
-    '<div class="pf-who">'+
-      '<label class="pf-l">Chi sta compilando e presta il consenso *</label>'+
-      '<select id="pfRole" onchange="anamRoleChange()">'+
-        '<option value="">— scegli —</option>'+
-        '<option value="athlete">Sono l\'atleta e sono maggiorenne</option>'+
-        '<option value="guardian">Sono il genitore o chi esercita la responsabilità genitoriale</option>'+
-      '</select>'+
-    '</div>'+
-    '<div class="pf-field" id="pfNameWrap" style="display:none">'+
-      '<label class="pf-l">Nome e cognome di chi presta il consenso *</label>'+
-      '<input type="text" id="pfName" autocomplete="name">'+
-    '</div>'+
+    '<div class="pf-who" id="pfConsentRole"></div>'+
 
     // Due caselle separate, non una. Prendere atto di un'informativa e
     // acconsentire al trattamento di dati sanitari sono due atti distinti:
@@ -2324,17 +2488,13 @@ function renderAnamForm(token, name, policy){
     '<button class="pf-btn" id="pfBtn">Invia la scheda</button>'+
     '<p class="pf-foot">Una volta inviata, la scheda resta riservata al tuo preparatore.</p>'+
     '</div>';
-  document.getElementById("pfBtn").onclick=()=>submitAnam(token);
+  anamConsent();
+  document.getElementById("pfBtn").onclick=()=>submitAnam(token, squadra);
 }
 
-function anamRoleChange(){
-  const r=document.getElementById("pfRole").value;
-  const w=document.getElementById("pfNameWrap");
-  if(w) w.style.display = r==="guardian" ? "" : "none";
-}
-
-function submitAnam(token){
+function submitAnam(token, squadra){
   const box=document.getElementById("pubform"), err=document.getElementById("pfErr"), btn=document.getElementById("pfBtn");
+  const val=id=>((document.getElementById(id)||{}).value||"").trim();
   const profile={};
   box.querySelectorAll("[data-k]").forEach(el=>{
     const k=el.getAttribute("data-k");
@@ -2342,26 +2502,43 @@ function submitAnam(token){
     else { const v=(el.value||"").trim(); if(v!=="") profile[k]=v; }
   });
 
-  const consentRole=(document.getElementById("pfRole")||{}).value||"";
-  const consentName=((document.getElementById("pfName")||{}).value||"").trim();
-  const policyRead=!!(document.getElementById("pfRead")||{}).checked;
-  const consentHealth=!!(document.getElementById("pfHealth")||{}).checked;
-
-  if(!consentRole){ err.textContent="Indica chi sta compilando il modulo."; return; }
-  if(consentRole==="guardian" && consentName.length<3){
-    err.textContent="Scrivi il nome e cognome di chi presta il consenso."; return;
+  const req={token, profile};
+  if(squadra){
+    const first=val("pfFirst"), last=val("pfLast"), sex=val("pfSex"), birth=val("pfBirth");
+    if(first.length<2){ err.textContent="Scrivi il tuo nome."; return; }
+    if(last.length<2){ err.textContent="Scrivi il tuo cognome."; return; }
+    if(!sex){ err.textContent="Indica il sesso: i valori di riferimento dei test sono distinti."; return; }
+    if(anamAge()==null){ err.textContent="Controlla la data di nascita."; return; }
+    req.athlete={first, last, sex, birth};
+    const pass=val("pfPass"); if(pass) req.pass=pass;
+  } else if(anamAge()==null){
+    err.textContent="Compila la data di nascita: serve a stabilire chi presta il consenso."; return;
   }
-  if(!policyRead || !consentHealth){
+
+  req.consentRole=ANAM_ROLE;
+  // solo per il genitore: su un'atleta maggiorenne un nome rimasto in memoria
+  // da una data sbagliata finirebbe registrato come firmatario
+  req.consentName=(ANAM_ROLE==="guardian") ? (val("pfName")||ANAM_NAME) : "";
+  req.policyRead=!!(document.getElementById("pfRead")||{}).checked;
+  req.consentHealth=!!(document.getElementById("pfHealth")||{}).checked;
+
+  if(!req.consentRole){ err.textContent="Compila la data di nascita: serve a stabilire chi presta il consenso."; return; }
+  if(req.consentRole==="guardian" && req.consentName.length<3){
+    err.textContent="Scrivi il nome e cognome del genitore che presta il consenso."; return;
+  }
+  if(!req.policyRead || !req.consentHealth){
     err.textContent="Per inviare servono entrambe le conferme in fondo al modulo."; return;
   }
 
   err.textContent=""; btn.disabled=true; btn.textContent="Invio…";
-  apiCall("formSubmit",{token, profile, consentRole, consentName, policyRead, consentHealth}).then(()=>{
+  apiCall("formSubmit",req).then(()=>{
     box.innerHTML='<div class="pf-box pf-done"><div class="pf-ok">✓</div><h1>Scheda inviata</h1>'+
       '<p class="pf-p">Grazie! I dati sono stati inviati in modo sicuro al tuo preparatore. Puoi chiudere questa pagina.</p></div>';
   }).catch(e=>{
     btn.disabled=false; btn.textContent="Invia la scheda";
-    err.textContent = e.status===410 ? "Questa scheda è già stata inviata: il link è monouso." : e.message;
+    err.textContent = (e.status===410 && !squadra)
+      ? "Questa scheda è già stata inviata: il link è monouso."
+      : e.message;
   });
 }
 
@@ -2417,8 +2594,216 @@ function shareLink(link,name){
   if(navigator.share) navigator.share({title:"Scheda anamnesi", text:"Ciao "+name+", compila la tua scheda per la preparazione:", url:link}).catch(()=>{});
 }
 
+/* ── versione da stampare ───────────────────────────────────────────────────
+   Alla riunione di inizio stagione c'è sempre chi il modulo online non lo apre.
+   Il foglio nasce dalle STESSE domande del modulo (anamFields), quindi non può
+   andare fuori sincrono: aggiungi un campo nell'app e compare anche qui.
+   E il consenso su carta firmata è una prova migliore di una spunta.         */
+function printAnamnesi(){
+  const pol=S.policy||{};
+  if(!policyReady(pol)||!Number(pol.version)){
+    toast("Prima compila l'informativa: il foglio deve citarne la versione"); return;
+  }
+  // La riga su cui si scrive deve stare ATTACCATA alla sua domanda. Con 7mm di
+  // vuoto sopra, l'occhio la associava alla domanda successiva e il foglio si
+  // leggeva sfalsato di una riga.
+  const riga=(n)=>'<div class="ln" style="height:'+(n||1)*6+'mm"></div>';
+  // Domanda a sinistra, spazio per scrivere a destra, sulla stessa riga: e' il
+  // modo in cui funziona un modulo di carta. Con la riga SOTTO la domanda,
+  // l'occhio la associava alla domanda successiva e il foglio si leggeva
+  // sfalsato di una riga — visto stampandolo, non immaginandolo.
+  const campo=(l)=>'<div class="q qr"><span class="l">'+esc(l)+'</span><span class="ln"></span></div>';
+  let body="";
+  // la data di nascita e' gia' nel riquadro "Chi sei" qui sopra: chiederla due
+  // volte su un foglio di carta e' il modo migliore per farsela scrivere diversa
+  anamFields().filter(f=>f.k!=="birth").forEach(f=>{
+    if(f.sec){ body+='<h2>'+esc(f.sec)+'</h2>'; return; }
+    if(f.t==="check"){ body+='<div class="ck"><span class="bx"></span>'+esc(f.l)+'</div>'; return; }
+    if(f.t==="select"){
+      const o=(f.o||[]).filter(x=>x);
+      body+='<div class="q"><span class="l">'+esc(f.l)+'</span>'+
+        (o.length&&o.length<=5
+          ? '<span class="op">'+o.map(x=>'<span class="bx"></span>'+esc(x)).join(" ")+'</span>'
+          : '')+'</div>'+
+        (o.length&&o.length<=5 ? '' : campo(""));
+      return;
+    }
+    if(f.t==="area"){ body+='<div class="q"><span class="l">'+esc(f.l)+'</span>'+riga(2)+'</div>'; return; }
+    body+=campo(f.l);
+  });
+
+  const doc='<!doctype html><html lang="it"><head><meta charset="utf-8">'+
+    '<title>Scheda anamnesi — Iron Performance</title><style>'+
+    '@page{size:A4;margin:14mm}'+
+    'body{font:11px/1.45 -apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:0}'+
+    'h1{font-size:17px;margin:0 0 2px}h2{font-size:10px;letter-spacing:1px;text-transform:uppercase;'+
+      'color:#C81E2D;border-bottom:1px solid #ddd;padding-bottom:3px;margin:13px 0 6px}'+
+    '.br{font-size:9px;letter-spacing:2px;color:#C81E2D;font-weight:700}'+
+    '.sub{color:#555;font-size:10px;margin:0 0 4px}'+
+    '.q{margin-bottom:9px;break-inside:avoid}.q .l{display:block;color:#333;font-size:10px}'+'.qr{display:flex;align-items:flex-end;gap:8px;margin-bottom:7px}'+'.qr .l{flex:0 0 38%;padding-bottom:1px}.qr .ln{flex:1;height:6mm;margin-top:0}'+
+    '.ln{border-bottom:1px solid #bbb;margin-top:1mm}'+
+    '.ck{margin:3px 0;break-inside:avoid}'+
+    '.bx{display:inline-block;width:9px;height:9px;border:1px solid #666;margin-right:5px;'+
+      'vertical-align:-1px;border-radius:2px}'+
+    '.op{display:block;font-size:10px;margin-top:3px}.op .bx{margin-left:9px}'+
+    '.op .bx:first-child{margin-left:0}'+
+    '.cons{border:1.5px solid #C81E2D;border-radius:6px;padding:9px 11px;margin-top:14px;break-inside:avoid}'+
+    '.cons p{margin:0 0 6px;font-size:10px}'+
+    '.fx{margin-top:12px;display:flex;gap:16px}.fx div{flex:1}'+
+    '.fx .ln{margin-top:16px}.fx span{font-size:9px;color:#666}'+
+    '.note{font-size:9px;color:#666;margin-top:9px}'+
+    '</style></head><body>'+
+    '<div class="br">IRON PERFORMANCE</div><h1>Scheda anamnesi</h1>'+
+    '<p class="sub">Compila con i dati che conosci. Riconsegna il foglio al preparatore.</p>'+
+    '<h2>Chi sei</h2>'+
+    campo("Nome e cognome")+
+    campo("Data di nascita")+
+    '<div class="q"><span class="l">Sesso</span><span class="op">'+
+      '<span class="bx"></span>Femminile <span class="bx"></span>Maschile</span></div>'+
+    campo("Squadra")+
+    body+
+    '<div class="cons"><h2 style="margin-top:0">Consenso al trattamento dei dati sanitari</h2>'+
+    '<p>Il/la sottoscritto/a dichiara di aver letto l\'<b>informativa privacy '+
+      'versione '+esc(String(pol.version))+(pol.updatedAt?' del '+esc(fmtDate(String(pol.updatedAt))):'')+
+      '</b> di <b>'+esc(pol.titolare||"")+'</b>, consegnata insieme a questo foglio.</p>'+
+    '<p>Presta il consenso al trattamento dei <b>dati relativi alla salute</b> (art. 9.2.a GDPR) '+
+      'per le finalità ivi indicate, consapevole di poterlo <b>revocare in qualsiasi momento</b>.</p>'+
+    '<p><span class="bx"></span>Sono l\'atleta e sono maggiorenne &nbsp; '+
+      '<span class="bx"></span>Sono il genitore o chi esercita la responsabilità genitoriale</p>'+
+    '<div class="fx"><div>'+riga(1)+'<span>Nome e cognome di chi firma (leggibile)</span></div>'+
+      '<div>'+riga(1)+'<span>Data</span></div></div>'+
+    '<div class="fx"><div>'+riga(1)+'<span>Firma</span></div></div>'+
+    '<p class="note">Per un\'atleta minorenne questo foglio va firmato da chi esercita la '+
+      'responsabilità genitoriale: una firma dell\'atleta non sarebbe valida.</p>'+
+    '</div>'+
+    '<p class="note">Il preparatore conserva questo foglio: è la prova del consenso. '+
+      'Nell\'app va registrato con data e versione dell\'informativa qui sopra.</p>'+
+    '</body></html>';
+
+  const w=window.open("", "_blank");
+  if(!w){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
+  w.document.write(doc); w.document.close();
+  // il tempo di impaginare i font prima di aprire la stampa
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 400);
+}
+
+/* ── modulo di squadra: un link solo, che crea le schede ────────────────────
+   Mandare quindici link personali uno per uno è il motivo per cui l'anamnesi
+   non si compilava. Qui il link è uno: chi lo apre scrive i propri dati e la
+   scheda nasce al momento dell'invio — non prima, altrimenti la rosa si
+   riempirebbe di atlete che hanno solo aperto la pagina.                    */
+function teamFormGuard(){
+  if(!AUTH||!AUTH.token){ toast("Rientra per generare il link"); return false; }
+  if(!policyReady(S.policy)||!Number(S.policy.version)){
+    modal('<div class="mh"><div><div class="mt">Prima serve l\'informativa</div>'+
+      '<div class="ms">Non si raccolgono dati sanitari senza</div></div>'+
+      '<button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="alert warn"><span class="ai">⚠️</span><span>'+
+      'Il modulo raccoglie <b>dati sanitari</b>. Finché l\'informativa non è pubblicata, '+
+      'il server rifiuta gli invii: le ragazze compilerebbero per niente.'+
+      '</span></div>'+
+      '<button class="btn primary" style="width:100%;margin-top:12px" onclick="openPolicy()">Compila l\'informativa</button>');
+    return false;
+  }
+  return true;
+}
+
+function openTeamForm(teamId){
+  if(!teamFormGuard()) return;
+  const t=S.teams.find(x=>x.id===teamId); if(!t) return;
+  const inRosa=S.athletes.filter(a=>a.team===teamId).length;
+  modal('<div class="mh"><div><div class="mt">Modulo di squadra</div><div class="ms">'+esc(t.name)+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div><div class="pf-gen">Controllo…</div>');
+
+  apiCall("teamLinks",{}).then(j=>{
+    const aperto=(j.links||[]).find(l=>String(l.team_id)===String(teamId));
+    let h='<div class="mh"><div><div class="mt">Modulo di squadra</div><div class="ms">'+esc(t.name)+'</div></div>'+
+      '<button class="mcl" onclick="closeM()">✕</button></div>';
+
+    if(aperto){
+      const usate=Number(aperto.uses||0), tetto=Number(aperto.max_uses||0);
+      const scade=String(aperto.expires_at||"").slice(0,10);
+      h+='<div class="alert info"><span class="ai">📋</span><span>'+
+         'Modulo <b>aperto</b>: <b>'+usate+'</b> schede ricevute'+(tetto?' su '+tetto+' previste':'')+
+         '. Scade il '+(scade?fmtDate(scade):"—")+'.'+
+         (aperto.has_pass?' Protetto da parola d\'ordine.':'')+'</span></div>'+
+         '<div class="gnote">Il link non si può rileggere da qui: in archivio c\'è solo la sua impronta, non il link. '+
+         'Se l\'hai perso, generane uno nuovo — il vecchio si chiude da solo.</div>'+
+         '<div style="display:flex;gap:8px;margin-top:12px">'+
+         '<button class="btn" style="flex:1" onclick="closeTeamForm(\''+teamId+'\')">Chiudi il modulo</button>'+
+         '<button class="btn primary" style="flex:1" onclick="teamFormNew(\''+teamId+'\')">Genera un link nuovo</button>'+
+         '</div>';
+    } else {
+      h+='<p class="gnote">Un link solo per tutta la squadra. Chi lo apre scrive nome, cognome, sesso e data di '+
+         'nascita, poi compila la scheda: l\'atleta compare nella squadra <b>solo quando invia</b>. '+
+         'Se è minorenne, il modulo chiede da solo il consenso di un genitore.</p>'+
+         '<label class="fl">Quante schede al massimo</label>'+
+         '<input id="tfMax" type="number" inputmode="numeric" min="1" max="60" value="'+Math.min(60,Math.max(inRosa+5,20))+'">'+
+         '<div class="gnote">Raggiunto il numero, il modulo si chiude da solo. Serve a limitare i danni se il link finisce fuori dalla squadra.</div>'+
+         '<label class="fl">Giorni di validità</label>'+
+         '<input id="tfDays" type="number" inputmode="numeric" min="1" max="60" value="14">'+
+         '<label class="fl">Parola d\'ordine (facoltativa)</label>'+
+         '<input id="tfPass" type="text" autocomplete="off" placeholder="lasciala vuota se non ti serve">'+
+         '<div class="gnote">Una parola che dici a voce in palestra. Un link inoltrato a chi non c\'era non serve a niente. '+
+         'Maiuscole e accenti non contano.</div>'+
+         '<button class="btn primary" style="width:100%;margin-top:14px" onclick="teamFormNew(\''+teamId+'\')">Genera il link</button>';
+    }
+    modal(h);
+  }).catch(e=>{
+    modal('<div class="mh"><div><div class="mt">Modulo di squadra</div></div>'+
+      '<button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="alert info"><span class="ai">⚠️</span><span>'+esc(e.message)+'</span></div>');
+  });
+}
+
+function teamFormNew(teamId){
+  const t=S.teams.find(x=>x.id===teamId); if(!t) return;
+  const g=id=>(document.getElementById(id)||{}).value;
+  const maxUses=parseInt(g("tfMax"),10), days=parseInt(g("tfDays"),10), pass=(g("tfPass")||"").trim();
+  modal('<div class="mh"><div><div class="mt">Modulo di squadra</div><div class="ms">'+esc(t.name)+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div><div class="pf-gen">Genero il link sicuro…</div>');
+
+  apiCall("teamLink",{teamId, teamName:t.name, maxUses, days, pass}).then(j=>{
+    const link=location.origin+location.pathname+"?anamnesi="+encodeURIComponent(j.token);
+    const msg="Ciao! Compila la tua scheda atleta per la preparazione: "+link;
+    modal('<div class="mh"><div><div class="mt">Link generato</div><div class="ms">'+esc(t.name)+'</div></div>'+
+      '<button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="alert warn"><span class="ai">⚠️</span><span><b>Copialo adesso.</b> Non è rileggibile da qui: '+
+      'in archivio resta solo la sua impronta. Se lo perdi, ne generi uno nuovo e il vecchio si chiude.</span></div>'+
+      '<label class="fl">Link della squadra</label>'+
+      '<input id="tfLink" readonly value="'+esc(link)+'" onclick="this.select()">'+
+      '<div style="display:flex;gap:8px;margin-top:12px">'+
+      '<button class="btn primary" style="flex:1" onclick="copyText(\'tfLink\')">📋 Copia link</button>'+
+      (navigator.share?'<button class="btn" style="flex:1" onclick="shareTeamLink('+jsStr(msg)+')">↗ Condividi</button>':'')+
+      '</div>'+
+      '<label class="fl" style="margin-top:14px">Messaggio già pronto</label>'+
+      '<input id="tfMsg" readonly value="'+esc(msg)+'" onclick="this.select()">'+
+      '<button class="btn" style="width:100%;margin-top:8px" onclick="copyText(\'tfMsg\')">📋 Copia il messaggio</button>'+
+      '<div class="gnote">Valido <b>'+j.days+' giorni</b>, fino a <b>'+j.maxUses+' schede</b>'+
+      (j.hasPass?', protetto da parola d\'ordine':'')+'. '+
+      'Mandalo nel gruppo delle atlete: chi lo riceve compila una scheda sola, la propria.</div>');
+  }).catch(e=>{
+    modal('<div class="mh"><div><div class="mt">Modulo di squadra</div></div>'+
+      '<button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="alert info"><span class="ai">⚠️</span><span>'+esc(e.message)+'</span></div>');
+  });
+}
+
+function shareTeamLink(msg){
+  if(navigator.share) navigator.share({title:"Scheda atleta", text:msg}).catch(()=>{});
+}
+
+function closeTeamForm(teamId){
+  if(!confirm("Chiudere il modulo di questa squadra?\n\nChi apre il link da adesso non potrà più inviare. Le schede già arrivate restano.")) return;
+  apiCall("closeTeamLink",{teamId}).then(()=>{ closeM(); toast("Modulo chiuso"); })
+    .catch(e=>toast(e.message));
+}
+
 function openAthlete(id, isNew){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
+  // "nuova" vuol dire non ancora letta: aprirla è esattamente il gesto che la
+  // rende letta. Si salva solo se c'era davvero qualcosa da spegnere.
+  if(a.profile&&a.profile.formNew){ a.profile.formNew=false; save(); render(); }
   const p=a.profile||{};
   let topt=S.teams.map(t=>'<option value="'+t.id+'"'+(a.team===t.id?" selected":"")+'>'+esc(t.name)+'</option>').join("");
   topt+='<option value=""'+(!a.team?" selected":"")+'>Senza squadra</option>';
@@ -2481,6 +2866,11 @@ function openAthlete(id, isNew){
       i+=2;
     } else if(f.t==="check"){
       h+=checkField(f,p); i++;
+      // Sotto la spunta del consenso: da dove viene. Erano indistinguibili.
+      if(f.k==="consent"){
+        const o=consentOrigine(p);
+        if(o) h+='<div class="csrc csrc-'+o.c+'"><b>'+o.t.toUpperCase()+'</b> — '+o.d+'</div>';
+      }
     } else {
       h+='<label class="fl">'+f.l+'</label>'+(f.k==="role"?roleInput(p,kb,id):profileField(f,p)); i++;
     }
@@ -2519,6 +2909,10 @@ function saveAthleteEdit(id){
     if(f.t==="check"){ if(el.checked) p[f.k]=true; }
     else { const v=el.value.trim(); if(v) p[f.k]=v; }
   });
+  // Consenso spuntato a mano dal preparatore: e' una dichiarazione sua, e va
+  // detto. Non si tocca l'origine se il consenso arriva gia' da altrove.
+  if(p.consent && !p.consentSource) p.consentSource="manual";
+  if(!p.consent){ delete p.consentSource; }
   a.profile=p;
   save(); closeM(); render(); toast("Scheda salvata");
 }
@@ -4239,6 +4633,11 @@ function buildFormPlan(m){
         if(raw) FORM_SCREEN.forEach(f=>{ if(f.kw.some(k=>raw.indexOf(normHdr(k))>=0)) p[f.k]=true; });
       }
       p.consent=true;
+      // Origine dichiarata, non dimostrata: data, firmatario e versione qui
+      // arrivano da un foglio di calcolo che il preparatore puo' riscrivere.
+      // Senza questo campo un consenso importato e uno raccolto dal modulo
+      // sono identici nella scheda, e fra sei mesi non si distinguono piu'.
+      p.consentSource="import";
       const cd=toISODate(cell(row,m.consentDate)); p.consentDate=cd||todayISO();
       const by=cell(row,m.consentBy);
       p.consentBy = by ? (/genitor|tutor|madre|padre|responsabil/i.test(by)

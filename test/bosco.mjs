@@ -1,7 +1,14 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import vm from "node:vm";
 import assert from "node:assert/strict";
-const html = readFileSync("/home/claude/iron-performance/index.html","utf8");
+// Qui c'era un percorso assoluto della macchina su cui il test e' stato scritto.
+// Funzionava solo li': sul computer di chi usa il progetto, `npm test` moriva
+// con ENOENT al primo test. Un test che gira su una macchina sola non e' una
+// rete di sicurezza, e' un promemoria.
+const here = dirname(fileURLToPath(import.meta.url));
+const html = readFileSync(join(here, "..", "index.html"), "utf8");
 const m = html.match(/<script>\n([\s\S]*)\n<\/script>\s*<\/body>/);
 const src = m[1].slice(0, m[1].indexOf("const _anamToken=anamToken();"));
 const el={addEventListener(){},appendChild(){},setAttribute(){},getAttribute(){return null},focus(){},select(){},click(){},

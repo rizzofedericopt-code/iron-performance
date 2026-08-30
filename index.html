@@ -104,6 +104,18 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .pf-hint{color:var(--muted2);font-size:12px;line-height:1.5;margin:6px 0 4px}
 .pf-hint b{color:var(--text)}
 .pf-minor{border-left:3px solid var(--accent);padding-left:10px}
+.tname .sx,.nm .sx{margin-left:6px}
+.tdig{margin-top:7px;display:flex;flex-direction:column;gap:3px}
+.tdrow{font-size:12px;line-height:1.45;color:var(--text)}
+.tdrow.mute{color:var(--muted2)}
+.tdrow.amber{color:#FFB340}
+.tdrow.down{color:#ff7a82;font-weight:600}
+.tnew{border-left:3px solid var(--muted2)}
+.tnew-red{border-left-color:var(--accent)}
+.tnewact{margin-top:9px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.tnewact span{font-size:11px;color:var(--muted2);line-height:1.4}
+.tsecact{float:right;font-size:11px;font-weight:500;text-transform:none;letter-spacing:0;
+  color:var(--muted2);text-decoration:underline;cursor:pointer}
 .fhint{font-size:11px;line-height:1.45;color:var(--muted2);margin:-6px 0 12px}
 .pf-inline-h{color:var(--muted2);font-size:11px}
 .csrc{font-size:11px;line-height:1.5;color:var(--muted2);margin:-4px 0 12px;
@@ -2372,13 +2384,13 @@ const PROFILE=[
    h:"Per esempio scendere in accosciata, portare il braccio sopra la testa, ruotare il collo."},
 
   {sec:"Screening rapido — spunta solo se la risposta è SÌ"},
-  {k:"scHeart",    l:"Ti hanno mai detto che hai un problema al cuore", t:"check"},
-  {k:"scChest",    l:"Dolore al petto quando fai sforzo", t:"check"},
-  {k:"scDizzy",    l:"Capogiri o svenimenti", t:"check"},
-  {k:"scBreath",   l:"Fiato corto stando ferma o per sforzi leggeri", t:"check"},
-  {k:"scJoint",    l:"Un problema a ossa o articolazioni che peggiora allenandoti", t:"check"},
-  {k:"scFamily",   l:"In famiglia, morte improvvisa o problemi di cuore prima dei 50 anni", t:"check"},
-  {k:"scMedsHeart",l:"Prendi farmaci per il cuore o per la pressione", t:"check"},
+  {k:"scHeart",    l:"Ti hanno mai detto che hai un problema al cuore", t:"check", s:"problema al cuore"},
+  {k:"scChest",    l:"Dolore al petto quando fai sforzo", t:"check", s:"dolore al petto sotto sforzo"},
+  {k:"scDizzy",    l:"Capogiri o svenimenti", t:"check", s:"capogiri o svenimenti"},
+  {k:"scBreath",   l:"Fiato corto stando ferma o per sforzi leggeri", t:"check", s:"fiato corto a riposo"},
+  {k:"scJoint",    l:"Un problema a ossa o articolazioni che peggiora allenandoti", t:"check", s:"problema osteoarticolare che peggiora"},
+  {k:"scFamily",   l:"In famiglia, morte improvvisa o problemi di cuore prima dei 50 anni", t:"check", s:"familiarità cardiaca precoce"},
+  {k:"scMedsHeart",l:"Prendi farmaci per il cuore o per la pressione", t:"check", s:"farmaci per cuore/pressione"},
 
   {sec:"Farmaci & allergie"},
   {k:"meds",        l:"Farmaci che prendi regolarmente", t:"area"},
@@ -3859,6 +3871,93 @@ function cmjFatigue(aid){
   return {pct, cv, thr, nBase:prev.length, fatigued: pct<=-thr};
 }
 function tstat(v,l,cls){ return '<div class="tstat"><div class="tsv '+(cls||"")+'">'+v+'</div><div class="tsl">'+l+'</div></div>'; }
+/* ═══════════ Cosa c'è dentro una scheda, senza aprirla ═══════════
+   «🚩 Screening 2» non dice QUALI due, e per saperlo bisognava entrare
+   nell'anamnesi. Da qui in giù si nomina tutto: le voci di screening spuntate,
+   il testo dell'infortunio, lo stato del certificato. Le etichette brevi
+   arrivano da PROFILE (campo `s`), così se cambio una domanda non resta una
+   descrizione vecchia appesa in un'altra schermata. */
+function screenPositives(p){
+  p=p||{};
+  return PROFILE.filter(f=>f.k && SCREEN_KEYS.indexOf(f.k)>=0 && p[f.k]).map(f=>f.s||f.l);
+}
+
+/* L'idoneità scaduta non compariva da nessuna parte in Oggi: è la cosa che ti
+   fa fermare un'atleta a bordo campo, e la scoprivi aprendo la scheda. */
+function medicalState(p){
+  p=p||{};
+  const st=String(p.medical||"").trim(), exp=String(p.medicalExpiry||"").trim();
+  if(st==="Non idoneo") return {t:"NON IDONEA", c:"down"};
+  if(exp){
+    const g=daysAgo(exp);
+    if(isFinite(g)){
+      if(g>0)   return {t:"certificato scaduto da "+g+" gg", c:"down"};
+      if(g>-30) return {t:"certificato scade fra "+(-g)+" gg", c:"amber"};
+    }
+  }
+  if(st==="In attesa") return {t:"idoneità in attesa", c:"amber"};
+  if(!st) return {t:"idoneità non registrata", c:"amber"};
+  return null;
+}
+
+const _tronca=(v,n)=>{ const t=String(v==null?"":v).replace(/\s+/g," ").trim();
+  return t.length>n ? t.slice(0,n-1)+"…" : t; };
+
+/* Il riassunto che si legge senza entrare da nessuna parte. `rosso` dice se
+   c'è qualcosa che non si può archiviare con un'occhiata distratta. */
+function schedaDigest(a){
+  const p=a.profile||{}, righe=[]; let rosso=false;
+  const eta=ageFrom(p.birth);
+  const testa=[];
+  if(eta!=null) testa.push(eta+" anni");
+  if(p.role) testa.push(_tronca(p.role,24));
+  if(p.height&&p.weight) testa.push(p.height+" cm · "+p.weight+" kg");
+  if(testa.length) righe.push({t:testa.join(" · "), c:"mute"});
+
+  const sc=screenPositives(p);
+  if(sc.length){ rosso=true; righe.push({t:"🚩 "+sc.join(" · "), c:"down"}); }
+
+  const m=medicalState(p);
+  if(m){ if(m.c==="down") rosso=true; righe.push({t:"🩺 "+m.t, c:m.c}); }
+
+  if(p.injuriesCurrent && String(p.injuriesCurrent).trim()){
+    rosso=true; righe.push({t:"⚠ "+_tronca(p.injuriesCurrent,110), c:"down"});
+  }
+  const dolore=parseFloat(p.painLevel);
+  if(!isNaN(dolore) && dolore>0){
+    if(dolore>=S.cfg.painCut) rosso=true;
+    righe.push({t:"Dolore "+dolore+"/10"+(p.painContext?" — "+p.painContext.toLowerCase():""),
+                c:dolore>=S.cfg.painCut?"down":"amber"});
+  }
+  if(p.conditions && String(p.conditions).trim())
+    righe.push({t:"Patologie: "+_tronca(p.conditions,90), c:"amber"});
+  if(p.meds && String(p.meds).trim())
+    righe.push({t:"Farmaci: "+_tronca(p.meds,70), c:"amber"});
+  if(p.allergies && String(p.allergies).trim())
+    righe.push({t:"Allergie: "+_tronca(p.allergies,70), c:"amber"});
+  if(p.recurrent && String(p.recurrent).trim())
+    righe.push({t:"Ricorrenti: "+_tronca(p.recurrent,80), c:"mute"});
+  if(/parecchio/i.test(String(p.growth||"")))
+    righe.push({t:"📏 Cresciuta parecchio nell'ultimo anno — dosa i salti", c:"amber"});
+
+  const o=consentOrigine(p);
+  if(o && o.c!=="ok") righe.push({t:"✍️ Consenso "+o.t+", non registrato dal sistema", c:"amber"});
+  if(!p.consent){ rosso=true; righe.push({t:"🛡 Consenso mancante", c:"down"}); }
+
+  return {righe, rosso};
+}
+
+function markSheetSeen(id, ev){
+  if(ev&&ev.stopPropagation) ev.stopPropagation();
+  const a=(S.athletes||[]).find(x=>x.id===id); if(!a||!a.profile) return;
+  a.profile.formNew=false; save(); render();
+}
+function markAllSheetsSeen(){
+  let n=0;
+  (S.athletes||[]).forEach(a=>{ if(a.profile&&a.profile.formNew){ a.profile.formNew=false; n++; } });
+  if(n){ save(); render(); toast(n+(n===1?" scheda segnata come letta":" schede segnate come lette")); }
+}
+
 function renderToday(){
   const grid=document.getElementById("grid");
   const ath=teamAthletes();
@@ -3871,6 +3970,10 @@ function renderToday(){
     else if(!isNaN(pain) && pain>=S.cfg.painCut){ flags.push({t:"⚠ Dolore "+pain+"/10",c:"down"}); sev+=4; }
     const sc=SCREEN_KEYS.filter(k=>p[k]).length;
     if(sc){ flags.push({t:"🚩 Screening "+sc,c:"down"}); sev+=5; }
+    // Un certificato scaduto non compariva in Oggi: e' la cosa che ti fa
+    // fermare un'atleta a bordo campo, e la scoprivi solo aprendo la scheda.
+    const med=medicalState(p);
+    if(med){ flags.push({t:"🩺 "+med.t, c:med.c}); sev+=(med.c==="down"?5:1); }
     const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1]; let rToday=false;
     let rEv=null;
     if(rl){ rEv=readinessEval(a.id,rl); rToday=(rl.d===today);
@@ -3885,6 +3988,7 @@ function renderToday(){
     let sug=""; const rpc=(rEv&&rEv.pc!=null)?rEv.pc:null; const rCol=rEv?rEv.color:null;
     if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
     else if(!isNaN(pain) && pain>=S.cfg.painCut) sug="Dolore presente: resta sotto soglia, non peggiorare nelle 24h.";
+    else if(med && med.c==="down") sug="Non far allenare finché l'idoneità non è a posto: è una responsabilità tua, non discutibile.";
     else if(sc) sug="Verifica medica prima di proporre carichi intensi.";
     else if(rCol==="down") sug="Priorità recupero: riduci volume e intensità oggi.";
     else if(ac && ac.acwr!=null && (ac.acwr>S.cfg.acwrCritHigh||ac.acwr<S.cfg.acwrCritLow)) sug=(ac.acwr>S.cfg.acwrCritHigh?"Carico acuto alto: attenua — o conferma che è un picco pianificato.":"Carico molto basso: reintroduci gradualmente (rischio detraining).");
@@ -3905,12 +4009,64 @@ function renderToday(){
      tstat(checkinToday+"/"+ath.length,"Check-in oggi")+
      tstat(manage.length,"Da gestire", manage.length?"down":"up")+
      tstat(ready.length,"Pronti","up")+'</div>';
+  /* ── Schede nuove ───────────────────────────────────────────────────────
+     La scritta «nuova» si spegneva solo aprendo l'anamnesi. Qui la scheda si
+     legge per intero senza entrare da nessuna parte, e la notifica si toglie
+     da sé — ma SOLO se non c'è niente di rosso dentro.
+
+     Le schede con uno screening spuntato, un infortunio in corso o il
+     consenso mancante restano finché non premi «Visto». Non è pigrizia
+     dell'app: aprire l'applicazione non è la stessa cosa che aver letto, e una
+     bandierina cardiaca che sparisce da sola perché sei passato di qui è
+     esattamente il modo in cui una cosa del genere non viene vista. */
+  const nuove=items.filter(x=>(x.a.profile||{}).formNew);
+  const giaMostrate={};
+  if(nuove.length){
+    const conRosso=[];
+    h+='<div class="tsec">Schede appena arrivate ('+nuove.length+')'+
+       (nuove.length>1?'<span class="tsecact" onclick="markAllSheetsSeen()">segna tutte come lette</span>':'')+
+       '</div>';
+    nuove.forEach(x=>{
+      const d=schedaDigest(x.a);
+      giaMostrate[x.a.id]=1;
+      if(d.rosso) conRosso.push(x.a.id);
+      h+='<div class="tcard tnew'+(d.rosso?' tnew-red':'')+'" onclick="openAthlete(\''+x.a.id+'\')">'+
+         '<div class="tname">'+esc(x.a.name)+'<span class="sx">'+(x.a.sex||"M")+'</span>'+
+         '<span class="newsheet">nuova</span></div>'+
+         '<div class="tdig">'+d.righe.map(r=>'<div class="tdrow '+r.c+'">'+esc(r.t)+'</div>').join("")+
+         (d.righe.length<=1?'<div class="tdrow mute">Nessun segnale da segnalare.</div>':'')+'</div>'+
+         (d.rosso
+           ? '<div class="tnewact"><button class="btn sm" onclick="markSheetSeen(\''+x.a.id+'\',event)">✓ Visto</button>'+
+             '<span>ha qualcosa di rosso: resta qui finché non lo confermi</span></div>'
+           : '<div class="tnewact"><span>nessun segnale: non la ritrovi qui la prossima volta</span></div>')+
+         '</div>';
+    });
+    // le schede pulite si spengono da sole, dopo essere state mostrate
+    const daSpegnere=nuove.filter(x=>conRosso.indexOf(x.a.id)<0);
+    if(daSpegnere.length){
+      setTimeout(()=>{
+        let n=0;
+        daSpegnere.forEach(x=>{ const a=(S.athletes||[]).find(y=>y.id===x.a.id);
+          if(a&&a.profile&&a.profile.formNew){ a.profile.formNew=false; n++; } });
+        if(n) save();   // niente render(): la scheda è già a schermo, sparirà alla prossima
+      },0);
+    }
+  }
+
   h+='<div class="tsec">Da gestire'+(manage.length?' ('+manage.length+')':'')+'</div>';
   if(manage.length){
     manage.forEach(x=>{
+      // se e' gia' comparsa fra le schede nuove, poche righe sopra, ripetere lo
+      // stesso riassunto qui sotto e' rumore: restano i flag e il consiglio
+      const d = giaMostrate[x.a.id] ? null : schedaDigest(x.a);
+      const righe = d
+        ? d.righe.filter(r=>/^🚩|^⚠|^Dolore/.test(r.t))
+            .concat(d.righe.filter(r=>r.c!=="mute" && !/^🚩|^⚠|^Dolore/.test(r.t)))
+        : [];
       h+='<div class="tcard" onclick="openAthlete(\''+x.a.id+'\')">'+
          '<div class="tname">'+esc(x.a.name)+'<span class="sx">'+(x.a.sex||"M")+'</span></div>'+
          '<div class="tflags">'+x.flags.map(f=>'<span class="tflag '+f.c+'">'+f.t+'</span>').join("")+'</div>'+
+         (righe.length?'<div class="tdig">'+righe.map(r=>'<div class="tdrow '+r.c+'">'+esc(r.t)+'</div>').join("")+'</div>':'')+
          (x.sug?'<div class="tsugg">💡 '+x.sug+'</div>':'')+'</div>';
     });
   } else {

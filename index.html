@@ -771,6 +771,7 @@ ul.kb li b{color:#fff;font-weight:600}
   <button onclick="exportCSV()">📄 Esporta tabella (CSV)</button>
   <button onclick="importJSON()">⬆️ Importa backup</button>
   <button onclick="printAnamnesi()">🖨 Stampa il modulo anamnesi (carta)</button>
+  <button onclick="importMJL()">📲 Importa test da My Jump Lab (CSV)</button>
   <button onclick="importForms()">📋 Importa anamnesi da Google Moduli</button>
   <div class="sep"></div>
   <button onclick="openPrivacy()">🛡 Privacy e conformità</button>
@@ -793,6 +794,7 @@ ul.kb li b{color:#fff;font-weight:600}
 
 <input type="file" id="fileIn" accept="application/json,.json" style="display:none">
 <input type="file" id="formIn" accept=".csv,text/csv" style="display:none">
+<input type="file" id="mjlIn" accept=".csv,text/csv" style="display:none">
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -4924,7 +4926,8 @@ function exportCSV(){
   S.athletes.forEach(a=>{ const tm=S.teams.find(t=>t.id===a.team);
     TESTS.forEach(t=>series(a.id,t.id).forEach(e=>{
       rows.push([tm?tm.name:"—",a.name,a.sex||"M",t.full,t.unit,e.d,fmtNum(e.v),
-                 e.fonte==="lv"?"stima da curva carico-velocità":"misurato"]);
+                 e.fonte==="lv"?"stima da curva carico-velocità"
+                 :e.fonte==="mjl"?"importato da My Jump Lab":"misurato"]);
     })); });
   const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
   dl("iron-performance-"+todayISO()+".csv", csv, "text/csv"); toast("CSV esportato");
@@ -4978,7 +4981,12 @@ function sanitizeImport(o){
                        // `fonte` distingue una stima dalla curva da un massimale
                        // fatto davvero: perderla nel ripristino significa non
                        // sapere piu' quali numeri sono misurati.
-                       .map(e=>{ const r={d:e.d, v:num(e.v)}; if(e.fonte==="lv") r.fonte="lv"; return r; });
+                       .map(e=>{ const r={d:e.d, v:num(e.v)};
+                         // elenco chiuso: un'origine sconosciuta non entra, ma
+                         // aggiungerne una qui e dimenticarsi di questa riga
+                         // la farebbe sparire al primo ripristino
+                         if(e.fonte==="lv"||e.fonte==="mjl") r.fonte=e.fonte;
+                         return r; });
     });
     out.data[aid]=dst;
   });
@@ -5094,6 +5102,225 @@ document.getElementById("fileIn").addEventListener("change",function(e){
    consenso obbligatoria. Le righe senza consenso NON portano dentro dati
    clinici: entra solo l'anagrafica. Non è una scelta di stile — senza
    consenso quel trattamento non ha base giuridica.                        */
+
+/* ═══════════════ IMPORTAZIONE DA MY JUMP LAB ═══════════════
+   My Jump Lab non ha un'API: esporta CSV e sincronizza su iCloud fra i
+   dispositivi di chi lo usa. Non c'è nessun account da collegare — quindi la
+   strada è una sola, e va fatta bene.
+
+   Il formato del CSV cambia con le versioni dell'app e con la lingua del
+   telefono. Per questo qui NON si dà per scontata nessuna intestazione: si
+   propone un abbinamento e lo confermi tu. Una colonna indovinata male in
+   silenzio metterebbe le altezze di salto nella colonna dell'RSI, e te ne
+   accorgeresti fra tre mesi guardando un grafico che non torna.            */
+let MJL_CSV=null, MJL_PLAN=null;
+
+/* Test dell'app che possono arrivare da My Jump Lab, con le parole da cercare
+   nelle intestazioni. Italiano e inglese: l'export segue la lingua del telefono. */
+const MJL_TARGETS=[
+  {t:"cmj",    kw:["cmj","countermovement","contromovimento"], unit:"cm"},
+  {t:"sj",     kw:["sj","squat jump"], unit:"cm"},
+  {t:"dj",     kw:["dj","drop jump","rsi"], unit:"RSI"},
+  {t:"cmj1lL", kw:["cmj left","cmj sinistra","left leg","gamba sinistra","sinistra"], unit:"cm"},
+  {t:"cmj1lR", kw:["cmj right","cmj destra","right leg","gamba destra","destra"], unit:"cm"},
+  {t:"dj1lL",  kw:["dj left","drop jump left","dj sinistra"], unit:"RSI"},
+  {t:"dj1lR",  kw:["dj right","drop jump right","dj destra"], unit:"RSI"},
+  {t:"bosco15",kw:["15 s","15s","rj 15"], unit:"W/kg"},
+  {t:"bosco30",kw:["30 s","30s","rj 30"], unit:"W/kg"},
+  {t:"bosco60",kw:["60 s","60s","rj 60"], unit:"W/kg"},
+];
+const MJL_META=[
+  {k:"name", l:"Nome dell'atleta", kw:["athlete","atleta","name","nome","player","subject","soggetto"]},
+  {k:"date", l:"Data",             kw:["date","data","fecha","timestamp","day","giorno"]},
+];
+
+/* Le altezze escono in centimetri o in metri a seconda della versione e delle
+   impostazioni. 0,32 e 32 sono lo stesso salto: senza questo controllo uno dei
+   due finirebbe nello storico come un salto da 0,3 cm, e la media di squadra
+   sarebbe da buttare. Si decide sulla mediana, non sul primo valore. */
+function mjlScale(valori, unit){
+  const v=valori.filter(x=>isFinite(x)&&x>0).sort((a,b)=>a-b);
+  if(!v.length) return {f:1, nota:""};
+  const med=v[Math.floor(v.length/2)];
+  if(unit==="cm"){
+    if(med<3)   return {f:100, nota:"sembrano metri: moltiplicati per 100"};
+    if(med>200) return {f:0.1, nota:"sembrano millimetri: divisi per 10"};
+  }
+  return {f:1, nota:""};
+}
+
+function importMJL(){
+  document.getElementById("menu").classList.remove("on");
+  document.getElementById("mjlIn").click();
+}
+document.getElementById("mjlIn").addEventListener("change",function(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  if(f.size>10*1024*1024){ toast("File troppo grande"); ev.target.value=""; return; }
+  const r=new FileReader();
+  r.onload=()=>{
+    let rows;
+    try{ rows=parseCSV(r.result); }catch(e){ toast("CSV illeggibile"); return; }
+    if(rows.length<2){ toast("Il CSV non contiene righe di dati"); return; }
+    MJL_CSV={hdr:rows[0].map(h=>String(h).trim()), rows:rows.slice(1).filter(r=>r.some(c=>String(c).trim()!==""))};
+    openMJLMap();
+  };
+  r.onerror=()=>toast("Impossibile leggere il file");
+  r.readAsText(f,"UTF-8"); ev.target.value="";
+});
+
+function openMJLMap(){
+  const hdr=MJL_CSV.hdr, used={};
+  const guess={};
+  MJL_META.forEach(f=>{ const i=guessCol(f,hdr,used); if(i>=0){ guess[f.k]=i; used[i]=1; } });
+  MJL_TARGETS.forEach(f=>{ const i=guessCol({kw:f.kw},hdr,used); if(i>=0){ guess[f.t]=i; used[i]=1; } });
+
+  const opts=(sel)=>{ let o='<option value="-1">— non importare —</option>';
+    hdr.forEach((h,i)=>{ o+='<option value="'+i+'"'+(sel===i?" selected":"")+'>'+esc(h.slice(0,70))+'</option>'; });
+    return o; };
+
+  let h='<div class="mh"><div><div class="mt">Importa da My Jump Lab</div>'+
+    '<div class="ms">'+MJL_CSV.rows.length+' righe · '+hdr.length+' colonne</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="alert info"><span class="ai">ℹ️</span><span>My Jump Lab non ha un modo per collegare l\'account: '+
+    'questa è l\'unica strada. Le colonne le ho indovinate, <b>controllale</b>: una sbagliata metterebbe '+
+    'le altezze di salto nella colonna dell\'RSI senza dire niente.</span></div>'+
+    '<div class="psec">Chi e quando</div>';
+  MJL_META.forEach(f=>{
+    h+='<div class="thr"><label>'+esc(f.l)+' <span style="color:var(--accent)">*</span></label>'+
+       '<select id="mj_'+f.k+'">'+opts(guess[f.k]!=null?guess[f.k]:-1)+'</select></div>';
+  });
+  h+='<div class="psec">Quale colonna va in quale test</div>';
+  MJL_TARGETS.forEach(f=>{
+    const T=TESTS.find(x=>x.id===f.t); if(!T) return;
+    h+='<div class="thr"><label>'+esc(T.name)+' <span style="color:var(--muted2);font-size:10px">'+esc(T.unit)+'</span></label>'+
+       '<select id="mj_'+f.t+'">'+opts(guess[f.t]!=null?guess[f.t]:-1)+'</select></div>';
+  });
+  h+='<div class="thr-act"><button class="btn sm" onclick="closeM()">Annulla</button>'+
+     '<button class="btn primary" onclick="previewMJL()">Anteprima</button></div>';
+  modal(h);
+}
+
+function mjlCell(row,i){ return i>=0 ? String(row[i]==null?"":row[i]).trim() : ""; }
+
+function previewMJL(){
+  const g=k=>parseInt((document.getElementById("mj_"+k)||{}).value,10);
+  const m={name:g("name"), date:g("date")};
+  if(!(m.name>=0)){ toast("Indica la colonna con il nome dell'atleta"); return; }
+  if(!(m.date>=0)){ toast("Indica la colonna con la data"); return; }
+
+  const cols=MJL_TARGETS.map(f=>({t:f.t, unit:f.unit, i:g(f.t)})).filter(x=>x.i>=0);
+  if(!cols.length){ toast("Indica almeno una colonna di risultati"); return; }
+
+  // fattore di scala per colonna, deciso sulla mediana di quella colonna
+  cols.forEach(c=>{
+    const vals=MJL_CSV.rows.map(r=>parseFloat(mjlCell(r,c.i).replace(",","."))).filter(isFinite);
+    Object.assign(c, mjlScale(vals, c.unit));
+  });
+
+  // indice degli atleti gia' in rosa, per nome normalizzato
+  const idx={};
+  (S.athletes||[]).forEach(a=>{
+    const n=normHdr(a.name);
+    (idx[n]=idx[n]||[]).push(a);
+    const p=n.split(" ");
+    if(p.length===2){ const rov=p[1]+" "+p[0]; (idx[rov]=idx[rov]||[]).push(a); }
+  });
+
+  const righe=[], ignoti={}, scartate=[];
+  MJL_CSV.rows.forEach((r,ri)=>{
+    const nome=mjlCell(r,m.name);
+    const dRaw=mjlCell(r,m.date);
+    const d=toISODate(dRaw);
+    if(!nome){ return; }
+    if(!d){ scartate.push("riga "+(ri+2)+": data non leggibile («"+dRaw+"»)"); return; }
+    const cand=idx[normHdr(nome)];
+    const a=(cand&&cand.length===1)?cand[0]:null;
+    if(!a){ ignoti[nome]=(ignoti[nome]||0)+1; return; }
+    const vals={};
+    cols.forEach(c=>{
+      const v=parseFloat(mjlCell(r,c.i).replace(",","."));
+      if(isFinite(v)&&v>0) vals[c.t]=Math.round(v*c.f*100)/100;
+    });
+    if(Object.keys(vals).length) righe.push({aid:a.id, nome:a.name, d, vals});
+  });
+
+  MJL_PLAN={righe, cols, ignoti, scartate};
+
+  let nuovi=0, agg=0;
+  righe.forEach(x=>{ Object.keys(x.vals).forEach(t=>{
+    const serie=((S.data||{})[x.aid]||{})[t]||[];
+    if(serie.some(e=>e.d===x.d)) agg++; else nuovi++;
+  }); });
+
+  const nIgn=Object.keys(ignoti);
+  let h='<div class="mh"><div><div class="mt">Anteprima</div><div class="ms">'+
+    righe.length+' righe abbinate</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+
+  const scale=MJL_PLAN.cols.filter(c=>c.nota);
+  if(scale.length){
+    h+='<div class="alert warn"><span class="ai">📏</span><span><b>Unità di misura corrette da sole:</b><br>'+
+      scale.map(c=>{ const T=TESTS.find(x=>x.id===c.t); return esc(T?T.name:c.t)+' — '+esc(c.nota); }).join('<br>')+
+      '<br>Controlla un valore qui sotto prima di confermare.</span></div>';
+  }
+
+  h+='<div class="alert '+(nuovi?'info':'warn')+'"><span class="ai">'+(nuovi?'✅':'ℹ️')+'</span><span>'+
+     '<b>'+nuovi+'</b> misurazioni nuove, <b>'+agg+'</b> già presenti in quella data (verranno sostituite).</span></div>';
+
+  if(nIgn.length){
+    h+='<div class="alert danger"><span class="ai">⚠️</span><span><b>'+nIgn.length+
+       ' nomi non corrispondono a nessuna atleta in rosa</b> e verranno saltati. '+
+       'Non le creo io: un nome scritto diverso creerebbe una seconda scheda della stessa persona.</span></div>'+
+       '<div class="hist">';
+    nIgn.slice(0,12).forEach(n=>{ h+='<div class="hrow"><span class="hd">'+esc(n)+'</span>'+
+      '<span class="hv"><span class="rd-cmj down">'+ignoti[n]+' righe</span></span></div>'; });
+    if(nIgn.length>12) h+='<div class="hrow"><span class="hd">…e altri '+(nIgn.length-12)+'</span></div>';
+    h+='</div><div class="gnote">Rinominale in My Jump Lab o nella rosa perché combacino, poi rifai l\'importazione.</div>';
+  }
+  if(MJL_PLAN.scartate.length){
+    h+='<div class="gnote">Righe saltate: '+MJL_PLAN.scartate.slice(0,5).map(esc).join('<br>')+
+       (MJL_PLAN.scartate.length>5?'<br>…e altre '+(MJL_PLAN.scartate.length-5):'')+'</div>';
+  }
+
+  if(righe.length){
+    h+='<label class="fl">Prime righe, per controllo</label><div class="hist">';
+    righe.slice(0,8).forEach(x=>{
+      const det=Object.keys(x.vals).map(t=>{ const T=TESTS.find(y=>y.id===t);
+        return (T?T.name:t)+' '+fmtNum(x.vals[t]); }).join(' · ');
+      h+='<div class="hrow"><span class="hd">'+esc(x.nome)+'</span>'+
+         '<span class="hv" style="font-size:11px">'+fmtDate(x.d)+' · '+esc(det)+'</span></div>';
+    });
+    h+='</div>';
+  }
+
+  h+='<div class="thr-act"><button class="btn sm" onclick="openMJLMap()">‹ Correggi le colonne</button>'+
+     (righe.length?'<button class="btn primary" onclick="applyMJL()">Importa</button>':'')+'</div>';
+  modal(h);
+}
+
+function applyMJL(){
+  const plan=MJL_PLAN;
+  if(!plan||!plan.righe.length){ toast("Niente da importare"); return; }
+  snapshotBeforeRisk("importazione da My Jump Lab");
+  let n=0;
+  plan.righe.forEach(x=>{
+    if(!S.data[x.aid]) S.data[x.aid]={};
+    Object.keys(x.vals).forEach(t=>{
+      if(!S.data[x.aid][t]) S.data[x.aid][t]=[];
+      const serie=S.data[x.aid][t];
+      const gia=serie.find(e=>e.d===x.d);
+      // fonte:"mjl" distingue un dato importato da uno digitato: alla prima
+      // discordanza fra app e storico e' l'unica cosa che dice da dove viene
+      const voce={d:x.d, v:x.vals[t], fonte:"mjl"};
+      if(gia) Object.assign(gia,voce); else serie.push(voce);
+      serie.sort((a,b)=>a.d<b.d?-1:1);
+      n++;
+    });
+  });
+  save(); closeM(); render();
+  toast(n+" misurazioni importate da My Jump Lab");
+  MJL_CSV=null; MJL_PLAN=null;
+}
 
 function parseCSV(text){
   text=String(text||"").replace(/^\uFEFF/,"").replace(/\r\n/g,"\n").replace(/\r/g,"\n");

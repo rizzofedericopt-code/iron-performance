@@ -228,5 +228,108 @@ prova("l'esportazione CSV dichiara l'origine di ogni riga", () => {
     "chi legge il CSV esportato deve sapere quali numeri sono stati importati");
 });
 
+/* ═══════════ 6. I test che My Jump Lab misura ═══════════
+   Non tutti quelli che l'app misura: solo quelli che cambiano una decisione.
+   Duty factor, pronazione e caduta del bacino restano fuori — sono
+   informazioni vere, ma una colonna che non sai leggere e' rumore. */
+
+prova("i test nuovi di My Jump Lab esistono nel catalogo", () => {
+  const attesi = ["cmjA", "armCon", "rsiMod", "rsi105", "bjump",
+                  "fvF0", "fvV0", "fvPmax", "sfvF0", "sfvV0", "sfvPmax",
+                  "vcut", "nordicAng", "nordicTq", "hipIR"];
+  const mancanti = attesi.filter(id => !vm.runInContext(
+    "TESTS.some(t=>t.id===" + JSON.stringify(id) + ")", sandbox));
+  assert.equal(mancanti.join(","), "", "mancano: " + mancanti.join(", "));
+});
+
+prova("ogni test nuovo ha unita', direzione e categoria coerenti", () => {
+  const nuovi = vm.runInContext(`JSON.stringify(TESTS.filter(t=>
+    ["cmjA","armCon","rsiMod","rsi105","bjump","fvF0","fvV0","fvPmax",
+     "sfvF0","sfvV0","sfvPmax","vcut","nordicAng","nordicTq","hipIR"].indexOf(t.id)>=0)
+    .map(t=>({id:t.id,unit:t.unit,dir:t.dir,cat:t.cat,sports:t.sports.length})))`, sandbox);
+  JSON.parse(nuovi).forEach(t => {
+    assert.ok(t.unit && t.unit.length, t.id + " senza unita'");
+    assert.ok(t.dir === 1 || t.dir === -1, t.id + " direzione " + t.dir);
+    assert.ok(t.cat && t.cat.length, t.id + " senza categoria");
+    assert.ok(t.sports > 0, t.id + " non assegnato a nessuno sport");
+  });
+});
+
+prova("il V-Cut e' un tempo: piu' basso e' meglio", () => {
+  const dir = vm.runInContext("TESTS.find(t=>t.id==='vcut').dir", sandbox);
+  assert.equal(dir, -1, "su un tempo la freccia verde deve essere quella che scende");
+});
+
+prova("il contributo delle braccia si calcola da solo", () => {
+  const d = vm.runInContext("JSON.stringify(TESTS.find(t=>t.id==='armCon').derived.from)", sandbox);
+  assert.equal(d, '["cmjA","cmj"]');
+  const fn = vm.runInContext("TESTS.find(t=>t.id==='armCon').derived.fn", sandbox);
+  // Abalakov 36, CMJ 30 → +20%
+  assert.ok(Math.abs(fn(36, 30) - 20) < 1e-9, "atteso 20%, ottenuto " + fn(36, 30));
+  assert.equal(fn(36, 0), null, "senza CMJ non si divide per zero");
+  assert.equal(fn(36, null), null);
+});
+
+prova("nessun test nuovo si inventa una scala Base→Elite", () => {
+  // le normative per ragazze under 18 su questi test o non esistono o
+  // dipendono troppo dal protocollo: un pallino verde sarebbe una bugia
+  const conBande = vm.runInContext(`TESTS.filter(t=>
+    ["cmjA","armCon","rsiMod","rsi105","bjump","fvF0","fvV0","fvPmax",
+     "sfvF0","sfvV0","sfvPmax","vcut","nordicAng","nordicTq","hipIR"].indexOf(t.id)>=0
+    && t.lv).map(t=>t.id).join(",")`, sandbox);
+  assert.equal(conBande, "", "hanno soglie inventate: " + conBande);
+});
+
+prova("ogni test nuovo ha la sua guida, non una pagina vuota", () => {
+  const senza = vm.runInContext(`["cmjA","armCon","rsiMod","rsi105","bjump","fvF0","fvV0","fvPmax",
+     "sfvF0","sfvV0","sfvPmax","vcut","nordicAng","nordicTq","hipIR"]
+     .filter(id=>!PROTO[id]||!PROTO[id].what).join(",")`, sandbox);
+  assert.equal(senza, "", "un test senza spiegazione e' una colonna che non sai leggere: " + senza);
+});
+
+prova("i test che caricano le articolazioni hanno un avviso", () => {
+  ["rsi105", "nordicAng"].forEach(id => {
+    const a = vm.runInContext("PROTO['" + id + "'] && PROTO['" + id + "'].alert ? 1 : 0", sandbox);
+    assert.equal(a, 1, id + " deve avvisare su chi non deve farlo");
+  });
+});
+
+prova("il profilo F-V verticale porta con se' il limite del telefono", () => {
+  const t = vm.runInContext("PROTO.fvF0.alert.text", sandbox);
+  assert.match(t, /pendenza|squilibrio/i,
+    "la singola altezza e' affidabile, la pendenza del profilo no: va detto");
+  assert.match(t, /telefono/i);
+});
+
+prova("RSI-mod e RSI del Drop Jump non vengono confusi", () => {
+  const n = vm.runInContext("PROTO.rsiMod.note", sandbox);
+  assert.match(n, /Drop Jump/, "sono due numeri diversi e non si confrontano fra loro");
+  const u1 = vm.runInContext("TESTS.find(t=>t.id==='rsiMod').unit", sandbox);
+  const u2 = vm.runInContext("TESTS.find(t=>t.id==='dj').unit", sandbox);
+  assert.notEqual(u1, u2, "unita' diverse aiutano a non sovrapporli");
+});
+
+prova("l'Abalakov ricorda che senza CMJ nella stessa data non serve", () => {
+  assert.match(vm.runInContext("PROTO.cmjA.note", sandbox), /stessa seduta|stessa data/i);
+});
+
+prova("le nuove colonne sono importabili da My Jump Lab", () => {
+  const senza = vm.runInContext(`["cmjA","rsiMod","rsi105","bjump","fvF0","fvV0","fvPmax",
+     "sfvF0","sfvV0","sfvPmax","vcut","nordicAng","nordicTq","hipIR"]
+     .filter(id=>!MJL_TARGETS.some(x=>x.t===id)).join(",")`, sandbox);
+  assert.equal(senza, "", "aggiunti al catalogo ma non importabili: " + senza);
+  // armCon no: si calcola, non si importa
+  assert.equal(vm.runInContext("MJL_TARGETS.some(x=>x.t==='armCon')", sandbox), false,
+    "un test derivato non si importa: si calcola da Abalakov e CMJ");
+});
+
+prova("solo cm e altezze vengono riscalate, mai gradi angoli o rapporti", () => {
+  const rischio = vm.runInContext(`MJL_TARGETS.filter(x=>x.unit==="cm").map(x=>x.t).join(",")`, sandbox);
+  ["rsiMod", "rsi105", "nordicAng", "hipIR", "vcut", "fvV0"].forEach(id => {
+    assert.ok(rischio.split(",").indexOf(id) < 0,
+      id + " non deve essere trattato come un'altezza: verrebbe moltiplicato per cento");
+  });
+});
+
 console.log(failed ? "\n" + failed + " test falliti" : "\nTutti i test passati");
 process.exit(failed ? 1 : 0);

@@ -104,6 +104,20 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .pf-hint{color:var(--muted2);font-size:12px;line-height:1.5;margin:6px 0 4px}
 .pf-hint b{color:var(--text)}
 .pf-minor{border-left:3px solid var(--accent);padding-left:10px}
+.lvhow{margin-top:12px}
+.lvhow-b{font-size:12.5px;line-height:1.55;color:var(--muted2)}
+.lvhow-b p{margin:0 0 9px}
+.lvhow-b b{color:var(--text)}
+.lvhow-b u{text-decoration:underline}
+.lvwarn{border-left:3px solid var(--accent);padding-left:10px;color:var(--text)}
+.lvlad{margin-top:10px;border:1px solid var(--line2);border-radius:11px;overflow:hidden}
+.lvlrow{display:flex;align-items:center;gap:10px;padding:8px 11px;font-size:12.5px;
+  border-bottom:1px solid var(--line)}
+.lvlrow:last-child{border-bottom:none}
+.lvlpc{flex:0 0 42px;color:var(--muted2);font-size:11px}
+.lvlkg{flex:1;font-weight:700;font-family:var(--sans)}
+.lvlrip{flex:0 0 46px;color:var(--muted2);font-size:11.5px}
+.lvlrec{flex:0 0 76px;color:var(--muted2);font-size:11px;text-align:right}
 .tname .sx,.nm .sx{margin-left:6px}
 .tdig{margin-top:7px;display:flex;flex-direction:column;gap:3px}
 .tdrow{font-size:12px;line-height:1.45;color:var(--text)}
@@ -3273,16 +3287,49 @@ function linRegLV(points){
   if(!denom) return null;
   const m=(n*sxy-sx*sy)/denom;
   const b=(sy-m*sx)/n;
-  const meanY=sy/n;
+  const meanY=sy/n, meanL=sx/n;
   let ssTot=0, ssRes=0;
   points.forEach(p=>{ const pred=m*p.load+b; ssTot+=(p.v-meanY)*(p.v-meanY); ssRes+=(p.v-pred)*(p.v-pred); });
   const r2 = ssTot>0 ? 1-ssRes/ssTot : (ssRes===0?1:0);
-  return {m,b,r2};
+  // Sxx e l'errore standard dei residui servono all'intervallo di confidenza
+  // qui sotto: senza, l'1RM esce come un numero secco e sembra una misura.
+  const Sxx = sxx - sx*sx/n;
+  const s = n>2 ? Math.sqrt(ssRes/(n-2)) : null;   // con 2 punti non ci sono gradi di libertà
+  return {m,b,r2,n,meanL,Sxx,s};
 }
 function lvEstimate(reg, mvt){
   if(!reg || reg.m>=0) return null;   // la velocità deve calare all'aumentare del carico
   const load1RM=(mvt-reg.b)/reg.m;
   return load1RM>0 ? load1RM : null;
+}
+
+/* t di Student a due code, 95%. Serve fino a pochi gradi di libertà, che è
+   esattamente il caso qui: con 4 carichi i gradi di libertà sono 2, e t vale
+   4,3 — non 1,96. Usare 1,96 su quattro punti dimezzerebbe l'incertezza
+   dichiarata rispetto a quella vera. */
+const T95=[null,12.706,4.303,3.182,2.776,2.571,2.447,2.365,2.306,2.262,2.228,
+           2.201,2.179,2.160,2.145,2.131,2.120,2.110,2.101,2.093,2.086];
+function tCrit(df){ return df<1 ? null : (df<T95.length ? T95[df] : 1.96); }
+
+/* Incertezza dell'1RM stimato.
+
+   La stima è una CALIBRAZIONE inversa: si è fittata v = b + m·carico e poi si
+   chiede a quale carico la retta tocca l'MVT. L'errore di quella risposta non
+   è l'errore della retta: cresce con la distanza fra il carico stimato e il
+   baricentro dei carichi provati. Cioè: più lunga è l'estrapolazione, più
+   larga è la forbice — che è precisamente ciò che l'R² non racconta.
+
+       se(L̂) = (s / |m|) · √( 1/n + (L̂ − L̄)² / Sxx )
+
+   Con due punti soli non esiste: zero gradi di libertà, nessuna stima della
+   dispersione. Dirlo è più utile che inventare un numero. */
+function lvUncertainty(reg, est){
+  if(!reg || est==null || reg.s==null || !reg.Sxx || !reg.m) return null;
+  const df=reg.n-2, t=tCrit(df);
+  if(t==null) return null;
+  const se=(reg.s/Math.abs(reg.m))*Math.sqrt(1/reg.n + Math.pow(est-reg.meanL,2)/reg.Sxx);
+  if(!isFinite(se)) return null;
+  return {se, df, t, ci:t*se, lo:est-t*se, hi:est+t*se};
 }
 let LV_ROWS=[], CUR_LV_AID=null;
 /* ─── Esercizi della curva carico-velocità ───────────────────────────────
@@ -3309,18 +3356,116 @@ const LV_EX=[
   {n:"Altro",             mvt:0.30, test:null},
 ];
 function lvExInfo(nome){ return LV_EX.find(e=>e.n===nome) || LV_EX[LV_EX.length-1]; }
+
+/* ─── Quale velocità stai misurando ────────────────────────────────────────
+   Il modulo chiedeva «velocità media (m/s)» e basta. Ma i dispositivi VBT ne
+   riportano due, e non sono la stessa cosa:
+
+     MPV  velocità media propulsiva — solo la fase in cui l'accelerazione
+          supera −g, cioè si esclude la frenata finale
+     MV   velocità media dell'intera fase concentrica
+
+   Sui carichi leggeri MPV è molto più alta di MV (c'è tanta frenata); vicino
+   al massimale le due quasi coincidono. Risultato: cambiano la PENDENZA della
+   retta, e quindi l'1RM estrapolato, anche se la soglia finale è simile.
+
+   I valori di MVT qui sotto vengono da letteratura basata su MPV. Misurare in
+   MV e usarli lo stesso è un errore silenzioso: nessuno se ne accorge, il
+   numero esce comunque. Da qui in avanti la scelta si dichiara e si conserva,
+   e mischiare i due tipi sullo stesso esercizio produce un avviso.           */
+const LV_VTYPE=[
+  {k:"MPV", l:"MPV — velocità media propulsiva", h:"È quella su cui sono tarati i riferimenti MVT dell'app."},
+  {k:"MV",  l:"MV — velocità media concentrica",  h:"Va bene, ma i riferimenti MVT sotto restano quelli MPV: verificali sull'atleta con un massimale vero."},
+];
+
+/* ─── Preparare il test PER QUESTO ATLETA ──────────────────────────────────
+   Finora aprivi il modulo e dovevi decidere tu, a mente, con quali carichi
+   far salire l'atleta. È il punto in cui il test riesce o non riesce: carichi
+   troppo leggeri e vicini fra loro danno una retta che sembra bellissima
+   (R² 0,99) e un 1RM inventato per metà.
+
+   Da un 1RM di partenza — misurato, stimato da una serie a ripetizioni, o
+   ripreso dalla curva precedente — si costruisce la scala dei carichi. */
+function lvRound(kg, passo){ const p=passo||2.5; return Math.round(kg/p)*p; }
+
+/* Epley: 1RM ≈ w·(1 + rip/30). Serve SOLO a scegliere i carichi del test,
+   non entra in nessun risultato: sopra le 5-6 ripetizioni sbaglia parecchio,
+   e per quello che deve fare qui va benissimo lo stesso. */
+function epley1RM(w, rip){
+  w=parseFloat(w); rip=parseFloat(rip);
+  if(!isFinite(w)||!isFinite(rip)||w<=0||rip<1) return null;
+  return w*(1+rip/30);
+}
+
+/* La scala di carichi. Percentuali e ripetizioni sono quelle del test
+   incrementale classico: si sale finché la velocità si avvicina all'MVT.
+   L'ultimo gradino sta al 90% e non al 100% perché il senso della curva è
+   proprio non dover fare il massimale. */
+function lvLadder(est1RM, passo){
+  const e=parseFloat(est1RM);
+  if(!isFinite(e)||e<=0) return [];
+  const scala=[
+    {pc:0.45, rip:3, rec:"2 min"},
+    {pc:0.60, rip:3, rec:"2 min"},
+    {pc:0.75, rip:2, rec:"3 min"},
+    {pc:0.85, rip:1, rec:"3-4 min"},
+    {pc:0.90, rip:1, rec:"—"},
+  ];
+  return scala.map(x=>({pc:x.pc, load:lvRound(e*x.pc, passo), rip:x.rip, rec:x.rec}));
+}
+
+/* L'1RM da cui partire, nell'ordine in cui e' piu' affidabile:
+   una curva precedente sullo stesso esercizio, poi un massimale nello storico. */
+function lvStartingMax(aid, exercise){
+  const info=lvExInfo(exercise);
+  const curve=((S.lv||{})[aid]||[]).filter(e=>e.exercise===exercise && isFinite(e.est1RM));
+  if(curve.length){ const u=curve[curve.length-1];
+    return {kg:u.est1RM, fonte:"curva del "+fmtDate(u.d)}; }
+  if(info.test){
+    const serie=((S.data||{})[aid]||{})[info.test]||[];
+    const veri=serie.filter(e=>e.fonte!=="lv" && isFinite(e.v));
+    if(veri.length){ const u=veri[veri.length-1];
+      return {kg:u.v, fonte:"massimale del "+fmtDate(u.d)}; }
+    if(serie.length){ const u=serie[serie.length-1];
+      return {kg:u.v, fonte:"stima del "+fmtDate(u.d)}; }
+  }
+  return null;
+}
+
+/* L'MVT misurato sull'atleta batte qualunque riferimento di letteratura: e' la
+   velocita' della SUA ultima ripetizione a un massimale vero. Se e' stato
+   registrato una volta, si riusa. */
+function lvKnownMVT(aid, exercise){
+  const curve=((S.lv||{})[aid]||[]).filter(e=>e.exercise===exercise && e.mvtSource==="misurato" && isFinite(e.mvt));
+  return curve.length ? curve[curve.length-1] : null;
+}
 function lvExChange(){
   const sel=document.getElementById("lvEx"); if(!sel) return;
   const info=lvExInfo(sel.value);
   const alt=document.getElementById("lvExAltro");
   if(alt) alt.style.display = sel.value==="Altro" ? "" : "none";
-  const mv=document.getElementById("lvMvt");
-  if(mv && !mv.dataset.tocco) mv.value=info.mvt;
-  const nota=document.getElementById("lvMvtNote");
-  if(nota) nota.innerHTML = sel.value==="Altro"
-    ? 'Nessun riferimento per questo esercizio: la soglia va decisa da te.'
-    : 'Riferimento di partenza per <b>'+esc(sel.value)+'</b>. Cambialo se sull\'atleta vedi altro: '+
-      'l\'MVT varia con tecnica ed escursione.';
+
+  const mv=document.getElementById("lvMvt"), nota=document.getElementById("lvMvtNote");
+  // un MVT gia' misurato su questa atleta vale piu' del riferimento: si riusa
+  const suo=lvKnownMVT(CUR_LV_AID, sel.value);
+  if(mv && !mv.dataset.tocco){
+    if(suo){ mv.value=suo.mvt; mv.dataset.misurato=1;
+      if(nota) nota.innerHTML='<b>MVT misurato su questa atleta</b> il '+fmtDate(suo.d)+
+        ' ('+fmtNum(suo.mvt)+' m/s). Vale più di qualunque riferimento.';
+    } else { mv.value=info.mvt; mv.dataset.misurato=0;
+      if(nota) nota.innerHTML = sel.value==="Altro"
+        ? 'Nessun riferimento per questo esercizio: la soglia va decisa da te.'
+        : 'Riferimento di partenza per <b>'+esc(sel.value)+'</b>, da letteratura su MPV. '+
+          'Varia con tecnica ed escursione: se hai un suo massimale vero, usa quella velocità.';
+    }
+  }
+
+  const vt=(document.getElementById("lvVType")||{}).value||"MPV";
+  const vn=document.getElementById("lvVNote");
+  const vi=LV_VTYPE.find(x=>x.k===vt);
+  if(vn&&vi) vn.innerHTML=esc(vi.h);
+
+  renderLVPrep();
   previewLV();
 }
 
@@ -3329,24 +3474,142 @@ function openLVEntry(aid){
   CUR_LV_AID=aid;
   LV_ROWS=[{load:"",v:""},{load:"",v:""},{load:"",v:""}];
   const opt=LV_EX.map(e=>'<option value="'+esc(e.n)+'">'+esc(e.n)+'</option>').join("");
-  let h='<div class="mh"><div><div class="mt">Curva carico-velocità</div><div class="ms">'+esc(a.name)+'</div></div>'+
+  const vopt=LV_VTYPE.map(v=>'<option value="'+v.k+'">'+esc(v.l)+'</option>').join("");
+  const bw=parseFloat((a.profile||{}).weight);
+  let h='<div class="mh"><div><div class="mt">Curva carico-velocità</div><div class="ms">'+esc(a.name)+
+      (bw?' · '+fmtNum(bw)+' kg':'')+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>'+
+
+    // Come si esegue, dentro la schermata in cui lo esegui. Un protocollo che
+    // sta in un documento a parte non viene letto mentre sei in palestra.
+    '<details class="asec lvhow"><summary>Come si esegue — leggilo la prima volta</summary>'+
+    '<div class="lvhow-b">'+
+    '<p><b>A cosa serve.</b> Si misura la velocità a 4-5 carichi crescenti. La relazione fra '+
+    'carico e velocità è quasi una retta: si tira quella retta e si legge a quale carico '+
+    'toccherebbe la velocità dell\'ultima ripetizione possibile. Ottieni un 1RM <b>senza far fare '+
+    'il massimale</b>, e lo puoi rifare ogni tre settimane.</p>'+
+    '<p><b>Prima.</b> Riscaldamento completo, poi 2 serie leggere di avvicinamento che <u>non</u> '+
+    'entrano nel test. L\'atleta deve essere fresca: una curva fatta a fine seduta misura la fatica, non la forza.</p>'+
+    '<p><b>Durante.</b> Ogni ripetizione va spinta <b>alla massima velocità possibile</b>, sempre, anche '+
+    'col carico leggero. È la regola che regge tutto il test: se rallenta apposta sul 45% la retta '+
+    'si piega e l\'1RM esce sbagliato. Di ogni serie registri la ripetizione <b>più veloce</b>.</p>'+
+    '<p><b>Fino a dove.</b> Si sale finché la velocità si avvicina all\'MVT o la tecnica peggiora. '+
+    'Non serve arrivare al massimale — è tutto il punto.</p>'+
+    '<p><b>Stessa cosa ogni volta.</b> Stesso bilanciere, stessa profondità, stesso dispositivo e '+
+    'stessa posizione del sensore. Un cambio di profondità nell\'accosciata sposta la curva più di '+
+    'tre settimane di allenamento.</p>'+
+    '<p class="lvwarn">Serve un dispositivo che misuri la velocità. A occhio o col cronometro non si fa: '+
+    'un errore di 0,05 m/s su un punto sposta l\'1RM di diversi chili.</p>'+
+    '</div></details>'+
+
     '<label class="fl">Data</label><input id="lvD" type="date" value="'+todayISO()+'">'+
     '<label class="fl">Esercizio</label><select id="lvEx" onchange="lvExChange()">'+opt+'</select>'+
     '<input id="lvExAltro" type="text" placeholder="Nome dell\'esercizio" style="display:none;margin-top:8px">'+
-    '<label class="fl">Soglia di velocità minima — MVT (m/s)</label>'+
-    '<input id="lvMvt" type="number" inputmode="decimal" step="any" value="'+LV_EX[0].mvt+'" '+
-      'oninput="this.dataset.tocco=1;previewLV()">'+
-    '<div class="gnote" id="lvMvtNote" style="margin-top:0">Riferimento di partenza per <b>Back squat</b>.</div>'+
-    '<label class="fl">Punti carico (kg) / velocità media (m/s)</label>'+
+
+    '<label class="fl">Che velocità ti dà il dispositivo</label>'+
+    '<select id="lvVType" onchange="lvExChange()">'+vopt+'</select>'+
+    '<div class="gnote" id="lvVNote" style="margin-top:0"></div>'+
+
+    // ── preparazione: quali carichi usare con QUESTA atleta ──
+    '<div class="psec" style="margin-top:18px">Prepara i carichi</div>'+
+    '<div id="lvPrep"></div>'+
+
+    '<div class="psec" style="margin-top:18px">Punti misurati</div>'+
+    '<label class="fl">Carico (kg) e velocità (m/s) della ripetizione più veloce</label>'+
     '<div id="lvRows"></div>'+
     '<button class="btn sm" style="width:100%;margin-top:6px" onclick="addLVRow()">+ Aggiungi punto</button>'+
+
+    '<div class="psec" style="margin-top:18px">Soglia di velocità (MVT)</div>'+
+    '<label class="fl">Velocità dell\'ultima ripetizione possibile — m/s</label>'+
+    '<input id="lvMvt" type="number" inputmode="decimal" step="any" value="'+LV_EX[0].mvt+'" '+
+      'oninput="this.dataset.tocco=1;this.dataset.misurato=0;previewLV()">'+
+    '<div class="gnote" id="lvMvtNote" style="margin-top:0">Riferimento di partenza per <b>Back squat</b>.</div>'+
+    '<label class="fl" style="margin-top:10px">Hai la velocità di un suo massimale VERO?</label>'+
+    '<div style="display:flex;gap:8px">'+
+      '<input id="lvMvtReal" type="number" inputmode="decimal" step="any" placeholder="m/s dell\'ultima rip." style="flex:1">'+
+      '<button class="btn sm" onclick="lvUseRealMVT()">Usa questa</button>'+
+    '</div>'+
+    '<div class="gnote">L\'MVT misurato su di lei batte qualunque riferimento di letteratura: '+
+    'è il singolo cambiamento che migliora di più la stima. Si registra una volta e resta.</div>'+
+
     '<div id="lvErr" class="login-err"></div>'+
     '<div id="lvResult" class="pf" style="display:none"></div>'+
     '<button class="btn sm" style="width:100%;margin-top:10px" onclick="previewLV()">Calcola</button>'+
     '<button class="btn primary" style="width:100%;margin-top:8px" id="lvSaveBtn" onclick="saveLV(\''+aid+'\')" disabled>Salva</button>';
   modal(h);
   renderLVRows();
+  lvExChange();
+}
+
+/* La velocita' dell'ultima ripetizione di un massimale vero E' l'MVT di
+   quell'atleta su quell'esercizio. Registrarla una volta vale piu' di
+   qualunque taratura presa dalla letteratura. */
+function lvUseRealMVT(){
+  const v=parseFloat((document.getElementById("lvMvtReal")||{}).value);
+  if(!isFinite(v)||v<=0||v>1.2){ toast("Scrivi la velocità in m/s (es. 0,28)"); return; }
+  const mv=document.getElementById("lvMvt");
+  mv.value=v; mv.dataset.tocco=1; mv.dataset.misurato=1;
+  const nota=document.getElementById("lvMvtNote");
+  if(nota) nota.innerHTML='<b>MVT misurato su questa atleta.</b> Da qui in avanti viene riproposto da solo su questo esercizio.';
+  previewLV();
+}
+
+/* Il riquadro di preparazione: da quale 1RM si parte e quali carichi usare.
+   Il pulsante scrive i carichi direttamente nelle righe, cosi' in palestra
+   resta da digitare solo la velocita'. */
+function renderLVPrep(){
+  const box=document.getElementById("lvPrep"); if(!box) return;
+  const aid=CUR_LV_AID;
+  const ex=(document.getElementById("lvEx")||{}).value||LV_EX[0].n;
+  const noto=lvStartingMax(aid, ex);
+  const manuale=(document.getElementById("lvBaseKg")||{}).value;
+  const base=parseFloat(manuale)||(noto?noto.kg:null);
+
+  let h='<div class="gnote" style="margin-top:0">'+
+    (noto
+      ? 'Parto dal tuo dato più recente: <b>'+fmtNum(Math.round(noto.kg*10)/10)+' kg</b> ('+esc(noto.fonte)+'). Cambialo se sai che non è più attuale.'
+      : 'Non ho un 1RM di riferimento per questo esercizio. Scrivilo, oppure ricavalo da una serie a ripetizioni qui sotto.')+
+    '</div>'+
+    '<label class="fl">1RM di partenza (kg)</label>'+
+    '<input id="lvBaseKg" type="number" inputmode="decimal" step="any" value="'+(base!=null?fmtNum(Math.round(base*10)/10):"")+'" oninput="renderLVPrep()">'+
+    '<label class="fl">…oppure ricavalo: peso × ripetizioni fatte a cedimento</label>'+
+    '<div style="display:flex;gap:8px">'+
+      '<input id="lvRmW" type="number" inputmode="decimal" step="any" placeholder="kg" style="flex:1">'+
+      '<input id="lvRmR" type="number" inputmode="numeric" placeholder="rip." style="flex:1">'+
+      '<button class="btn sm" onclick="lvFromReps()">Ricava</button>'+
+    '</div>'+
+    '<div class="gnote">Formula di Epley, e serve <b>solo a scegliere i carichi del test</b>: non entra nel risultato. '+
+    'Sopra le 5-6 ripetizioni diventa imprecisa.</div>';
+
+  const scala=lvLadder(base);
+  if(scala.length){
+    h+='<div class="lvlad">';
+    scala.forEach(r=>{ h+='<div class="lvlrow"><span class="lvlpc">'+Math.round(r.pc*100)+'%</span>'+
+      '<span class="lvlkg">'+fmtNum(r.load)+' kg</span>'+
+      '<span class="lvlrip">'+r.rip+(r.rip===1?' rip':' rip')+'</span>'+
+      '<span class="lvlrec">rec '+r.rec+'</span></div>'; });
+    h+='</div>'+
+      '<button class="btn sm" style="width:100%;margin-top:8px" onclick="lvFillLadder()">↓ Metti questi carichi nelle righe</button>'+
+      '<div class="gnote">Arrotondati a 2,5 kg. Se l\'ultimo gradino le risulta troppo pesante, fermati prima: '+
+      'la curva regge lo stesso, l\'estrapolazione si allunga un po\' e l\'app te lo dice.</div>';
+  }
+  box.innerHTML=h;
+}
+function lvFromReps(){
+  const w=(document.getElementById("lvRmW")||{}).value, r=(document.getElementById("lvRmR")||{}).value;
+  const e=epley1RM(w,r);
+  if(e==null){ toast("Servono peso e ripetizioni"); return; }
+  if(parseFloat(r)>8) toast("Oltre le 8 ripetizioni la stima è larga: usala solo per scegliere i carichi");
+  const el=document.getElementById("lvBaseKg"); if(el) el.value=Math.round(e*10)/10;
+  renderLVPrep();
+}
+function lvFillLadder(){
+  const base=parseFloat((document.getElementById("lvBaseKg")||{}).value);
+  const scala=lvLadder(base);
+  if(!scala.length){ toast("Serve un 1RM di partenza"); return; }
+  LV_ROWS=scala.map(r=>({load:String(r.load), v:""}));
+  renderLVRows();
+  toast("Carichi inseriti: in palestra scrivi solo le velocità");
 }
 function renderLVRows(){
   const el=document.getElementById("lvRows"); if(!el) return;
@@ -3367,6 +3630,7 @@ function previewLV(){
   const est=lvEstimate(reg, mvt);
   if(est==null){ err.textContent="Impossibile stimare l'1RM con questi dati (estrapolazione fuori range o negativa)."; res.style.display="none"; btn.disabled=true; return; }
   err.textContent="";
+  const vtipo=(document.getElementById("lvVType")||{}).value||"";
   const atl=S.athletes.find(a=>a.id===CUR_LV_AID)||{};
   const bw=parseFloat((atl.profile||{}).weight);
   const rel = (bw&&bw>0) ? est/bw : null;
@@ -3384,12 +3648,35 @@ function previewLV(){
     (cop<0.7?"estrapolazione lunga, il numero è indicativo":"per una stima solida conviene arrivare almeno all'85%"));
   if(nPunti<4) avvisi.push("solo <b>"+nPunti+" punti</b>: con 4-5 carichi ben distanziati la retta è molto più affidabile");
   if(reg.r2<0.95) avvisi.push("<b>R² "+fmtNum(Math.round(reg.r2*1000)/1000)+"</b>: i punti non sono ben allineati, ricontrolla le velocità");
+  /* Mischiare MPV e MV sullo stesso esercizio rende le curve non confrontabili:
+     la pendenza cambia perche' sui carichi leggeri le due misure divergono. */
+  const exSel=(document.getElementById("lvEx")||{}).value;
+  const prec=((S.lv||{})[CUR_LV_AID]||[]).filter(e=>e.exercise===exSel && e.vType);
+  if(vtipo && prec.length && prec[prec.length-1].vType!==vtipo)
+    avvisi.push("le curve precedenti su questo esercizio erano in <b>"+esc(prec[prec.length-1].vType)+
+      "</b>: confrontarle con una in "+esc(vtipo)+" non ha senso, la pendenza cambia");
+
+  /* Ampiezza dei carichi. Cinque punti fra 60 e 70 kg danno un R² splendido e
+     una pendenza che non significa niente: la retta e' definita da un pugno di
+     punti sovrapposti e l'estrapolazione moltiplica quell'errore. */
+  const minLoad=Math.min.apply(null, pts.map(p=>p.load));
+  const spread=est>0 ? (maxLoad-minLoad)/est : 0;
+  if(spread<0.30) avvisi.push("i carichi coprono solo il <b>"+Math.round(spread*100)+"%</b> della stima: "+
+    "troppo vicini fra loro perché la pendenza sia attendibile (servono almeno 30-40 punti percentuali fra il più leggero e il più pesante)");
+
+  const inc=lvUncertainty(reg, est);
 
   res.style.display="block";
   res.innerHTML=
-    '<b>1RM stimato: '+fmtNum(Math.round(est*10)/10)+' kg</b>'+
+    '<b>1RM stimato: '+fmtNum(Math.round(est))+' kg'+
+      (inc ? ' <span style="font-weight:600">± '+fmtNum(Math.round(inc.ci))+'</span>' : '')+'</b>'+
+    (inc
+      ? '<div style="color:var(--muted2);font-size:11.5px;margin-top:2px">'+
+        'intervallo di confidenza al 95%: da <b>'+fmtNum(Math.round(inc.lo))+'</b> a <b>'+fmtNum(Math.round(inc.hi))+'</b> kg</div>'
+      : '<div style="color:var(--muted2);font-size:11.5px;margin-top:2px">'+
+        'con soli 2 punti l\'incertezza non è calcolabile: non ci sono gradi di libertà per stimarla</div>')+
     '<div style="color:var(--muted2);font-size:11.5px;margin-top:3px">'+
-      'MVT '+fmtNum(mvt)+' m/s · R² '+fmtNum(Math.round(reg.r2*1000)/1000)+
+      'MVT '+fmtNum(mvt)+' m/s'+(vtipo?' · '+vtipo:'')+' · R² '+fmtNum(Math.round(reg.r2*1000)/1000)+
       ' · '+nPunti+' punti · massimo testato '+fmtNum(maxLoad)+' kg ('+Math.round(cop*100)+'% della stima)'+
     '</div>'+
     (avvisi.length
@@ -3405,6 +3692,7 @@ function previewLV(){
         'ed è quella che decide se passare al lavoro balistico.</div>');
   btn.disabled=false;
   btn.dataset.est=est; btn.dataset.r2=reg.r2; btn.dataset.m=reg.m; btn.dataset.b=reg.b;
+  btn.dataset.ci=inc?Math.round(inc.ci*10)/10:"";
 }
 function saveLV(aid){
   const btn=document.getElementById("lvSaveBtn");
@@ -3420,7 +3708,12 @@ function saveLV(aid){
   if(!S.lv) S.lv={}; if(!S.lv[aid]) S.lv[aid]=[];
   const arr=S.lv[aid]; const exist=arr.find(e=>e.d===d && e.exercise===ex);
   const val=Math.round(est*10)/10;
-  const entry={d, exercise:ex, points:pts, mvt, est1RM:val, m:parseFloat(btn.dataset.m), b:parseFloat(btn.dataset.b), r2:parseFloat(btn.dataset.r2)};
+  const mvEl=document.getElementById("lvMvt");
+  const entry={d, exercise:ex, points:pts, mvt, est1RM:val,
+    m:parseFloat(btn.dataset.m), b:parseFloat(btn.dataset.b), r2:parseFloat(btn.dataset.r2),
+    vType:(document.getElementById("lvVType")||{}).value||"MPV",
+    mvtSource:(mvEl&&mvEl.dataset.misurato==="1")?"misurato":"riferimento",
+    ci95:isFinite(parseFloat(btn.dataset.ci))?parseFloat(btn.dataset.ci):null};
   if(exist) Object.assign(exist,entry); else arr.push(entry);
   arr.sort((x,y)=>x.d<y.d?-1:1);
 
@@ -4623,7 +4916,14 @@ function sanitizeImport(o){
       r.points=(Array.isArray(e.points)?e.points:[]).slice(0,30)
         .map(p=>({load:num(p&&p.load), v:num(p&&p.v)}))
         .filter(p=>p.load!=null&&p.v!=null);
-      ["mvt","est1RM","m","b","r2"].forEach(f=>{ const n=num(e[f]); if(n!=null) r[f]=n; });
+      ["mvt","est1RM","m","b","r2","ci95"].forEach(f=>{ const n=num(e[f]); if(n!=null) r[f]=n; });
+      // vType e mvtSource non sono numeri e sarebbero spariti in silenzio al
+      // primo ripristino: e' lo stesso difetto che aveva cancellato screen e lv
+      // per intero. Senza vType due curve non sono piu' confrontabili; senza
+      // mvtSource si perde la sola cosa che distingue una soglia misurata
+      // sull'atleta da una copiata dalla letteratura.
+      if(e.vType==="MPV"||e.vType==="MV") r.vType=e.vType;
+      if(e.mvtSource==="misurato"||e.mvtSource==="riferimento") r.mvtSource=e.mvtSource;
       return r;
     });
   });

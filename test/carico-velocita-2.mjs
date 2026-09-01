@@ -322,5 +322,124 @@ prova("gli MVT di riferimento restano quelli per esercizio", () => {
     "va detto da dove vengono, altrimenti sembrano costanti universali");
 });
 
+/* ═══════════ 8. Il dato deve VEDERSI ═══════════
+   La stima veniva scritta nella serie di 1RM Squat... che con la pallavolo
+   selezionata non compariva affatto, perche' quei test erano marcati
+   "combattimento, forza". Il dato c'era, non si vedeva, e sembrava che la
+   curva non servisse a niente. */
+
+prova("un test con dati dentro non sparisce per colpa del filtro sport", () => {
+  const f = html.match(/function visibleTests\(\)[\s\S]*?\n}/);
+  assert.ok(f, "visibleTests non trovata");
+  assert.match(f[0], /const conDati=\{\}/,
+    "la batteria dice cosa raccogliere, non cosa nascondere");
+  assert.match(f[0], /base\.concat\(extra\)/);
+});
+
+prova("i test con dati compaiono anche fuori dalla batteria", () => {
+  vm.runInContext(`
+    S.teams=[{id:"t1",name:"Volley",sport:"pallavolo",tests:["cmj"]}];
+    S.activeTeam="t1"; S.sport="pallavolo";
+    S.athletes=[{id:"a1",name:"G",team:"t1",profile:{}}];
+    S.data={a1:{rmSquat:[{d:"2026-07-01",v:110,fonte:"lv"}]}};`, sandbox);
+  const ids = vm.runInContext("visibleTests().map(t=>t.id).join(',')", sandbox);
+  assert.ok(ids.split(",").indexOf("rmSquat") >= 0,
+    "una colonna che non vedi e' una misurazione buttata — visibili: " + ids);
+  assert.ok(ids.split(",").indexOf("cmj") >= 0, "la batteria resta");
+});
+
+prova("un test senza dati non si intrufola nella tabella", () => {
+  vm.runInContext(`S.data={a1:{}};`, sandbox);
+  const ids = vm.runInContext("visibleTests().map(t=>t.id).join(',')", sandbox);
+  assert.ok(ids.split(",").indexOf("rmSquat") < 0,
+    "senza dati non c'e' niente da mostrare: " + ids);
+});
+
+prova("ogni esercizio della curva ha un test dove finire", () => {
+  const senza = vm.runInContext(
+    "LV_EX.filter(e=>e.n!=='Altro' && !e.test).map(e=>e.n).join(',')", sandbox);
+  assert.equal(senza, "",
+    "hip thrust, military press e trazioni calcolavano una stima che non andava da nessuna parte: " + senza);
+  const ids = vm.runInContext(
+    "LV_EX.filter(e=>e.test).map(e=>e.test).filter(t=>!TESTS.some(x=>x.id===t)).join(',')", sandbox);
+  assert.equal(ids, "", "test di destinazione inesistenti nel catalogo: " + ids);
+});
+
+prova("sulle trazioni viene detto che il carico e' la massa totale", () => {
+  assert.match(html, /massa <b>totale mossa<\/b>/,
+    "mettendo solo la zavorra sull'asse dei carichi la retta non significa niente");
+});
+
+/* ═══════════ 9. L'andamento delle curve ═══════════ */
+
+prova("le curve salvate si rivedono, raggruppate per esercizio", () => {
+  vm.runInContext(`
+    S.lv={a1:[
+      {d:"2026-05-01",exercise:"Back squat",est1RM:104,r2:0.99,mvt:0.30,vType:"MPV",ci95:5,
+       points:[{load:50,v:.8},{load:70,v:.66},{load:85,v:.52},{load:92,v:.42}]},
+      {d:"2026-07-01",exercise:"Back squat",est1RM:112,r2:0.97,mvt:0.30,vType:"MPV",ci95:7,
+       points:[{load:55,v:.8},{load:75,v:.66},{load:95,v:.5}]},
+      {d:"2026-07-01",exercise:"Panca piana",est1RM:52,r2:0.99,mvt:0.17,vType:"MPV",
+       points:[{load:30,v:.7},{load:45,v:.4}]}
+    ]};`, sandbox);
+  const h = vm.runInContext("lvHistory('a1')", sandbox);
+  assert.equal(Object.keys(h).length, 2, "due esercizi distinti");
+  assert.equal(h["Back squat"].length, 2);
+  assert.equal(h["Back squat"][0].d, "2026-05-01", "in ordine di data crescente");
+});
+
+prova("la copertura si ricalcola: e' il numero che conta piu' dell'R2", () => {
+  const { lvCoverage } = sandbox;
+  const c = lvCoverage({ est1RM: 100, points: [{ load: 50 }, { load: 85 }] });
+  assert.ok(Math.abs(c - 0.85) < 1e-9, "copertura " + c);
+  assert.equal(lvCoverage({ est1RM: 100, points: [] }), null);
+  assert.equal(lvCoverage({ points: [{ load: 50 }] }), null);
+});
+
+prova("una curva debole si distingue da una solida a colpo d'occhio", () => {
+  const b = vm.runInContext("lvHistoryBlock('a1')", sandbox);
+  assert.match(b, /lvh-ok/, "quella a 4 punti fino al 92% e' solida");
+  assert.match(b, /lvh-weak/, "quella a 3 punti no");
+  assert.match(b, /rumore di misura, non progresso/,
+    "va detto perche' due numeri non si possono confrontare");
+});
+
+prova("la tabella mostra la differenza fra una curva e la precedente", () => {
+  const b = vm.runInContext("lvHistoryBlock('a1')", sandbox);
+  assert.match(b, /\+8/, "da 104 a 112 sono +8 kg");
+  assert.match(b, /±7/, "con la sua forbice accanto");
+  assert.match(b, /Back squat/); assert.match(b, /Panca piana/);
+});
+
+prova("mischiare MPV e MV fra curve dello stesso esercizio viene detto", () => {
+  vm.runInContext(`S.lv={a1:[
+    {d:"2026-05-01",exercise:"Back squat",est1RM:104,mvt:0.30,vType:"MPV",points:[{load:50,v:.8},{load:90,v:.4}]},
+    {d:"2026-07-01",exercise:"Back squat",est1RM:118,mvt:0.30,vType:"MV", points:[{load:50,v:.7},{load:90,v:.3}]}
+  ]};`, sandbox);
+  const b = vm.runInContext("lvHistoryBlock('a1')", sandbox);
+  assert.match(b, /non sono confrontabili/,
+    "un +14 kg fra una curva MPV e una MV non e' un progresso, e' un cambio di unita'");
+});
+
+prova("un MVT misurato sull'atleta si riconosce nella tabella", () => {
+  vm.runInContext(`S.lv={a1:[
+    {d:"2026-07-01",exercise:"Back squat",est1RM:112,mvt:0.34,mvtSource:"misurato",vType:"MPV",
+     points:[{load:60,v:.8},{load:100,v:.45}]}
+  ]};`, sandbox);
+  assert.match(vm.runInContext("lvHistoryBlock('a1')", sandbox), /lvh-m/);
+});
+
+prova("senza curve la scheda non mostra una tabella vuota", () => {
+  vm.runInContext(`S.lv={a1:[]};`, sandbox);
+  assert.equal(vm.runInContext("lvHistoryBlock('a1')", sandbox), "");
+  vm.runInContext(`S.lv={};`, sandbox);
+  assert.equal(vm.runInContext("lvHistoryBlock('a1')", sandbox), "");
+});
+
+prova("la tabella e' agganciata alla scheda atleta", () => {
+  assert.match(html, /h\+=lvHistoryBlock\(id\);/,
+    "calcolarla e non mostrarla e' esattamente il difetto che si sta correggendo");
+});
+
 console.log(failed ? "\n" + failed + " test falliti" : "\nTutti i test passati");
 process.exit(failed ? 1 : 0);

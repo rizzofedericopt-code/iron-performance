@@ -104,6 +104,19 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .pf-hint{color:var(--muted2);font-size:12px;line-height:1.5;margin:6px 0 4px}
 .pf-hint b{color:var(--text)}
 .pf-minor{border-left:3px solid var(--accent);padding-left:10px}
+.lvhx{margin-bottom:16px}
+.lvhx-t{font-family:var(--sans);font-weight:700;font-size:11px;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--muted2);margin:10px 0 6px}
+table.lvhist{width:100%;border-collapse:collapse;font-size:12px}
+table.lvhist th{font-family:var(--sans);font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--muted2);font-weight:600;text-align:left;padding:4px 5px;border-bottom:1px solid var(--line2)}
+table.lvhist td{padding:6px 5px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.lvhist tr.lvh-weak td{opacity:.55}
+table.lvhist td.up{color:#34C759}
+table.lvhist td.down{color:#ff7a82}
+.lvh-ci{color:var(--muted2);font-weight:400}
+.lvh-m{color:#34C759;margin-left:3px}
+.lvh-v{color:var(--muted2);font-size:9.5px;margin-left:4px}
 .lvhow{margin-top:12px}
 .lvhow-b{font-size:12.5px;line-height:1.55;color:var(--muted2)}
 .lvhow-b p{margin:0 0 9px}
@@ -873,6 +886,12 @@ const TESTS=[
   {id:"rmSquat",   name:"1RM Squat",   full:"Massimale 1RM — Squat",        unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
   {id:"rmBench",   name:"1RM Panca",   full:"Massimale 1RM — Panca piana",  unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
   {id:"rmDead",    name:"1RM Stacco",  full:"Massimale 1RM — Stacco da terra", unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
+  /* Hip thrust, military press e trazioni non avevano un posto dove finire:
+     la curva carico-velocità li calcolava e la stima restava chiusa nel suo
+     archivio, senza andamento e senza colonna. */
+  {id:"rmHip",     name:"1RM Hip thrust", full:"Massimale 1RM — Hip thrust",    unit:"kg", dir:1, cat:"Forza", sports:["forza"]},
+  {id:"rmOhp",     name:"1RM Military",   full:"Massimale 1RM — Military press", unit:"kg", dir:1, cat:"Forza", sports:["forza"]},
+  {id:"rmPull",    name:"1RM Trazioni",   full:"Massimale 1RM — Trazioni (carico totale mosso)", unit:"kg", dir:1, cat:"Forza", sports:["forza"]},
   {id:"pushMax",   name:"Push-up max", full:"Push-up massimi (resistenza di forza di spinta)", unit:"rip", dir:1, cat:"Forza", sports:["combattimento","forza","generale"], lv:{m:[20,30,40,50],f:[10,18,25,35]}},
   {id:"trmInc",    name:"Tapis increm.",full:"Test incrementale al tapis roulant — velocità finale", unit:"km/h", dir:1, cat:"Aerobico", sports:["combattimento","atletica","generale"], lv:{m:[13,15,16.5,18],f:[11.5,13.5,15,16.5]}},
   {id:"airBike",   name:"Air bike",    full:"Air bike — test incrementale (potenza finale)", unit:"W", dir:1, cat:"Aerobico", sports:["combattimento","forza","generale"]},
@@ -1901,11 +1920,31 @@ function sparkline(arr,dir){
 
 /* ═══════════════ RENDER GRIGLIA ═══════════════ */
 function visibleTests(){
+  let base;
   if(S.activeTeam && S.activeTeam!=="all" && S.activeTeam!=="none"){
     const t=S.teams.find(x=>x.id===S.activeTeam);
-    if(t && t.tests && t.tests.length){ return TESTS.filter(x=>t.tests.indexOf(x.id)>=0); }
+    if(t && t.tests && t.tests.length) base=TESTS.filter(x=>t.tests.indexOf(x.id)>=0);
   }
-  return S.sport==="all" ? TESTS : TESTS.filter(t=>t.sports.includes(S.sport));
+  if(!base) base = S.sport==="all" ? TESTS : TESTS.filter(t=>t.sports.includes(S.sport));
+
+  /* Un test su cui hai registrato qualcosa NON deve sparire perché il filtro
+     per sport o la batteria della squadra non lo prevedono.
+
+     Era il caso di 1RM Squat, Panca e Stacco: marcati come test da
+     combattimento e forza, quindi invisibili con la pallavolo selezionata.
+     La curva carico-velocità scriveva lì dentro la sua stima, e la stima
+     finiva in una colonna che non esisteva a schermo. Il dato c'era, non si
+     vedeva, e sembrava che la curva non servisse a niente.
+
+     La batteria dice cosa RACCOGLIERE, non cosa nascondere. */
+  const conDati={};
+  (teamAthletes()||[]).forEach(a=>{
+    const d=(S.data||{})[a.id]||{};
+    Object.keys(d).forEach(t=>{ if(d[t]&&d[t].length) conDati[t]=1; });
+  });
+  const gia={}; base.forEach(t=>gia[t.id]=1);
+  const extra=TESTS.filter(t=>conDati[t.id]&&!gia[t.id]);
+  return extra.length ? base.concat(extra) : base;
 }
 
 function renderSports(){
@@ -3007,6 +3046,7 @@ function openAthlete(id, isNew){
   // GUIDA inline in fondo
   h+='<div class="psec" style="color:var(--accent);border-color:var(--line2);margin-top:24px">📋 Guida preparazione & percorso — '+kb.label+'</div>'+
      '<div id="briefBox">'+briefBody(kb, p.role||"", p)+'</div>';
+  h+=lvHistoryBlock(id);
   h+='<div style="height:18px"></div>'+
     '<button class="btn primary" style="width:100%" onclick="saveAthleteEdit(\''+id+'\')">'+(isNew?"Salva anamnesi":"Salva scheda")+'</button>'+
     (isNew
@@ -3350,9 +3390,9 @@ const LV_EX=[
   {n:"Front squat",       mvt:0.30, test:"rmSquat"},
   {n:"Panca piana",       mvt:0.17, test:"rmBench"},
   {n:"Stacco da terra",   mvt:0.16, test:"rmDead"},
-  {n:"Hip thrust",        mvt:0.25, test:null},
-  {n:"Military press",    mvt:0.19, test:null},
-  {n:"Trazioni",          mvt:0.23, test:null},
+  {n:"Hip thrust",        mvt:0.25, test:"rmHip"},
+  {n:"Military press",    mvt:0.19, test:"rmOhp"},
+  {n:"Trazioni",          mvt:0.23, test:"rmPull"},
   {n:"Altro",             mvt:0.30, test:null},
 ];
 function lvExInfo(nome){ return LV_EX.find(e=>e.n===nome) || LV_EX[LV_EX.length-1]; }
@@ -3435,6 +3475,78 @@ function lvStartingMax(aid, exercise){
 /* L'MVT misurato sull'atleta batte qualunque riferimento di letteratura: e' la
    velocita' della SUA ultima ripetizione a un massimale vero. Se e' stato
    registrato una volta, si riusa. */
+/* ─── Le curve nel tempo ────────────────────────────────────────────────────
+   Le curve venivano salvate e non le rivedeva nessuno: R², MVT, tipo di
+   velocità, numero di punti, tutto scritto e mai mostrato. Ma sono proprio
+   quelle informazioni a dire se due stime si possono confrontare fra loro.
+
+   Un +8 kg fra una curva a 4 punti con l'85% coperto e una a 2 punti fermata
+   al 60% non è un progresso: è rumore di misura. Qui si vede. */
+function lvHistory(aid){
+  const arr=((S.lv||{})[aid]||[]).filter(e=>e&&e.d&&isFinite(e.est1RM));
+  const perEx={};
+  arr.slice().sort((x,y)=>x.d<y.d?-1:1).forEach(e=>{
+    (perEx[e.exercise]=perEx[e.exercise]||[]).push(e);
+  });
+  return perEx;
+}
+
+/* Copertura: quanto in alto sono arrivati i carichi rispetto alla stima.
+   È il numero che conta più dell'R² e non veniva conservato: si ricalcola. */
+function lvCoverage(e){
+  const pts=(e&&e.points)||[];
+  if(!pts.length||!e.est1RM) return null;
+  const mx=Math.max.apply(null, pts.map(p=>p.load).filter(isFinite));
+  return isFinite(mx)&&e.est1RM>0 ? mx/e.est1RM : null;
+}
+
+function lvHistoryBlock(aid){
+  const perEx=lvHistory(aid);
+  const esercizi=Object.keys(perEx);
+  if(!esercizi.length) return "";
+  let h='<div class="psec" style="margin-top:22px">📈 Curve carico-velocità</div>';
+  esercizi.forEach(ex=>{
+    const lista=perEx[ex];
+    h+='<div class="lvhx"><div class="lvhx-t">'+esc(ex)+'</div>'+
+       '<table class="lvhist"><thead><tr><th>Data</th><th>1RM</th><th>Δ</th>'+
+       '<th>Punti</th><th>Fin dove</th><th>R²</th><th>MVT</th></tr></thead><tbody>';
+    lista.slice().reverse().forEach((e,i)=>{
+      const prec=lista[lista.length-2-i];
+      const d = prec ? e.est1RM-prec.est1RM : null;
+      const cop=lvCoverage(e);
+      const nP=(e.points||[]).length;
+      // affidabile = 4+ punti, arrivati almeno all'85%, punti allineati
+      const solida = nP>=4 && cop!=null && cop>=0.85 && (e.r2==null||e.r2>=0.95);
+      h+='<tr class="'+(solida?"lvh-ok":"lvh-weak")+'">'+
+         '<td>'+fmtDate(e.d)+'</td>'+
+         '<td><b>'+fmtNum(Math.round(e.est1RM))+'</b>'+
+           (isFinite(e.ci95)&&e.ci95?'<span class="lvh-ci"> ±'+fmtNum(Math.round(e.ci95))+'</span>':'')+'</td>'+
+         '<td class="'+(d==null?"":(d>0?"up":(d<0?"down":"")))+'">'+
+           (d==null?'—':(d>0?'+':'')+fmtNum(Math.round(d*10)/10))+'</td>'+
+         '<td>'+nP+'</td>'+
+         '<td>'+(cop!=null?Math.round(cop*100)+'%':'—')+'</td>'+
+         '<td>'+(isFinite(e.r2)?fmtNum(Math.round(e.r2*100)/100):'—')+'</td>'+
+         '<td>'+fmtNum(e.mvt)+(e.mvtSource==="misurato"?'<span class="lvh-m" title="misurato su questa atleta">✓</span>':'')+
+           (e.vType?'<span class="lvh-v">'+esc(e.vType)+'</span>':'')+'</td>'+
+         '</tr>';
+    });
+    h+='</tbody></table>';
+    // avvisi che valgono per il CONFRONTO fra le curve, non per la singola
+    const tipi={}; lista.forEach(e=>{ if(e.vType) tipi[e.vType]=1; });
+    const note=[];
+    if(Object.keys(tipi).length>1)
+      note.push('Queste curve non sono confrontabili fra loro: alcune in <b>'+
+        Object.keys(tipi).join('</b>, altre in <b>')+'</b>. La pendenza cambia col tipo di velocità.');
+    if(lista.some(e=>(e.points||[]).length<4))
+      note.push('Le righe più chiare hanno pochi punti o un\'estrapolazione lunga: la differenza fra due di quelle è rumore di misura, non progresso.');
+    if(note.length) h+='<div class="gnote">'+note.join('<br>')+'</div>';
+    h+='</div>';
+  });
+  h+='<div class="gnote">L\'1RM stimato finisce anche nella tabella dei test, insieme agli altri, '+
+     'marcato come stima. Da lì vedi l\'andamento accanto a salti e sprint.</div>';
+  return h;
+}
+
 function lvKnownMVT(aid, exercise){
   const curve=((S.lv||{})[aid]||[]).filter(e=>e.exercise===exercise && e.mvtSource==="misurato" && isFinite(e.mvt));
   return curve.length ? curve[curve.length-1] : null;
@@ -3456,7 +3568,10 @@ function lvExChange(){
       if(nota) nota.innerHTML = sel.value==="Altro"
         ? 'Nessun riferimento per questo esercizio: la soglia va decisa da te.'
         : 'Riferimento di partenza per <b>'+esc(sel.value)+'</b>, da letteratura su MPV. '+
-          'Varia con tecnica ed escursione: se hai un suo massimale vero, usa quella velocità.';
+          'Varia con tecnica ed escursione: se hai un suo massimale vero, usa quella velocità.'+
+          (sel.value==="Trazioni"
+            ? '<br><b>Attenzione:</b> come carico scrivi la massa <b>totale mossa</b> — peso corporeo più zavorra. '+
+              'Mettendo solo la zavorra la retta non ha alcun senso.' : '');
     }
   }
 

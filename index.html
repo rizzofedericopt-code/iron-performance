@@ -123,6 +123,13 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .blm{font-size:12px;color:var(--text);margin-top:7px}
 .blm b{font-family:var(--sans)}
 .bleq{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.blcost{margin-left:auto;font-size:10px;color:var(--muted2);text-align:right;line-height:1.2}
+.blevcard.on .blcost{color:var(--accent)}
+.blok{margin-left:6px}
+.bleqp{background:none!important;border:none!important;padding:2px 0 2px 0!important;
+  color:var(--muted2)!important;font-weight:600}
+.breq-2{color:#FFB340}
+.breq-3{color:#ff7a82}
 .bleq span{font-size:10px;color:var(--muted2);background:var(--surface);
   border:1px solid var(--line);border-radius:999px;padding:2px 7px}
 
@@ -869,12 +876,12 @@ const TESTS=[
   {id:"rm1",  name:"1RM",      full:"Massimale 1RM",            unit:"kg",       dir:1, cat:"Forza", sports:["forza","pallavolo","calcio","basket","generale","combattimento"]},
   {id:"rm35", name:"3-5RM",    full:"Test 3-5RM",               unit:"kg",       dir:1, cat:"Forza", sports:["forza","generale","combattimento"]},
   {id:"pred", name:"xRM→1RM",  full:"1RM stimato (submassimale)",unit:"kg",      dir:1, cat:"Forza", sports:["forza","generale"]},
-  {id:"vbt",  name:"VBT",      full:"Velocità bilanciere (load-velocity)",unit:"m/s",dir:1,cat:"Forza",sports:["forza","combattimento"]},
-  {id:"imtp", name:"IMTP",     full:"Forza isometrica mid-thigh",unit:"N/kg",    dir:1, cat:"Forza", sports:["forza","pallavolo","basket","combattimento"], lv:{m:[22,28,34,40],f:[18,24,30,36]}},
+  {id:"vbt",  name:"VBT",      full:"Velocità bilanciere (load-velocity)",unit:"m/s",dir:1,cat:"Forza",sports:["forza","combattimento","pallavolo"]},
+  {id:"imtp", name:"IMTP",     full:"Forza isometrica mid-thigh",unit:"N/kg",    dir:1, cat:"Forza", sports:["forza","pallavolo","basket","combattimento","calcio","atletica","generale"], lv:{m:[22,28,34,40],f:[18,24,30,36]}},
   // ─ POTENZA / SALTO ─
   {id:"cmj",  name:"CMJ",      full:"Countermovement Jump",     unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
-  {id:"sj",   name:"SJ",       full:"Squat Jump",               unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","forza","combattimento"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
-  {id:"dj",   name:"Drop Jump",full:"Drop Jump — RSI",          unit:"RSI",      dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","combattimento"], lv:{m:[0.8,1.2,1.6,2.0],f:[0.6,1.0,1.4,1.7]}},
+  {id:"sj",   name:"SJ",       full:"Squat Jump",               unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","forza","combattimento","atletica","generale"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
+  {id:"dj",   name:"Drop Jump",full:"Drop Jump — RSI",          unit:"RSI",      dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","combattimento","forza","generale"], lv:{m:[0.8,1.2,1.6,2.0],f:[0.6,1.0,1.4,1.7]}},
   /* ─── Test che My Jump Lab misura e che qui non c'erano ──────────────────
      Aggiunti solo quelli che cambiano una decisione. My Jump Lab misura anche
      pronazione, caduta del bacino, duty factor e mobilità del collo: sono
@@ -896,11 +903,11 @@ const TESTS=[
   {id:"bjump",  name:"Salto in lungo", full:"Salto in lungo da fermo", unit:"cm", dir:1, cat:"Potenza",
    sports:["calcio","atletica","generale","combattimento"]},
   {id:"fvF0",   name:"F-V vert. F0", full:"Profilo F-V verticale — forza teorica massima", unit:"N/kg", dir:1, cat:"Potenza",
-   sports:["pallavolo","basket","atletica"]},
+   sports:["pallavolo","basket","atletica","forza"]},
   {id:"fvV0",   name:"F-V vert. V0", full:"Profilo F-V verticale — velocità teorica massima", unit:"m/s", dir:1, cat:"Potenza",
-   sports:["pallavolo","basket","atletica"]},
+   sports:["pallavolo","basket","atletica","forza"]},
   {id:"fvPmax", name:"F-V vert. Pmax", full:"Profilo F-V verticale — potenza massima", unit:"W/kg", dir:1, cat:"Potenza",
-   sports:["pallavolo","basket","atletica"]},
+   sports:["pallavolo","basket","atletica","forza"]},
   {id:"sfvF0",  name:"Sprint F0", full:"Profilo F-V orizzontale — forza orizzontale massima", unit:"N/kg", dir:1, cat:"Velocità",
    sports:["calcio","atletica"]},
   {id:"sfvV0",  name:"Sprint V0", full:"Profilo F-V orizzontale — velocità massima teorica", unit:"m/s", dir:1, cat:"Velocità",
@@ -916,7 +923,7 @@ const TESTS=[
   {id:"hipIR",  name:"Anca IR", full:"Rotazione interna d'anca", unit:"gradi", dir:1, cat:"Mobilità & stabilità",
    sports:["pallavolo","basket","calcio","combattimento","generale"]},
 
-  {id:"eur",  name:"EUR",      full:"Elastic Index (CMJ ÷ SJ)", unit:"ratio",    dir:1, cat:"Potenza", sports:["pallavolo","basket"], derived:{from:["cmj","sj"], fn:(c,s)=> s? c/s : null}},
+  {id:"eur",  name:"EUR",      full:"Elastic Index (CMJ ÷ SJ)", unit:"ratio",    dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","forza","combattimento","generale"], derived:{from:["cmj","sj"], fn:(c,s)=> s? c/s : null}},
   // ─ SALTO MONOPODALICO ─
   {id:"cmj1lL", name:"CMJ 1L sx", full:"CMJ monopodalico — sinistra", unit:"cm", dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"]},
   {id:"cmj1lR", name:"CMJ 1L dx", full:"CMJ monopodalico — destra",   unit:"cm", dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"]},
@@ -934,23 +941,25 @@ const TESTS=[
   {id:"bosco30", name:"Bosco 30s", full:"Test di Bosco — 30 secondi", unit:"W/kg", dir:1, cat:"Anaerobico", sports:["pallavolo","basket","calcio","atletica","combattimento","generale"]},
   {id:"bosco60", name:"Bosco 60s", full:"Test di Bosco — 60 secondi", unit:"W/kg", dir:1, cat:"Anaerobico", sports:["pallavolo","basket","calcio","atletica","combattimento","generale"]},
   // ─ VELOCITÀ / AGILITÀ ─
-  {id:"spr10",name:"Sprint 10m",full:"Sprint 10 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo","atletica","combattimento"], lv:{m:[2.10,1.95,1.85,1.75],f:[2.30,2.15,2.05,1.95]}},
+  {id:"spr10",name:"Sprint 10m",full:"Sprint 10 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo","atletica","combattimento","generale"], lv:{m:[2.10,1.95,1.85,1.75],f:[2.30,2.15,2.05,1.95]}},
   {id:"spr30",name:"Sprint 30m",full:"Sprint 30 metri",        unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","atletica"], lv:{m:[4.80,4.50,4.25,4.00],f:[5.20,4.90,4.60,4.35]}},
   {id:"rsa",  name:"RSA best", full:"RSA — miglior sprint",     unit:"s",        dir:-1,cat:"Velocità", sports:["calcio","basket","pallavolo"]},
   {id:"sdec", name:"RSA Sdec", full:"RSA — % decremento",       unit:"%",        dir:-1,cat:"Velocità", sports:["calcio","basket"]},
   // ─ AEROBICO ─
   {id:"vo2",  name:"VO₂max",   full:"VO₂max",                   unit:"ml/kg/min",dir:1, cat:"Aerobico", sports:["calcio","atletica","generale","combattimento"], lv:{m:[40,48,55,62],f:[35,42,49,56]}},
   {id:"mas",  name:"MAS",      full:"Velocità Aerobica Massimale",unit:"km/h",   dir:1, cat:"Aerobico", sports:["calcio","atletica","combattimento"], lv:{m:[14,16,17.5,19],f:[12.5,14.5,16,17.5]}},
-  {id:"yoyo1",name:"Yo-Yo IR1",full:"Yo-Yo Intermittent Recovery 1",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio","basket","pallavolo","combattimento"], lv:{m:[800,1400,2000,2600],f:[600,1100,1600,2200]}},
+  {id:"yoyo1",name:"Yo-Yo IR1",full:"Yo-Yo Intermittent Recovery 1",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio","basket","pallavolo","combattimento","generale"], lv:{m:[800,1400,2000,2600],f:[600,1100,1600,2200]}},
   {id:"yoyo2",name:"Yo-Yo IR2",full:"Yo-Yo Intermittent Recovery 2",unit:"m",   dir:1, cat:"Aerobico", sports:["calcio"]},
   // ─ PROFILO F-V ─
   {id:"fvdef", name:"Deficit F-V", full:"Squilibrio Forza-Velocità",   unit:"%",  dir:-1, cat:"Potenza", sports:["forza","atletica","calcio","basket","pallavolo","combattimento"]},
   // ─ CAMBIO DIREZIONE ─
-  {id:"cod505",name:"505",        full:"505 — cambio direzione 180°",  unit:"s",  dir:-1, cat:"Cambio direzione", sports:["calcio","basket","pallavolo","combattimento"]},
+  {id:"bronco", name:"Bronco", full:"Bronco test — 1200 m a navette (20-40-60 m × 5)", unit:"s", dir:-1,
+   cat:"Aerobico", sports:["calcio","atletica","combattimento"]},
+  {id:"cod505",name:"505",        full:"505 — cambio direzione 180°",  unit:"s",  dir:-1, cat:"Cambio direzione", sports:["calcio","basket","pallavolo","combattimento","atletica","generale"]},
   {id:"ttest", name:"T-test",     full:"T-test — agilità",             unit:"s",  dir:-1, cat:"Cambio direzione", sports:["calcio","basket","pallavolo"]},
   // ─ ASIMMETRIA & FUNZIONALE ─
   {id:"cmjAsym",  name:"Asimm. CMJ", full:"Asimmetria inter-arto al CMJ", unit:"%", dir:-1, cat:"Asimmetria & funzionale", sports:["pallavolo","basket","calcio","atletica","combattimento"]},
-  {id:"ybtLow",   name:"YBT inf.",   full:"Y-Balance arto inferiore (composite)", unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","pallavolo","atletica"]},
+  {id:"ybtLow",   name:"YBT inf.",   full:"Y-Balance arto inferiore (composite)", unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","pallavolo","atletica","combattimento"]},
   {id:"hopLSI",   name:"Hop LSI",    full:"Single-leg hop — LSI",       unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","pallavolo","atletica"]},
   {id:"tripleHop",name:"Triple hop", full:"Triple hop — LSI",           unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","atletica"]},
   // ─ MOBILITÀ & STABILITÀ ─
@@ -974,9 +983,9 @@ const TESTS=[
   {id:"wingPeak",  name:"Picco anaer.", full:"Potenza anaerobica di picco (Wingate)",  unit:"W/kg", dir:1, cat:"Anaerobico", sports:["combattimento","atletica"], lv:{m:[6,7.5,9,10.5],f:[5,6,7.5,8.5]}},
   {id:"wingMean",  name:"Media anaer.", full:"Potenza anaerobica media (Wingate) — capacità", unit:"W/kg", dir:1, cat:"Anaerobico", sports:["combattimento","atletica"], lv:{m:[4.5,5.5,6.5,7.5],f:[3.5,4.5,5.5,6.5]}},
   // ─ FORZA / PRESA / RESISTENZA ─
-  {id:"gripStr",   name:"Presa",        full:"Forza di presa (dinamometro, mano dominante)", unit:"kg", dir:1, cat:"Forza", sports:["combattimento"], lv:{m:[40,48,55,62],f:[24,30,36,42]}},
+  {id:"gripStr",   name:"Presa",        full:"Forza di presa (dinamometro, mano dominante)", unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"], lv:{m:[40,48,55,62],f:[24,30,36,42]}},
   {id:"pullMax",   name:"Trazioni max", full:"Trazioni massime (resistenza di forza arti superiori)", unit:"rip", dir:1, cat:"Forza", sports:["combattimento","forza","generale"], lv:{m:[5,10,15,20],f:[1,4,8,12]}},
-  {id:"rmSquat",   name:"1RM Squat",   full:"Massimale 1RM — Squat",        unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
+  {id:"rmSquat",   name:"1RM Squat",   full:"Massimale 1RM — Squat",        unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza","pallavolo","calcio","basket","atletica","generale"]},
   {id:"rmBench",   name:"1RM Panca",   full:"Massimale 1RM — Panca piana",  unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
   {id:"rmDead",    name:"1RM Stacco",  full:"Massimale 1RM — Stacco da terra", unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
   /* Hip thrust, military press e trazioni non avevano un posto dove finire:
@@ -5782,7 +5791,7 @@ function loadDemo(){
 const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆️",sj:"🔽",dj:"⬇️",eur:"🔁",
   cmjA:"🙌",armCon:"💪",rsiMod:"⚡",rsi105:"🦘",bjump:"↔️",
   fvF0:"📐",fvV0:"📐",fvPmax:"📐",sfvF0:"🏇",sfvV0:"🏇",sfvPmax:"🏇",
-  vcut:"↩️",nordicAng:"🦵",nordicTq:"🦵",hipIR:"🔃",
+  vcut:"↩️",nordicAng:"🦵",nordicTq:"🦵",hipIR:"🔃",bronco:"🐎",
   spr10:"⏱️",spr30:"🏁",rsa:"🔄",sdec:"📉",vo2:"🫁",mas:"🏃",yoyo1:"🪀",yoyo2:"🪀",
   fvdef:"📈",cod505:"🔀",ttest:"✖️",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
   shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶",
@@ -5791,6 +5800,24 @@ const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆
   rmSquat:"🦵",rmBench:"🛏️",rmDead:"🪝",pushMax:"🤸",trmInc:"🏃",airBike:"🚴"};
 
 const PROTO={
+  bronco:{eyebrow:"Capacità aerobica sotto fatica",
+    what:"Cinque cicli di navette — 20, 40 e 60 metri andata e ritorno — per <b>1200 metri totali</b>, "+
+      "<b>senza recupero</b>. Quattro-sei minuti a tutta. Nato nel rugby, si è diffuso in calcio, basket "+
+      "e hockey perché le continue accelerazioni e frenate somigliano al gioco. Dal tempo si ricava la "+
+      "velocità aerobica massima, con cui poi prescrivi le ripetute.",
+    alert:{type:"warn",text:"Non è un test da pallavolo: gli scambi durano 5-10 secondi con pause lunghe, "+
+      "è il sistema energetico sbagliato. E su atleti giovani costa le due sedute successive: mettilo dove "+
+      "non hai niente di importante nei tre giorni dopo."},
+    steps:[{t:"Segna i riferimenti",d:"Coni a 0, 20, 40 e 60 metri, in linea."},
+      {t:"Un ciclo",d:"20 m e ritorno, 40 m e ritorno, 60 m e ritorno. Sono 240 metri."},
+      {t:"Cinque cicli di fila",d:"Senza fermarsi mai. Totale 1200 metri."},
+      {t:"Ferma il cronometro all'arrivo",d:"Un solo tentativo: ripeterlo lo stesso giorno non ha senso."}],
+    interpret:["Il tempo da solo serve poco: quello che usi è la velocità aerobica massima che se ne ricava, "+
+      "perché è in percentuale di quella che prescrivi le ripetute.",
+      "Confrontalo solo con se stesso e sulla stessa superficie: su erba e su sintetico i tempi non si parlano."],
+    note:"I riferimenti che girano (elite sotto 4:15) sono su uomini adulti di rugby. Su altre popolazioni "+
+      "non valgono: usa il confronto dell'atleta con se stesso."},
+
   /* ─── I test aggiunti per My Jump Lab ─────────────────────────────────── */
   cmjA:{eyebrow:"Salto — il più vicino alla schiacciata",
     what:"CMJ con le <b>braccia libere</b> di oscillare. È il salto che assomiglia di più a quello di gara: in pallavolo le braccia ci sono sempre. Il confronto con il CMJ a braccia bloccate dice quanto sa usarle.",
@@ -6392,19 +6419,34 @@ function lvTable(t){
    dell'attrezzatura. Da qui nasce la distinzione fra batteria da campo e
    batteria completa — non dalla difficoltà del test, dalla roba che serve. */
 const EQ={
-  metro:{l:"metro / rullina", campo:true},
-  gesso:{l:"gesso o nastro",  campo:true},
-  crono:{l:"cronometro",      campo:true},
-  coni: {l:"coni",            campo:true},
-  video:{l:"telefono (My Jump Lab)", campo:true},
-  audio:{l:"tracce audio Yo-Yo",     campo:true},
-  sala: {l:"sala pesi",       campo:false},
-  vbt:  {l:"encoder / VBT",   campo:false},
-  pedana:{l:"pedana a contatto o di forza", campo:false},
-  dina: {l:"dinamometro",     campo:false},
-  gonio:{l:"goniometro o inclinometro", campo:false},
-  lab:  {l:"laboratorio",     campo:false},
+  /* liv 1 · CAMPO — roba che hai già o che costa pochi euro */
+  metro:{l:"metro / rullina",           liv:1},
+  gesso:{l:"gesso o nastro",            liv:1},
+  crono:{l:"cronometro",                liv:1},
+  coni: {l:"coni",                      liv:1},
+  video:{l:"telefono (My Jump Lab)",    liv:1},
+  audio:{l:"tracce audio Yo-Yo",        liv:1},
+  gonio:{l:"goniometro (10 €)",         liv:1},
+  /* liv 2 · SALA — serve una sala pesi, ma niente elettronica */
+  sala: {l:"sala pesi (bilanciere, dischi, panca)", liv:2},
+  /* liv 3 · STRUMENTI — attrezzatura che si compra apposta */
+  vbt:  {l:"encoder / VBT",             liv:3},
+  pedana:{l:"pedana a contatto o di forza", liv:3},
+  dina: {l:"dinamometro",               liv:3},
+  lab:  {l:"laboratorio",               liv:3},
 };
+const LIVELLI=[
+  {k:"campo", n:1, i:"🏟", l:"Su campo",
+   d:"Metro, coni, cronometro, telefono. Niente che tu non abbia già.",
+   costo:"nessuna spesa"},
+  {k:"sala",  n:2, i:"🏋️", l:"Campo + sala",
+   d:"Aggiunge quello che si fa con bilanciere e dischi. Nessuna elettronica.",
+   costo:"serve una sala pesi"},
+  {k:"completa", n:3, i:"🔬", l:"Completa",
+   d:"Aggiunge encoder, pedana, dinamometro. Strumenti che si comprano apposta.",
+   costo:"attrezzatura dedicata"},
+];
+function livInfo(k){ return LIVELLI.find(x=>x.k===k)||LIVELLI[0]; }
 /* Attrezzatura per test. Chi non è elencato non richiede niente. */
 const TEST_EQ={
   cmj:["video"], sj:["video"], dj:["video"], cmjA:["video"], rsiMod:["video"],
@@ -6425,7 +6467,10 @@ const TEST_EQ={
   mas:["crono","coni"], bodyFat:["dina"],
 };
 function testEq(id){ return TEST_EQ[id]||[]; }
-function isFieldTest(id){ return testEq(id).every(k=>EQ[k]&&EQ[k].campo); }
+/* Il livello di un test è quello dell'attrezzatura più esigente che richiede. */
+function testLevel(id){
+  return testEq(id).reduce((m,k)=>Math.max(m,(EQ[k]&&EQ[k].liv)||1),1);
+}
 function eqList(ids){
   const set={}; ids.forEach(id=>testEq(id).forEach(k=>set[k]=1));
   return Object.keys(set).filter(k=>EQ[k]).map(k=>EQ[k].l);
@@ -6448,7 +6493,7 @@ const USO={
   eur:{s:"Rapporto CMJ/SJ: quanto sfrutta la componente elastica.",
        u:"Basso = manca il riutilizzo elastico, lavora pliometria e stiffness. Alto = l'elastico c'è già, il margine è nella forza."},
   dj:{s:"Reattività da caduta: quanto salta rispetto a quanto sta a terra.",
-      u:"Guida la scelta dell'altezza di caduta in pliometria: si allena all'altezza dove l'RSI è più alto, non alla più alta possibile."},
+      u:"Scegli l'altezza di caduta della pliometria dove il suo RSI è più alto — non la più alta che regge: quella allena solo a incassare."},
   rsiMod:{s:"Altezza divisa per il tempo di stacco, dal CMJ.",
           u:"Cala prima dell'altezza. È il primo campanello di affaticamento neuromuscolare: usalo per decidere il carico della seduta."},
   rsi105:{s:"Rimbalzo su salti ripetuti: il gesto del muro e della difesa.",
@@ -6481,7 +6526,7 @@ const USO={
   ankleDF:{s:"Dorsiflessione di caviglia con ginocchio al muro.",
            u:"Sotto i 10 cm limita l'accosciata e sposta il carico sul ginocchio. Mobilità di caviglia prima di insistere sui salti."},
   shIR:{s:"Rotazione interna di spalla del braccio che schiaccia.",
-        u:"Un deficit marcato rispetto all'altro lato è il segnale classico di sovraccarico overhead: mobilità e controllo prima che faccia male."},
+        u:"Se il braccio che schiaccia perde oltre 15° sull'altro, metti mobilità e controllo di scapola prima che faccia male: è il quadro classico da sovraccarico."},
   hipIR:{s:"Rotazione interna d'anca.", u:"Limitata, sposta il lavoro su ginocchio e lombare. La differenza fra i lati conta più del valore."},
   ybtLow:{s:"Controllo monopodalico in tre direzioni.", u:"Utile su chi rientra da un infortunio: dice se il controllo è tornato simmetrico."},
   hopLSI:{s:"Simmetria nel salto orizzontale monopodalico.", u:"Criterio classico di ritorno allo sport: sopra il 90% si riprende a caricare."},
@@ -6616,60 +6661,81 @@ const TIER=[
   {k:"anno",  l:"Inizio stagione",    w:"baseline, 1-2 volte l'anno", i:"🧭"},
 ];
 
+/* I tre livelli sono INCREMENTALI: «sala» è campo più quello che aggiunge la
+   sala pesi, «completa» è sala più quello che aggiunge la strumentazione.
+   Si scrivono come aggiunte e non come tre elenchi completi, perché tre
+   elenchi che dicono in parte la stessa cosa divergono alla prima modifica —
+   e a quel punto la batteria da campo e quella completa non contengono più
+   gli stessi test di base senza che nessuno se ne accorga.                  */
 const BATT2={
   pallavolo:{
-    campo:{ nota:"Tutto in palestra, con la squadra. Il telefono per i salti, un metro al muro per le quote.",
-      sett:["cmj","rsiMod"], ciclo:["cmjA","cmj1lL","cmj1lR","cmj1lAsym","sj","eur"],
-      anno:["dj","spr10","cod505","ankleDF","shIR","yoyo1"] },
-    completa:{ nota:"Aggiunge la sala e la pedana: forza relativa e capacità anaerobica.",
-      sett:["cmj","rsiMod"], ciclo:["cmjA","cmj1lL","cmj1lR","cmj1lAsym","sj","eur","rsi105"],
-      anno:["dj","spr10","cod505","vcut","ankleDF","shIR","hipIR","yoyo1","rmSquat","imtp","bosco30","nordicAng"] }},
+    nota:"Salti e gesto sopra la testa. Il cuore è il CMJ settimanale, più spalla e atterraggi.",
+    campo:{ sett:["cmj","rsiMod"], ciclo:["cmjA","cmj1lL","cmj1lR","cmj1lAsym","sj","eur"],
+            anno:["dj","spr10","cod505","ankleDF","shIR","hipIR","nordicAng","yoyo1"] },
+    sala:{ nota:"Con la sala aggiungi la base di forza. Sotto i 18 anni niente massimali singoli: 3-5 ripetizioni.",
+           ciclo:["rm35"], anno:["pred","pullMax","pushMax"] },
+    completa:{ nota:"Con encoder e pedana: forza relativa vera e capacità anaerobica.",
+               ciclo:["vbt"], anno:["rmSquat","imtp","bosco30","rsi105","vcut","nordicTq"] }},
   calcio:{
-    campo:{ nota:"Campo, coni e cronometro. Yo-Yo con le tracce audio.",
-      sett:["cmj"], ciclo:["spr10","spr30","cod505","cmj1lAsym"],
-      anno:["yoyo1","mas","rsa","sdec","ttest","bjump","ankleDF"] },
-    completa:{ nota:"Aggiunge sala, dinamometro e profilo dello sprint.",
-      sett:["cmj","rsiMod"], ciclo:["spr10","spr30","cod505","cmj1lL","cmj1lR","cmj1lAsym","nordicAng"],
-      anno:["yoyo1","mas","rsa","sdec","bronco","sfvF0","sfvV0","sfvPmax","rmSquat","imtp","hopLSI","ybtLow"] }},
+    nota:"Base aerobica, sprint ripetuti e cambi di direzione. Ischiocrurali sotto osservazione.",
+    campo:{ sett:["cmj"], ciclo:["spr10","spr30","cod505","cmj1lAsym","nordicAng"],
+            anno:["yoyo1","mas","rsa","sdec","ttest","bjump","ankleDF"] },
+    sala:{ nota:"La sala serve alla base di forza degli arti inferiori.",
+           ciclo:[], anno:["rm35","pred"] },
+    completa:{ nota:"Con la strumentazione: profilo dello sprint e forza isometrica.",
+               ciclo:["cmj1lL","cmj1lR"], anno:["bronco","sfvF0","sfvV0","sfvPmax","rmSquat","imtp","nordicTq","hopLSI","ybtLow"] }},
   basket:{
-    campo:{ nota:"Palestra e telefono. La caviglia è il punto da tenere d'occhio.",
-      sett:["cmj","rsiMod"], ciclo:["cmj1lL","cmj1lR","cmj1lAsym","sj","eur"],
-      anno:["dj","spr10","cod505","ttest","ankleDF","yoyo1"] },
-    completa:{ nota:"Aggiunge sala, pedana e controllo monopodalico completo.",
-      sett:["cmj","rsiMod"], ciclo:["cmjA","cmj1lL","cmj1lR","cmj1lAsym","sj","eur","rsi105"],
-      anno:["dj","spr10","cod505","ttest","vcut","ankleDF","hipIR","yoyo1","rmSquat","imtp","bosco30","ybtLow","hopLSI"] }},
+    nota:"Salti, cambi di direzione e caviglia. Atterraggi al centro della prevenzione.",
+    campo:{ sett:["cmj","rsiMod"], ciclo:["cmj1lL","cmj1lR","cmj1lAsym","sj","eur"],
+            anno:["dj","spr10","cod505","ttest","ankleDF","hipIR","yoyo1"] },
+    sala:{ nota:"Base di forza per reggere il volume di salti.", ciclo:["rm35"], anno:["pred"] },
+    completa:{ nota:"Aggiunge reattività su pedana e controllo monopodalico completo.",
+               ciclo:["cmjA","rsi105"], anno:["vcut","rmSquat","imtp","bosco30","ybtLow","hopLSI"] }},
   atletica:{
-    campo:{ nota:"Pista, coni e cronometro.",
-      sett:["cmj"], ciclo:["spr10","spr30","bjump","cmj1lAsym"],
-      anno:["dj","sj","eur","cod505","ankleDF","mas"] },
-    completa:{ nota:"Aggiunge il profilo forza-velocità e la sala.",
-      sett:["cmj","rsiMod"], ciclo:["spr10","spr30","bjump","rsi105","cmj1lL","cmj1lR","cmj1lAsym"],
-      anno:["dj","sj","eur","sfvF0","sfvV0","sfvPmax","fvF0","fvV0","fvPmax","rmSquat","imtp","nordicAng"] }},
+    nota:"Velocità e potenza. Il profilo forza-velocità guida la scelta del lavoro.",
+    campo:{ sett:["cmj"], ciclo:["spr10","spr30","bjump","cmj1lAsym"],
+            anno:["dj","sj","eur","cod505","ankleDF","mas"] },
+    sala:{ nota:"Forza massimale come base della potenza.", ciclo:["rm35"], anno:["pred","rm1"] },
+    completa:{ nota:"Profilo forza-velocità verticale e orizzontale.",
+               ciclo:["rsi105","cmj1lL","cmj1lR"],
+               anno:["sfvF0","sfvV0","sfvPmax","fvF0","fvV0","fvPmax","rmSquat","imtp","nordicAng","nordicTq"] }},
   forza:{
-    campo:{ nota:"Senza encoder: massimali per ripetizioni e salti col telefono.",
-      sett:["cmj"], ciclo:["rm35","pred","bjump"],
-      anno:["sj","eur","dj","gripStr","ankleDF"] },
-    completa:{ nota:"Sala completa con encoder: curva carico-velocità e massimali diretti.",
-      sett:["cmj","vbt"], ciclo:["rmSquat","rmBench","rmDead","rm1"],
-      anno:["rmHip","rmOhp","rmPull","imtp","sj","eur","dj","fvF0","fvV0","fvPmax","bodyFat"] }},
+    nota:"Il lavoro è in sala: qui il campo serve solo a vedere se la forza si trasferisce.",
+    campo:{ sett:["cmj"], ciclo:["bjump","cmj1lAsym"], anno:["sj","eur","dj","ankleDF","hipIR"] },
+    sala:{ nota:"Massimali per ripetizioni: più sicuri del singolo e quasi altrettanto informativi.",
+           ciclo:["rm35","pred"], anno:["rm1","pullMax","pushMax"] },
+    completa:{ nota:"Con l'encoder la curva carico-velocità sostituisce i massimali.",
+               ciclo:["vbt","rmSquat","rmBench","rmDead"],
+               anno:["rmHip","rmOhp","rmPull","imtp","gripStr","fvF0","fvV0","fvPmax","bodyFat"] }},
   combattimento:{
-    campo:{ nota:"Palestra, telefono e cronometro.",
-      sett:["cmj"], ciclo:["cmj1lAsym","bjump","spr10"],
-      anno:["sj","eur","dj","shuttle300","shuttleFat","ankleDF","hipIR"] },
-    completa:{ nota:"Aggiunge sala, dinamometro e capacità anaerobica su pedana.",
-      sett:["cmj","rsiMod"], ciclo:["cmj1lL","cmj1lR","cmj1lAsym","bjump","spr10","gripStr"],
-      anno:["sj","eur","dj","bosco30","bosco60","shuttle300","shuttleFat","rmSquat","imtp","hipIR","ybtLow"] }},
+    nota:"Potenza ripetuta e capacità di reggere riprese intense.",
+    campo:{ sett:["cmj"], ciclo:["cmj1lAsym","bjump","spr10"],
+            anno:["sj","eur","dj","shuttle300","shuttleFat","ankleDF","hipIR"] },
+    sala:{ nota:"Base di forza e trazioni.", ciclo:["rm35"], anno:["pred","pullMax","pushMax"] },
+    completa:{ nota:"Capacità anaerobica su pedana e forza di presa.",
+               ciclo:["cmj1lL","cmj1lR","gripStr"], anno:["bosco30","bosco60","rmSquat","imtp","ybtLow"] }},
   generale:{
-    campo:{ nota:"Il minimo che funziona ovunque, senza attrezzatura.",
-      sett:["cmj"], ciclo:["cmj1lAsym","bjump"],
-      anno:["sj","eur","spr10","cod505","ankleDF"] },
-    completa:{ nota:"Aggiunge la sala per la base di forza.",
-      sett:["cmj","rsiMod"], ciclo:["cmj1lL","cmj1lR","cmj1lAsym","bjump","spr10"],
-      anno:["sj","eur","dj","cod505","rmSquat","imtp","ankleDF","hipIR","yoyo1"] }},
+    nota:"Il minimo che funziona ovunque, poi si aggiunge quello che hai.",
+    campo:{ sett:["cmj"], ciclo:["cmj1lAsym","bjump"], anno:["sj","eur","spr10","cod505","ankleDF"] },
+    sala:{ nota:"Base di forza generale.", ciclo:["rm35"], anno:["pred","pullMax","pushMax"] },
+    completa:{ nota:"Aggiunge forza isometrica e reattività strumentata.",
+               ciclo:["rsiMod","cmj1lL","cmj1lR"], anno:["dj","rmSquat","imtp","hipIR","yoyo1"] }},
 };
+
+/* Compone il livello richiesto sommando le aggiunte a quelli sotto. */
 function batt2(sport, liv){
   const b=BATT2[sport]||BATT2.generale;
-  return b[liv==="completa"?"completa":"campo"];
+  const ordine=["campo","sala","completa"];
+  const fino=Math.max(ordine.indexOf(liv),0);
+  const out={sett:[],ciclo:[],anno:[],nota:b.nota||"",note:[]};
+  for(let i=0;i<=fino;i++){
+    const p=b[ordine[i]]; if(!p) continue;
+    ["sett","ciclo","anno"].forEach(k=>{
+      (p[k]||[]).forEach(id=>{ if(out[k].indexOf(id)<0) out[k].push(id); });
+    });
+    if(i>0 && p.nota) out.note.push(p.nota);
+  }
+  return out;
 }
 function batt2Tests(sport, liv){
   const b=batt2(sport,liv), out=[];
@@ -6724,17 +6790,26 @@ function openBattery(sp, liv){
 
   // 2 · il livello — due carte, con dentro cosa serve
   h+='<div class="bstep">2 · Con che attrezzatura</div><div class="blev">';
-  [["campo","🏟","Da campo","Quello che hai già: metro, coni, cronometro, telefono."],
-   ["completa","🔬","Completa","Aggiunge sala pesi, encoder, pedana, dinamometro."]].forEach(function(x){
-    const k=x[0], ids=batt2Tests(sport,k), b=batt2(sport,k);
-    const eq=eqList(ids), on=(liv||"campo")===k;
+  LIVELLI.forEach(function(L){
+    const ids=batt2Tests(sport,L.k), b=batt2(sport,L.k);
+    const on=(liv||"")===L.k;
     const tot=TIER.reduce((a,t)=>a+tierMinuti(b[t.k]||[],n).min,0);
-    h+='<button class="blevcard'+(on?" on":"")+'" onclick="openBattery(\''+sport+'\',\''+k+'\')">'+
-       '<div class="blh"><span class="bli">'+x[1]+'</span><span class="blt">'+x[2]+'</span>'+
+    // solo l'attrezzatura che QUESTO livello aggiunge rispetto al precedente:
+    // ripetere ogni volta metro e coni nasconde la vera differenza fra i tre
+    const eqNuova=eqList(ids).filter((_,i)=>true);
+    const soloSue=[]; const set={};
+    ids.forEach(id=>testEq(id).forEach(k=>{ if(EQ[k]&&EQ[k].liv===L.n) set[k]=1; }));
+    Object.keys(set).forEach(k=>soloSue.push(EQ[k].l));
+    h+='<button class="blevcard'+(on?" on":"")+'" onclick="openBattery(\''+sport+'\',\''+L.k+'\')">'+
+       '<div class="blh"><span class="bli">'+L.i+'</span><span class="blt">'+L.l+'</span>'+
+       '<span class="blcost">'+L.costo+'</span>'+
        (on?'<span class="blok">✓</span>':'')+'</div>'+
-       '<div class="bld">'+x[3]+'</div>'+
+       '<div class="bld">'+L.d+'</div>'+
        '<div class="blm"><b>'+ids.length+'</b> test · circa <b>'+tot+' min</b> l\'anno con '+n+(n===1?' atleta':' atlete')+'</div>'+
-       '<div class="bleq">'+eq.map(e=>'<span>'+esc(e)+'</span>').join("")+'</div>'+
+       (soloSue.length
+         ? '<div class="bleq">'+(L.n>1?'<span class="bleqp">in più:</span>':'')+
+           soloSue.map(e=>'<span>'+esc(e)+'</span>').join("")+'</div>'
+         : '')+
        '</button>';
   });
   h+='</div>';
@@ -6749,6 +6824,7 @@ function openBattery(sp, liv){
   const b=batt2(sport,liv);
   h+='<div class="bstep">3 · Quando farli</div>';
   if(b.nota) h+='<div class="gnote" style="margin-top:0">'+b.nota+'</div>';
+  (b.note||[]).forEach(x=>{ h+='<div class="gnote" style="border-left:2px solid var(--accent);margin-top:0">'+x+'</div>'; });
 
   TIER.forEach(function(t,ti){
     const ids=(b[t.k]||[]).filter(id=>TMAP[id]);
@@ -6767,14 +6843,14 @@ function openBattery(sp, liv){
          (tm.squadra?" + prova di squadra":"")+'</span>'+
        '</summary><div class="btbody">'+nota;
     ids.forEach(function(id){
-      const T=TMAP[id], u=usoOf(id), eq=eqList([id]);
+      const T=TMAP[id], u=usoOf(id), eq=eqList([id]), lv=testLevel(id);
       h+='<div class="brow">'+
          '<div class="brh"><span class="brn">'+(ICON[id]||"🔬")+' '+esc(T.name)+'</span>'+
          '<span class="bru">'+esc(T.unit)+'</span>'+
          '<button class="brg" onclick="event.stopPropagation();openGuide(\''+id+'\')">guida</button></div>'+
          (u?'<div class="brs">'+u.s+'</div><div class="bruu"><b>In preparazione:</b> '+u.u+'</div>'
             :'<div class="brs">'+esc(T.full)+'</div>')+
-         (eq.length?'<div class="breq">serve: '+eq.map(esc).join(" · ")+'</div>':'')+
+         (eq.length?'<div class="breq'+(lv>1?" breq-"+lv:"")+'">serve: '+eq.map(esc).join(" · ")+'</div>':'')+
          '</div>';
     });
     const inseribili=ids.map(id=>TMAP[id]).filter(x=>x&&!x.derived);
@@ -6787,7 +6863,7 @@ function openBattery(sp, liv){
   const team=S.teams.find(x=>x.id===S.activeTeam);
   if(team && (team.sport||"generale")===sport){
     h+='<button class="btn primary" style="width:100%;margin-top:16px" onclick="applyBattery(\''+sport+'\',\''+liv+'\')">'+
-       'Usa questa batteria per «'+esc(team.name)+'»</button>'+
+       'Usa la batteria «'+esc(livInfo(liv).l)+'» per '+esc(team.name)+'</button>'+
        '<div class="gnote">Imposta quali test compaiono nella tabella della squadra. Non cancella niente: '+
        'i dati già registrati restano visibili comunque.</div>';
   }
@@ -6800,7 +6876,7 @@ function applyBattery(sport, liv){
   const ids=batt2Tests(sport,liv).filter(id=>TMAP[id]);
   team.tests=ids;
   save(); closeM(); render();
-  toast("Batteria "+(liv==="completa"?"completa":"da campo")+" impostata · "+ids.length+" test");
+  toast("Batteria «"+livInfo(liv).l+"» impostata · "+ids.length+" test");
 }
 
 /* Sessione da un elenco esplicito di test, non da un indice dentro una

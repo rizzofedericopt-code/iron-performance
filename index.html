@@ -104,6 +104,56 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .pf-hint{color:var(--muted2);font-size:12px;line-height:1.5;margin:6px 0 4px}
 .pf-hint b{color:var(--text)}
 .pf-minor{border-left:3px solid var(--accent);padding-left:10px}
+.bstep{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:1.1px;
+  text-transform:uppercase;color:var(--muted2);margin:18px 0 8px}
+.bstep:first-of-type{margin-top:4px}
+
+.blev{display:grid;gap:10px}
+@media(min-width:560px){.blev{grid-template-columns:1fr 1fr}}
+.blevcard{display:block;width:100%;text-align:left;cursor:pointer;
+  background:var(--surface2);border:1.5px solid var(--line2);border-radius:14px;
+  padding:13px 14px;color:var(--text);font:inherit;transition:border-color .12s,background .12s}
+.blevcard:hover{border-color:var(--muted2)}
+.blevcard.on{border-color:var(--accent);background:rgba(230,57,70,.07)}
+.blh{display:flex;align-items:center;gap:8px}
+.bli{font-size:19px;line-height:1}
+.blt{font-family:var(--sans);font-weight:700;font-size:15px}
+.blok{margin-left:auto;color:var(--accent);font-weight:700}
+.bld{font-size:12px;color:var(--muted2);line-height:1.45;margin-top:5px}
+.blm{font-size:12px;color:var(--text);margin-top:7px}
+.blm b{font-family:var(--sans)}
+.bleq{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.bleq span{font-size:10px;color:var(--muted2);background:var(--surface);
+  border:1px solid var(--line);border-radius:999px;padding:2px 7px}
+
+.btier{border:1px solid var(--line2);border-radius:13px;margin-bottom:9px;
+  background:var(--surface2);overflow:hidden}
+.btier>summary{list-style:none;cursor:pointer;padding:12px 14px;
+  display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.btier>summary::-webkit-details-marker{display:none}
+.bti{font-size:15px;line-height:1}
+.btl{font-family:var(--sans);font-weight:700;font-size:14px;color:var(--text)}
+.btw{font-size:11px;color:var(--muted2)}
+.btm{margin-left:auto;font-size:11.5px;color:var(--muted2);white-space:nowrap}
+.btbody{padding:0 14px 13px}
+
+.btnote{font-size:11.5px;color:var(--muted2);line-height:1.5;
+  background:var(--surface);border-radius:9px;padding:9px 11px;margin-bottom:4px}
+.btnote b{color:var(--text)}
+.brow{border-top:1px solid var(--line);padding:11px 0}
+.brh{display:flex;align-items:baseline;gap:8px}
+.brn{font-family:var(--sans);font-weight:600;font-size:13.5px;color:var(--text)}
+.bru{font-size:10.5px;color:var(--muted2)}
+.brg{margin-left:auto;background:none;border:none;color:var(--muted2);
+  font-size:11px;text-decoration:underline;cursor:pointer;padding:0}
+.brg:hover{color:var(--accent)}
+.brs{font-size:12.5px;color:var(--muted2);line-height:1.5;margin-top:3px}
+.bruu{font-size:12.5px;color:var(--text);line-height:1.5;margin-top:5px;
+  padding-left:9px;border-left:2px solid var(--accent)}
+.bruu b{font-family:var(--sans);font-size:10px;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--accent)}
+.breq{font-size:10.5px;color:var(--muted2);margin-top:5px}
+
 .lvhx{margin-bottom:16px}
 .lvhx-t{font-family:var(--sans);font-weight:700;font-size:11px;letter-spacing:.8px;
   text-transform:uppercase;color:var(--muted2);margin:10px 0 6px}
@@ -6336,6 +6386,111 @@ function lvTable(t){
          '<div style="font-size:10px;color:var(--muted2);font-family:var(--mono);margin:9px 0 4px">Femminile ('+t.unit+') · indicativi</div>'+bar("f");
 }
 
+/* ═══════════════ ATTREZZATURA ═══════════════
+   Cosa serve per fare un test. È la prima cosa da sapere e non c'era da nessuna
+   parte: sceglievi una batteria e scoprivi in palestra che ti mancava metà
+   dell'attrezzatura. Da qui nasce la distinzione fra batteria da campo e
+   batteria completa — non dalla difficoltà del test, dalla roba che serve. */
+const EQ={
+  metro:{l:"metro / rullina", campo:true},
+  gesso:{l:"gesso o nastro",  campo:true},
+  crono:{l:"cronometro",      campo:true},
+  coni: {l:"coni",            campo:true},
+  video:{l:"telefono (My Jump Lab)", campo:true},
+  audio:{l:"tracce audio Yo-Yo",     campo:true},
+  sala: {l:"sala pesi",       campo:false},
+  vbt:  {l:"encoder / VBT",   campo:false},
+  pedana:{l:"pedana a contatto o di forza", campo:false},
+  dina: {l:"dinamometro",     campo:false},
+  gonio:{l:"goniometro o inclinometro", campo:false},
+  lab:  {l:"laboratorio",     campo:false},
+};
+/* Attrezzatura per test. Chi non è elencato non richiede niente. */
+const TEST_EQ={
+  cmj:["video"], sj:["video"], dj:["video"], cmjA:["video"], rsiMod:["video"],
+  rsi105:["video"], cmj1lL:["video"], cmj1lR:["video"], dj1lL:["video"], dj1lR:["video"],
+  bosco15:["pedana"], bosco30:["pedana"], bosco60:["pedana"],
+  fvF0:["video"], fvV0:["video"], fvPmax:["video"], fvdef:["video"],
+  sfvF0:["video","crono"], sfvV0:["video","crono"], sfvPmax:["video","crono"],
+  bjump:["metro"], ybtLow:["metro"], hopLSI:["metro"], tripleHop:["metro"],
+  shMob:["metro"], ankleDF:["metro"], shIR:["gonio"], hipIR:["gonio"],
+  spr10:["crono","coni"], spr30:["crono","coni"], rsa:["crono","coni"], sdec:["crono","coni"],
+  cod505:["crono","coni"], ttest:["crono","coni"], vcut:["crono","coni"], bronco:["crono","coni"],
+  yoyo1:["audio","coni"], yoyo2:["audio","coni"], shuttle300:["crono","coni"], shuttleFat:["crono","coni"],
+  rm1:["sala"], rm35:["sala"], pred:["sala"], rmSquat:["sala"], rmBench:["sala"],
+  rmDead:["sala"], rmHip:["sala"], rmOhp:["sala"], rmPull:["sala"],
+  vbt:["sala","vbt"], imtp:["dina"], gripStr:["dina"],
+  nordicAng:["video"], nordicTq:["dina"],
+  vo2:["lab"], wingPeak:["lab"], wingMean:["lab"], airBike:["lab"], trmInc:["lab"],
+  mas:["crono","coni"], bodyFat:["dina"],
+};
+function testEq(id){ return TEST_EQ[id]||[]; }
+function isFieldTest(id){ return testEq(id).every(k=>EQ[k]&&EQ[k].campo); }
+function eqList(ids){
+  const set={}; ids.forEach(id=>testEq(id).forEach(k=>set[k]=1));
+  return Object.keys(set).filter(k=>EQ[k]).map(k=>EQ[k].l);
+}
+
+/* ═══════════════ A COSA SERVE, E COSA CI FAI ═══════════════
+   Una riga per test, e non è la stessa cosa della guida: la guida spiega come
+   si esegue, questa dice CHE DECISIONE prendi col numero che esce. È la parte
+   che manca in tutte le app di testing — misurano bene e poi ti lasciano lì
+   con una tabella e nessuna idea di cosa farci lunedì. */
+const USO={
+  cmj:{s:"Potenza degli arti inferiori, il salto di riferimento.",
+       u:"Ripetuto ogni settimana è il tuo indicatore di fatica: un calo del 5-8% sulla sua media dice di alleggerire oggi, non fra tre giorni."},
+  sj:{s:"Salto senza contromovimento: forza esplosiva pura, senza componente elastica.",
+      u:"Da solo dice poco. Serve insieme al CMJ per ricavare l'EUR: è quello che ti dice se lavorare di forza o di pliometria."},
+  cmjA:{s:"Il salto di gara: rincorsa e braccia libere.",
+        u:"È il numero che mostri all'atleta e all'allenatore. Se cresce il CMJ ma non l'Abalakov, il problema è coordinazione, non forza."},
+  armCon:{s:"Quanto guadagna dallo slancio delle braccia.",
+          u:"Sotto il 10% metti tecnica di braccia nel riscaldamento: rende più in fretta di due mesi di squat."},
+  eur:{s:"Rapporto CMJ/SJ: quanto sfrutta la componente elastica.",
+       u:"Basso = manca il riutilizzo elastico, lavora pliometria e stiffness. Alto = l'elastico c'è già, il margine è nella forza."},
+  dj:{s:"Reattività da caduta: quanto salta rispetto a quanto sta a terra.",
+      u:"Guida la scelta dell'altezza di caduta in pliometria: si allena all'altezza dove l'RSI è più alto, non alla più alta possibile."},
+  rsiMod:{s:"Altezza divisa per il tempo di stacco, dal CMJ.",
+          u:"Cala prima dell'altezza. È il primo campanello di affaticamento neuromuscolare: usalo per decidere il carico della seduta."},
+  rsi105:{s:"Rimbalzo su salti ripetuti: il gesto del muro e della difesa.",
+          u:"Sale con la pliometria a basso contatto. Se crolla su chi di solito salta bene, ferma i salti e controlla caviglie e Achille."},
+  cmj1lL:{s:"Salto sulla gamba sinistra.", u:"Serve solo insieme alla destra: è la differenza fra i due che conta."},
+  cmj1lR:{s:"Salto sulla gamba destra.",   u:"Serve solo insieme alla sinistra: è la differenza fra i due che conta."},
+  cmj1lAsym:{s:"Differenza percentuale fra le due gambe.",
+             u:"È l'indicatore di rischio più pratico che hai. Se cresce nel tempo, metti lavoro monopodalico prima che diventi un infortunio."},
+  bjump:{s:"Spinta orizzontale, con un metro e nient'altro.",
+         u:"Chi salta alto ma non lontano spinge poco all'indietro: lavoro di spinta orizzontale e accelerazioni."},
+  spr10:{s:"Accelerazione nei primi metri.",
+         u:"È la distanza che conta negli sport di campo piccolo. Se non migliora con la forza, il problema è tecnico."},
+  spr30:{s:"Velocità massima raggiunta.", u:"Serve dove si corre lungo. Su un campo da pallavolo non lo usi mai."},
+  cod505:{s:"Un cambio di direzione a 180°, decelerazione compresa.",
+          u:"Confrontalo con lo sprint lineare: se il 505 è lento e lo sprint no, il problema è frenare, non correre."},
+  ttest:{s:"Agilità su più direzioni, spostamenti laterali compresi.", u:"Test generale di agilità: buono a inizio e fine preparazione, non da ripetere spesso."},
+  vcut:{s:"Cambi di direzione in serie a 45°.", u:"Più vicino al gioco del 505. Peggiora prima quando la condizione cala."},
+  yoyo1:{s:"Capacità di ripetere sforzi intermittenti.",
+         u:"Dice se regge il ritmo partita. Da rifare a inizio preparazione e al rientro dalla sosta: due volte l'anno bastano."},
+  bronco:{s:"1200 m di navette senza recupero: capacità aerobica sotto fatica.",
+          u:"Dal tempo ricavi la velocità aerobica massima e ci costruisci sopra le ripetute. Sport a inseguimento, non pallavolo."},
+  mas:{s:"Velocità aerobica massima.", u:"È il numero con cui prescrivi le ripetute: le intensità si esprimono in percentuale di questa."},
+  rsa:{s:"Sprint ripetuti: il migliore della serie.", u:"Insieme al calo percentuale dice se il problema è velocità o capacità di ripeterla."},
+  imtp:{s:"Forza isometrica massima, per chilo di peso.",
+        u:"Base di forza senza rischio tecnico. Utile su chi non può ancora fare massimali."},
+  rmSquat:{s:"Massimale di squat, misurato o stimato dalla curva.",
+           u:"È la base delle percentuali di lavoro. Rapportato al peso corporeo dice se ha senso passare al lavoro balistico."},
+  vbt:{s:"Velocità del bilanciere a un carico dato.",
+       u:"Autoregolazione: stesso carico più lento del solito = giornata storta, riduci. Serve un encoder."},
+  ankleDF:{s:"Dorsiflessione di caviglia con ginocchio al muro.",
+           u:"Sotto i 10 cm limita l'accosciata e sposta il carico sul ginocchio. Mobilità di caviglia prima di insistere sui salti."},
+  shIR:{s:"Rotazione interna di spalla del braccio che schiaccia.",
+        u:"Un deficit marcato rispetto all'altro lato è il segnale classico di sovraccarico overhead: mobilità e controllo prima che faccia male."},
+  hipIR:{s:"Rotazione interna d'anca.", u:"Limitata, sposta il lavoro su ginocchio e lombare. La differenza fra i lati conta più del valore."},
+  ybtLow:{s:"Controllo monopodalico in tre direzioni.", u:"Utile su chi rientra da un infortunio: dice se il controllo è tornato simmetrico."},
+  hopLSI:{s:"Simmetria nel salto orizzontale monopodalico.", u:"Criterio classico di ritorno allo sport: sopra il 90% si riprende a caricare."},
+  nordicAng:{s:"Fin dove trattiene la discesa nel Nordic.",
+             u:"Legato al rischio di infortunio agli ischiocrurali. Se cala nel tempo, aumenta il lavoro eccentrico."},
+  bodyFat:{s:"Percentuale di massa grassa.", u:"Da guardare come tendenza, mai come obiettivo dichiarato all'atleta. Con delle under 18, cautela doppia."},
+};
+function usoOf(id){ return USO[id]||null; }
+
 const BATTERY={
   pallavolo:{
     note:"Pallavolo: salti e gesto overhead. Cuore del monitoraggio: CMJ continuo + cura di spalla e atterraggi.",
@@ -6445,6 +6600,103 @@ const BATTERY={
       {t:"Functional Movement Screen (FMS)", w:"Baseline / periodico", y:"Qualità del movimento e asimmetrie: screen di base e linguaggio comune col cliente.", tests:["fmsSquat","fmsHurdle","fmsLunge","fmsShoulder","fmsASLR","fmsPushup","fmsRotary"]}
     ]}
 };
+/* ═══════════════ BATTERIE PRONTE, DUE LIVELLI ═══════════════
+   Ogni sport ha due batterie, e la differenza NON è la difficoltà dei test:
+   è l'attrezzatura. «Da campo» si fa con metro, coni, cronometro e telefono —
+   cioè in palestra, con la squadra, senza niente di speciale. «Completa»
+   aggiunge quello che serve la sala, la pedana, l'encoder.
+
+   Dentro ogni batteria i test sono ordinati per FREQUENZA, non per categoria,
+   perché è la domanda vera: cosa faccio questa settimana? cosa a fine ciclo?
+   cosa a inizio stagione? Un elenco per categoria non risponde a nessuna
+   delle tre.                                                                */
+const TIER=[
+  {k:"sett",  l:"Ogni settimana",     w:"prima dell'allenamento", i:"🔁"},
+  {k:"ciclo", l:"Ogni 6-8 settimane", w:"fine di un blocco",      i:"📅"},
+  {k:"anno",  l:"Inizio stagione",    w:"baseline, 1-2 volte l'anno", i:"🧭"},
+];
+
+const BATT2={
+  pallavolo:{
+    campo:{ nota:"Tutto in palestra, con la squadra. Il telefono per i salti, un metro al muro per le quote.",
+      sett:["cmj","rsiMod"], ciclo:["cmjA","cmj1lL","cmj1lR","cmj1lAsym","sj","eur"],
+      anno:["dj","spr10","cod505","ankleDF","shIR","yoyo1"] },
+    completa:{ nota:"Aggiunge la sala e la pedana: forza relativa e capacità anaerobica.",
+      sett:["cmj","rsiMod"], ciclo:["cmjA","cmj1lL","cmj1lR","cmj1lAsym","sj","eur","rsi105"],
+      anno:["dj","spr10","cod505","vcut","ankleDF","shIR","hipIR","yoyo1","rmSquat","imtp","bosco30","nordicAng"] }},
+  calcio:{
+    campo:{ nota:"Campo, coni e cronometro. Yo-Yo con le tracce audio.",
+      sett:["cmj"], ciclo:["spr10","spr30","cod505","cmj1lAsym"],
+      anno:["yoyo1","mas","rsa","sdec","ttest","bjump","ankleDF"] },
+    completa:{ nota:"Aggiunge sala, dinamometro e profilo dello sprint.",
+      sett:["cmj","rsiMod"], ciclo:["spr10","spr30","cod505","cmj1lL","cmj1lR","cmj1lAsym","nordicAng"],
+      anno:["yoyo1","mas","rsa","sdec","bronco","sfvF0","sfvV0","sfvPmax","rmSquat","imtp","hopLSI","ybtLow"] }},
+  basket:{
+    campo:{ nota:"Palestra e telefono. La caviglia è il punto da tenere d'occhio.",
+      sett:["cmj","rsiMod"], ciclo:["cmj1lL","cmj1lR","cmj1lAsym","sj","eur"],
+      anno:["dj","spr10","cod505","ttest","ankleDF","yoyo1"] },
+    completa:{ nota:"Aggiunge sala, pedana e controllo monopodalico completo.",
+      sett:["cmj","rsiMod"], ciclo:["cmjA","cmj1lL","cmj1lR","cmj1lAsym","sj","eur","rsi105"],
+      anno:["dj","spr10","cod505","ttest","vcut","ankleDF","hipIR","yoyo1","rmSquat","imtp","bosco30","ybtLow","hopLSI"] }},
+  atletica:{
+    campo:{ nota:"Pista, coni e cronometro.",
+      sett:["cmj"], ciclo:["spr10","spr30","bjump","cmj1lAsym"],
+      anno:["dj","sj","eur","cod505","ankleDF","mas"] },
+    completa:{ nota:"Aggiunge il profilo forza-velocità e la sala.",
+      sett:["cmj","rsiMod"], ciclo:["spr10","spr30","bjump","rsi105","cmj1lL","cmj1lR","cmj1lAsym"],
+      anno:["dj","sj","eur","sfvF0","sfvV0","sfvPmax","fvF0","fvV0","fvPmax","rmSquat","imtp","nordicAng"] }},
+  forza:{
+    campo:{ nota:"Senza encoder: massimali per ripetizioni e salti col telefono.",
+      sett:["cmj"], ciclo:["rm35","pred","bjump"],
+      anno:["sj","eur","dj","gripStr","ankleDF"] },
+    completa:{ nota:"Sala completa con encoder: curva carico-velocità e massimali diretti.",
+      sett:["cmj","vbt"], ciclo:["rmSquat","rmBench","rmDead","rm1"],
+      anno:["rmHip","rmOhp","rmPull","imtp","sj","eur","dj","fvF0","fvV0","fvPmax","bodyFat"] }},
+  combattimento:{
+    campo:{ nota:"Palestra, telefono e cronometro.",
+      sett:["cmj"], ciclo:["cmj1lAsym","bjump","spr10"],
+      anno:["sj","eur","dj","shuttle300","shuttleFat","ankleDF","hipIR"] },
+    completa:{ nota:"Aggiunge sala, dinamometro e capacità anaerobica su pedana.",
+      sett:["cmj","rsiMod"], ciclo:["cmj1lL","cmj1lR","cmj1lAsym","bjump","spr10","gripStr"],
+      anno:["sj","eur","dj","bosco30","bosco60","shuttle300","shuttleFat","rmSquat","imtp","hipIR","ybtLow"] }},
+  generale:{
+    campo:{ nota:"Il minimo che funziona ovunque, senza attrezzatura.",
+      sett:["cmj"], ciclo:["cmj1lAsym","bjump"],
+      anno:["sj","eur","spr10","cod505","ankleDF"] },
+    completa:{ nota:"Aggiunge la sala per la base di forza.",
+      sett:["cmj","rsiMod"], ciclo:["cmj1lL","cmj1lR","cmj1lAsym","bjump","spr10"],
+      anno:["sj","eur","dj","cod505","rmSquat","imtp","ankleDF","hipIR","yoyo1"] }},
+};
+function batt2(sport, liv){
+  const b=BATT2[sport]||BATT2.generale;
+  return b[liv==="completa"?"completa":"campo"];
+}
+function batt2Tests(sport, liv){
+  const b=batt2(sport,liv), out=[];
+  TIER.forEach(t=>(b[t.k]||[]).forEach(id=>{ if(out.indexOf(id)<0) out.push(id); }));
+  return out;
+}
+/* Quanto tempo, per la squadra che hai davanti. Non un valore di manuale: il
+   conto vero, atleta per atleta, perche' e' quello che decide se lo farai. */
+const T_TEST={ cmj:20, rsiMod:0, cmjA:90, sj:60, eur:0, cmj1lL:60, cmj1lR:60, cmj1lAsym:0,
+  dj:90, rsi105:90, bjump:60, spr10:60, spr30:90, cod505:90, ttest:120, vcut:120,
+  ankleDF:60, shIR:60, hipIR:60, ybtLow:180, hopLSI:120, nordicAng:120,
+  rmSquat:600, rmBench:600, rmDead:600, rm1:600, rm35:420, pred:300, vbt:180, imtp:180,
+  bosco30:90, bosco60:120, gripStr:30, bodyFat:120 };
+function tierMinuti(ids, n){
+  let s=0, squadra=false;
+  ids.forEach(id=>{
+    if(id==="yoyo1"||id==="yoyo2"||id==="mas"||id==="bronco"||id==="shuttle300"||id==="shuttleFat"){ squadra=true; return; }
+    s += (T_TEST[id]!=null ? T_TEST[id] : 60);
+  });
+  const min=Math.round(s*n/60);
+  // Due numeri diversi, e confonderli fa saltare la programmazione della
+  // giornata: `min` e' il lavoro totale di chi misura, `staz` e' il tempo che
+  // passa davvero se giri a tre stazioni in parallelo. Il primo dice quanto
+  // costa, il secondo quanto dura.
+  return {min, staz:Math.max(Math.round(min/3),1), squadra};
+}
+
 function battVariant(b){ if(!b||!b.variants||!b.variants.length) return null;
   return b.variants.find(v=>v.k===S.cvar) || b.variants[0]; }
 function battView(sport){ const b=BATTERY[sport]||BATTERY.generale; const v=battVariant(b);
@@ -6452,32 +6704,129 @@ function battView(sport){ const b=BATTERY[sport]||BATTERY.generale; const v=batt
            : {b, v:null, note:b.note, groups:b.groups, core:b.core||[]}; }
 function sportMeta(id){ return SPORTS.find(s=>s.id===id)||{icon:"",label:id}; }
 function isCore(tid){ if(S.sport==="all") return false; const bv=battView(S.sport); return bv.core.indexOf(tid)>=0; }
-function openBattery(sp, vk){
+function openBattery(sp, liv){
   let sport=sp;
   if(!sport){ if(S.sport!=="all") sport=S.sport; else { const tm=S.teams.find(t=>t.id===S.activeTeam); sport=(tm&&tm.sport)||"pallavolo"; } }
-  if(vk){ S.cvar=vk; save(); }
   document.getElementById("menu").classList.remove("on");
-  const bv=battView(sport); const b=bv.b; const sm=sportMeta(sport);
-  let h='<div class="mh"><div><div class="eyebrow">Batteria consigliata</div>'+
+  const sm=sportMeta(sport);
+  const n=Math.max(teamAthletes().length,1);
+
+  let h='<div class="mh"><div><div class="eyebrow">Batterie pronte</div>'+
     '<div class="mt">'+sm.icon+' '+sm.label+'</div>'+
-    '<div class="ms">Quali test usare e quando</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
-  h+='<div class="bsports">'+SPORTS.filter(s=>s.id!=="all").map(s=>'<button class="'+(s.id===sport?"on":"")+'" onclick="openBattery(\''+s.id+'\')">'+s.label+'</button>').join("")+'</div>';
-  if(b.note) h+='<div class="gnote" style="margin:0 0 10px">'+b.note+'</div>';
-  if(b.variants){
-    const cur=bv.v;
-    h+='<div class="bsports bvars">'+b.variants.map(v=>'<button class="'+(v.k===cur.k?"on":"")+'" onclick="openBattery(\''+sport+'\',\''+v.k+'\')">'+v.label+'</button>').join("")+'</div>';
-    if(cur.note) h+='<div class="gnote" style="margin:0 0 12px;border-left:2px solid var(--accent)">'+cur.note+'</div>';
-  }
-  bv.groups.forEach(function(g,gi){
-    h+='<div class="bgrp"><div class="bt">'+g.t+'</div><div class="bw">⏱ '+g.w+'</div><div class="by">'+g.y+'</div><div class="btests">';
-    g.tests.forEach(id=>{ const t=TMAP[id]; if(!t) return;
-      h+='<span class="btchip" onclick="openGuide(\''+id+'\')">'+(ICON[id]||"🔬")+' '+t.name+'</span>'; });
-    h+='</div>';
-    const enterable=g.tests.map(id=>TMAP[id]).filter(t=>t&&!t.derived).length;
-    if(enterable) h+='<button class="btn sm" style="margin-top:11px" onclick="openBatterySession(\''+sport+'\','+gi+')">+ Crea sessione con questi test</button>';
-    h+='</div>';
+    '<div class="ms">Cosa misurare, quando, e cosa ci fai</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+
+  // 1 · lo sport
+  h+='<div class="bstep">1 · Lo sport</div>'+
+     '<div class="bsports">'+SPORTS.filter(x=>x.id!=="all").map(x=>
+       '<button class="'+(x.id===sport?"on":"")+'" onclick="openBattery(\''+x.id+'\''+(liv?",'"+liv+"'":"")+')">'+
+       x.icon+' '+x.label+'</button>').join("")+'</div>';
+
+  // 2 · il livello — due carte, con dentro cosa serve
+  h+='<div class="bstep">2 · Con che attrezzatura</div><div class="blev">';
+  [["campo","🏟","Da campo","Quello che hai già: metro, coni, cronometro, telefono."],
+   ["completa","🔬","Completa","Aggiunge sala pesi, encoder, pedana, dinamometro."]].forEach(function(x){
+    const k=x[0], ids=batt2Tests(sport,k), b=batt2(sport,k);
+    const eq=eqList(ids), on=(liv||"campo")===k;
+    const tot=TIER.reduce((a,t)=>a+tierMinuti(b[t.k]||[],n).min,0);
+    h+='<button class="blevcard'+(on?" on":"")+'" onclick="openBattery(\''+sport+'\',\''+k+'\')">'+
+       '<div class="blh"><span class="bli">'+x[1]+'</span><span class="blt">'+x[2]+'</span>'+
+       (on?'<span class="blok">✓</span>':'')+'</div>'+
+       '<div class="bld">'+x[3]+'</div>'+
+       '<div class="blm"><b>'+ids.length+'</b> test · circa <b>'+tot+' min</b> l\'anno con '+n+(n===1?' atleta':' atlete')+'</div>'+
+       '<div class="bleq">'+eq.map(e=>'<span>'+esc(e)+'</span>').join("")+'</div>'+
+       '</button>';
   });
+  h+='</div>';
+
+  if(!liv){
+    h+='<div class="gnote">Scegli il livello per vedere cosa contiene. La differenza non è la difficoltà dei test: '+
+       'è l\'attrezzatura che serve.</div>';
+    modal(h); return;
+  }
+
+  // 3 · quando — i tre livelli di frequenza
+  const b=batt2(sport,liv);
+  h+='<div class="bstep">3 · Quando farli</div>';
+  if(b.nota) h+='<div class="gnote" style="margin-top:0">'+b.nota+'</div>';
+
+  TIER.forEach(function(t,ti){
+    const ids=(b[t.k]||[]).filter(id=>TMAP[id]);
+    if(!ids.length) return;
+    const tm=tierMinuti(ids,n);
+    const nota = tm.min>30
+      ? '<div class="btnote">'+tm.min+' minuti di lavoro in tutto: se giri a <b>tre stazioni</b> in parallelo '+
+        'passano circa <b>'+tm.staz+' minuti</b>. Da solo, mettine in conto '+tm.min+'.'+
+        (tm.squadra?' La prova di squadra si fa a parte, tutte insieme.':'')+'</div>'
+      : '';
+    h+='<details class="btier"'+(ti===0?" open":"")+'>'+
+       '<summary><span class="bti">'+t.i+'</span>'+
+       '<span class="btl">'+t.l+'</span>'+
+       '<span class="btw">'+t.w+'</span>'+
+       '<span class="btm">'+(tm.min>30?"~"+tm.staz+" min a 3 stazioni":"~"+tm.min+" min")+
+         (tm.squadra?" + prova di squadra":"")+'</span>'+
+       '</summary><div class="btbody">'+nota;
+    ids.forEach(function(id){
+      const T=TMAP[id], u=usoOf(id), eq=eqList([id]);
+      h+='<div class="brow">'+
+         '<div class="brh"><span class="brn">'+(ICON[id]||"🔬")+' '+esc(T.name)+'</span>'+
+         '<span class="bru">'+esc(T.unit)+'</span>'+
+         '<button class="brg" onclick="event.stopPropagation();openGuide(\''+id+'\')">guida</button></div>'+
+         (u?'<div class="brs">'+u.s+'</div><div class="bruu"><b>In preparazione:</b> '+u.u+'</div>'
+            :'<div class="brs">'+esc(T.full)+'</div>')+
+         (eq.length?'<div class="breq">serve: '+eq.map(esc).join(" · ")+'</div>':'')+
+         '</div>';
+    });
+    const inseribili=ids.map(id=>TMAP[id]).filter(x=>x&&!x.derived);
+    if(inseribili.length)
+      h+='<button class="btn sm" style="width:100%;margin-top:10px" onclick="openBatterySessionIds('+
+         jsStr(inseribili.map(x=>x.id).join(","))+','+jsStr(t.l)+')">+ Crea sessione con questi '+inseribili.length+' test</button>';
+    h+='</div></details>';
+  });
+
+  const team=S.teams.find(x=>x.id===S.activeTeam);
+  if(team && (team.sport||"generale")===sport){
+    h+='<button class="btn primary" style="width:100%;margin-top:16px" onclick="applyBattery(\''+sport+'\',\''+liv+'\')">'+
+       'Usa questa batteria per «'+esc(team.name)+'»</button>'+
+       '<div class="gnote">Imposta quali test compaiono nella tabella della squadra. Non cancella niente: '+
+       'i dati già registrati restano visibili comunque.</div>';
+  }
   modal(h);
+}
+
+/* Applica la batteria alla squadra: decide quali colonne vedi, non cosa esiste. */
+function applyBattery(sport, liv){
+  const team=S.teams.find(x=>x.id===S.activeTeam); if(!team) return;
+  const ids=batt2Tests(sport,liv).filter(id=>TMAP[id]);
+  team.tests=ids;
+  save(); closeM(); render();
+  toast("Batteria "+(liv==="completa"?"completa":"da campo")+" impostata · "+ids.length+" test");
+}
+
+/* Sessione da un elenco esplicito di test, non da un indice dentro una
+   struttura: cosi' la stessa funzione serve batterie, gruppi e selezioni. */
+function openBatterySessionIds(idsCsv, titolo){
+  const ath=teamAthletes(); if(ath.length===0){ addAthlete(); return; }
+  const tests=String(idsCsv).split(",").map(id=>TMAP[id]).filter(t=>t&&!t.derived);
+  if(!tests.length){ toast("Nessun test da inserire"); return; }
+  let body="";
+  tests.forEach(t=>{
+    body+='<div class="bsess-test"><div class="bsess-th">'+(ICON[t.id]||"")+' '+t.full+' <span>('+t.unit+')</span></div>';
+    ath.forEach(a=>{
+      const arr=series(a.id,t.id); const last=arr.length?fmtNum(arr[arr.length-1].v):"";
+      body+='<div class="sess-row"><div><div class="sn">'+esc(a.name)+'</div>'+
+        (last!==""?'<div class="sp">ultimo: '+last+' '+t.unit+'</div>':'<div class="sp">—</div>')+'</div>'+
+        '<input class="mono" type="number" inputmode="decimal" step="any" placeholder="'+(last||t.unit)+'" data-a="'+a.id+'" data-t="'+t.id+'"></div>';
+    });
+    body+='</div>';
+  });
+  modal('<div class="mh"><div><div class="mt">Sessione</div>'+
+    '<div class="ms">'+esc(titolo||"")+' · '+tests.length+' test · '+ath.length+(ath.length===1?' atleta':' atlete')+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<label class="fl">Data</label><input id="bsD" type="date" value="'+todayISO()+'">'+
+    '<div style="height:8px"></div>'+body+
+    '<div style="height:10px"></div>'+
+    '<button class="btn primary" style="width:100%" onclick="saveBatterySession()">Salva sessione</button>');
 }
 
 let CHOOSE_TEAM=null;
@@ -6530,28 +6879,11 @@ function saveChosenTests(){
   toast(ids.length?(team.name+": "+ids.length+" test monitorati"):(team.name+": filtro azzerato"));
 }
 
+/* Restava una seconda implementazione della stessa schermata, che si sarebbe
+   separata dalla prima alla prima modifica. Ora e' un rimando. */
 function openBatterySession(sport, gi){
-  const ath=teamAthletes(); if(ath.length===0){ addAthlete(); return; }
   const bv=battView(sport); const g=bv.groups[gi]; if(!g) return;
-  const tests=g.tests.map(id=>TMAP[id]).filter(t=>t && !t.derived);
-  let body="";
-  tests.forEach(t=>{
-    body+='<div class="bsess-test"><div class="bsess-th">'+(ICON[t.id]||"")+' '+t.full+' <span>('+t.unit+')</span></div>';
-    ath.forEach(a=>{
-      const arr=series(a.id,t.id); const last=arr.length?fmtNum(arr[arr.length-1].v):"";
-      body+='<div class="sess-row"><div><div class="sn">'+esc(a.name)+'</div>'+
-        (last!==""?'<div class="sp">ultimo: '+last+' '+t.unit+'</div>':'<div class="sp">—</div>')+'</div>'+
-        '<input class="mono" type="number" inputmode="decimal" step="any" placeholder="'+(last||t.unit)+'" data-a="'+a.id+'" data-t="'+t.id+'"></div>';
-    });
-    body+='</div>';
-  });
-  modal('<div class="mh"><div><div class="mt">Sessione · '+g.t+'</div>'+
-    '<div class="ms">'+sportMeta(sport).label+' · '+tests.length+' test · '+ath.length+' atleti</div></div>'+
-    '<button class="mcl" onclick="closeM()">✕</button></div>'+
-    '<label class="fl">Data</label><input id="bsD" type="date" value="'+todayISO()+'">'+
-    '<div style="height:8px"></div>'+body+
-    '<div style="height:10px"></div>'+
-    '<button class="btn primary" style="width:100%" onclick="saveBatterySession()">Salva sessione</button>');
+  openBatterySessionIds(g.tests.join(","), g.t);
 }
 function saveBatterySession(){
   const d=document.getElementById("bsD").value||todayISO(); let n=0;

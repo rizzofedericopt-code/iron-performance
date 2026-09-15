@@ -27,6 +27,23 @@ alto su una riga, scheda atleta a fisarmonica, una sola strada per registrare i 
 panca e stacco sottostimava l'1RM del 14-16%), indicatore di quanto è lunga
 l'estrapolazione, stima che entra nello storico marcata come tale.
 
+**1RM da una serie a ripetizioni** — sei equazioni invece di una: la mediana è la
+stima, minimo e massimo sono l'intervallo, e l'intervallo si vede. Le ripetizioni
+di riserva si dichiarano e si sommano (senza, la stima esce bassa del 3% per ogni
+ripetizione lasciata). Sopra le 10 ripetizioni effettive non si salva. Mayhew è
+esclusa: a una ripetizione restituisce il 109% del carico.
+
+**Gruppi di carico** — finestra a parte, nessun effetto sulla tabella. Si apre dal
+menu o dalla cella di un massimale. Atlete in ordine di 1RM (dal più leggero, così
+sul bilanciere i dischi si aggiungono e basta), percentuale a scelta, carico
+arrotondato a quello che si può davvero caricare e scomposto in dischi. I gruppi
+automatici si tagliano dove la lista ha i salti veri, non ogni tre nomi; quelli a
+mano li componi tu spuntando i nomi, con la media che si vede prima di confermare,
+e **restano salvati per squadra e per esercizio** — la settimana dopo ritrovi gli
+stessi gruppi con i carichi ricalcolati. Sotto ogni nome la percentuale che le
+tocca davvero: la soglia d'allarme non è simmetrica, perché andare leggeri costa
+uno stimolo e andare pesanti costa una tecnica.
+
 **Indice di Bosco dal telefono** — le altezze bastano, `t = √(8h/g)`. Simulato:
 ±2-5% di errore contro il ±35% di un profilo estrapolato con lo stesso strumento.
 

@@ -716,6 +716,83 @@ ul.kb li b{color:#fff;font-weight:600}
   .set-row:hover{background:var(--surface3)}
   .tcard:hover,.grow:hover{border-color:var(--line2)}
 }
+/* ── Stima 1RM da ripetizioni ── */
+.rmbig{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;margin-top:10px}
+.rmv{font-family:var(--mono);font-size:40px;font-weight:700;line-height:1;color:var(--text)}
+.rmv small{font-size:16px;color:var(--muted);margin-left:5px;font-weight:600}
+.rml{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-top:6px}
+.rmci{font-size:11.5px;color:var(--muted2);margin-top:9px;line-height:1.45}
+.rmtab{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px}
+.rmr{display:flex;align-items:baseline;gap:10px;padding:8px 11px;border-bottom:1px solid var(--line)}
+.rmr:last-child{border-bottom:none}
+.rmn{flex:0 0 42px;font-weight:700;font-size:12.5px;color:var(--accent)}
+.rmk{font-family:var(--mono);font-size:14px;font-weight:600}
+.rmp{margin-left:auto;font-size:10.5px;color:var(--muted2)}
+
+/* ── Gruppi di carico ── */
+.lgex{display:flex;gap:6px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}
+.lgex::-webkit-scrollbar{display:none}
+.lgn{font-family:var(--mono);opacity:.65;font-size:11px;margin-left:3px}
+.lgpr{display:flex;align-items:center;gap:8px}
+.lgpr input{font-family:var(--mono);font-size:26px;font-weight:700;text-align:center;flex:0 0 108px}
+.lgsym{font-size:19px;color:var(--muted);font-weight:700}
+.lgchips{display:flex;gap:6px;overflow-x:auto;margin-top:9px;padding-bottom:3px;scrollbar-width:none}
+.lgchips::-webkit-scrollbar{display:none}
+/* Su un telefono da 390px quattro selettori in fila diventano quattro righe
+   e i gruppi finiscono sotto la piega. In griglia da due stanno in due. */
+.lgopt{display:grid;grid-template-columns:1fr 1fr;gap:10px 10px;margin-top:12px}
+.lgopt .seg{width:100%;display:flex}
+.lgopt .seg button{flex:1;padding:6px 4px;font-size:11.5px;white-space:nowrap}
+.lgopt .fl{margin-bottom:5px}
+.lgwrap{display:flex;flex-direction:column;gap:9px;margin-top:10px}
+.lgg{border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:10px;padding:10px 12px;background:var(--surface2)}
+.lgg.warn{border-left-color:#FF9F0A}
+.lgg.bad{border-left-color:var(--down)}
+.lgg.ok{border-left-color:var(--up)}
+.lgh{display:flex;align-items:baseline;justify-content:space-between}
+.lgt{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:700}
+.lgkg{font-family:var(--mono);font-size:25px;font-weight:700}
+.lgkg small{font-size:12px;color:var(--muted);margin-left:3px;font-weight:600}
+.lgpl{font-size:10.5px;color:var(--muted2);margin:1px 0 8px;border-bottom:1px solid var(--line);padding-bottom:7px}
+.lgrow{display:flex;align-items:baseline;gap:8px;padding:3px 0;font-size:12.5px}
+.lgnm{flex:1 1 auto;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg1{font-family:var(--mono);font-size:11px;color:var(--muted2);flex:0 0 auto}
+.lgef{font-family:var(--mono);font-size:13px;font-weight:700;flex:0 0 46px;text-align:right}
+.lgd{font-family:var(--mono);font-size:11px;flex:0 0 42px;text-align:right}
+.lgef.ok,.lgd.ok{color:var(--up)}
+.lgef.warn,.lgd.warn{color:#FF9F0A}
+.lgef.bad,.lgd.bad{color:var(--down)}
+.lgst,.lgold{font-size:9px;text-transform:uppercase;letter-spacing:.4px;border-radius:4px;padding:1px 4px;margin-left:5px;vertical-align:1px}
+.lgst{background:rgba(255,159,10,0.15);color:#FFB340}
+.lgold{background:var(--downbg);color:#FF6961}
+.lgleg{font-size:10.5px;color:var(--muted2);line-height:1.5;margin-top:9px}
+.lgmiss{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.lgm{display:flex;align-items:center;justify-content:space-between;width:100%;background:var(--surface2);
+  border:1px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--text);
+  font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer}
+.lgm span{color:var(--accent);font-size:11px;font-weight:700}
+.lgm:active{background:var(--surface3)}
+
+/* ── Gruppi a mano: pool con spunte e riepilogo della selezione ── */
+.lgx{background:none;border:none;color:var(--muted2);font-size:12px;cursor:pointer;padding:0 0 0 7px;line-height:1}
+.lgx:active{color:var(--down)}
+.lgrow2{display:flex;gap:8px;margin-top:12px}
+.lgrow2>.btn{flex:1}
+.lgpool{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.lgp{display:flex;align-items:center;gap:8px;width:100%;background:var(--surface2);border:1px solid var(--line);
+  border-radius:9px;padding:9px 11px;color:var(--text);font-family:var(--sans);font-size:12.5px;cursor:pointer;text-align:left}
+.lgp.on{border-color:var(--accent);background:rgba(230,57,70,0.10)}
+.lgp:active{background:var(--surface3)}
+.lgpb{flex:0 0 18px;height:18px;border:1.5px solid var(--line2);border-radius:5px;display:flex;
+  align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+.lgp.on .lgpb{background:var(--accent);border-color:var(--accent)}
+.lgpi{flex:0 0 auto;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent)}
+.lgsum{border:1px solid var(--accent);border-radius:11px;padding:12px;margin-top:11px;background:var(--surface2)}
+.lgsum.warn{border-color:#FF9F0A}
+.lgsum.bad{border-color:var(--down)}
+.lgsh{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.lgsk{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1.1}
+.lgsk small{font-size:13px;color:var(--muted);margin-left:4px;font-weight:600}
 </style>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0A0A0A">
@@ -819,6 +896,7 @@ ul.kb li b{color:#fff;font-weight:600}
 <div class="menu" id="menu">
   <button onclick="guideIndex()">📖 Guida ai test</button>
   <button onclick="openBattery()">🎯 Batteria consigliata</button>
+  <button onclick="openLoadGroups()">🏋️ Gruppi di carico (% dell'1RM)</button>
   <button onclick="chooseTests()">🎚 Scegli test da monitorare</button>
   <button onclick="openThresholds()">⚙️ Soglie di monitoraggio</button>
   <button onclick="openTeamFormPicker()">🔗 Modulo di squadra — un link per tutte</button>
@@ -1018,7 +1096,9 @@ const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acw
   cmjBaseDays:42,           // finestra della baseline CMJ: oltre non e' fatica, e' altro
   // Curva carico-velocità: soglie MODIFICABILI dal coach, non valori assoluti di letteratura.
   lvMVT:0.30,               // velocità minima (m/s) usata per stimare l'1RM, regolabile per esercizio
-  lvRelStrengthGate:1.5};   // 1RM stimato ÷ peso corporeo: sopra questa soglia si considera "forza relativa sufficiente"
+  lvRelStrengthGate:1.5,    // 1RM stimato ÷ peso corporeo: sopra questa soglia si considera "forza relativa sufficiente"
+  rmBar:20,                 // peso del bilanciere: i carichi dei gruppi si scompongono in dischi su questo
+  rmStep:2.5};              // incremento minimo caricabile = doppio del disco più piccolo che hai
 /* ═══════════════ INFORMATIVA PRIVACY ═══════════════
    L'informativa è un DATO, non un testo fisso nel codice: cambia con i tuoi
    recapiti, con i tempi di conservazione che decidi, con chi la riceve.
@@ -1095,6 +1175,7 @@ function normalize(){
   if(!S.load) S.load={};
   if(!S.screen) S.screen={};   // valutazioni posturali/funzionali, una per data
   if(!S.lv) S.lv={};           // sessioni di curva carico-velocità
+  if(!S.gruppi) S.gruppi={};   // gruppi di lavoro decisi a mano, per test
   if(!S.cvar) S.cvar="percussione";
   if(!S.cfg) S.cfg={};
   Object.keys(CFG_DEF).forEach(k=>{ if(typeof S.cfg[k]!=="number"||isNaN(S.cfg[k])) S.cfg[k]=CFG_DEF[k]; });
@@ -1337,6 +1418,9 @@ function mergeState(server, local){
      Vince la versione piu' alta — il numero cresce solo quando si pubblica. */
   const pl=local.policy||{}, ps=server.policy||{};
   out.policy = (Number(pl.version)||0) >= (Number(ps.version)||0) ? pl : ps;
+  /* I gruppi di lavoro non sono misure datate: sono una decisione del
+     preparatore, come le soglie. Vince l'ultima fatta su questo dispositivo. */
+  out.gruppi=local.gruppi||server.gruppi||{};
   out.cvar=local.cvar||server.cvar;
   out.cfg=local.cfg||server.cfg; out.sport=local.sport||server.sport;
   out.view=local.view||server.view; out.activeTeam=local.activeTeam||server.activeTeam;
@@ -2126,7 +2210,8 @@ function renderMatrix(){
       if(arr.length===0){ h+='<span class="empty">+</span>'; }
       else{
         const last=arr[arr.length-1], di=deltaInfo(arr,t.dir);
-        const stim=(last.fonte==="lv")?'<span class="cstim" title="Stimato dalla curva carico-velocità">≈</span>':'';
+        const stim=(last.fonte==="lv"||last.fonte==="reps")
+          ? '<span class="cstim" title="'+(last.fonte==="reps"?"Stimato da una serie a ripetizioni":"Stimato dalla curva carico-velocità")+'">≈</span>' : '';
         const li=eLevelApplicable(a)?levelIdx(t,a.sex,last.v):-1;
         if(li>=0) h+='<span class="lvdot" title="'+["Base","Discreto","Buono","Ottimo","Elite"][li]+'" style="background:'+LVCOL[li]+'"></span>';
         h+='<div class="val">'+stim+fmtNum(last.v)+'</div>';
@@ -3155,6 +3240,7 @@ function openAthlete(id, isNew){
       ? '<button class="btn" style="width:100%;margin-top:8px" onclick="closeM()">Più tardi</button>'
       : '<button class="btn sm" style="width:100%;margin-top:8px" onclick="anamLink(\''+id+'\')">🔗 Manda link per far compilare l\'anamnesi</button>'+
         '<button class="btn sm" style="width:100%;margin-top:8px" onclick="openScreenEntry(\''+id+'\')">🧍 Valutazione posturale e funzionale</button>'+
+        '<button class="btn sm" style="width:100%;margin-top:8px" onclick="openRepMaxEntry(\''+id+'\')">🧮 Stima 1RM da una serie a ripetizioni</button>'+
         '<button class="btn sm" style="width:100%;margin-top:8px" onclick="openLVEntry(\''+id+'\')">📈 Curva carico-velocità</button>'+
         '<button class="btn sm" style="width:100%;margin-top:8px" onclick="openBoscoEntry(\''+id+'\')">🏃 Test di Bosco</button>'+
         '<div class="dz"><span style="color:var(--muted);font-size:12px">Elimina atleta e dati</span>'+
@@ -3185,6 +3271,17 @@ function saveAthleteEdit(id){
   a.profile=p;
   save(); closeM(); render(); toast("Scheda salvata");
 }
+/* Un atleta cancellato deve uscire anche dai gruppi di lavoro: altrimenti in
+   palestra ti trovi un nome che non esiste in un gruppo da tre. Sta in una
+   funzione sola perche' i punti da cui si cancella un atleta sono due. */
+function gruppiTogli(id){
+  Object.keys(S.gruppi||{}).forEach(tid=>{
+    const o=S.gruppi[tid];
+    if(!o||!Array.isArray(o.g)) { delete S.gruppi[tid]; return; }
+    o.g=o.g.map(g=>g.filter(x=>x!==id)).filter(g=>g.length);
+    if(!o.g.length) delete S.gruppi[tid];
+  });
+}
 function delAthlete(id){
   const a=S.athletes.find(x=>x.id===id); if(!a) return;
   if(!confirm("Eliminare "+a.name+" e TUTTI i suoi dati?\n\nVengono cancellati anche anamnesi, check-in di readiness e carichi. L'operazione è definitiva.")) return;
@@ -3197,6 +3294,7 @@ function delAthlete(id){
   if(S.load) delete S.load[id];
   if(S.screen) delete S.screen[id];
   if(S.lv) delete S.lv[id];
+  gruppiTogli(id);
   tombSet("ath:"+id);   // impedisce che il merge lo resusciti
   save(); closeM(); render(); toast("Atleta e dati eliminati");
 }
@@ -3565,7 +3663,7 @@ function lvStartingMax(aid, exercise){
     return {kg:u.est1RM, fonte:"curva del "+fmtDate(u.d)}; }
   if(info.test){
     const serie=((S.data||{})[aid]||{})[info.test]||[];
-    const veri=serie.filter(e=>e.fonte!=="lv" && isFinite(e.v));
+    const veri=serie.filter(e=>e.fonte!=="lv" && e.fonte!=="reps" && isFinite(e.v));
     if(veri.length){ const u=veri[veri.length-1];
       return {kg:u.v, fonte:"massimale del "+fmtDate(u.d)}; }
     if(serie.length){ const u=serie[serie.length-1];
@@ -3957,6 +4055,848 @@ function saveLV(aid){
   }
   save(); closeM(); render();
   toast("1RM stimato "+val+" kg"+inSerie);
+}
+
+
+/* ═══════════════ 1RM DA UNA SERIE A RIPETIZIONI ═══════════════════════════
+   Il massimale vero su un'atleta di 16 anni è un test che costa caro: serve
+   tecnica stabile, un assistente per lato, e comunque una giornata in cui la
+   ragazza stia bene. Non si fa tre volte l'anno su quindici persone.
+
+   L'alternativa è una serie a ripetizioni con un carico sottomassimale, da
+   cui si RISALE all'1RM. Ma qui si nasconde un errore che nessuno vede:
+
+     1. le formule non concordano. A 5 ripetizioni stanno dentro il 3%; a 15
+        si aprono dell'11%. Chi ne usa una sola ottiene un numero pulito e
+        non sa quanto è sbagliato.
+     2. quasi tutte presuppongono il CEDIMENTO tecnico. Se l'atleta si ferma
+        con due ripetizioni ancora in canna — e con un'under 18 sotto un
+        bilanciere è quello che deve succedere — la stima esce sistematicamente
+        bassa, di circa il 5% per ogni ripetizione lasciata.
+
+   Qui le formule sono sei e si usano tutte: la MEDIANA è la stima, il minimo
+   e il massimo sono l'intervallo. Le ripetizioni di riserva (RIR) si
+   dichiarano e si sommano alle ripetizioni fatte.
+
+   L'intervallo non si allarga in modo regolare: da 2 a 6 ripetizioni resta
+   fra il 4 e il 5%, poi cresce — 7% a 10 ripetizioni, oltre il 20% a 15.
+   È lì che il metodo smette di funzionare, e sopra le 10 ripetizioni
+   effettive la stima non si salva: a quel punto stai misurando la
+   resistenza, non la forza.
+
+   Mayhew non c'è, ed è una scelta. È un'equazione pubblicata e usata, ma a
+   una ripetizione restituisce il 109% del carico: cioè dice che un massimale
+   sollevato vale 9 kg più di quanto pesa. Tarata sulla panca in una
+   popolazione precisa, fuori da lì al fondo basso della scala è storta — e
+   il fondo basso è esattamente dove va fatto questo test.                  */
+const RM_EQ=[
+  {k:"epley",    l:"Epley",    f:r=> 1+r/30},
+  {k:"brzycki",  l:"Brzycki",  f:r=> r<36 ? 36/(37-r) : null},
+  {k:"lander",   l:"Lander",   f:r=> { const d=1.013-0.0267123*r; return d>0.05 ? 1/d : null; }},
+  {k:"lombardi", l:"Lombardi", f:r=> Math.pow(r,0.10)},
+  {k:"oconner",  l:"O'Conner", f:r=> 1+0.025*r},
+  {k:"wathan",   l:"Wathan",   f:r=> 100/(48.8+53.8*Math.exp(-0.075*r))},
+];
+const RM_RIP_MAX=10;     // oltre, la stima non si salva
+
+function rmMediana(arr){
+  if(!arr||!arr.length) return null;
+  const a=arr.slice().sort((x,y)=>x-y), h=a.length>>1;
+  return a.length%2 ? a[h] : (a[h-1]+a[h])/2;
+}
+/* Tutti i fattori 1RM/carico per r ripetizioni, ordinati.
+   A una ripetizione non c'è niente da stimare: il carico E' l'1RM, e si esce
+   prima di chiedere alle formule (nessuna delle sei torna esattamente a 1). */
+function rmFactors(r){
+  r=Number(r);
+  if(!isFinite(r)||r<1) return [];
+  if(r<=1) return [1];
+  return RM_EQ.map(e=>e.f(r)).filter(x=>isFinite(x)&&x>0).sort((a,b)=>a-b);
+}
+function rmFactor(r){ return rmMediana(rmFactors(r)); }
+
+/* La stima, con il suo intervallo. `rir` sono le ripetizioni che l'atleta
+   avrebbe ancora potuto fare: si sommano, perché la formula parla di
+   cedimento e lei non ci è arrivata. */
+function rmEstimate(peso, rip, rir){
+  const w=parseFloat(peso), r0=parseFloat(rip);
+  let q=parseFloat(rir); if(!isFinite(q)||q<0) q=0;
+  if(!isFinite(w)||w<=0||!isFinite(r0)||r0<1) return null;
+  const r=Math.round(r0+q);
+  const fs=rmFactors(r);
+  if(!fs.length) return null;
+  const med=rmMediana(fs);
+  const o={peso:w, rip:r0, rir:q, rEff:r,
+    kg:w*med, lo:w*fs[0], hi:w*fs[fs.length-1]};
+  o.spread=o.kg>0 ? (o.hi-o.lo)/o.kg*100 : 0;
+  o.liv = r<=1 ? "misurato" : r<=6 ? "buona" : r<=RM_RIP_MAX ? "accettabile" : "inutilizzabile";
+  return o;
+}
+/* Il carico per n ripetizioni, dallo stesso impianto: e' l'inverso.
+   Serve per il 5RM, che e' quello che poi scrivi sul programma. */
+function rmLoadFor(est1RM, n){
+  const e=parseFloat(est1RM), f=rmFactor(n);
+  if(!isFinite(e)||e<=0||!f) return null;
+  return e/f;
+}
+/* Quante ripetizioni si reggono, in teoria, a una data percentuale.
+   Non e' un dettaglio accademico: se prescrivi 5 ripetizioni all'80% e il
+   massimo teorico e' 8, stai chiedendo 3 ripetizioni di riserva — che e' una
+   cosa diversa dal cedimento, e va saputa. */
+function rmRepsAtPct(pc){
+  const p=parseFloat(pc);
+  if(!isFinite(p)||p<=0||p>100) return null;
+  const target=100/p;
+  let best=null;
+  for(let r=1;r<=20;r++){
+    const f=rmFactor(r); if(f==null) continue;
+    const d=Math.abs(f-target);
+    if(best==null||d<best.d) best={r:r, d:d};
+  }
+  return best ? best.r : null;
+}
+
+/* ─── Il bilanciere vero ────────────────────────────────────────────────────
+   Un carico calcolato di 63,7 kg non esiste in palestra. Esiste 62,5 kg, ed
+   esiste come «venti di bilanciere più 15+5+1,25 per lato»: e' l'unica forma
+   in cui il numero serve a qualcosa mentre stai caricando.                   */
+/* Set di dischi di una palestra normale: il 25 non c'e' perche' in mezza
+   Italia non c'e', e 20+5 fa lo stesso peso senza farti cercare niente. */
+const RM_DISCHI=[20,15,10,5,2.5,1.25];
+function rmBar(){ const n=Number((S.cfg||{}).rmBar); return isFinite(n)&&n>0 ? n : 20; }
+function rmStep(){ const n=Number((S.cfg||{}).rmStep); return isFinite(n)&&n>0 ? n : 2.5; }
+function rmRound(kg){
+  const p=rmStep(), n=parseFloat(kg);
+  if(!isFinite(n)) return null;
+  return Math.round(n/p)*p;
+}
+function rmPlates(kg){
+  const bar=rmBar(), min=rmStep()/2;
+  let side=(parseFloat(kg)-bar)/2;
+  if(!isFinite(side)) return null;
+  if(side<-1e-9) return {sotto:true, perSide:[], resto:0};
+  const out=[];
+  RM_DISCHI.filter(d=>d>=min-1e-9).forEach(d=>{
+    while(side>=d-1e-9 && out.length<12){ out.push(d); side-=d; }
+  });
+  return {sotto:false, perSide:out, resto:Math.round(side*100)/100};
+}
+function rmPlatesText(kg){
+  const p=rmPlates(kg);
+  if(!p) return "";
+  if(p.sotto) return "sotto il bilanciere scarico ("+fmtNum(rmBar())+" kg)";
+  if(!p.perSide.length) return "bilanciere scarico";
+  return "bilanciere "+fmtNum(rmBar())+" + "+p.perSide.map(fmtNum).join("+")+" per lato"+
+         (p.resto>0 ? " (avanzano "+fmtNum(p.resto*2)+" kg)" : "");
+}
+
+/* ─── Da dove viene l'1RM di ciascuna ───────────────────────────────────────
+   Tre origini possibili, e non valgono uguale. Un massimale sollevato batte
+   una curva carico-velocita', che batte una stima da ripetizioni. Il tempo
+   pero' conta piu' dell'origine: un massimale di cinque mesi fa e' storia.
+   Qui si mostrano entrambe le cose e non si sceglie al posto tuo.           */
+const RM_FONTI={
+  lv:{l:"curva", t:"Stimato dalla curva carico-velocità", c:"warn"},
+  reps:{l:"stima", t:"Stimato da una serie a ripetizioni", c:"warn"},
+  mjl:{l:"import", t:"Importato da My Jump Lab", c:"warn"},
+};
+function rmGiorni(d){
+  const t=Date.parse(String(d)+"T12:00:00");
+  return isFinite(t) ? Math.round((Date.now()-t)/864e5) : null;
+}
+function rm1RM(aid, testId){
+  const serie=(((S.data||{})[aid]||{})[testId]||[])
+    .filter(e=>e&&e.d&&isFinite(e.v)&&e.v>0).slice().sort((a,b)=>a.d<b.d?-1:1);
+  if(!serie.length) return null;
+  const u=serie[serie.length-1];
+  const f=RM_FONTI[u.fonte];
+  return {kg:u.v, d:u.d, gg:rmGiorni(u.d),
+          fonte:u.fonte||"", tag:f?f.l:"misurato", titolo:f?f.t:"Massimale sollevato davvero",
+          stima:!!f};
+}
+
+/* ─── I gruppi ──────────────────────────────────────────────────────────────
+   Tre atlete su un bilanciere, un carico solo, nessun cambio disco: e' cosi'
+   che una seduta di forza sta dentro l'ora. Il prezzo e' che chi sta sotto la
+   media lavora piu' pesante di quanto previsto, e chi sta sopra piu' leggero.
+
+   Il prezzo si paga sempre; quello che si puo' fare e' renderlo PICCOLO e
+   VISIBILE. Piccolo: i gruppi si tagliano dove la lista ha i salti naturali,
+   non ogni tre nomi in ordine. Visibile: sotto ogni nome c'e' la percentuale
+   che le tocca davvero col carico del gruppo.
+
+   Il taglio ottimo su una lista ordinata e' per forza fatto di blocchi
+   contigui, quindi basta una programmazione dinamica su n — trenta atlete
+   sono nulla. Si accettano gruppi di size-1 e size+1 con una penalita', perche'
+   quattordici atlete in gruppi da tre fanno 4 gruppi e mezzo, e il mezzo va
+   messo dove costa meno.
+
+   Un gruppo da UNA non si accetta mai, nemmeno se azzererebbe la dispersione:
+   il senso di tutto questo e' non cambiare i dischi, e un'atleta da sola su un
+   bilanciere e' il cambio dischi.                                            */
+function rmGruppi(lista, size){
+  const n=lista.length;
+  if(!n) return [];
+  const s=Math.max(1, Math.round(size||3));
+  if(n<=s) return [lista.slice()];
+  const lo=(s>=3?s-1:s), hi=s+1, INF=1e18;
+  const best=new Array(n+1).fill(INF), from=new Array(n+1).fill(-1);
+  best[0]=0;
+  for(let i=1;i<=n;i++){
+    for(let k=lo;k<=hi;k++){
+      const j=i-k;
+      if(j<0||best[j]>=INF) continue;
+      const vals=lista.slice(j,i).map(x=>x.kg);
+      const mx=Math.max.apply(null,vals), mn=Math.min.apply(null,vals);
+      const media=vals.reduce((a,b)=>a+b,0)/vals.length;
+      const disp=media>0 ? (mx-mn)/media*100 : 0;
+      /* La penalita' e' PROPORZIONALE alla dimensione chiesta: un gruppo da 3
+         quando ne hai chiesti 2 e' uno sforamento del 50%, lo stesso gruppo da
+         3 quando ne hai chiesti 4 e' un buco del 25%. Una penalita' fissa
+         trattava i due casi uguale e sfornava terzetti a chi aveva chiesto
+         coppie. */
+      const c=best[j]+disp+Math.abs(k-s)/s*12;
+      if(c<best[i]-1e-9){ best[i]=c; from[i]=j; }
+    }
+  }
+  if(from[n]<0){                       // non dovrebbe accadere: resta il taglio ingenuo
+    const out=[]; for(let i=0;i<n;i+=s) out.push(lista.slice(i,i+s)); return out;
+  }
+  const out=[]; let i=n;
+  while(i>0){ const j=from[i]; out.unshift(lista.slice(j,i)); i=j; }
+  return out;
+}
+/* Quanto e' grave lo scarto. NON e' simmetrico, e questa e' la parte che
+   conta: lavorare 5 punti SOTTO la percentuale prevista significa solo uno
+   stimolo un po' piu' leggero: te ne accorgi a fine mesociclo, forse.
+   Lavorare 5 punti SOPRA significa ripetizioni mancate, tecnica che scade
+   nelle ultime alzate, e su un'atleta di sedici anni e' il momento in cui la
+   schiena si arrotonda. Le due cose non si segnalano con la stessa soglia. */
+function rmScarto(dpp){
+  if(dpp>0)  return dpp<=3 ? "ok" : dpp<=6 ? "warn" : "bad";
+  const a=-dpp;
+  return a<=4 ? "ok" : a<=8 ? "warn" : "bad";
+}
+const RM_RANK={ok:0, warn:1, bad:2};
+
+/* Il carico del gruppo e cosa costa a ciascuna.
+   `mode`: "media" (quello che chiedi tu) oppure "min", che allinea tutte sul
+   carico della piu' leggera — nessuno lavora piu' pesante del previsto. */
+function rmGruppoCarico(g, pct, mode){
+  const ideali=g.map(x=>x.kg*pct/100);
+  const grezzo = mode==="min" ? Math.min.apply(null,ideali)
+               : mode==="max" ? Math.max.apply(null,ideali)
+               : ideali.reduce((a,b)=>a+b,0)/ideali.length;
+  const load=rmRound(grezzo);
+  const righe=g.map((x,i)=>{
+    const eff=x.kg>0 ? load/x.kg*100 : 0;
+    const dpp=eff-pct;                       // scarto in PUNTI di percentuale
+    return {a:x, ideale:ideali[i], eff:eff, dpp:dpp, cls:rmScarto(dpp)};
+  });
+  const peggio=righe.reduce((m,r)=>Math.max(m,RM_RANK[r.cls]),0);
+  const sopra=righe.filter(r=>r.dpp>6).length;   // quante lavorano davvero piu' pesante
+  return {load:load, righe:righe, sopra:sopra,
+          cls: peggio===2 ? "bad" : peggio===1 ? "warn" : "ok"};
+}
+
+
+/* ─── Il modulo: una serie, tre numeri ──────────────────────────────────── */
+function rmExList(){ return LV_EX.filter(e=>e.test); }
+/* Il test di massimale accetta anche una stima da ripetizioni? Serve a sapere
+   se nella cella della tabella va offerta la seconda strada. */
+function rmTestEx(tid){ const e=rmExList().find(x=>x.test===tid); return e?e.n:null; }
+let RM_BACK=0;                 // 1 = dopo il salvataggio si torna ai gruppi di carico
+
+function openRepMaxEntry(aid, exPref, back){
+  const a=S.athletes.find(x=>x.id===aid); if(!a) return;
+  RM_BACK=back?1:0;
+  const lista=rmExList();
+  const sel=lista.find(e=>e.n===exPref) ? exPref : lista[0].n;
+  let h='<div class="mh"><div><div class="mt">Stima 1RM da ripetizioni</div>'+
+    '<div class="ms">'+esc(a.name)+'</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
+
+  h+='<div class="alert info"><span class="ai">🧮</span><span>'+
+     'Una serie sola, con un carico che regge per <b>3-6 ripetizioni</b>. '+
+     'Da lì si risale all\'1RM e al 5RM senza mai caricare il massimale.</span></div>';
+
+  h+='<div class="psec">La serie</div>'+
+     '<div class="row2"><div><label class="fl">Data</label>'+
+     '<input type="date" id="rmD" value="'+todayISO()+'"></div>'+
+     '<div><label class="fl">Esercizio</label><select id="rmEx" onchange="rmPreview()">'+
+     lista.map(e=>'<option value="'+escAttr(e.n)+'"'+(e.n===sel?" selected":"")+'>'+esc(e.n)+'</option>').join("")+
+     '</select></div></div>'+
+     '<div class="row2" style="margin-top:9px">'+
+     '<div><label class="fl">Carico (kg)</label>'+
+     '<input type="number" inputmode="decimal" step="0.5" id="rmW" oninput="rmPreview()" placeholder="es. 50"></div>'+
+     '<div><label class="fl">Ripetizioni fatte</label>'+
+     '<input type="number" inputmode="numeric" step="1" id="rmR" oninput="rmPreview()" placeholder="es. 5"></div>'+
+     '</div>'+
+     '<label class="fl" style="margin-top:9px">Ripetizioni ancora possibili (RIR)</label>'+
+     '<select id="rmRir" onchange="rmPreview()">'+
+     ['<option value="0">0 — è arrivata al cedimento tecnico</option>',
+      '<option value="1" selected>1 — ne aveva ancora una</option>',
+      '<option value="2">2 — ne aveva ancora due</option>',
+      '<option value="3">3 — ne aveva ancora tre</option>'].join("")+'</select>'+
+     '<div class="fhint">Con un\'atleta giovane sotto un bilanciere il cedimento vero <b>non si cerca</b>: '+
+     'si chiudono le ripetizioni quando la tecnica è ancora pulita e si dichiara qui quante ne restavano. '+
+     'Ogni riserva non dichiarata abbassa la stima di circa il 3%.</div>';
+
+  h+='<div id="rmOut"></div>';
+  h+='<button class="btn primary" id="rmSaveBtn" style="width:100%;margin-top:16px" disabled '+
+     'onclick="saveRepMax(\''+aid+'\')">Salva la stima</button>';
+  h+='<div class="gnote">La stima entra nello storico del test corrispondente marcata <b>«stima»</b>: '+
+     'nella tabella andamento la distingui sempre da un massimale sollevato davvero, e non le si somma sopra.</div>';
+  modal(h);
+  rmPreview();
+}
+
+function rmPreview(){
+  const out=document.getElementById("rmOut"), btn=document.getElementById("rmSaveBtn");
+  if(!out) return;
+  const w=document.getElementById("rmW").value, r=document.getElementById("rmR").value;
+  const rir=document.getElementById("rmRir").value;
+  const est=rmEstimate(w,r,rir);
+  if(btn){ btn.disabled=true; btn.dataset.est=""; }
+  if(!est){ out.innerHTML='<div class="gnote">Inserisci carico e ripetizioni.</div>'; return; }
+
+  const kg=Math.round(est.kg*10)/10;
+  let h='<div class="psec">Risultato</div>';
+
+  if(est.rEff>RM_RIP_MAX){
+    h+='<div class="alert danger"><span class="ai">⛔</span><span>'+
+       '<b>'+est.rEff+' ripetizioni effettive: troppe.</b> Le formule qui dentro si aprono di '+
+       fmtNum(Math.round(est.spread))+'% fra la più bassa e la più alta — significa '+
+       fmtNum(Math.round(est.lo))+'-'+fmtNum(Math.round(est.hi))+' kg, un intervallo che non ti serve a niente. '+
+       'Oltre le 10 ripetizioni non stai più misurando la forza. Rifalla con un carico più alto.</span></div>';
+    out.innerHTML=h; return;
+  }
+
+  h+='<div class="rmbig"><div class="rmv">'+fmtNum(kg)+'<small>kg</small></div>'+
+     '<div class="rml">1RM stimato</div>'+
+     '<div class="rmci">le sei formule danno da <b>'+fmtNum(Math.round(est.lo))+'</b> a <b>'+
+     fmtNum(Math.round(est.hi))+'</b> kg (±'+fmtNum(Math.round(est.spread/2*10)/10)+'%)</div></div>';
+
+  if(est.rEff<=1){
+    h+='<div class="alert info"><span class="ai">✅</span><span>Una ripetizione al cedimento '+
+       '<b>è</b> il massimale: qui non c\'è niente da stimare.</span></div>';
+  }else if(est.rEff<=6){
+    h+='<div class="alert info"><span class="ai">✅</span><span>'+est.rEff+' ripetizioni effettive: '+
+       'è la zona in cui queste formule funzionano. Stima affidabile.</span></div>';
+  }else{
+    h+='<div class="alert warn"><span class="ai">⚠️</span><span>'+est.rEff+' ripetizioni effettive: '+
+       'utilizzabile, ma le formule cominciano a divergere. Per un numero su cui costruire un mesociclo, '+
+       'rifalla con un carico che regga 3-6 ripetizioni.</span></div>';
+  }
+
+  h+='<div class="psec">I carichi che ne discendono</div><div class="rmtab">';
+  [1,2,3,5,8,10].forEach(n=>{
+    const v=rmLoadFor(kg,n); if(v==null) return;
+    const r2=rmRound(v);
+    h+='<div class="rmr"><span class="rmn">'+n+'RM</span>'+
+       '<span class="rmk">'+fmtNum(Math.round(v*10)/10)+' kg</span>'+
+       '<span class="rmp">'+fmtNum(r2)+' kg sul bilanciere</span></div>';
+  });
+  h+='</div>';
+  h+='<div class="gnote">Sono i carichi che dovrebbe reggere per <b>quel numero di ripetizioni al cedimento</b>. '+
+     'Se in programma ci sono ripetizioni di riserva, il carico va sotto a questi.</div>';
+
+  out.innerHTML=h;
+  if(btn){ btn.disabled=false; btn.dataset.est=String(kg);
+    btn.dataset.lo=String(Math.round(est.lo*10)/10);
+    btn.dataset.hi=String(Math.round(est.hi*10)/10);
+    btn.dataset.w=String(est.peso); btn.dataset.r=String(est.rip); btn.dataset.rir=String(est.rir); }
+}
+
+function saveRepMax(aid, exFisso, torna){
+  const btn=document.getElementById("rmSaveBtn");
+  const kg=parseFloat(btn.dataset.est); if(!isFinite(kg)||kg<=0) return;
+  const d=document.getElementById("rmD").value||todayISO();
+  // dalla cella della tabella l'esercizio e' gia' deciso: e' quello della colonna
+  const ex=exFisso||document.getElementById("rmEx").value;
+  const info=lvExInfo(ex);
+  if(!info.test){ toast("Esercizio senza test collegato"); return; }
+  if(!S.data[aid]) S.data[aid]={};
+  if(!S.data[aid][info.test]) S.data[aid][info.test]=[];
+  const serie=S.data[aid][info.test];
+  const gia=serie.find(e=>e.d===d);
+  /* Un massimale sollevato e una curva carico-velocita' valgono piu' di una
+     stima da ripetizioni: nella stessa data non si sovrascrivono. Prima questo
+     controllo non c'era in nessuna delle due direzioni e vinceva l'ultimo che
+     salvava, in silenzio. */
+  if(gia && gia.fonte!=="reps"){
+    toast("In questa data c'è già "+(gia.fonte==="lv"?"una stima da curva":"un massimale misurato")+": non l'ho toccato");
+    if(torna==="cella"){ drawCell(); } else { closeM(); }
+    return;
+  }
+  const rec={d:d, v:kg, fonte:"reps",
+    rmW:parseFloat(btn.dataset.w), rmR:parseFloat(btn.dataset.r), rmRir:parseFloat(btn.dataset.rir),
+    rmLo:parseFloat(btn.dataset.lo), rmHi:parseFloat(btn.dataset.hi)};
+  if(gia) Object.assign(gia,rec); else serie.push(rec);
+  serie.sort((x,y)=>x.d<y.d?-1:1);
+  save(); render();
+  toast("1RM stimato "+fmtNum(kg)+" kg · aggiunto allo storico di "+TMAP[info.test].name);
+  /* Salvando dalla cella si resta nella cella: vedi la stima entrare nello
+     storico sotto, e puoi inserirne un'altra senza riaprire niente. */
+  if(torna==="cella"){ drawCell(); return; }
+  closeM();
+  if(RM_BACK){ RM_BACK=0; setTimeout(()=>openLoadGroups(LG.ex||info.test), 60); }
+}
+
+/* ═══════════════ GRUPPI DI CARICO ═══════════════════════════════════════════
+   La domanda a cui risponde questa schermata e' una sola, e te la fai in
+   palestra con quindici ragazze ferme davanti al bilanciere: chi va con chi,
+   e con quanti chili.
+
+   Sta in una finestra a se': non tocca la tabella, non cambia niente nei dati.
+   E' uno strumento da leggere col telefono in mano mentre carichi i dischi.  */
+let LG={ex:null, pct:75, size:3, mode:"media", man:"auto", ord:"asc", sel:{}};
+
+/* Back squat e front squat scrivono nello stesso test (rmSquat): elencarli
+   come due voci produceva due bottoni identici, con lo stesso numero sopra.
+   Qui si ragiona per TEST, che e' dove i dati stanno davvero; il nome
+   dell'esercizio serve solo a precompilare il modulo della stima. */
+function lgEsercizi(){
+  const rows=teamAthletes()||[];
+  const visti={}, out=[];
+  rmExList().forEach(e=>{
+    if(visti[e.test]) return;
+    visti[e.test]=1;
+    let n=0; rows.forEach(a=>{ if(rm1RM(a.id,e.test)) n++; });
+    out.push({n:((TMAP[e.test]||{}).name||e.n).replace(/^1RM\s+/,""), ex:e.n, test:e.test, conta:n});
+  });
+  return out;
+}
+function openLoadGroups(testPref){
+  const rows=teamAthletes()||[];
+  if(!rows.length){ toast("Nessun atleta nella squadra selezionata"); return; }
+  const lista=lgEsercizi();
+  let scelto=lista.find(e=>e.test===(testPref||LG.ex));
+  if(!scelto){ scelto=lista.slice().sort((a,b)=>b.conta-a.conta)[0]; }
+  LG.ex=scelto.test; LG.sel={};
+  modal(lgHead()+'<div id="lgBody">'+lgBody()+'</div>');
+}
+function lgHead(){
+  const t=S.teams.find(x=>x.id===S.activeTeam);
+  const sq = S.activeTeam==="all" ? "Tutte le squadre" : (t?t.name:"Senza squadra");
+  return '<div class="mh"><div><div class="mt">Gruppi di carico</div>'+
+    '<div class="ms">'+esc(sq)+'</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
+}
+function lgSetEx(test){ LG.ex=test; LG.sel={}; document.getElementById("lgBody").innerHTML=lgBody(); }
+function lgSetSize(n){ LG.size=n; lgRefresh(); lgMarks(); }
+function lgSetMode(m){ LG.mode=m; lgRefresh(); lgMarks(); }
+function lgSetOrd(o){ LG.ord=o; lgRefresh(); lgMarks(); }
+/* Passare fra automatico e a mano cambia anche i comandi in alto (il selettore
+   «atlete per gruppo» sparisce): qui si ridisegna tutto, non solo i risultati. */
+function lgSetMan(m){ LG.man=m; LG.sel={}; const b=document.getElementById("lgBody"); if(b) b.innerHTML=lgBody(); }
+function lgSetPct(v){
+  const n=parseFloat(v);
+  LG.pct = isFinite(n) ? Math.min(100,Math.max(20,n)) : LG.pct;
+  lgRefresh(); lgMarks();
+}
+function lgPct(v){
+  LG.pct=v;
+  const i=document.getElementById("lgPct"); if(i) i.value=String(v);
+  lgRefresh(); lgMarks();
+}
+function lgRefresh(){
+  const el=document.getElementById("lgRes"); if(el) el.innerHTML=lgRes();
+  const hi=document.getElementById("lgHint"); if(hi) hi.innerHTML=lgHint();
+}
+/* Aggiorna solo gli stati dei bottoni: rifare tutto il corpo a ogni cifra
+   digitata sfilava il cursore dal campo della percentuale. */
+function lgMarks(){
+  const q=(sel,fn)=>Array.prototype.forEach.call(document.querySelectorAll(sel),fn);
+  q(".lgpc",b=>b.classList.toggle("on", Number(b.dataset.v)===LG.pct));
+  q(".lgsz",b=>b.classList.toggle("on", Number(b.dataset.v)===LG.size));
+  q(".lgmd",b=>b.classList.toggle("on", b.dataset.v===LG.mode));
+  q(".lgmn",b=>b.classList.toggle("on", b.dataset.v===LG.man));
+  q(".lgor",b=>b.classList.toggle("on", b.dataset.v===LG.ord));
+}
+function lgHint(){
+  const r=rmRepsAtPct(LG.pct);
+  if(!r) return "";
+  return 'Al <b>'+fmtNum(LG.pct)+'%</b> il massimo teorico è <b>'+r+' ripetizioni</b>: '+
+    'se ne prescrivi meno, la differenza sono ripetizioni di riserva.';
+}
+function lgBody(){
+  const lista=lgEsercizi();
+  let h='<div class="lgex">'+lista.map(e=>
+    '<button class="chip'+(e.test===LG.ex?" on":"")+'" onclick="lgSetEx(\''+e.test+'\')">'+
+    esc(e.n)+' <span class="lgn">'+e.conta+'</span></button>').join("")+'</div>';
+
+  h+='<div class="psec">Percentuale di lavoro</div>'+
+     '<div class="lgpr"><input type="number" inputmode="decimal" step="1" id="lgPct" value="'+fmtNum(LG.pct)+'" '+
+     'oninput="lgSetPct(this.value)"><span class="lgsym">%</span></div>'+
+     '<div class="lgchips">'+[50,60,65,70,75,80,85,90].map(v=>
+       '<button class="chip lgpc'+(v===LG.pct?" on":"")+'" data-v="'+v+'" onclick="lgPct('+v+')">'+v+'%</button>').join("")+'</div>'+
+     '<div class="fhint" id="lgHint">'+lgHint()+'</div>';
+
+  h+='<div class="psec">Come si formano</div>'+
+     '<div class="lgopt"><div><label class="fl">Gruppi</label><div class="seg">'+
+     [["auto","automatici"],["man","a mano"]].map(m=>
+       '<button class="lgmn'+(m[0]===LG.man?" on":"")+'" data-v="'+m[0]+'" onclick="lgSetMan(\''+m[0]+'\')">'+m[1]+'</button>').join("")+
+     '</div></div>'+
+     (LG.man==="auto"
+       ? '<div><label class="fl">Atlete per gruppo</label><div class="seg">'+
+         [2,3,4].map(v=>'<button class="lgsz'+(v===LG.size?" on":"")+'" data-v="'+v+'" onclick="lgSetSize('+v+')">'+v+'</button>').join("")+
+         '</div></div>'
+       : '')+
+     '<div><label class="fl">Carico del gruppo</label><div class="seg">'+
+     [["media","media"],["min","più leggera"]].map(m=>
+       '<button class="lgmd'+(m[0]===LG.mode?" on":"")+'" data-v="'+m[0]+'" onclick="lgSetMode(\''+m[0]+'\')">'+m[1]+'</button>').join("")+
+     '</div></div>'+
+     '<div><label class="fl">Ordine</label><div class="seg">'+
+     [["asc","leggeri prima"],["desc","pesanti prima"]].map(m=>
+       '<button class="lgor'+(m[0]===LG.ord?" on":"")+'" data-v="'+m[0]+'" onclick="lgSetOrd(\''+m[0]+'\')">'+m[1]+'</button>').join("")+
+     '</div></div></div>'+
+     /* .fhint ha un margine negativo in alto (serve sotto i campi di testo):
+        qui finiva sopra i bottoni. */
+     (LG.ord==="asc"
+       ? '<div class="fhint" style="margin-top:9px">Dal più leggero al più pesante: su un bilanciere solo, '+
+         'così i dischi si <b>aggiungono</b> e basta, non si tolgono mai.</div>'
+       : '<div class="fhint" style="margin-top:9px">Dal più pesante: se le più forti scaldano prima, '+
+         'oppure se lavori su due bilancieri.</div>');
+
+  h+='<div id="lgRes">'+lgRes()+'</div>';
+  h+='<div class="psec">Attrezzatura</div><div class="row2">'+
+     '<div><label class="fl">Bilanciere (kg)</label>'+
+     '<input type="number" step="0.5" id="lgBar" value="'+fmtNum(rmBar())+'" onchange="lgEquip()"></div>'+
+     '<div><label class="fl">Incremento minimo (kg)</label>'+
+     '<input type="number" step="0.5" id="lgStep" value="'+fmtNum(rmStep())+'" onchange="lgEquip()"></div></div>'+
+     '<div class="fhint">L\'incremento minimo è il doppio del disco più piccolo che hai: '+
+     'con i dischi da 1,25 kg l\'incremento è 2,5 kg.</div>';
+  return h;
+}
+function lgEquip(){
+  const b=parseFloat(document.getElementById("lgBar").value);
+  const s=parseFloat(document.getElementById("lgStep").value);
+  if(isFinite(b)&&b>0) S.cfg.rmBar=b;
+  if(isFinite(s)&&s>0) S.cfg.rmStep=s;
+  save(); lgRefresh();
+}
+
+/* ─── Chi ha un 1RM su questo test, e quanto ───────────────────────────────
+   Una sola funzione: la usano la modalita' automatica, quella a mano e la
+   stampa. Quando tre schermate calcolano la stessa lista per conto loro,
+   prima o poi una delle tre dimentica un pezzo.                            */
+function lgCandidate(test){
+  const con=[], senza=[];
+  (teamAthletes()||[]).forEach(a=>{
+    const m=rm1RM(a.id,test);
+    if(m) con.push({id:a.id, nome:a.name, kg:m.kg, m:m}); else senza.push(a);
+  });
+  con.sort((x,y)=> LG.ord==="desc" ? y.kg-x.kg : x.kg-y.kg);
+  return {con:con, senza:senza};
+}
+function lgById(con){ const m={}; con.forEach(x=>m[x.id]=x); return m; }
+
+/* ─── I gruppi fatti a mano ────────────────────────────────────────────────
+   L'automatico e' un punto di partenza, non una risposta: il numero non sa
+   chi ha la caviglia messa male, chi oggi non c'e' e chi va d'accordo con
+   chi. Qui i gruppi li decidi tu, e RESTANO: la settimana dopo trovi gli
+   stessi, con i carichi ricalcolati sui massimali aggiornati.
+
+   Restano per test, non per percentuale: il gruppo e' fatto di persone, la
+   percentuale cambia ogni seduta.                                          */
+/* La chiave e' TEST + SQUADRA. Con la sola chiave del test, aprendo la
+   pallavolo dopo il calcio si vedevano i gruppi del calcio pieni di nomi
+   «senza dato» — e peggio: il primo ritocco li avrebbe riscritti perdendo
+   l'altra squadra. Ogni squadra ha i suoi. */
+function lgKey(){ return LG.ex+"@"+(S.activeTeam||"all"); }
+function lgSalvati(test){
+  const o=(S.gruppi||{})[test];
+  if(!o||!Array.isArray(o.g)) return null;
+  const vivi={}; (S.athletes||[]).forEach(a=>vivi[a.id]=1);
+  const visto={}, g=[];
+  o.g.forEach(arr=>{
+    if(!Array.isArray(arr)) return;
+    /* Il segno va messo MENTRE si filtra: con un filter che legge `visto` e lo
+       aggiorna solo dopo, due copie dello stesso id nello stesso gruppo
+       passavano tutte e due — e in palestra diventa un nome scritto due volte
+       su un gruppo da tre. */
+    const pulito=[];
+    arr.forEach(id=>{ if(vivi[id] && !visto[id]){ visto[id]=1; pulito.push(id); } });
+    if(pulito.length) g.push(pulito);
+  });
+  return g.length ? g : null;
+}
+function lgScrivi(test, g){
+  if(!S.gruppi) S.gruppi={};
+  if(!g||!g.length) delete S.gruppi[test];
+  else S.gruppi[test]={d:todayISO(), g:g.map(x=>x.slice())};
+  save();
+}
+function lgTog(aid){ if(LG.sel[aid]) delete LG.sel[aid]; else LG.sel[aid]=1; lgRefresh(); }
+function lgForma(){
+  const ids=Object.keys(LG.sel);
+  if(ids.length<2){ toast("Servono almeno due atlete"); return; }
+  const g=lgSalvati(lgKey())||[];
+  g.push(ids); LG.sel={};
+  lgScrivi(lgKey(), g); lgRefresh();
+}
+function lgTogli(gi, aid){
+  const g=lgSalvati(lgKey())||[];
+  if(!g[gi]) return;
+  g[gi]=g[gi].filter(x=>x!==aid);
+  lgScrivi(lgKey(), g.filter(x=>x.length)); lgRefresh();
+}
+function lgSciogli(gi){
+  const g=lgSalvati(lgKey())||[];
+  g.splice(gi,1);
+  lgScrivi(lgKey(), g); lgRefresh();
+}
+function lgDaAuto(){
+  const {con}=lgCandidate(LG.ex);
+  if(!con.length){ toast("Nessun 1RM su questo test"); return; }
+  lgScrivi(lgKey(), rmGruppi(con, LG.size).map(g=>g.map(x=>x.id)));
+  LG.sel={}; lgRefresh();
+  toast("Gruppi automatici copiati: ora puoi spostare chi vuoi");
+}
+function lgAzzera(){
+  lgScrivi(lgKey(), null); LG.sel={}; lgRefresh();
+}
+
+/* La scheda di un gruppo. `gi` non nullo = modalita' a mano, con i comandi
+   per togliere un'atleta o sciogliere il gruppo. */
+function lgCard(g, etichetta, gi){
+  const r=rmGruppoCarico(g, LG.pct, LG.mode);
+  let b='<div class="lgg '+r.cls+'"><div class="lgh"><span class="lgt">'+esc(etichetta)+
+    (gi!=null?'<button class="lgx" title="Sciogli il gruppo" onclick="lgSciogli('+gi+')">🗑</button>':'')+'</span>'+
+    '<span class="lgkg">'+fmtNum(r.load)+'<small>kg</small></span></div>'+
+    '<div class="lgpl">'+esc(rmPlatesText(r.load))+'</div>';
+  b+=r.righe.map(x=>{
+    const m=x.a.m;
+    const vec = m.gg!=null && m.gg>120 ? '<span class="lgold" title="Dato di oltre 4 mesi fa">vecchio</span>' : '';
+    const st  = m.stima ? '<span class="lgst" title="'+escAttr(m.titolo)+'">'+esc(m.tag)+'</span>' : '';
+    return '<div class="lgrow"><span class="lgnm">'+esc(x.a.nome)+st+vec+'</span>'+
+      '<span class="lg1">1RM '+fmtNum(Math.round(x.a.kg))+'</span>'+
+      '<span class="lgef '+x.cls+'">'+fmtNum(Math.round(x.eff))+'%</span>'+
+      '<span class="lgd '+x.cls+'">'+(x.dpp>0?"+":"")+fmtNum(Math.round(x.dpp*10)/10)+'</span>'+
+      (gi!=null?'<button class="lgx" title="Togli dal gruppo" onclick="lgTogli('+gi+',\''+x.a.id+'\')">✕</button>':'')+
+      '</div>';
+  }).join("");
+  return {html:b+'</div>', r:r};
+}
+function lgLegenda(){
+  return '<div class="lgleg"><b>1RM</b> il suo massimale · <b>%</b> quella che le tocca davvero con il carico del gruppo · '+
+    'l\'ultima colonna è lo scarto in punti dal '+fmtNum(LG.pct)+'% previsto.<br>'+
+    'Il rosso non è simmetrico: <b>sopra</b> il previsto scatta a +6 punti, <b>sotto</b> a −8. '+
+    'Andare leggeri costa uno stimolo; andare pesanti costa una tecnica.</div>';
+}
+function lgAvvisi(pesanti, larghi){
+  if(pesanti){
+    return '<div class="alert danger"><span class="ai">⚠️</span><span>'+
+      '<b>'+pesanti+' '+(pesanti===1?"atleta lavora":"atlete lavorano")+' oltre 6 punti sopra la percentuale prevista.</b> '+
+      'Non è uno stimolo più forte: sono ripetizioni che salteranno, o che usciranno con la tecnica rotta. '+
+      'Passa a «la più leggera», o sposta chi è troppo sotto in un altro gruppo.</span></div>';
+  }
+  if(larghi){
+    return '<div class="alert warn"><span class="ai">⚠️</span><span>'+
+      '<b>'+larghi+' '+(larghi===1?"gruppo è largo":"gruppi sono larghi")+'.</b> '+
+      'Qualcuna lavora parecchio sotto la percentuale prevista: è uno stimolo più leggero, non un rischio.</span></div>';
+  }
+  return "";
+}
+function lgMancanti(senza, nome, ex){
+  if(!senza.length) return "";
+  return '<div class="psec">Senza 1RM su '+esc(nome)+' ('+senza.length+')</div>'+
+    '<div class="lgmiss">'+senza.map(a=>
+      '<button class="lgm" onclick="openRepMaxEntry(\''+a.id+'\',\''+escAttr(ex)+'\',1)">'+
+      esc(a.name)+'<span>stima →</span></button>').join("")+'</div>'+
+    '<div class="fhint">Una serie a 3-6 ripetizioni con un carico prudente e l\'atleta entra nei gruppi.</div>';
+}
+function lgRes(){
+  const voce=lgEsercizi().find(e=>e.test===LG.ex)||{}, nome=voce.n||"", ex=voce.ex||nome;
+  return (LG.man==="man" ? lgResMan(nome,ex) : lgResAuto(nome,ex));
+}
+function lgResAuto(nome, ex){
+  const {con, senza}=lgCandidate(LG.ex);
+  let h="";
+  if(!con.length){
+    h+='<div class="alert warn" style="margin-top:14px"><span class="ai">⚠️</span><span>'+
+       'Nessuna ha un 1RM su <b>'+esc(nome)+'</b>. Serve almeno una stima: bastano una serie e trenta secondi per atleta.</span></div>';
+  }else{
+    const gruppi=rmGruppi(con, LG.size);
+    let larghi=0, pesanti=0;
+    const corpo=gruppi.map((g,i)=>{
+      const c=lgCard(g, "Gruppo "+(i+1), null);
+      if(c.r.cls==="bad") larghi++;
+      pesanti+=c.r.sopra;
+      return c.html;
+    }).join("");
+    h+='<div class="psec">'+con.length+' atlete · '+gruppi.length+' gruppi</div>';
+    /* I gruppi non escono sempre della misura chiesta, e non e' un difetto: se
+       fra due atlete c'e' un salto grosso, attraversarlo per rispettare il
+       numero costa piu' di quanto vale. Ma se non lo dico sembra rotto. */
+    const misure=gruppi.map(g=>g.length);
+    if(misure.some(n=>n!==LG.size)){
+      h+='<div class="gnote" style="margin-top:0;border:none;padding-top:4px">'+
+         'Hai chiesto gruppi da <b>'+LG.size+'</b>: la rosa si taglia meglio in <b>'+misure.join("+")+'</b>. '+
+         'Fra alcune atlete c\'è un salto di forza che non conviene attraversare — passarci sopra per rispettare '+
+         'il numero farebbe lavorare qualcuna molto fuori percentuale.</div>';
+    }
+    h+=lgAvvisi(pesanti, larghi);
+    h+='<div class="lgwrap">'+corpo+'</div>'+lgLegenda();
+    h+='<div class="lgrow2">'+
+       '<button class="btn sm" onclick="lgPrint()">🖨 Stampa</button>'+
+       '<button class="btn sm" onclick="lgSetMan(\'man\');lgDaAuto()">✏️ Aggiusta a mano</button></div>';
+  }
+  return h+lgMancanti(senza, nome, ex);
+}
+function lgResMan(nome, ex){
+  const {con, senza}=lgCandidate(LG.ex);
+  const idx=lgById(con);
+  const salvati=lgSalvati(lgKey())||[];
+  const dentro={}; salvati.forEach(g=>g.forEach(id=>dentro[id]=1));
+  // chi e' nei gruppi salvati ma oggi non ha un 1RM su questo test non si puo'
+  // caricare: resta nel gruppo, ma va detto invece di sparire in silenzio
+  const senzaDato=[];
+  const blocchi=salvati.map(g=>{
+    const dati=g.map(id=>idx[id]).filter(Boolean);
+    g.forEach(id=>{ if(!idx[id]){ const a=(S.athletes||[]).find(x=>x.id===id); if(a) senzaDato.push(a.name); } });
+    return dati;
+  });
+  const ordinati=blocchi.map((g,i)=>({g:g, gi:i}))
+    .filter(x=>x.g.length)
+    .sort((a,b)=>{
+      const ma=a.g.reduce((s,x)=>s+x.kg,0)/a.g.length, mb=b.g.reduce((s,x)=>s+x.kg,0)/b.g.length;
+      return LG.ord==="desc" ? mb-ma : ma-mb;
+    });
+
+  let h="";
+  if(!con.length){
+    return '<div class="alert warn" style="margin-top:14px"><span class="ai">⚠️</span><span>'+
+      'Nessuna ha un 1RM su <b>'+esc(nome)+'</b>: non c\'è niente da raggruppare.</span></div>'+
+      lgMancanti(senza, nome, ex);
+  }
+
+  if(ordinati.length){
+    let larghi=0, pesanti=0;
+    const corpo=ordinati.map((x,i)=>{
+      const c=lgCard(x.g, "Gruppo "+(i+1), x.gi);
+      if(c.r.cls==="bad") larghi++;
+      pesanti+=c.r.sopra;
+      return c.html;
+    }).join("");
+    const quando=((S.gruppi||{})[lgKey()]||{}).d;
+    h+='<div class="psec">'+ordinati.length+' gruppi'+(quando?' · formati il '+fmtDate(quando):'')+'</div>';
+    h+=lgAvvisi(pesanti, larghi);
+    h+='<div class="lgwrap">'+corpo+'</div>'+lgLegenda();
+    if(senzaDato.length){
+      h+='<div class="alert warn"><span class="ai">⚠️</span><span>'+
+         esc(senzaDato.join(", "))+': '+(senzaDato.length===1?'è in un gruppo ma non ha':'sono nei gruppi ma non hanno')+
+         ' un 1RM su '+esc(nome)+', quindi non '+(senzaDato.length===1?'entra':'entrano')+' nel calcolo del carico.</span></div>';
+    }
+    h+='<div class="lgrow2">'+
+       '<button class="btn sm" onclick="lgPrint()">🖨 Stampa</button>'+
+       '<button class="btn sm" onclick="lgDaAuto()">↻ Rifai in automatico</button>'+
+       '<button class="btn sm danger" onclick="lgAzzera()">Svuota</button></div>';
+  }else{
+    h+='<div class="alert info" style="margin-top:14px"><span class="ai">✏️</span><span>'+
+       'Nessun gruppo ancora. Spunta le atlete qui sotto e premi <b>Forma il gruppo</b>, '+
+       'oppure parti dalla proposta automatica e sposta chi vuoi.</span></div>'+
+       '<button class="btn" style="width:100%;margin-top:10px" onclick="lgDaAuto()">↻ Parti dai gruppi automatici</button>';
+  }
+
+  const liberi=con.filter(x=>!dentro[x.id]);
+  h+='<div class="psec">Da assegnare ('+liberi.length+')</div>';
+  if(!liberi.length){
+    h+='<div class="fhint">Tutte assegnate.</div>';
+  }else{
+    h+='<div class="lgpool">'+liberi.map(x=>{
+      const on=!!LG.sel[x.id];
+      const ideale=rmRound(x.kg*LG.pct/100);
+      return '<button class="lgp'+(on?" on":"")+'" onclick="lgTog(\''+x.id+'\')">'+
+        '<span class="lgpb">'+(on?"✓":"")+'</span>'+
+        '<span class="lgnm">'+esc(x.nome)+(x.m.stima?'<span class="lgst">'+esc(x.m.tag)+'</span>':'')+'</span>'+
+        '<span class="lg1">1RM '+fmtNum(Math.round(x.kg))+'</span>'+
+        '<span class="lgpi">'+fmtNum(ideale)+' kg</span></button>';
+    }).join("")+'</div>';
+    /* La media dei selezionati, mentre li selezioni: e' la domanda vera —
+       «se metto insieme queste tre, con quanti chili le carico?» */
+    const sel=liberi.filter(x=>LG.sel[x.id]);
+    if(sel.length){
+      const r=rmGruppoCarico(sel, LG.pct, LG.mode);
+      h+='<div class="lgsum '+r.cls+'"><div class="lgsh">'+sel.length+' selezionate · carico '+
+         (LG.mode==="min"?"della più leggera":"medio")+'</div>'+
+         '<div class="lgsk">'+fmtNum(r.load)+'<small>kg</small></div>'+
+         '<div class="lgpl">'+esc(rmPlatesText(r.load))+'</div>'+
+         r.righe.map(x=>'<div class="lgrow"><span class="lgnm">'+esc(x.a.nome)+'</span>'+
+           '<span class="lgef '+x.cls+'">'+fmtNum(Math.round(x.eff))+'%</span>'+
+           '<span class="lgd '+x.cls+'">'+(x.dpp>0?"+":"")+fmtNum(Math.round(x.dpp*10)/10)+'</span></div>').join("")+
+         '<button class="btn primary" style="width:100%;margin-top:10px" onclick="lgForma()">Forma il gruppo</button></div>';
+    }else{
+      h+='<div class="fhint">Spunta due o più atlete: qui sotto compare il carico medio che le unisce, '+
+         'e cosa significa per ciascuna.</div>';
+    }
+  }
+  return h+lgMancanti(senza, nome, ex);
+}
+
+/* Il foglio da portare in palestra: nomi, carichi, dischi. Su carta il colore
+   non c'e', quindi lo scarto e' scritto in chiaro. */
+/* I gruppi che si stanno guardando adesso: quelli decisi a mano se ci sono,
+   altrimenti la proposta automatica. La stampa deve mostrare esattamente cio'
+   che c'e' sullo schermo, altrimenti in palestra si lavora su due versioni. */
+function lgCorrenti(){
+  const {con}=lgCandidate(LG.ex);
+  if(LG.man!=="man") return rmGruppi(con, LG.size);
+  const idx=lgById(con);
+  const g=(lgSalvati(lgKey())||[]).map(arr=>arr.map(id=>idx[id]).filter(Boolean)).filter(x=>x.length);
+  if(!g.length) return rmGruppi(con, LG.size);
+  return g.sort((a,b)=>{
+    const ma=a.reduce((s,x)=>s+x.kg,0)/a.length, mb=b.reduce((s,x)=>s+x.kg,0)/b.length;
+    return LG.ord==="desc" ? mb-ma : ma-mb;
+  });
+}
+function lgPrint(){
+  const voce=lgEsercizi().find(e=>e.test===LG.ex)||{}, nome=voce.n||"";
+  const gruppi=lgCorrenti();
+  if(!gruppi.length){ toast("Niente da stampare"); return; }
+  const t=S.teams.find(x=>x.id===S.activeTeam);
+  const sq = S.activeTeam==="all" ? "Tutte le squadre" : (t?t.name:"Senza squadra");
+
+  let b="";
+  gruppi.forEach((g,i)=>{
+    const r=rmGruppoCarico(g, LG.pct, LG.mode);
+    b+='<div class="g"><div class="gh"><span class="gt">Gruppo '+(i+1)+'</span>'+
+       '<span class="gk">'+fmtNum(r.load)+' kg</span></div>'+
+       '<div class="gp">'+esc(rmPlatesText(r.load))+'</div><table>';
+    r.righe.forEach(x=>{
+      b+='<tr><td class="n">'+esc(x.a.nome)+'</td><td>1RM '+fmtNum(Math.round(x.a.kg))+'</td>'+
+         '<td>'+fmtNum(Math.round(x.eff))+'% del suo</td>'+
+         '<td class="d">'+(x.dpp>0?"+":"")+fmtNum(Math.round(x.dpp*10)/10)+' punti</td></tr>';
+    });
+    b+='</table></div>';
+  });
+
+  const doc='<!doctype html><html lang="it"><head><meta charset="utf-8">'+
+    '<title>Gruppi di carico — '+esc(nome)+'</title><style>'+
+    '@page{size:A4;margin:14mm}'+
+    'body{font:11px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:0}'+
+    '.br{font-size:9px;letter-spacing:2px;color:#C81E2D;font-weight:700}'+
+    'h1{font-size:17px;margin:0 0 2px}.sub{color:#555;font-size:10px;margin:0 0 12px}'+
+    '.g{border:1px solid #ccc;border-radius:6px;padding:8px 10px;margin-bottom:8px;break-inside:avoid}'+
+    '.gh{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:4px}'+
+    '.gt{font-weight:700;font-size:12px}.gk{font-size:19px;font-weight:700;color:#C81E2D}'+
+    '.gp{font-size:9px;color:#666;margin:3px 0 5px}'+
+    'table{width:100%;border-collapse:collapse}td{padding:2px 0;font-size:10.5px}'+
+    'td.n{font-weight:600;width:38%}td.d{text-align:right;color:#666}'+
+    '.note{font-size:9px;color:#666;margin-top:10px;border-top:1px solid #eee;padding-top:6px}'+
+    '</style></head><body>'+
+    '<div class="br">IRON PERFORMANCE</div><h1>Gruppi di carico — '+esc(nome)+'</h1>'+
+    '<p class="sub">'+esc(sq)+' · '+fmtNum(LG.pct)+'% dell\'1RM'+
+    ' · carico del gruppo: '+(LG.mode==="min"?"la più leggera":"media")+
+    ' · '+(LG.man==="man"?"gruppi tuoi":"gruppi automatici")+' · '+fmtDate(todayISO())+'</p>'+
+    b+
+    '<p class="note">«punti» è lo scarto in punti di percentuale fra il carico del gruppo e quello previsto per lei. '+
+    'Oltre +6 il carico è pesante per quell\'atleta: toglile un paio di ripetizioni o spostala di gruppo. '+
+    'Sotto −8 è solo più leggero: si recupera con una serie in più.</p>'+
+    '</body></html>';
+  const w=window.open("", "_blank");
+  if(!w){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
+  w.document.write(doc); w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 400);
 }
 
 /* ═══════════════ KNOWLEDGE BASE SPORT + RUOLO ═══════════════ */
@@ -4806,7 +5746,8 @@ function delLoad(aid,i){
 /* ═══════════════ CELLA: STORICO + INSERIMENTO ═══════════════ */
 let CUR={a:null,t:null};
 function openCell(aid,tid){
-  CUR={a:aid,t:tid};
+  const ult=(series(aid,tid)||[]).slice(-1)[0];
+  CUR={a:aid, t:tid, mode:(ult&&ult.fonte==="reps")?"reps":"max"};
   drawCell();
   document.getElementById("ov").classList.add("on");
 }
@@ -4840,11 +5781,42 @@ function drawCell(){
     h+='<div class="alert info"><span class="ai">⚙️</span><span>Valore <b>calcolato in automatico</b> da '+fromNames+
        '. Non si inserisce a mano: aggiorna '+fromNames+' e l\'EUR si ricalcola da solo.</span></div>';
   } else {
-    h+='<label class="fl">Nuova misurazione</label><div class="row2">'+
-      '<input id="mV" class="mono" type="number" inputmode="decimal" step="any" placeholder="valore '+t.unit+'">'+
-      '<input id="mD" type="date" value="'+todayISO()+'"></div>'+
-      '<div style="height:10px"></div>'+
-      '<button class="btn primary" style="width:100%" onclick="addMeasure()">Salva misurazione</button>';
+    /* Un massimale si puo' MISURARE o STIMARE da una serie a ripetizioni, e i
+       due numeri vanno nella stessa colonna — non in due colonne diverse.
+       Due colonne per la stessa qualita' vogliono dire due andamenti, ognuno
+       con dentro meta' delle misure, e nessuno dei due leggibile. La colonna
+       resta una; a cambiare e' solo il modo in cui ci entri. */
+    const exCella=rmTestEx(CUR.t);
+    if(exCella){
+      h+='<label class="fl">Come ci arrivi</label><div class="seg" style="width:100%;display:flex">'+
+         '<button style="flex:1" class="'+(CUR.mode==="reps"?"":"on")+'" onclick="cellMode(\'max\')">Massimale sollevato</button>'+
+         '<button style="flex:1" class="'+(CUR.mode==="reps"?"on":"")+'" onclick="cellMode(\'reps\')">Da ripetizioni</button>'+
+         '</div>';
+    }
+    if(exCella && CUR.mode==="reps"){
+      h+='<div class="fhint" style="margin-top:8px">Una serie sola con un carico che regge <b>3-6 ripetizioni</b>, '+
+        'fermandosi con la tecnica ancora pulita. Dichiara quante ne restavano: senza, la stima esce bassa '+
+        'di circa il 3% per ognuna.</div>'+
+        '<div class="row2">'+
+        '<div><label class="fl">Carico (kg)</label>'+
+        '<input type="number" inputmode="decimal" step="0.5" id="rmW" oninput="rmPreview()" placeholder="es. 50"></div>'+
+        '<div><label class="fl">Ripetizioni fatte</label>'+
+        '<input type="number" inputmode="numeric" step="1" id="rmR" oninput="rmPreview()" placeholder="es. 5"></div></div>'+
+        '<div class="row2" style="margin-top:9px">'+
+        '<div><label class="fl">Ne restavano (RIR)</label><select id="rmRir" onchange="rmPreview()">'+
+        [0,1,2,3].map(n=>'<option value="'+n+'"'+(n===1?" selected":"")+'>'+n+'</option>').join("")+
+        '</select></div>'+
+        '<div><label class="fl">Data</label><input type="date" id="rmD" value="'+todayISO()+'"></div></div>'+
+        '<div id="rmOut"></div>'+
+        '<button class="btn primary" id="rmSaveBtn" style="width:100%;margin-top:12px" disabled '+
+        'onclick="saveRepMax(\''+CUR.a+'\',\''+escAttr(exCella)+'\',\'cella\')">Salva la stima</button>';
+    }else{
+      h+='<label class="fl">Nuova misurazione</label><div class="row2">'+
+        '<input id="mV" class="mono" type="number" inputmode="decimal" step="any" placeholder="valore '+t.unit+'">'+
+        '<input id="mD" type="date" value="'+todayISO()+'"></div>'+
+        '<div style="height:10px"></div>'+
+        '<button class="btn primary" style="width:100%" onclick="addMeasure()">Salva misurazione</button>';
+    }
   }
 
   // storico
@@ -4859,7 +5831,8 @@ function drawCell(){
       const pr=(arr.length>1 && e.v===best)?'<span class="star" title="Record personale">★</span> ':'';
       // Un 1RM ricavato dalla curva non e' un massimale sollevato: senza questo
       // segno, fra sei mesi non c'e' modo di distinguerli.
-      const stimato=(e.fonte==="lv")?'<span class="stima" title="Stimato dalla curva carico-velocità, non sollevato">stima</span> ':'';
+      const stimato=(e.fonte==="lv"||e.fonte==="reps")
+        ? '<span class="stima" title="'+(e.fonte==="reps"?"Stimato da una serie a ripetizioni, non sollevato":"Stimato dalla curva carico-velocità, non sollevato")+'">stima</span> ' : '';
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
          '<span class="hv">'+stimato+pr+fmtNum(e.v)+' <span style="color:var(--muted2);font-size:10px">'+t.unit+'</span></span>'+
          dl+(t.derived?'':'<span class="hdl" onclick="delMeasure('+i+')">🗑</span>')+'</div>';
@@ -4870,9 +5843,17 @@ function drawCell(){
       ? 'Nessun valore ancora: serve almeno una data in cui siano presenti entrambi i test sorgente.'
       : 'Nessuna misurazione ancora. La prima crea il punto di partenza; dalla seconda in poi vedrai la variazione colorata.')+'</p>';
   }
+  if(rmTestEx(CUR.t)){
+    h+='<button class="btn sm" style="width:100%;margin-top:14px" '+
+       'onclick="openLoadGroups(\''+CUR.t+'\')">🏋️ Percentuali e gruppi di carico su questo test</button>';
+  }
   document.getElementById("modal").innerHTML=h;
-  setTimeout(()=>{ const v=document.getElementById("mV"); if(v) v.focus(); },60);
+  if(CUR.mode==="reps") rmPreview();
+  setTimeout(()=>{ const v=document.getElementById("mV")||document.getElementById("rmW"); if(v) v.focus(); },60);
 }
+/* La scelta resta quella dell'ultima volta su questa cella: chi stima, stima
+   sempre; chi carica il massimale, lo carica sempre. */
+function cellMode(m){ CUR.mode=m; drawCell(); }
 function addMeasure(){
   const t=TMAP[CUR.t];
   const v=parseFloat(document.getElementById("mV").value);
@@ -5027,6 +6008,7 @@ function exportCSV(){
     TESTS.forEach(t=>series(a.id,t.id).forEach(e=>{
       rows.push([tm?tm.name:"—",a.name,a.sex||"M",t.full,t.unit,e.d,fmtNum(e.v),
                  e.fonte==="lv"?"stima da curva carico-velocità"
+                 :e.fonte==="reps"?"stima da serie a ripetizioni"
                  :e.fonte==="mjl"?"importato da My Jump Lab":"misurato"]);
     })); });
   const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
@@ -5047,7 +6029,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},tomb:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},gruppi:{},tomb:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -5085,7 +6067,10 @@ function sanitizeImport(o){
                          // elenco chiuso: un'origine sconosciuta non entra, ma
                          // aggiungerne una qui e dimenticarsi di questa riga
                          // la farebbe sparire al primo ripristino
-                         if(e.fonte==="lv"||e.fonte==="mjl") r.fonte=e.fonte;
+                         if(e.fonte==="lv"||e.fonte==="mjl"||e.fonte==="reps") r.fonte=e.fonte;
+                         // com'e' nata la stima da ripetizioni: carico, ripetizioni,
+                         // riserva e intervallo. Senza, resta un numero senza storia.
+                         ["rmW","rmR","rmRir","rmLo","rmHi"].forEach(f=>{ const q=num(e[f]); if(q!=null) r[f]=q; });
                          return r; });
     });
     out.data[aid]=dst;
@@ -5159,6 +6144,24 @@ function sanitizeImport(o){
       const v=o.policy[k];
       if(k==="version"){ const n=num(v); out.policy.version=(n!=null&&n>=0)?Math.floor(n):0; }
       else out.policy[k]=str(v,2000);
+    });
+  }
+  /* Gruppi di lavoro: id di atleti vivi, niente doppioni, niente gruppi vuoti.
+     Un id che non esiste piu' qui non entra: in palestra un nome fantasma in
+     un gruppo e' peggio di un gruppo in meno. */
+  if(o.gruppi&&typeof o.gruppi==="object"&&!Array.isArray(o.gruppi)){
+    Object.keys(o.gruppi).slice(0,60).forEach(tid=>{
+      if(!/^[A-Za-z0-9_@-]{1,60}$/.test(tid)) return;   // <test>@<squadra>
+      const v=o.gruppi[tid];
+      if(!v||typeof v!=="object"||!Array.isArray(v.g)) return;
+      const visto={}, g=[];
+      v.g.slice(0,40).forEach(arr=>{
+        if(!Array.isArray(arr)) return;
+        const p=[];
+        arr.slice(0,40).forEach(id=>{ if(idOk(id)&&live[id]&&!visto[id]){ visto[id]=1; p.push(id); } });
+        if(p.length) g.push(p);
+      });
+      if(g.length) out.gruppi[tid]={d:isDate(v.d)?v.d:todayISO(), g:g};
     });
   }
   if(o.tomb&&typeof o.tomb==="object") Object.keys(o.tomb).slice(0,2000).forEach(k=>{ out.tomb[k]=str(o.tomb[k],40); });
@@ -5764,6 +6767,7 @@ function loadDemo(){
     S.athletes.forEach(a=>{
       S.tomb["ath:"+a.id]=ora;
       ["data","readiness","load","screen","lv"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
+      gruppiTogli(a.id);
     });
     (S.teams||[]).forEach(x=>{ S.tomb["team:"+x.id]=ora; });
   }

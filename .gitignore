@@ -9,3 +9,6 @@ Thumbs.db
 
 # cartella di appoggio: file vecchi da cancellare a mano
 _da_eliminare/
+
+# script di aggiornamento personale, non va nel repository
+aggiorna.bat

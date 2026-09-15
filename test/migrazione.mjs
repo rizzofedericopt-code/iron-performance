@@ -12,11 +12,23 @@
 // una migrazione automatica che non gira, o che gira due volte e rompe, e'
 // peggio del passaggio manuale che ha sostituito.
 
-import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import assert from "node:assert/strict";
+
+/* PGlite e' una dipendenza di sviluppo: sul portatile di chi allena puo' non
+   esserci, e in quel caso la catena di `npm test` si spezzava qui con un
+   errore rosso che SEMBRA una regressione. Peggio ancora, tutti i test dopo
+   questo non giravano piu'. Meglio saltarlo dicendo forte che e' saltato. */
+let PGlite;
+try { ({ PGlite } = await import("@electric-sql/pglite")); }
+catch (e) {
+  console.log("\n  ~~ SALTATO: manca @electric-sql/pglite (dipendenza di sviluppo).");
+  console.log("     Prova il database vero; per farlo girare:  npm install --save-dev @electric-sql/pglite");
+  console.log("     Non e' un errore dell'app: il resto della suite vale lo stesso.\n");
+  process.exit(0);
+}
 
 const here = dirname(fileURLToPath(import.meta.url));
 const store = readFileSync(join(here, "..", "api", "store.js"), "utf8");

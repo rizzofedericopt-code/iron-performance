@@ -574,6 +574,25 @@ ul.kb li b{color:#fff;font-weight:600}
 .sess-row .sn{flex:1;font-size:13.5px;font-weight:600}
 .sess-row .sp{font-family:var(--mono);font-size:10px;color:var(--muted2)}
 .sess-row input{flex:0 0 96px;text-align:right;padding:9px 10px;font-family:var(--mono)}
+/* riga a tre campi: carico, ripetizioni, riserva — piu' la stima a destra */
+.sess-rm{padding:9px 0;border-bottom:1px solid var(--line)}
+.sess-rm .srh{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px}
+.sess-rm .sn{font-size:13.5px;font-weight:600}
+.sess-rm .sp{font-family:var(--mono);font-size:10px;color:var(--muted2);flex:0 0 auto}
+.sess-rm .srb{display:flex;align-items:center;gap:6px}
+.sess-rm .srb input{flex:1 1 0;min-width:0;text-align:center;padding:9px 4px;font-family:var(--mono)}
+.sess-rm .srb select{flex:0 0 78px;padding:9px 4px;font-size:12px}
+.srOut{flex:0 0 74px;text-align:right;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--muted2)}
+.srOut.ok{color:var(--up)}
+.srOut.warn{color:#FF9F0A}
+.srOut.bad{color:var(--down);font-size:10.5px;font-weight:600;line-height:1.2}
+.sessrir{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted)}
+.sessrir .seg button{padding:5px 13px}
+.srhead{display:flex;gap:6px;padding:4px 0 2px;font-size:9.5px;text-transform:uppercase;
+  letter-spacing:.4px;color:var(--muted2);position:sticky;top:0;background:var(--bg);z-index:1}
+.srhead span:nth-child(1),.srhead span:nth-child(2){flex:1 1 0;text-align:center}
+.srhead span:nth-child(3){flex:0 0 78px;text-align:center}
+.srhead span:nth-child(4){flex:0 0 74px;text-align:right}
 .menu{position:absolute;right:14px;top:54px;background:var(--surface2);border:1px solid var(--line2);
   border-radius:12px;padding:6px;z-index:60;display:none;min-width:190px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 .menu.on{display:block}
@@ -5877,11 +5896,12 @@ function delMeasure(i){
 }
 
 /* ═══════════════ SESSIONE (inserimento per colonna) ═══════════════ */
-let SESS={t:null};
+let SESS={t:null, mode:"max"};
 function openSession(){
   if(teamAthletes().length===0){ addAthlete(); return; }
   const tests=visibleTests().filter(t=>!t.derived);
   SESS.t=tests.length?tests[0].id:null;
+  SESS.mode="max";
   const tm=S.teams.find(x=>x.id===S.activeTeam);
   const sub = tm ? ("Squadra: "+esc(tm.name)) : (S.activeTeam==="none"?"Atleti senza squadra":"Tutte le squadre");
   let opt=tests.map(t=>'<option value="'+t.id+'">'+t.name+' ('+t.unit+')</option>').join("");
@@ -5900,34 +5920,144 @@ function openSession(){
     '<div class="row2"><div><label class="fl">Test</label>'+
     '<select id="sT" onchange="sessRows()">'+opt+'</select></div>'+
     '<div><label class="fl">Data</label><input id="sD" type="date" value="'+todayISO()+'"></div></div>'+
+    '<div id="sMode"></div>'+
     '<label class="fl">Atleti</label><div class="sess-list" id="sList"></div>'+
     '<div style="height:14px"></div>'+
     '<button class="btn primary" style="width:100%" onclick="saveSession()">Salva sessione</button>');
   sessRows();
 }
+/* Un massimale, su una squadra, non si misura quasi mai sollevandolo: si
+   ricava da una serie a ripetizioni. Ma qui c'era una casella sola per atleta,
+   cioe' il numero finale — e per inserire carico e ripetizioni bisognava
+   aprire quindici schede una per una, che e' esattamente il lavoro che questa
+   schermata esiste per evitare. */
 function sessRows(){
   const tid=document.getElementById("sT").value; SESS.t=tid; const t=TMAP[tid];
-  let h="";
+  const ex=rmTestEx(tid);
+  if(!ex) SESS.mode="max";
+
+  const mh=document.getElementById("sMode");
+  if(mh){
+    mh.innerHTML = ex
+      ? '<label class="fl">Come ci arrivi</label><div class="seg" style="width:100%;display:flex">'+
+        '<button style="flex:1" class="'+(SESS.mode==="reps"?"":"on")+'" onclick="sessMode(\'max\')">Massimale sollevato</button>'+
+        '<button style="flex:1" class="'+(SESS.mode==="reps"?"on":"")+'" onclick="sessMode(\'reps\')">Da ripetizioni</button>'+
+        '</div>'+
+        (SESS.mode==="reps"
+          ? '<div class="sessrir"><span>Ripetizioni di riserva per tutte:</span><div class="seg">'+
+            [0,1,2,3].map(n=>'<button onclick="sessRirAll('+n+')">'+n+'</button>').join("")+'</div></div>'+
+            '<div class="fhint" style="margin-top:7px">Carico, ripetizioni chiuse con la tecnica pulita, e quante ne restavano. '+
+            'L\'1RM compare a destra mentre scrivi.</div>'
+          : '')
+      : '';
+  }
+
+  /* I segnaposto («kg», «rip») spariscono appena ci scrivi dentro: senza una
+     riga di intestazione, dopo trenta secondi non sai piu' quale casella e'
+     quale. */
+  let h = SESS.mode==="reps"
+    ? '<div class="srhead"><span>carico</span><span>ripetiz.</span><span>riserva</span><span>1RM</span></div>'
+    : "";
   teamAthletes().forEach(a=>{
-    const arr=series(a.id,tid); const lastv=arr.length?fmtNum(arr[arr.length-1].v):"";
-    h+='<div class="sess-row"><div><div class="sn">'+esc(a.name)+'</div>'+
-       (lastv!==""?'<div class="sp">ultimo: '+lastv+' '+t.unit+'</div>':'<div class="sp">—</div>')+'</div>'+
-       '<input class="mono" type="number" inputmode="decimal" step="any" placeholder="'+(lastv||t.unit)+'" data-a="'+a.id+'"></div>';
+    const arr=series(a.id,tid); const u=arr.length?arr[arr.length-1]:null;
+    const lastv=u?fmtNum(u.v):"";
+    const prec = lastv!=="" ? 'ultimo: '+lastv+' '+t.unit+(u.fonte==="reps"||u.fonte==="lv"?" (stima)":"") : "—";
+    if(SESS.mode==="reps"){
+      // il carico della volta scorsa e' il punto di partenza piu' utile che ho
+      const sug=(u&&isFinite(u.rmW))?fmtNum(u.rmW):"";
+      h+='<div class="sess-rm" data-a="'+a.id+'">'+
+         '<div class="srh"><span class="sn">'+esc(a.name)+'</span><span class="sp">'+prec+'</span></div>'+
+         '<div class="srb">'+
+         '<input class="mono srW" type="number" inputmode="decimal" step="0.5" placeholder="'+(sug||"kg")+'" oninput="sessCalc(\''+a.id+'\')">'+
+         '<input class="mono srR" type="number" inputmode="numeric" step="1" placeholder="rip" oninput="sessCalc(\''+a.id+'\')">'+
+         '<select class="srQ" onchange="sessCalc(\''+a.id+'\')">'+
+           [0,1,2,3].map(n=>'<option value="'+n+'"'+(n===1?" selected":"")+'>RIR '+n+'</option>').join("")+
+         '</select>'+
+         '<span class="srOut" id="srOut_'+a.id+'">—</span></div></div>';
+    }else{
+      h+='<div class="sess-row"><div><div class="sn">'+esc(a.name)+'</div>'+
+         '<div class="sp">'+prec+'</div></div>'+
+         '<input class="mono" type="number" inputmode="decimal" step="any" placeholder="'+(lastv||t.unit)+'" data-a="'+a.id+'"></div>';
+    }
   });
   document.getElementById("sList").innerHTML=h;
 }
+function sessMode(m){ SESS.mode=m; sessRows(); }
+function sessRirAll(n){
+  document.querySelectorAll("#sList .srQ").forEach(sel=>{ sel.value=String(n); });
+  document.querySelectorAll("#sList .sess-rm").forEach(r=>sessCalc(r.getAttribute("data-a")));
+}
+/* La stima riga per riga, mentre scrive. Il numero deve comparire LI', accanto
+   ai campi: un totale in fondo non lo guarda nessuno mentre carica i dischi. */
+function sessStima(riga){
+  if(!riga) return null;
+  const w=riga.querySelector(".srW").value, r=riga.querySelector(".srR").value;
+  const q=riga.querySelector(".srQ").value;
+  return rmEstimate(w,r,q);
+}
+function sessCalc(aid){
+  const riga=document.querySelector('#sList .sess-rm[data-a="'+aid+'"]');
+  const out=document.getElementById("srOut_"+aid);
+  if(!riga||!out) return;
+  const est=sessStima(riga);
+  if(!est){ out.textContent="—"; out.className="srOut"; return; }
+  if(est.rEff>RM_RIP_MAX){
+    out.textContent=est.rEff+" rip · troppe";
+    out.className="srOut bad";
+    out.title="Oltre 10 ripetizioni effettive la stima non e' utilizzabile: questa riga non verra' salvata.";
+    return;
+  }
+  out.textContent=fmtNum(Math.round(est.kg*10)/10)+" kg";
+  out.className="srOut"+(est.rEff>6?" warn":" ok");
+  out.title="1RM stimato su "+est.rEff+" ripetizioni effettive";
+}
+/* I campi che raccontano COME e' nata una stima. Vanno via tutti insieme
+   quando la riga viene sostituita da un valore misurato, altrimenti restano
+   appiccicati a un numero che non c'entra piu' niente. */
+const RM_CAMPI=["rmW","rmR","rmRir","rmLo","rmHi"];
 function saveSession(){
   const tid=SESS.t, d=document.getElementById("sD").value||todayISO();
-  let n=0;
-  document.querySelectorAll("#sList input").forEach(inp=>{
-    const v=parseFloat(inp.value); if(isNaN(v)||v<0) return;
-    const aid=inp.getAttribute("data-a");
-    if(!S.data[aid]) S.data[aid]={}; if(!S.data[aid][tid]) S.data[aid][tid]=[];
-    const arr=S.data[aid][tid]; const ex=arr.find(e=>e.d===d);
-    if(ex) ex.v=v; else arr.push({d,v});
+  let n=0, saltate=0, protette=0;
+
+  const scrivi=(aid, rec)=>{
+    if(!S.data[aid]) S.data[aid]={};
+    if(!S.data[aid][tid]) S.data[aid][tid]=[];
+    const arr=S.data[aid][tid], ex=arr.find(e=>e.d===d);
+    if(ex){
+      /* Una stima non copre un massimale sollevato ne' una curva: e' la stessa
+         regola della scheda singola, e qui non c'era. */
+      /* Attenzione al contrario: un massimale MISURATO non ha `fonte` affatto.
+         Controllare "se ha una fonte diversa" lasciava scoperto proprio il
+         dato piu' prezioso — quello sollevato davvero. */
+      if(rec.fonte==="reps" && ex.fonte!=="reps"){ protette++; return; }
+      Object.assign(ex, rec);
+      /* Prima si scriveva solo `ex.v`: un valore misurato che sostituiva una
+         stima ne ereditava l'etichetta e restava marcato «stima» per sempre. */
+      if(!rec.fonte){ delete ex.fonte; RM_CAMPI.forEach(k=>delete ex[k]); }
+    }else arr.push(rec);
     arr.sort((x,y)=>x.d<y.d?-1:1); n++;
-  });
-  save(); closeM(); render(); toast(n+" misurazioni salvate");
+  };
+
+  if(SESS.mode==="reps"){
+    document.querySelectorAll("#sList .sess-rm").forEach(riga=>{
+      const est=sessStima(riga);
+      if(!est) return;
+      if(est.rEff>RM_RIP_MAX){ saltate++; return; }
+      const kg=Math.round(est.kg*10)/10;
+      scrivi(riga.getAttribute("data-a"), {d:d, v:kg, fonte:"reps",
+        rmW:est.peso, rmR:est.rip, rmRir:est.rir,
+        rmLo:Math.round(est.lo*10)/10, rmHi:Math.round(est.hi*10)/10});
+    });
+  }else{
+    document.querySelectorAll("#sList .sess-row input").forEach(inp=>{
+      const v=parseFloat(inp.value); if(isNaN(v)||v<0) return;
+      scrivi(inp.getAttribute("data-a"), {d:d, v:v});
+    });
+  }
+  save(); closeM(); render();
+  toast(n+" misurazioni salvate"+
+    (saltate?" · "+saltate+" saltate: oltre 10 ripetizioni":"")+
+    (protette?" · "+protette+" non toccate: c'era gia' un dato misurato":""));
 }
 
 /* ═══════════════ MODALE GENERICA ═══════════════ */

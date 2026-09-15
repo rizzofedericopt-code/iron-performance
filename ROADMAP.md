@@ -31,7 +31,9 @@ l'estrapolazione, stima che entra nello storico marcata come tale.
 stima, minimo e massimo sono l'intervallo, e l'intervallo si vede. Le ripetizioni
 di riserva si dichiarano e si sommano (senza, la stima esce bassa del 3% per ogni
 ripetizione lasciata). Sopra le 10 ripetizioni effettive non si salva. Mayhew è
-esclusa: a una ripetizione restituisce il 109% del carico.
+esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla cella
+della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
+ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
 **Gruppi di carico** — finestra a parte, nessun effetto sulla tabella. Si apre dal
 menu o dalla cella di un massimale. Atlete in ordine di 1RM (dal più leggero, così

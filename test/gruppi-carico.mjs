@@ -599,5 +599,134 @@ prova("ogni squadra ha i suoi gruppi: quelli del calcio non entrano in pallavolo
   run(`S.activeTeam="t1"`);
 });
 
+console.log("\nRegistra test: una colonna per tutta la squadra");
+
+/* La schermata "Registra test" legge le righe con querySelectorAll. Nel
+   sandbox non c'e' un DOM vero, quindi le righe gliele fabbrico io: sono
+   esattamente i campi che l'utente compila. */
+function righeReps(defs) {
+  const nodi = defs.map(d => {
+    const campi = {
+      ".srW": { value: d.w == null ? "" : String(d.w) },
+      ".srR": { value: d.r == null ? "" : String(d.r) },
+      ".srQ": { value: String(d.q == null ? 1 : d.q) },
+    };
+    return { getAttribute: k => (k === "data-a" ? d.aid : null), querySelector: sel => campi[sel] || null };
+  });
+  sandbox.document.querySelectorAll = sel => (sel.indexOf(".sess-rm") >= 0 ? nodi : []);
+}
+function righeMax(defs) {
+  const nodi = defs.map(d => ({ value: d.v == null ? "" : String(d.v), getAttribute: k => (k === "data-a" ? d.aid : null) }));
+  sandbox.document.querySelectorAll = sel => (sel.indexOf(".sess-row input") >= 0 ? nodi : []);
+}
+const nienteRighe = () => { sandbox.document.querySelectorAll = () => []; };
+
+prova("il selettore massimale/ripetizioni compare solo sui test di massimale", () => {
+  squadra([90, 80]);
+  nienteRighe();
+  campi.sT = "rmSquat"; run(`SESS={t:"rmSquat",mode:"max"}; sessRows();`);
+  assert.ok(/Da ripetizioni/.test(run(`document.getElementById("sMode").innerHTML`)),
+    "su 1RM Squat le due strade devono esserci");
+  campi.sT = "cmj"; run(`sessRows();`);
+  assert.equal(run(`document.getElementById("sMode").innerHTML`), "",
+    "su un CMJ non c'e' niente da stimare");
+  assert.equal(run(`SESS.mode`), "max", "e la modalita' torna a massimale da sola");
+});
+
+prova("in modo ripetizioni ogni atleta ha carico, ripetizioni e riserva", () => {
+  squadra([90, 80]);
+  nienteRighe();
+  campi.sT = "rmSquat"; run(`SESS={t:"rmSquat",mode:"reps"}; sessRows();`);
+  const h = run(`document.getElementById("sList").innerHTML`);
+  assert.equal((h.match(/class="mono srW"/g) || []).length, 2, "un campo carico per atleta");
+  assert.equal((h.match(/class="mono srR"/g) || []).length, 2, "un campo ripetizioni per atleta");
+  assert.equal((h.match(/class="srQ"/g) || []).length, 2, "un selettore RIR per atleta");
+  assert.ok(/RIR 1<\/option>/.test(h) && /value="1" selected/.test(h), "la riserva parte da 1");
+});
+
+prova("una colonna intera di stime si salva in un colpo", () => {
+  squadra([90, 80, 70]);
+  campi.sD = "2026-09-20";
+  righeReps([{ aid: "p0", w: 70, r: 5 }, { aid: "p1", w: 60, r: 4 }, { aid: "p2", w: 50, r: 6 }]);
+  run(`SESS={t:"rmSquat",mode:"reps"}; saveSession();`);
+  ["p0", "p1", "p2"].forEach(id => {
+    const e = run(`S.data.${id}.rmSquat.filter(x=>x.d==="2026-09-20")[0]`);
+    assert.ok(e, id + " non salvato");
+    assert.equal(e.fonte, "reps");
+    assert.ok(e.v > 0);
+    assert.ok(isFinite(e.rmW) && isFinite(e.rmR) && isFinite(e.rmRir), "carico, ripetizioni e riserva vanno conservati");
+  });
+  assert.ok(/3 misurazioni/.test(run(`LASTT`)), run(`LASTT`));
+});
+
+prova("le righe vuote non inventano numeri", () => {
+  squadra([90, 80]);
+  campi.sD = "2026-09-20";
+  righeReps([{ aid: "p0", w: 70, r: 5 }, { aid: "p1" }]);
+  run(`SESS={t:"rmSquat",mode:"reps"}; saveSession();`);
+  assert.equal(run(`S.data.p0.rmSquat.length`), 2);
+  assert.equal(run(`S.data.p1.rmSquat.length`), 1, "chi non ha compilato resta com'era");
+});
+
+prova("chi ha fatto troppe ripetizioni viene saltato, e te lo dice", () => {
+  squadra([90, 80]);
+  campi.sD = "2026-09-20";
+  righeReps([{ aid: "p0", w: 70, r: 5 }, { aid: "p1", w: 30, r: 14 }]);
+  run(`SESS={t:"rmSquat",mode:"reps"}; saveSession();`);
+  assert.equal(run(`S.data.p0.rmSquat.length`), 2);
+  assert.equal(run(`S.data.p1.rmSquat.length`), 1, "14 ripetizioni non producono un massimale");
+  assert.ok(/saltate/.test(run(`LASTT`)), "va detto: " + run(`LASTT`));
+});
+
+prova("una stima di gruppo non copre un massimale sollevato nello stesso giorno", () => {
+  squadra([90, 80]);
+  run(`S.data.p0.rmSquat=[{d:"2026-09-20",v:95}];`);   // massimale vero, misurato
+  campi.sD = "2026-09-20";
+  righeReps([{ aid: "p0", w: 70, r: 5 }]);
+  run(`SESS={t:"rmSquat",mode:"reps"}; saveSession();`);
+  const e = run(`S.data.p0.rmSquat[0]`);
+  assert.equal(e.v, 95, "il massimale misurato deve restare");
+  assert.equal(e.fonte, undefined);
+  assert.ok(/non toccate/.test(run(`LASTT`)), "va detto: " + run(`LASTT`));
+});
+
+/* ── il difetto che c'era gia', e che questa schermata rendeva invisibile ──
+   saveSession scriveva solo `ex.v`. Un massimale VERO digitato sopra una
+   stima ne ereditava l'etichetta: restava marcato «stima» per sempre, e i
+   gruppi di carico lo trattavano come tale. */
+prova("un massimale digitato sopra una stima smette di essere una stima", () => {
+  squadra([90]);
+  run(`S.data.p0.rmSquat=[{d:"2026-09-20",v:80,fonte:"reps",rmW:65,rmR:5,rmRir:1,rmLo:78,rmHi:82}];`);
+  campi.sD = "2026-09-20";
+  righeMax([{ aid: "p0", v: 95 }]);
+  run(`SESS={t:"rmSquat",mode:"max"}; saveSession();`);
+  const e = run(`S.data.p0.rmSquat[0]`);
+  assert.equal(e.v, 95);
+  assert.equal(e.fonte, undefined, "l'etichetta «stima» doveva sparire");
+  assert.equal(e.rmW, undefined, "e con lei carico, ripetizioni e intervallo");
+  assert.equal(e.rmLo, undefined);
+});
+
+prova("la stima compare accanto ai campi mentre scrivi", () => {
+  squadra([90]);
+  righeReps([{ aid: "p0", w: 70, r: 5, q: 1 }]);
+  sandbox.document.querySelector = sel => (sandbox.document.querySelectorAll(".sess-rm")[0] || null);
+  cache["srOut_p0"] = elFor("srOut_p0");
+  run(`sessCalc("p0")`);
+  assert.ok(/kg$/.test(cache["srOut_p0"].textContent), "atteso un valore in kg: " + cache["srOut_p0"].textContent);
+  assert.equal(cache["srOut_p0"].className, "srOut ok", "6 ripetizioni effettive: zona buona");
+
+  righeReps([{ aid: "p0", w: 55, r: 8, q: 1 }]);
+  run(`sessCalc("p0")`);
+  assert.equal(cache["srOut_p0"].className, "srOut warn", "9 effettive: utilizzabile, ma le formule si aprono");
+
+  righeReps([{ aid: "p0", w: 30, r: 14, q: 0 }]);
+  run(`sessCalc("p0")`);
+  assert.ok(/troppe/.test(cache["srOut_p0"].textContent), "deve dire che non va: " + cache["srOut_p0"].textContent);
+  assert.equal(cache["srOut_p0"].className, "srOut bad");
+  sandbox.document.querySelector = () => cache.__q || (cache.__q = elFor("__q"));
+  nienteRighe();
+});
+
 console.log(failed ? "\n" + failed + " PROVE FALLITE\n" : "\ntutto verde\n");
 process.exit(failed ? 1 : 0);

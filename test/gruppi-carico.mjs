@@ -276,7 +276,7 @@ console.log("\nOrigine del dato");
 prova("la stima finisce nello storico marchiata «reps»", () => {
   run(`S.athletes=[{id:"a1",name:"Sara",team:null,sex:"F"}]; S.data={}; S.lv={};`);
   Object.keys(campi).forEach(k => delete campi[k]);
-  campi.rmD = "2026-09-15"; campi.rmEx = "Back squat";
+  campi.rmD = "2026-09-15"; campi.rmEx = "rmSquat";
   cache.rmSaveBtn = elFor("rmSaveBtn");
   Object.assign(cache.rmSaveBtn.dataset, { est: "100", lo: "96", hi: "104", w: "85", r: "4", rir: "1" });
   run(`saveRepMax("a1")`);
@@ -292,7 +292,7 @@ prova("la stima finisce nello storico marchiata «reps»", () => {
 prova("una stima non sovrascrive un massimale misurato nella stessa data", () => {
   run(`S.athletes=[{id:"a1",name:"Sara"}]; S.data={a1:{rmSquat:[{d:"2026-09-15",v:92}]}};`);
   Object.keys(campi).forEach(k => delete campi[k]);
-  campi.rmD = "2026-09-15"; campi.rmEx = "Back squat";
+  campi.rmD = "2026-09-15"; campi.rmEx = "rmSquat";
   cache.rmSaveBtn = elFor("rmSaveBtn");
   Object.assign(cache.rmSaveBtn.dataset, { est: "120", lo: "115", hi: "125", w: "100", r: "4", rir: "0" });
   run(`saveRepMax("a1")`);
@@ -576,7 +576,7 @@ prova("salvando dalla cella l'esercizio e' quello della colonna, non il primo de
   cache.rmSaveBtn = elFor("rmSaveBtn");
   Object.assign(cache.rmSaveBtn.dataset, { est: "70", lo: "68", hi: "72", w: "60", r: "4", rir: "1" });
   run(`CUR={a:"p0",t:"rmBench",mode:"reps"};`);
-  run(`saveRepMax("p0","Panca piana","cella")`);
+  run(`saveRepMax("p0","rmBench","cella")`);
   assert.ok(run(`S.data.p0.rmBench`), "deve finire su panca");
   assert.equal(run(`S.data.p0.rmBench[0].v`), 70);
   assert.equal(run(`S.data.p0.rmSquat.length`), 1, "e NON su squat");

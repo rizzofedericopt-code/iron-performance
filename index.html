@@ -358,6 +358,10 @@ input.mono{font-family:var(--mono)}
 /* guida */
 .thi{margin-top:5px;font-size:9px;color:var(--muted2);cursor:pointer;font-family:var(--mono)}
 .thi:hover{color:var(--accent)}
+.th-test .tn.clic{cursor:pointer}
+.th-test .tn.clic:hover{color:var(--accent)}
+.thl{margin-top:5px;font-size:9px;color:var(--accent);cursor:pointer;font-family:var(--mono);font-weight:700}
+.thl:hover{text-decoration:underline}
 .gbtn{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--line2);
   color:var(--text);font-size:12px;font-weight:600;padding:8px 12px;border-radius:9px;cursor:pointer;margin-top:12px;width:100%;justify-content:center}
 .gbtn:hover{background:var(--surface3)}
@@ -2205,9 +2209,17 @@ function renderMatrix(){
   if(rows.length===0){ grid.innerHTML=emptyTeam(); return; }
   let h='<table><thead><tr><th class="cAth">Atleta</th>';
   tests.forEach(t=>{
-    h+='<th class="th-test"><div class="cat">'+t.cat+'</div><div class="tn">'+(isCore(t.id)?'<span class="star">★</span>':'')+t.name+'</div>'+
+    /* Sull'intestazione di un 1RM la domanda che ti fai davanti alla squadra
+       e' sempre la stessa: «con quanti chili le carico oggi?». Quella schermata
+       esisteva ma si apriva dal menu ⋯, cioe' dove non la cerca nessuno. */
+    const carichi=!!rmTestEx(t.id);
+    h+='<th class="th-test"><div class="cat">'+t.cat+'</div>'+
+       '<div class="tn'+(carichi?' clic':'')+'"'+
+         (carichi?' onclick="openLoadGroups(\''+t.id+'\')" title="Percentuali e gruppi di carico"':'')+'>'+
+         (isCore(t.id)?'<span class="star">★</span>':'')+t.name+'</div>'+
        '<div class="tu">'+t.unit+'</div>'+
        '<div class="dir">'+(t.dir<0?"↓ meglio":"↑ meglio")+'</div>'+
+       (carichi?'<div class="thl" onclick="openLoadGroups(\''+t.id+'\')">🏋️ carichi</div>':'')+
        '<div class="thi" onclick="openGuide(\''+t.id+'\')">ⓘ guida</div></th>';
   });
   h+='</tr></thead><tbody>';
@@ -2215,7 +2227,7 @@ function renderMatrix(){
   rows.forEach(a=>{
     const team=S.teams.find(t=>t.id===a.team);
     const tl=(S.activeTeam==="all"&&team)?esc(team.name)+" · ":"";
-    const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
+    const flag=haInfortunio(a.profile)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
     // scheda arrivata dal modulo e non ancora aperta: si spegne appena la guardi
     const nuova=(a.profile&&a.profile.formNew)?'<span class="newsheet" title="Scheda arrivata dal modulo, non ancora letta">nuova</span>':"";
     h+='<tr><td class="cAth"><div class="nm" onclick="openAthlete(\''+a.id+'\')">'+flag+'<span class="nmt">'+esc(a.name)+'</span>'+nuova+
@@ -2286,7 +2298,7 @@ function todayManageCount(){
     teamAthletes().forEach(a=>{
       const p=a.profile||{}; const pain=parseFloat(p.painLevel);
       let flag=false;
-      if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) flag=true;
+      if(haInfortunio(p)) flag=true;
       else if(!isNaN(pain) && pain>=S.cfg.painCut) flag=true;
       if(SCREEN_KEYS.filter(k=>p[k]).length) flag=true;
       const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1];
@@ -4321,16 +4333,36 @@ function rmGruppoCarico(g, pct, mode){
 
 /* ─── Il modulo: una serie, tre numeri ──────────────────────────────────── */
 function rmExList(){ return LV_EX.filter(e=>e.test); }
+/* Il massimale «generico» (test `rm1`, in kg) non sta in LV_EX perche' la
+   curva carico-velocita' ha bisogno di sapere QUALE esercizio stai facendo.
+   Per le percentuali di carico invece non serve: contano i chili. Escluderlo
+   voleva dire una colonna di massimali su cui il clic non faceva niente —
+   cioe' di nuovo il difetto che sto correggendo. */
+const RM_GENERICO={test:"rm1", n:"Massimale", ex:"Massimale (generico)"};
+function rmTestList(){
+  const out=[];
+  if(TMAP[RM_GENERICO.test]) out.push({test:RM_GENERICO.test, n:RM_GENERICO.n, ex:RM_GENERICO.ex});
+  const visti={};
+  rmExList().forEach(e=>{
+    if(visti[e.test]) return; visti[e.test]=1;
+    out.push({test:e.test, ex:e.n, n:((TMAP[e.test]||{}).name||e.n).replace(/^1RM\s+/,"")});
+  });
+  return out;
+}
 /* Il test di massimale accetta anche una stima da ripetizioni? Serve a sapere
    se nella cella della tabella va offerta la seconda strada. */
-function rmTestEx(tid){ const e=rmExList().find(x=>x.test===tid); return e?e.n:null; }
+function rmTestEx(tid){ const e=rmTestList().find(x=>x.test===tid); return e?e.ex:null; }
 let RM_BACK=0;                 // 1 = dopo il salvataggio si torna ai gruppi di carico
 
-function openRepMaxEntry(aid, exPref, back){
+function openRepMaxEntry(aid, testPref, back){
   const a=S.athletes.find(x=>x.id===aid); if(!a) return;
   RM_BACK=back?1:0;
-  const lista=rmExList();
-  const sel=lista.find(e=>e.n===exPref) ? exPref : lista[0].n;
+  /* Prima questo menu elencava ESERCIZI e il test si ricavava dal nome. Il
+     massimale generico non ha un esercizio, quindi cadeva sul primo della
+     lista: chiedevi una stima sul generico e te la ritrovavi sullo squat.
+     Adesso il menu porta direttamente il test. */
+  const lista=rmTestList();
+  const sel=lista.find(e=>e.test===testPref) ? testPref : lista[0].test;
   let h='<div class="mh"><div><div class="mt">Stima 1RM da ripetizioni</div>'+
     '<div class="ms">'+esc(a.name)+'</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
 
@@ -4342,7 +4374,7 @@ function openRepMaxEntry(aid, exPref, back){
      '<div class="row2"><div><label class="fl">Data</label>'+
      '<input type="date" id="rmD" value="'+todayISO()+'"></div>'+
      '<div><label class="fl">Esercizio</label><select id="rmEx" onchange="rmPreview()">'+
-     lista.map(e=>'<option value="'+escAttr(e.n)+'"'+(e.n===sel?" selected":"")+'>'+esc(e.n)+'</option>').join("")+
+     lista.map(e=>'<option value="'+escAttr(e.test)+'"'+(e.test===sel?" selected":"")+'>'+esc(e.ex)+'</option>').join("")+
      '</select></div></div>'+
      '<div class="row2" style="margin-top:9px">'+
      '<div><label class="fl">Carico (kg)</label>'+
@@ -4426,14 +4458,14 @@ function rmPreview(){
     btn.dataset.w=String(est.peso); btn.dataset.r=String(est.rip); btn.dataset.rir=String(est.rir); }
 }
 
-function saveRepMax(aid, exFisso, torna){
+function saveRepMax(aid, testFisso, torna){
   const btn=document.getElementById("rmSaveBtn");
   const kg=parseFloat(btn.dataset.est); if(!isFinite(kg)||kg<=0) return;
   const d=document.getElementById("rmD").value||todayISO();
-  // dalla cella della tabella l'esercizio e' gia' deciso: e' quello della colonna
-  const ex=exFisso||document.getElementById("rmEx").value;
-  const info=lvExInfo(ex);
-  if(!info.test){ toast("Esercizio senza test collegato"); return; }
+  // dalla cella della tabella il test e' gia' deciso: e' quello della colonna
+  const tid=testFisso||document.getElementById("rmEx").value;
+  const info={test:(TMAP[tid]?tid:null)};
+  if(!info.test){ toast("Test non riconosciuto"); return; }
   if(!S.data[aid]) S.data[aid]={};
   if(!S.data[aid][info.test]) S.data[aid][info.test]=[];
   const serie=S.data[aid][info.test];
@@ -4476,14 +4508,10 @@ let LG={ex:null, pct:75, size:3, mode:"media", man:"auto", ord:"asc", sel:{}};
    dell'esercizio serve solo a precompilare il modulo della stima. */
 function lgEsercizi(){
   const rows=teamAthletes()||[];
-  const visti={}, out=[];
-  rmExList().forEach(e=>{
-    if(visti[e.test]) return;
-    visti[e.test]=1;
+  return rmTestList().map(e=>{
     let n=0; rows.forEach(a=>{ if(rm1RM(a.id,e.test)) n++; });
-    out.push({n:((TMAP[e.test]||{}).name||e.n).replace(/^1RM\s+/,""), ex:e.n, test:e.test, conta:n});
+    return {n:e.n, ex:e.ex, test:e.test, conta:n};
   });
-  return out;
 }
 function openLoadGroups(testPref){
   const rows=teamAthletes()||[];
@@ -4720,7 +4748,7 @@ function lgMancanti(senza, nome, ex){
   if(!senza.length) return "";
   return '<div class="psec">Senza 1RM su '+esc(nome)+' ('+senza.length+')</div>'+
     '<div class="lgmiss">'+senza.map(a=>
-      '<button class="lgm" onclick="openRepMaxEntry(\''+a.id+'\',\''+escAttr(ex)+'\',1)">'+
+      '<button class="lgm" onclick="openRepMaxEntry(\''+a.id+'\',\''+escAttr(LG.ex)+'\',1)">'+
       esc(a.name)+'<span>stima →</span></button>').join("")+'</div>'+
     '<div class="fhint">Una serie a 3-6 ripetizioni con un carico prudente e l\'atleta entra nei gruppi.</div>';
 }
@@ -5353,6 +5381,56 @@ function screenPositives(p){
 
 /* L'idoneità scaduta non compariva da nessuna parte in Oggi: è la cosa che ti
    fa fermare un'atleta a bordo campo, e la scoprivi aprendo la scheda. */
+/* ─── «no» è una risposta, non un dato ─────────────────────────────────────
+   I campi clinici dell'anamnesi sono caselle di testo libero, e l'app
+   accendeva l'allarme se dentro c'era QUALSIASI cosa. Ma alla domanda «Dolori
+   o infortuni che hai ADESSO» un'atleta sana non lascia vuoto: scrive «no»,
+   «nessuno», «niente». Visto sul campo: sedici atlete su sedici col triangolo
+   rosso acceso.
+
+   È il difetto peggiore di tutti, perché non sbaglia un numero: spegne
+   l'attenzione. Un allarme acceso su tutte è un allarme che smetti di
+   guardare, e il giorno che una si fa male davvero quel triangolo non te lo
+   dice più.
+
+   La regola è volutamente TIMIDA, e sbaglia sempre dalla parte dell'allarme:
+   si riconosce solo una negazione breve e secca, confrontata per intero.
+   «nessuno» è vuoto; «nessuno adesso ma l'anno scorso il ginocchio» è una
+   risposta vera e resta accesa. Sopra i 30 caratteri non si prova nemmeno a
+   interpretare.
+
+   Le risposte delle atlete NON vengono riscritte: restano come le hanno
+   scritte loro, si interpretano solo al momento di mostrarle.              */
+function _normRisp(v){
+  return String(v==null?"":v)
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[.,;:!?'"()\[\]]/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+const RISP_NO={};
+["no","noo","nooo","nn","n","niente","nulla","nada","zero","0","x","xx",
+ "-","--","---","/","//","nessuno","nessuna","nessun","assente","assenti",
+ "negativo","negativa","non ho","non ne ho","non ho niente","non ho nulla",
+ "nessun dolore","nessun infortunio","nessun problema","nessun fastidio",
+ "nessuna patologia","nessuna allergia","nessun farmaco","nessuna malattia",
+ "no dolori","no infortuni","no problemi","no dolore","no allergie","no farmaci",
+ "ok","tutto ok","tutto bene","sto bene","va tutto bene","bene","niente di che",
+ "non presente","non presenti","np","na","n a","nd","n d"
+].forEach(k=>{ RISP_NO[k]=1; });
+
+function rispostaVuota(v){
+  const t=_normRisp(v);
+  if(!t) return true;
+  if(t.length>30) return false;     // una risposta lunga e' una risposta
+  return !!RISP_NO[t];
+}
+/* L'unica domanda che conta per il triangolo rosso. Sta in una funzione sola
+   perche' prima lo stesso controllo era scritto a mano in sei punti diversi:
+   correggerne cinque su sei sarebbe stato peggio che non correggerne nessuno. */
+function haInfortunio(p){ return !rispostaVuota((p||{}).injuriesCurrent); }
+
 function medicalState(p){
   p=p||{};
   const st=String(p.medical||"").trim(), exp=String(p.medicalExpiry||"").trim();
@@ -5389,7 +5467,7 @@ function schedaDigest(a){
   const m=medicalState(p);
   if(m){ if(m.c==="down") rosso=true; righe.push({t:"🩺 "+m.t, c:m.c}); }
 
-  if(p.injuriesCurrent && String(p.injuriesCurrent).trim()){
+  if(haInfortunio(p)){
     rosso=true; righe.push({t:"⚠ "+_tronca(p.injuriesCurrent,110), c:"down"});
   }
   const dolore=parseFloat(p.painLevel);
@@ -5398,13 +5476,14 @@ function schedaDigest(a){
     righe.push({t:"Dolore "+dolore+"/10"+(p.painContext?" — "+p.painContext.toLowerCase():""),
                 c:dolore>=S.cfg.painCut?"down":"amber"});
   }
-  if(p.conditions && String(p.conditions).trim())
+  // stesso trattamento: «nessuna» alle allergie non e' un'allergia
+  if(!rispostaVuota(p.conditions))
     righe.push({t:"Patologie: "+_tronca(p.conditions,90), c:"amber"});
-  if(p.meds && String(p.meds).trim())
+  if(!rispostaVuota(p.meds))
     righe.push({t:"Farmaci: "+_tronca(p.meds,70), c:"amber"});
-  if(p.allergies && String(p.allergies).trim())
+  if(!rispostaVuota(p.allergies))
     righe.push({t:"Allergie: "+_tronca(p.allergies,70), c:"amber"});
-  if(p.recurrent && String(p.recurrent).trim())
+  if(!rispostaVuota(p.recurrent))
     righe.push({t:"Ricorrenti: "+_tronca(p.recurrent,80), c:"mute"});
   if(/parecchio/i.test(String(p.growth||"")))
     righe.push({t:"📏 Cresciuta parecchio nell'ultimo anno — dosa i salti", c:"amber"});
@@ -5435,7 +5514,7 @@ function renderToday(){
   const items=ath.map(a=>{
     const p=a.profile||{}; const flags=[]; let sev=0;
     const pain=parseFloat(p.painLevel);
-    if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()){ flags.push({t:"⚠ Infortunio/dolore",c:"down"}); sev+=5; }
+    if(haInfortunio(p)){ flags.push({t:"⚠ Infortunio/dolore",c:"down"}); sev+=5; }
     else if(!isNaN(pain) && pain>=S.cfg.painCut){ flags.push({t:"⚠ Dolore "+pain+"/10",c:"down"}); sev+=4; }
     const sc=SCREEN_KEYS.filter(k=>p[k]).length;
     if(sc){ flags.push({t:"🚩 Screening "+sc,c:"down"}); sev+=5; }
@@ -5455,7 +5534,7 @@ function renderToday(){
     const cf=cmjFatigue(a.id);
     if(cf&&cf.fatigued){ flags.push({t:"⬇️ CMJ "+fmtNum(Math.round(cf.pct*10)/10)+"%",c:"down"}); sev+=2; }
     let sug=""; const rpc=(rEv&&rEv.pc!=null)?rEv.pc:null; const rCol=rEv?rEv.color:null;
-    if(p.injuriesCurrent && (""+p.injuriesCurrent).trim()) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
+    if(haInfortunio(p)) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
     else if(!isNaN(pain) && pain>=S.cfg.painCut) sug="Dolore presente: resta sotto soglia, non peggiorare nelle 24h.";
     else if(med && med.c==="down") sug="Non far allenare finché l'idoneità non è a posto: è una responsabilità tua, non discutibile.";
     else if(sc) sug="Verifica medica prima di proporre carichi intensi.";
@@ -5566,7 +5645,7 @@ function renderReadiness(){
   scored.forEach(function(o){ const a=o.a;
     const arr=(S.readiness&&S.readiness[a.id])||[];
     const last=arr[arr.length-1];
-    const flag=(a.profile&&a.profile.injuriesCurrent)?'<span class="medflag">⚠ </span>':"";
+    const flag=haInfortunio(a.profile)?'<span class="medflag">⚠ </span>':"";
     let scoreHtml, sub;
     if(last){
       const ev=readinessEval(a.id,last); const pc=ev.pc;
@@ -5828,7 +5907,7 @@ function drawCell(){
         '<div><label class="fl">Data</label><input type="date" id="rmD" value="'+todayISO()+'"></div></div>'+
         '<div id="rmOut"></div>'+
         '<button class="btn primary" id="rmSaveBtn" style="width:100%;margin-top:12px" disabled '+
-        'onclick="saveRepMax(\''+CUR.a+'\',\''+escAttr(exCella)+'\',\'cella\')">Salva la stima</button>';
+        'onclick="saveRepMax(\''+CUR.a+'\',\''+CUR.t+'\',\'cella\')">Salva la stima</button>';
     }else{
       h+='<label class="fl">Nuova misurazione</label><div class="row2">'+
         '<input id="mV" class="mono" type="number" inputmode="decimal" step="any" placeholder="valore '+t.unit+'">'+

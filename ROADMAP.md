@@ -35,8 +35,17 @@ esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla ce
 della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
 ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
-**Gruppi di carico** — finestra a parte, nessun effetto sulla tabella. Si apre dal
-menu o dalla cella di un massimale. Atlete in ordine di 1RM (dal più leggero, così
+**«no» è una risposta, non un dato** — i campi clinici dell'anamnesi sono a testo
+libero e l'allarme si accendeva se dentro c'era qualsiasi cosa. Un'atleta sana non
+lascia vuoto: scrive «no». Risultato visto sul campo: sedici triangoli rossi su
+sedici atlete, e un allarme acceso su tutte è un allarme che smetti di guardare.
+Ora si riconosce solo una negazione breve e secca, confrontata per intero: «nessuno»
+è vuoto, «nessuno adesso ma l'anno scorso il ginocchio» resta acceso. Nel dubbio
+accende. Le risposte delle atlete non vengono mai riscritte.
+
+**Gruppi di carico** — finestra a parte, nessun effetto sulla tabella. Si apre
+cliccando l'intestazione della colonna di un massimale (dove la si cerca), oltre che
+dal menu o dalla cella. Atlete in ordine di 1RM (dal più leggero, così
 sul bilanciere i dischi si aggiungono e basta), percentuale a scelta, carico
 arrotondato a quello che si può davvero caricare e scomposto in dischi. I gruppi
 automatici si tagliano dove la lista ha i salti veri, non ogni tre nomi; quelli a

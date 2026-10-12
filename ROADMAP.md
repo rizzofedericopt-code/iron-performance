@@ -35,6 +35,16 @@ esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla ce
 della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
 ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
+**Niente buchi nel catalogo** — i 54 test che l'app propone nelle batterie hanno
+tutti guida, icona, attrezzatura dichiarata e la riga «cosa decidi col numero».
+Prima ne mancavano 27: test che finivano nella seduta, venivano misurati, e poi
+lasciavano un numero senza istruzioni. Un controllo automatico ora impedisce che
+se ne aggiunga uno a metà. Le guide satellite (i tre numeri di un profilo
+forza-velocità escono da una prova sola) dichiarano il loro riferimento e lo
+mostrano come bottone, invece di dire «vedi la guida di…» e lasciarti cercare.
+Il test di Bosco è stato riportato al livello «su campo»: l'app lo calcola dalle
+altezze dei salti, il telefono basta, la pedana era una spesa inventata.
+
 **MAT — Modified Agility T-test** — il test di agilità che alla pallavolo mancava.
 Stesso percorso a T del T-test ma su 20 m invece di 36,6: restano i quattro cambi di
 direzione e sparisce il tratto lineare che faceva pesare la velocità più dell'agilità.

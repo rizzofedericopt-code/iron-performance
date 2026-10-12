@@ -310,5 +310,72 @@ prova("la guida dice che MAT e T-test non si fanno tutti e due", () => {
     "misurano la stessa qualità: va detto, o si fanno entrambi per sicurezza");
 });
 
+/* ═══════════ Niente buchi nel catalogo proposto ═══════════
+   Finche' il controllo era «hai aggiunto la guida al test nuovo?» la risposta
+   dipendeva da chi se lo ricordava. Un test puo' comparire in una batteria,
+   finire nella seduta, essere misurato — e non avere la riga che dice cosa
+   farne. Non si rompe niente: semplicemente quel numero resta li'.
+
+   Questo controllo vale per i test che l'app PROPONE, non per tutto il
+   catalogo: quelli di laboratorio e le voci di screening si raggiungono solo
+   a mano, e chi ci arriva sa gia' cosa sta cercando. */
+const inBatteria = (() => {
+  const o = {};
+  Object.keys(BATT2).forEach((sp) => LIV.forEach((l) =>
+    ["sett", "ciclo", "anno"].forEach((t) =>
+      ((BATT2[sp][l] || {})[t] || []).forEach((id) => { o[id] = 1; }))));
+  return Object.keys(o);
+})();
+
+prova("ogni test che l'app propone sa spiegarsi", () => {
+  assert.ok(inBatteria.length > 40, "lista sospetta: " + inBatteria.length);
+  const buchi = [];
+  inBatteria.forEach((id) => {
+    if (!PROTO[id]) buchi.push(id + ": nessuna guida");
+    if (!ICON[id]) buchi.push(id + ": nessuna icona");
+    if (!TEST_EQ[id]) buchi.push(id + ": attrezzatura non dichiarata");
+    const u = USO[id];
+    if (!u || !u.s || !u.u) buchi.push(id + ": manca «a cosa serve / cosa decidi»");
+  });
+  assert.equal(buchi.join(" · "), "", "buchi nel catalogo: " + buchi.join(" · "));
+});
+
+prova("e la riga «cosa decidi» dice una decisione, su tutti", () => {
+  // non solo sui nove di prima: se la regola vale, vale per tutti quelli
+  // che finiranno davanti a Federico in palestra
+  const verbi = /riduci|aumenta|alleggeri|lavora|metti|scegli|usa|ferma|controlla|confronta|prescriv|decidi|guarda|rifai|insist|separa|programma|associa|tieni|parti|passa|aggiungi|rivaluta/i;
+  const fiacchi = inBatteria.filter((id) => { const u = USO[id]; return !u || !verbi.test(u.u); });
+  assert.equal(fiacchi.join(","), "",
+    "descrivono invece di dire cosa fare: " + fiacchi.join(","));
+});
+
+prova("la guida non è un titolo vuoto: dice cosa misura e come si esegue", () => {
+  const magri = [];
+  inBatteria.forEach((id) => {
+    const g = PROTO[id]; if (!g) return;
+    if (!g.what || g.what.length < 60) magri.push(id + " (cosa misura)");
+    const derivato = TMAP[id] && TMAP[id].derived;
+    /* Una guida puo' essere il SATELLITE di un'altra — i tre numeri di un
+       profilo forza-velocita' escono tutti dalla stessa prova, e ripetere il
+       protocollo tre volte e' il modo migliore perche' le tre copie si
+       separino. In quel caso deve dichiararlo con `vedi`, e il bersaglio deve
+       essere completo: «sta scritto altrove» vale solo se altrove c'e'. */
+    const sat = g.vedi && PROTO[g.vedi] && PROTO[g.vedi].steps && PROTO[g.vedi].steps.length >= 2;
+    if (g.vedi && !PROTO[g.vedi]) magri.push(id + " (rimanda a una guida che non esiste: " + g.vedi + ")");
+    if (!derivato && !sat && (!g.steps || g.steps.length < 2)) magri.push(id + " (come si esegue)");
+    if (!g.interpret || !g.interpret.length) magri.push(id + " (come interpretare)");
+  });
+  assert.equal(magri.join(" · "), "", "guide senza contenuto: " + magri.join(" · "));
+});
+
+prova("il Bosco si fa col telefono, non serve la pedana", () => {
+  // l'app ricava la potenza dalle altezze: dichiarare la pedana lo spingeva
+  // fra i test da laboratorio e lo rendeva irraggiungibile senza motivo
+  ["bosco15", "bosco30", "bosco60"].forEach((id) => {
+    assert.equal(testLevel(id), 1, id + " deve restare alla portata di un telefono");
+    assert.ok(testEq(id).indexOf("video") >= 0, id + ": serve il telefono");
+  });
+});
+
 console.log(failed ? "\n" + failed + " test falliti" : "\nTutti i test passati");
 process.exit(failed ? 1 : 0);

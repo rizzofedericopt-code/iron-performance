@@ -1058,6 +1058,16 @@ const TESTS=[
    cat:"Aerobico", sports:["calcio","atletica","combattimento"]},
   {id:"cod505",name:"505",        full:"505 — cambio direzione 180°",  unit:"s",  dir:-1, cat:"Cambio direzione", sports:["calcio","basket","pallavolo","combattimento","atletica","generale"]},
   {id:"ttest", name:"T-test",     full:"T-test — agilità",             unit:"s",  dir:-1, cat:"Cambio direzione", sports:["calcio","basket","pallavolo"]},
+  /* MAT: stesso percorso a T del T-test ma su 20 m invece di 36,6. Sassi et al.
+     (2009) l'hanno costruito proprio perche' nel T-test le distanze lunghe
+     facevano pesare la velocita' lineare piu' dei cambi di direzione: in uno
+     sport di campo corto come la pallavolo si finiva per misurare la cosa
+     sbagliata. Le fasce vengono da quello studio (86 studenti universitari con
+     pratica di sport di squadra), e sono dichiarate nella guida per quello che
+     sono: riferimenti adulti e non d'elite. */
+  {id:"mat",   name:"MAT",        full:"Modified Agility T-test — agilità su 20 m", unit:"s", dir:-1, cat:"Cambio direzione",
+   sports:["pallavolo","basket","calcio","combattimento","generale"],
+   lv:{m:[6.65,6.30,5.90,5.55], f:[7.65,7.30,6.90,6.60]}},
   // ─ ASIMMETRIA & FUNZIONALE ─
   {id:"cmjAsym",  name:"Asimm. CMJ", full:"Asimmetria inter-arto al CMJ", unit:"%", dir:-1, cat:"Asimmetria & funzionale", sports:["pallavolo","basket","calcio","atletica","combattimento"]},
   {id:"ybtLow",   name:"YBT inf.",   full:"Y-Balance arto inferiore (composite)", unit:"%", dir:1, cat:"Asimmetria & funzionale", sports:["calcio","basket","pallavolo","atletica","combattimento"]},
@@ -7006,7 +7016,7 @@ const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆
   fvF0:"📐",fvV0:"📐",fvPmax:"📐",sfvF0:"🏇",sfvV0:"🏇",sfvPmax:"🏇",
   vcut:"↩️",nordicAng:"🦵",nordicTq:"🦵",hipIR:"🔃",bronco:"🐎",
   spr10:"⏱️",spr30:"🏁",rsa:"🔄",sdec:"📉",vo2:"🫁",mas:"🏃",yoyo1:"🪀",yoyo2:"🪀",
-  fvdef:"📈",cod505:"🔀",ttest:"✖️",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
+  fvdef:"📈",cod505:"🔀",ttest:"✖️",mat:"↔️",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
   shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶",
   fmsSquat:"🏋️",fmsHurdle:"🚧",fmsLunge:"🤺",fmsShoulder:"🙆",fmsASLR:"🦵",fmsPushup:"🛟",fmsRotary:"🔁",fmsTotal:"🧮",
   shuttle300:"🔁",shuttleFat:"📉",wingPeak:"⚡",wingMean:"🔋",gripStr:"🤝",pullMax:"🧗",punchPow:"🥊",bodyFat:"⚖️",
@@ -7309,6 +7319,23 @@ const PROTO={
     interpret:["Tempo più basso = meglio; combina velocità, spostamenti laterali e backpedal.","Utile come confronto nel tempo e tra atleti dello stesso ruolo."],
     advice:["Allena spostamenti laterali, forza di adduttori/abduttori e tecnica di cambio direzione."],
     note:"Standardizza calzature e superficie per confronti validi."},
+
+  mat:{eyebrow:"Agilità multidirezionale — versione corta",
+    what:"Lo stesso percorso a <b>T</b> del T-test, ma su <b>20 m invece di 36,6</b>. Accorciando le distanze restano i <b>quattro cambi di direzione</b> e sparisce il pezzo di corsa lineare che nel T-test finiva per misurare la velocità più dell'agilità — che su un campo di pallavolo è esattamente la cosa sbagliata da misurare.",
+    steps:[
+      {t:"I coni",d:"<b>A</b> partenza. <b>B</b> a <b>5 m</b> davanti ad A. <b>C</b> a <b>2,5 m</b> alla sinistra di B. <b>D</b> a <b>2,5 m</b> alla destra di B — quindi fra C e D ci sono 5 m. Percorso totale 20 m."},
+      {t:"Il percorso",d:"Entrambi i piedi dietro la linea A. Sprint fino a <b>B</b>, tocca la base del cono con la <b>mano destra</b>. Passo accostato a sinistra fino a <b>C</b>, tocca con la <b>sinistra</b>. Accostato a destra fino a <b>D</b>, tocca con la <b>destra</b>. Accostato a sinistra fino a <b>B</b>, tocca. Poi <b>all'indietro</b> fino alla linea A, più veloce che può."},
+      {t:"Le prove",d:"<b>Due prove di prova</b> per imparare il percorso, poi <b>due valide</b> con almeno <b>3 minuti</b> di recupero: si registra la migliore. Saltare la famigliarizzazione significa registrare quanto ha capito il percorso, non quanto è agile."},
+      {t:"Quando si annulla",d:"Prova nulla se <b>incrocia i piedi</b> nei laterali, se <b>non tocca</b> la base di un cono, o se si gira di spalle invece di restare frontale."}],
+    interpret:[
+      "Tempo più basso = meglio. Riferimento di Sassi et al. 2009, su 86 studenti universitari con pratica di sport di squadra: <b>donne 7,27 ± 0,35 s</b>, <b>uomini 6,27 ± 0,37 s</b>. Sono adulti e non sono atleti d'élite: servono a collocare, non a giudicare. Sotto i 18 anni l'app non applica le fasce, ed è giusto così.",
+      "Il rumore della misura è circa il <b>2,6%</b> (ICC 0,92 donne, 0,95 uomini). Su un tempo di 7 secondi sono <b>circa 0,19 s</b>: una variazione sotto i due decimi, su una sola atleta, probabilmente non è successo niente.",
+      "MAT e T-test misurano la stessa qualità: <b>scegline uno</b>. Farli tutti e due non ti dà una seconda informazione, ti dà solo una squadra più stanca."],
+    advice:[
+      "Il tempo si perde nelle <b>frenate</b>, non nei tratti di corsa: forza eccentrica monopodalica e tecnica di arresto prima del condizionamento.",
+      "Passo accostato: adduttori e abduttori, e lavoro tecnico sul non incrociare — è anche la penalità che annulla più prove.",
+      "Il tratto <b>all'indietro</b> è quello che nessuno allena ed è dove si perde di più: mettilo nelle andature del riscaldamento."],
+    note:"Cronometro a mano e fotocellule non si confrontano fra loro: la mano taglia 0,2-0,3 secondi, cioè più della differenza che stai cercando. Scegli uno strumento e tienilo, insieme alla stessa superficie e alle stesse scarpe."},
 
   cmjAsym:{eyebrow:"Asimmetria inter-arto",
     what:"Differenza % di forza/impulso tra arto <b>dx e sx</b> durante il CMJ (richiede pedana con doppia cella o due pedane). Spia di squilibri e di recupero post-infortunio.",
@@ -7670,7 +7697,7 @@ const TEST_EQ={
   bjump:["metro"], ybtLow:["metro"], hopLSI:["metro"], tripleHop:["metro"],
   shMob:["metro"], ankleDF:["metro"], shIR:["gonio"], hipIR:["gonio"],
   spr10:["crono","coni"], spr30:["crono","coni"], rsa:["crono","coni"], sdec:["crono","coni"],
-  cod505:["crono","coni"], ttest:["crono","coni"], vcut:["crono","coni"], bronco:["crono","coni"],
+  cod505:["crono","coni"], ttest:["crono","coni"], mat:["crono","coni","metro"], vcut:["crono","coni"], bronco:["crono","coni"],
   yoyo1:["audio","coni"], yoyo2:["audio","coni"], shuttle300:["crono","coni"], shuttleFat:["crono","coni"],
   rm1:["sala"], rm35:["sala"], pred:["sala"], rmSquat:["sala"], rmBench:["sala"],
   rmDead:["sala"], rmHip:["sala"], rmOhp:["sala"], rmPull:["sala"],
@@ -7723,6 +7750,7 @@ const USO={
   cod505:{s:"Un cambio di direzione a 180°, decelerazione compresa.",
           u:"Confrontalo con lo sprint lineare: se il 505 è lento e lo sprint no, il problema è frenare, non correre."},
   ttest:{s:"Agilità su più direzioni, spostamenti laterali compresi.", u:"Test generale di agilità: buono a inizio e fine preparazione, non da ripetere spesso."},
+  mat:{s:"Agilità con quattro cambi di direzione e passo accostato, su 20 m da campo.", u:"Decidi dove intervenire: confrontalo col 505 — se il MAT è lento e il 505 no, il problema è il passo laterale, non la frenata."},
   vcut:{s:"Cambi di direzione in serie a 45°.", u:"Più vicino al gioco del 505. Peggiora prima quando la condizione cala."},
   yoyo1:{s:"Capacità di ripetere sforzi intermittenti.",
          u:"Dice se regge il ritmo partita. Da rifare a inizio preparazione e al rientro dalla sosta: due volte l'anno bastano."},
@@ -7884,7 +7912,7 @@ const BATT2={
   pallavolo:{
     nota:"Salti e gesto sopra la testa. Il cuore è il CMJ settimanale, più spalla e atterraggi.",
     campo:{ sett:["cmj","rsiMod"], ciclo:["cmjA","cmj1lL","cmj1lR","cmj1lAsym","sj","eur"],
-            anno:["dj","spr10","cod505","ankleDF","shIR","hipIR","nordicAng","yoyo1"] },
+            anno:["dj","spr10","cod505","mat","ankleDF","shIR","hipIR","nordicAng","yoyo1"] },
     sala:{ nota:"Con la sala aggiungi la base di forza. Sotto i 18 anni niente massimali singoli: 3-5 ripetizioni.",
            ciclo:["rm35"], anno:["pred","pullMax","pushMax"] },
     completa:{ nota:"Con encoder e pedana: forza relativa vera e capacità anaerobica.",
@@ -7958,7 +7986,7 @@ function batt2Tests(sport, liv){
 /* Quanto tempo, per la squadra che hai davanti. Non un valore di manuale: il
    conto vero, atleta per atleta, perche' e' quello che decide se lo farai. */
 const T_TEST={ cmj:20, rsiMod:0, cmjA:90, sj:60, eur:0, cmj1lL:60, cmj1lR:60, cmj1lAsym:0,
-  dj:90, rsi105:90, bjump:60, spr10:60, spr30:90, cod505:90, ttest:120, vcut:120,
+  dj:90, rsi105:90, bjump:60, spr10:60, spr30:90, cod505:90, ttest:120, mat:120, vcut:120,
   ankleDF:60, shIR:60, hipIR:60, ybtLow:180, hopLSI:120, nordicAng:120,
   rmSquat:600, rmBench:600, rmDead:600, rm1:600, rm35:420, pred:300, vbt:180, imtp:180,
   bosco30:90, bosco60:120, gripStr:30, bodyFat:120 };

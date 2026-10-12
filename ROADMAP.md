@@ -35,6 +35,14 @@ esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla ce
 della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
 ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
+**MAT — Modified Agility T-test** — il test di agilità che alla pallavolo mancava.
+Stesso percorso a T del T-test ma su 20 m invece di 36,6: restano i quattro cambi di
+direzione e sparisce il tratto lineare che faceva pesare la velocità più dell'agilità.
+Si fa con coni, metro e cronometro, quindi sta nel livello «su campo». Fasce ancorate
+a Sassi et al. 2009 (donne 7,27 ± 0,35 s · uomini 6,27 ± 0,37 s) e dichiarate nella
+guida per quello che sono: adulti, non élite, non giovanili. MAT e T-test misurano la
+stessa cosa: se ne fa uno.
+
 **«no» è una risposta, non un dato** — i campi clinici dell'anamnesi sono a testo
 libero e l'allarme si accendeva se dentro c'era qualsiasi cosa. Un'atleta sana non
 lascia vuoto: scrive «no». Risultato visto sul campo: sedici triangoli rossi su

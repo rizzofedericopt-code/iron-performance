@@ -232,5 +232,83 @@ prova("una sola definizione di batt2, non due che si sovrascrivono", () => {
   assert.equal(n, 1, "trovate " + n + " definizioni");
 });
 
+/* ═══════════ Il MAT ═══════════
+   Aggiungere un test a questo catalogo vuol dire registrarlo in SEI punti
+   diversi: TESTS, l'icona, la guida, l'attrezzatura, «a cosa serve» e la
+   durata. Dimenticarne uno non rompe niente: il test compare lo stesso e
+   semplicemente non ha la guida, o conta 60 secondi a caso nel calcolo del
+   tempo. Si scopre in palestra. */
+/* `const` dentro un contesto vm non diventa una proprieta' del sandbox: le
+   funzioni si leggono da sandbox, le costanti vanno chieste al contesto. */
+const dentro = (c) => vm.runInContext(c, sandbox, { filename: "test" });
+const TMAP = dentro("TMAP"), PROTO = dentro("PROTO"), USO = dentro("USO"),
+      TEST_EQ = dentro("TEST_EQ"), ICON = dentro("ICON"), BATT2 = dentro("BATT2");
+const levelIdx = (t, sx, v) => dentro("levelIdx(TMAP." + t + ',"' + sx + '",' + v + ")");
+
+prova("il MAT è registrato in tutti e sei i punti, non solo nell'elenco", () => {
+  const t = TMAP.mat;
+  assert.ok(t, "manca da TESTS");
+  assert.equal(t.unit, "s");
+  assert.equal(t.dir, -1, "un tempo più basso è migliore");
+  assert.ok(PROTO.mat, "manca la guida: il test comparirebbe senza sapere come si esegue");
+  assert.ok(USO.mat && USO.mat.s && USO.mat.u, "manca «a cosa serve / cosa decidi»");
+  assert.ok(TEST_EQ.mat, "manca l'attrezzatura: finirebbe nel livello sbagliato");
+  assert.ok(ICON.mat, "manca l'icona");
+  assert.ok(html.indexOf("mat:120") > 0, "manca dalla tabella dei tempi: conterebbe 60 s a caso");
+});
+
+prova("il MAT si fa su campo, senza comprare niente", () => {
+  assert.equal(testLevel("mat"), 1, "coni, metro e cronometro: livello campo");
+  const eq = testEq("mat");
+  ["crono", "coni", "metro"].forEach(k => assert.ok(eq.indexOf(k) >= 0, "manca " + k));
+});
+
+prova("la pallavolo aveva il 505 ma nessun test di spostamento laterale", () => {
+  // il 505 è lineare: frena e riparte. In pallavolo si difende di lato.
+  assert.ok(BATT2.pallavolo.campo.anno.indexOf("mat") >= 0, "il MAT deve stare nella batteria su campo");
+  assert.ok(TMAP.mat.sports.indexOf("pallavolo") >= 0, "e il test deve essere assegnato alla pallavolo");
+});
+
+prova("le fasce seguono il verso giusto: più veloce = più in alto", () => {
+  // con dir -1 le soglie vanno dalla più lenta alla più veloce, altrimenti
+  // un tempo da elite finisce in «Base» e nessuno se ne accorge
+  ["m", "f"].forEach(sx => {
+    const th = TMAP.mat.lv[sx];
+    assert.equal(th.length, 4, sx + ": servono quattro soglie");
+    for (let i = 1; i < th.length; i++)
+      assert.ok(th[i] < th[i - 1], sx + ": le soglie devono scendere, trovato " + th.join(","));
+  });
+  const L = (sx, v) => levelIdx("mat", sx, v);
+  assert.ok(L("F", 6.4) > L("F", 7.3), "6,4 s deve valere più di 7,3 s");
+  assert.ok(L("M", 5.4) > L("M", 6.3), "5,4 s deve valere più di 6,3 s");
+  assert.equal(L("F", 8.5), 0, "molto lento = sotto base");
+});
+
+prova("le fasce sono ancorate ai valori dello studio, non inventate", () => {
+  // Sassi et al. 2009: donne 7,27 ± 0,35 · uomini 6,27 ± 0,37.
+  // La media dello studio deve cadere in mezzo alla scala, non agli estremi:
+  // se la media di una popolazione normale esce «Elite» la scala è finta.
+  assert.equal(levelIdx("mat", "F", 7.27), 2, "la media femminile deve stare in «Buono»");
+  assert.equal(levelIdx("mat", "M", 6.27), 2, "la media maschile deve stare in «Buono»");
+  const g = PROTO.mat;
+  const testo = JSON.stringify(g);
+  assert.ok(/7,27/.test(testo) && /6,27/.test(testo), "la guida deve citare i valori di riferimento");
+  assert.ok(/Sassi/.test(testo), "e dire da dove vengono");
+});
+
+prova("la guida dà le distanze vere, non «un percorso a T»", () => {
+  const testo = JSON.stringify(PROTO.mat);
+  assert.ok(/5 m/.test(testo), "manca il tratto da 5 m");
+  assert.ok(/2,5 m/.test(testo), "mancano i 2,5 m laterali — è ciò che distingue il MAT dal T-test");
+  assert.ok(/20 m/.test(testo), "manca la distanza totale");
+  assert.ok(/indietro/.test(testo), "manca il ritorno all'indietro");
+  assert.ok(/incrocia i piedi/.test(testo), "manca la penalità che annulla più prove");
+});
+
+prova("la guida dice che MAT e T-test non si fanno tutti e due", () => {
+  assert.ok(/T-test/.test(JSON.stringify(PROTO.mat)),
+    "misurano la stessa qualità: va detto, o si fanno entrambi per sicurezza");
+});
+
 console.log(failed ? "\n" + failed + " test falliti" : "\nTutti i test passati");
 process.exit(failed ? 1 : 0);

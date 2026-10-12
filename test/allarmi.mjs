@@ -190,5 +190,68 @@ prova("una stima chiesta sul generico non finisce sullo squat", () => {
   assert.equal(run(`S.data.p0.rmSquat`), undefined, "e NON sullo squat");
 });
 
+console.log("\nLa batteria della squadra");
+
+prova("un ripristino da backup non cancella la batteria personalizzata", () => {
+  /* `tests` dice quali colonne vuoi vedere per quella squadra. L'export la
+     scriveva, l'import la buttava via: tornavi da un backup e ti ritrovavi
+     tutte le colonne del catalogo al posto delle tue, senza un avviso. */
+  const b = JSON.stringify({
+    athletes: [{ id: "p0", name: "A" }],
+    data: {},
+    teams: [{ id: "t1", name: "YV", sport: "pallavolo", tests: ["cmj", "sj", "mat"] },
+            { id: "t2", name: "Senza", sport: "calcio" }],
+  });
+  const o = run(`sanitizeImport(${b})`);
+  const t1 = o.teams.filter(t => t.id === "t1")[0];
+  assert.ok(t1, "la squadra deve esserci");
+  assert.ok(t1.tests, "la batteria personalizzata è sparita nel ripristino");
+  assert.equal(t1.tests.join(","), "cmj,sj,mat");
+  const t2 = o.teams.filter(t => t.id === "t2")[0];
+  assert.equal(t2.tests, undefined, "chi non ha una batteria non deve ritrovarsene una");
+});
+
+prova("un backup manomesso non fa entrare id inventati nella batteria", () => {
+  const b = JSON.stringify({
+    athletes: [{ id: "p0", name: "A" }], data: {},
+    teams: [{ id: "t1", name: "YV", sport: "pallavolo", tests: ["cmj", "../evil", 42, null, "sj"] }],
+  });
+  const o = run(`sanitizeImport(${b})`);
+  assert.equal(o.teams[0].tests.join(","), "cmj,sj");
+});
+
+prova("il contatore dei test dice su quanti, non solo quanti", () => {
+  // «Test · 22» da solo sembra completo: con una batteria personalizzata un
+  // test nuovo del catalogo non compare e non hai motivo di sospettarlo
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo",tests:["cmj","sj","dj"]}];
+       S.activeTeam="t1"; S.sport="pallavolo"; S.athletes=[]; S.data={};
+       renderBar();`);
+  const h = run(`document.getElementById("bar").innerHTML`);
+  assert.ok(/Test · 3/.test(h), "manca il numero scelto: " + h.slice(0, 160));
+  assert.ok(/di \d+/.test(h), "manca il totale dello sport: " + h.slice(0, 160));
+  const tot = run(`TESTS.filter(x=>x.sports.includes("pallavolo")).length`);
+  assert.ok(h.indexOf("di " + tot) > 0, "il totale deve essere quello della pallavolo (" + tot + ")");
+});
+
+prova("senza batteria personalizzata il contatore non inventa numeri", () => {
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; renderBar();`);
+  const h = run(`document.getElementById("bar").innerHTML`);
+  assert.ok(!/di \d+/.test(h), "niente totale se non c'è una selezione: " + h.slice(0, 160));
+});
+
+prova("il MAT c'è nel catalogo della pallavolo, anche se una squadra non lo monitora", () => {
+  // è esattamente la situazione che ha portato a «non trovo il MAT»
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo",tests:["cmj","sj"]}];
+       S.activeTeam="t1"; S.sport="pallavolo"; S.athletes=[]; S.data={};`);
+  assert.ok(run(`TESTS.some(t=>t.id==="mat" && t.sports.includes("pallavolo"))`),
+    "il test deve esistere per la pallavolo");
+  assert.ok(!run(`visibleTests().some(t=>t.id==="mat")`),
+    "ma con una batteria personalizzata non si vede: è voluto, non è un difetto");
+  const h = run(`document.getElementById("bar").innerHTML`);
+  run(`renderBar()`);
+  assert.ok(/di \d+/.test(run(`document.getElementById("bar").innerHTML`)),
+    "e la barra deve dire che ce ne sono altri");
+});
+
 console.log(failed ? "\n" + failed + " PROVE FALLITE\n" : "\ntutto verde\n");
 process.exit(failed ? 1 : 0);

@@ -358,6 +358,7 @@ input.mono{font-family:var(--mono)}
 /* guida */
 .thi{margin-top:5px;font-size:9px;color:var(--muted2);cursor:pointer;font-family:var(--mono)}
 .thi:hover{color:var(--accent)}
+.bt-tot{opacity:.6;font-weight:600}
 .gvedi{display:block;width:100%;margin-top:16px;background:var(--surface2);border:1px solid var(--line2);
   border-radius:10px;padding:11px 13px;color:var(--accent);font-family:var(--sans);font-size:12.5px;
   font-weight:700;cursor:pointer;text-align:left}
@@ -2331,7 +2332,15 @@ function renderBar(){
   if(S.activeTeam && S.activeTeam!=="all" && S.activeTeam!=="none"){
     const at=S.teams.find(t=>t.id===S.activeTeam);
     const n=(at&&at.tests&&at.tests.length)?at.tests.length:0;
-    h+='<button class="btn sm bar-tests'+(n?' on':'')+'" onclick="chooseTests()" title="Scegli i test da monitorare per questa squadra">🎚 Test'+(n?' · '+n:'')+'</button>';
+    /* Diceva «Test · 22». Ventidue su quanti? Con una batteria personalizzata
+       un test aggiunto al catalogo non compare, e quel numero da solo sembra
+       completo: non hai nessun motivo per sospettare che esista dell'altro.
+       «22 di 42» e' la stessa informazione piu' la domanda giusta. */
+    const tot=at?TESTS.filter(x=>x.sports.includes(at.sport||S.sport||"generale")).length:0;
+    h+='<button class="btn sm bar-tests'+(n?' on':'')+'" onclick="chooseTests()" '+
+       'title="'+(n?"Monitori "+n+" test sui "+tot+" disponibili per questo sport — tocca per cambiare"
+                   :"Scegli i test da monitorare per questa squadra")+'">'+
+       '🎚 Test'+(n?' · '+n+(tot>n?' <span class="bt-tot">di '+tot+'</span>':''):'')+'</button>';
   }
   if(S.view==="today"){
     h+='<div class="barhint">chi gestire oggi, prima di decidere la seduta</div>';
@@ -6256,7 +6265,17 @@ function sanitizeImport(o){
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
-    out.teams.push({id:t.id, name:str(t.name,80)||"Squadra", sport:str(t.sport,40)});
+    const tm={id:t.id, name:str(t.name,80)||"Squadra", sport:str(t.sport,40)};
+    /* `tests` e' la batteria personalizzata della squadra — quali colonne
+       vuoi vedere. Il ripristino la buttava via: tornavi da un backup e ti
+       ritrovavi tutte le colonne del catalogo al posto delle tue, senza un
+       avviso. E' lo stesso difetto che aveva cancellato screen, lv e l'origine
+       dei dati: un campo che l'export scrive e l'import non legge. */
+    if(Array.isArray(t.tests)){
+      const ids=t.tests.slice(0,300).filter(x=>typeof x==="string" && /^[A-Za-z0-9_-]{1,40}$/.test(x));
+      if(ids.length) tm.tests=ids;
+    }
+    out.teams.push(tm);
   });
   const seen={};
   o.athletes.forEach(a=>{
@@ -8330,7 +8349,11 @@ function chooseTests(tid){
   base.forEach(id=>sel[id]=true);
   const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Anaerobico","Asimmetria & funzionale","Mobilità & stabilità","Composizione corporea","Functional Movement Screen"];
   let h='<div class="mh"><div><div class="eyebrow">Batteria della squadra</div><div class="mt">'+esc(team.name)+'</div>'+
-    '<div class="ms">'+sportMeta(team.sport||"generale").label+' · '+(custom?"batteria personalizzata":"filtro automatico per sport")+'</div></div>'+
+    '<div class="ms">'+sportMeta(team.sport||"generale").label+' · '+
+      (custom
+        ? "batteria personalizzata: "+team.tests.length+" test sui "+
+          TESTS.filter(x=>x.sports.includes(team.sport||"generale")).length+" dello sport"
+        : "filtro automatico per sport")+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
   h+='<div class="gnote" style="margin-top:0">Scegli i test da monitorare <b>per questa squadra</b>. La selezione resta salvata e vale solo qui: ogni squadra ha la sua. Nascondere un test <b>non cancella i dati</b>.</div>';
   h+='<div class="chq"><button class="btn sm" onclick="chooserSet(\'battery\')">🎯 Batteria consigliata</button>'+

@@ -35,6 +35,14 @@ esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla ce
 della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
 ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
+**La batteria della squadra sopravvive al ripristino** — `tests` (quali colonne
+vuoi vedere per quella squadra) veniva scritta dall'export e buttata via
+dall'import: tornavi da un backup e ti ritrovavi tutte le colonne del catalogo al
+posto delle tue. Stesso difetto che aveva già cancellato screening, curve e
+origine dei dati. E il contatore in barra ora dice «Test · 22 **di 42**»: con una
+batteria personalizzata un test nuovo del catalogo non compare, e quel numero da
+solo sembrava completo.
+
 **Niente buchi nel catalogo** — i 54 test che l'app propone nelle batterie hanno
 tutti guida, icona, attrezzatura dichiarata e la riga «cosa decidi col numero».
 Prima ne mancavano 27: test che finivano nella seduta, venivano misurati, e poi

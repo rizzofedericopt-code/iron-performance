@@ -359,6 +359,13 @@ input.mono{font-family:var(--mono)}
 .thi{margin-top:5px;font-size:9px;color:var(--muted2);cursor:pointer;font-family:var(--mono)}
 .thi:hover{color:var(--accent)}
 .bt-tot{opacity:.6;font-weight:600}
+.cuList{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.cuRow{display:flex;align-items:center;gap:9px;background:var(--surface2);border:1px solid var(--line);
+  border-radius:9px;padding:9px 11px}
+.cuN{flex:1 1 auto;font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cuD{flex:0 0 auto;font-family:var(--mono);font-size:10.5px;color:var(--muted2)}
+.cuX{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 4px;line-height:1}
+.cuX.danger:active{color:var(--down)}
 .gvedi{display:block;width:100%;margin-top:16px;background:var(--surface2);border:1px solid var(--line2);
   border-radius:10px;padding:11px 13px;color:var(--accent);font-family:var(--sans);font-size:12.5px;
   font-weight:700;cursor:pointer;text-align:left}
@@ -1125,6 +1132,76 @@ const TESTS=[
 ];
 const TMAP={}; TESTS.forEach(t=>TMAP[t.id]=t);
 
+/* ═══════════════ ESERCIZI TUOI ═══════════════════════════════════════════
+   La colonna «xRM→1RM» era una sola per tutti gli esercizi: ci finivano leg
+   press, affondi e pulley insieme, e l'andamento nel tempo diventava una
+   linea che sale e scende a seconda di cosa avevi fatto quel giorno. Lo
+   stesso difetto che ho rifiutato altrove — due numeri diversi nella stessa
+   colonna — stava qui per intero.
+
+   Ora ogni esercizio che aggiungi e' una COLONNA SUA. Si comporta come un
+   test del catalogo: andamento, gruppi di carico, stima da ripetizioni,
+   scelta nella batteria. Eredita guida, icona e attrezzatura dal test da cui
+   nasce (`base`), cosi' non serve riscrivere niente.
+
+   Tecnicamente: le voci personalizzate vengono INIETTATE in TESTS e TMAP
+   all'avvio, quindi tutto il resto dell'app non sa nemmeno che esistono. Se
+   si fossero tenute in un elenco separato, ogni schermata avrebbe dovuto
+   ricordarsi di guardare anche li' — e prima o poi una se ne dimentica.    */
+const CUSTOM_MAX=40;
+const CUSTOM_SPORTS=["forza","pallavolo","calcio","basket","atletica","combattimento","generale"];
+
+function customKey(n){
+  return String(n==null?"":n).toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g,"")
+    .replace(/[^a-z0-9]+/g," ").trim();
+}
+/* Idempotente: si puo' chiamare quante volte si vuole. Toglie prima quelle
+   gia' iniettate, poi rimette l'elenco corrente — altrimenti un import o un
+   secondo normalize() raddoppiava le colonne. */
+function applyCustom(){
+  for(let i=TESTS.length-1;i>=0;i--){
+    if(TESTS[i].custom){ delete TMAP[TESTS[i].id]; TESTS.splice(i,1); }
+  }
+  (S.custom||[]).forEach(c=>{
+    if(!c||!c.id||TMAP[c.id]) return;
+    const base=TMAP[c.base]||TMAP.pred;
+    const t={id:c.id, custom:true, base:c.base||"pred",
+      name:String(c.name||"Esercizio").slice(0,28),
+      full:(base?base.full:"1RM stimato")+" — "+String(c.name||"Esercizio").slice(0,40),
+      unit:base?base.unit:"kg", dir:base?base.dir:1, cat:base?base.cat:"Forza",
+      sports:CUSTOM_SPORTS.slice()};
+    TESTS.push(t); TMAP[t.id]=t;
+  });
+}
+/* Crea la colonna se non c'e' gia', e restituisce l'id in ogni caso: due
+   esercizi con lo stesso nome sono lo stesso esercizio, anche se li scrivi
+   con le maiuscole diverse. */
+function customAdd(nome, base){
+  const n=String(nome||"").trim();
+  if(!n) return null;
+  if(!S.custom) S.custom=[];
+  const k=customKey(n);
+  const gia=S.custom.find(c=>customKey(c.name)===k && (c.base||"pred")===(base||"pred"));
+  if(gia) return gia.id;
+  if(S.custom.length>=CUSTOM_MAX){ toast("Hai gia' "+CUSTOM_MAX+" esercizi tuoi: cancellane uno"); return null; }
+  const id="u"+uid();
+  S.custom.push({id:id, name:n.slice(0,40), base:base||"pred"});
+  applyCustom();
+  /* Se la squadra ha una batteria personalizzata, un test nuovo del catalogo
+     non ci entra da solo — ed e' giusto. Ma questo l'hai creato TU adesso:
+     doverlo anche spuntare per vederlo sarebbe una beffa. */
+  const tm=(S.teams||[]).find(x=>x.id===S.activeTeam);
+  if(tm && tm.tests && tm.tests.length && tm.tests.indexOf(id)<0) tm.tests.push(id);
+  return id;
+}
+function customList(){ return (S.custom||[]).slice(); }
+function customConDati(id){
+  let n=0;
+  (S.athletes||[]).forEach(a=>{ const arr=((S.data||{})[a.id]||{})[id]; if(arr&&arr.length) n+=arr.length; });
+  return n;
+}
+
 /* ═══════════════ STATO ═══════════════ */
 const KEY="testmonitor_v1";
 let S={athletes:[], data:{}, sport:"pallavolo"};
@@ -1219,6 +1296,8 @@ function normalize(){
   if(!S.screen) S.screen={};   // valutazioni posturali/funzionali, una per data
   if(!S.lv) S.lv={};           // sessioni di curva carico-velocità
   if(!S.gruppi) S.gruppi={};   // gruppi di lavoro decisi a mano, per test
+  if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
+  applyCustom();
   if(!S.cvar) S.cvar="percussione";
   if(!S.cfg) S.cfg={};
   Object.keys(CFG_DEF).forEach(k=>{ if(typeof S.cfg[k]!=="number"||isNaN(S.cfg[k])) S.cfg[k]=CFG_DEF[k]; });
@@ -1464,6 +1543,14 @@ function mergeState(server, local){
   /* I gruppi di lavoro non sono misure datate: sono una decisione del
      preparatore, come le soglie. Vince l'ultima fatta su questo dispositivo. */
   out.gruppi=local.gruppi||server.gruppi||{};
+  /* Gli esercizi personalizzati sono decisioni, come le soglie: vince
+     l'ultima fatta su questo dispositivo. Ma se il server ne ha di piu'
+     (li hai creati sul telefono) non si buttano via: si uniscono per id. */
+  (function(){
+    const m={}; (server.custom||[]).forEach(c=>{ if(c&&c.id) m[c.id]=c; });
+    (local.custom||[]).forEach(c=>{ if(c&&c.id) m[c.id]=c; });
+    out.custom=Object.keys(m).map(k=>m[k]);
+  })();
   out.cvar=local.cvar||server.cvar;
   out.cfg=local.cfg||server.cfg; out.sport=local.sport||server.sport;
   out.view=local.view||server.view; out.activeTeam=local.activeTeam||server.activeTeam;
@@ -4377,6 +4464,8 @@ function rmTestList(){
   const out=[];
   if(TMAP[RM_GENERICO.test]) out.push({test:RM_GENERICO.test, n:RM_GENERICO.n, ex:RM_GENERICO.ex});
   if(TMAP[RM_STIMA.test]) out.push({test:RM_STIMA.test, n:RM_STIMA.n, ex:RM_STIMA.ex});
+  // gli esercizi tuoi sono colonne di massimale a tutti gli effetti
+  (S.custom||[]).forEach(c=>{ if(TMAP[c.id]) out.push({test:c.id, n:c.name, ex:c.name}); });
   const visti={};
   rmExList().forEach(e=>{
     if(visti[e.test]) return; visti[e.test]=1;
@@ -5921,6 +6010,19 @@ function drawCell(){
        resta una; a cambiare e' solo il modo in cui ci entri. */
     const exCella=rmTestEx(CUR.t);
     if(exCella){
+      /* Su xRM→1RM (e sulle colonne che ne nascono) la domanda vera e' «quale
+         esercizio?»: ogni esercizio ha la sua colonna, quindi il selettore
+         non cambia un campo — cambia colonna. */
+      if(CUR.t==="pred" || t.custom){
+        const scelte=[{id:"pred", n:"— senza esercizio —"}]
+          .concat((S.custom||[]).filter(c=>(c.base||"pred")==="pred").map(c=>({id:c.id, n:c.name})));
+        h+='<label class="fl">Esercizio</label>'+
+           '<select id="cEx" onchange="cellEx(this.value)">'+
+           scelte.map(x=>'<option value="'+escAttr(x.id)+'"'+(x.id===CUR.t?" selected":"")+'>'+esc(x.n)+'</option>').join("")+
+           '<option value="__new">➕ Nuovo esercizio…</option></select>'+
+           '<div class="fhint">Ogni esercizio è una <b>colonna sua</b>: così l\'andamento nel tempo resta leggibile. '+
+           'Leg press e affondi nella stessa colonna darebbero una linea che sale e scende a seconda di cosa hai fatto quel giorno.</div>';
+      }
       const lblMax = CUR.t==="pred" ? "Numero già calcolato" : "Massimale sollevato";
       h+='<label class="fl">Come ci arrivi</label><div class="seg" style="width:100%;display:flex">'+
          '<button style="flex:1" class="'+(CUR.mode==="reps"?"":"on")+'" onclick="cellMode(\'max\')">'+lblMax+'</button>'+
@@ -5988,6 +6090,17 @@ function drawCell(){
 /* La scelta resta quella dell'ultima volta su questa cella: chi stima, stima
    sempre; chi carica il massimale, lo carica sempre. */
 function cellMode(m){ CUR.mode=m; drawCell(); }
+/* Cambiare esercizio significa cambiare colonna, non campo: si riapre la
+   cella giusta per la stessa atleta. */
+function cellEx(v){
+  if(v!=="__new"){ openCell(CUR.a, v); return; }
+  const n=prompt("Nome dell'esercizio (diventa una colonna sua)\n\nEsempi: Leg press, Affondi bulgari, Pulley");
+  if(n==null){ drawCell(); return; }
+  const id=customAdd(n, "pred");
+  if(!id){ drawCell(); return; }
+  save(); render(); openCell(CUR.a, id);
+  toast("«"+TMAP[id].name+"» aggiunto: ora è una colonna");
+}
 function addMeasure(){
   const t=TMAP[CUR.t];
   const v=parseFloat(document.getElementById("mV").value);
@@ -6066,6 +6179,16 @@ function sessRows(){
             'L\'1RM compare a destra mentre scrivi.</div>'
           : '')
       : '';
+    /* Stessa logica della cella: su xRM→1RM si sceglie l'esercizio, e la
+       scelta cambia la COLONNA su cui stai registrando. */
+    if(tid==="pred" || (t&&t.custom)){
+      const scelte=[{id:"pred", n:"— senza esercizio —"}]
+        .concat((S.custom||[]).filter(c=>(c.base||"pred")==="pred").map(c=>({id:c.id, n:c.name})));
+      mh.innerHTML += '<label class="fl" style="margin-top:12px">Esercizio</label>'+
+        '<select id="sEx" onchange="sessEx(this.value)">'+
+        scelte.map(x=>'<option value="'+escAttr(x.id)+'"'+(x.id===tid?" selected":"")+'>'+esc(x.n)+'</option>').join("")+
+        '<option value="__new">➕ Nuovo esercizio…</option></select>';
+    }
   }
 
   /* I segnaposto («kg», «rip») spariscono appena ci scrivi dentro: senza una
@@ -6099,6 +6222,19 @@ function sessRows(){
   document.getElementById("sList").innerHTML=h;
 }
 function sessMode(m){ SESS.mode=m; sessRows(); }
+function sessEx(v){
+  if(v!=="__new"){
+    const sel=document.getElementById("sT"); if(sel) sel.value=v;
+    SESS.t=v; sessRows(); return;
+  }
+  const n=prompt("Nome dell'esercizio (diventa una colonna sua)\n\nEsempi: Leg press, Affondi bulgari, Pulley");
+  if(n==null){ sessRows(); return; }
+  const id=customAdd(n, "pred");
+  if(!id){ sessRows(); return; }
+  save(); render(); closeM(); openSession();
+  setTimeout(()=>{ const sel=document.getElementById("sT"); if(sel){ sel.value=id; SESS.t=id; sessRows(); } },60);
+  toast("«"+TMAP[id].name+"» aggiunto: ora è una colonna");
+}
 function sessRirAll(n){
   document.querySelectorAll("#sList .srQ").forEach(sel=>{ sel.value=String(n); });
   document.querySelectorAll("#sList .sess-rm").forEach(r=>sessCalc(r.getAttribute("data-a")));
@@ -6211,6 +6347,7 @@ function openSettings(){
     row("📖","Guida ai test","Esecuzione, interpretazione, consigli","guideIndex()")+
     row("🎯","Batteria consigliata","Quali test usare e quando","openBattery()")+
     row("🎚","Batteria della squadra", team?("Test monitorati da "+esc(team.name)):"Seleziona prima una squadra","chooseTests()", nTests?nTests:"auto")+
+    row("🧰","Esercizi tuoi","Colonne che hai aggiunto tu (leg press, affondi…)","openCustom()", (S.custom||[]).length||"")+
     '</div>';
 
   h+='<div class="set-sec">Monitoraggio</div><div class="set-group">'+
@@ -6275,7 +6412,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},gruppi:{},tomb:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},gruppi:{},custom:[],tomb:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -6418,6 +6555,16 @@ function sanitizeImport(o){
         if(p.length) g.push(p);
       });
       if(g.length) out.gruppi[tid]={d:isDate(v.d)?v.d:todayISO(), g:g};
+    });
+  }
+  /* Gli esercizi tuoi: senza di loro il ripristino lascerebbe le misure in
+     colonne che non esistono piu', cioe' dati invisibili. */
+  if(Array.isArray(o.custom)){
+    const visti={};
+    o.custom.slice(0,CUSTOM_MAX).forEach(c=>{
+      if(!c||!idOk(c.id)||visti[c.id]) return; visti[c.id]=1;
+      const nome=str(c.name,40); if(!nome) return;
+      out.custom.push({id:c.id, name:nome, base:(TMAP[c.base]?c.base:"pred")});
     });
   }
   if(o.tomb&&typeof o.tomb==="object") Object.keys(o.tomb).slice(0,2000).forEach(k=>{ out.tomb[k]=str(o.tomb[k],40); });
@@ -7897,7 +8044,7 @@ const TEST_EQ={
   vo2:["lab"], wingPeak:["lab"], wingMean:["lab"], airBike:["lab"], trmInc:["lab"],
   mas:["crono","coni"], bodyFat:["dina"],
 };
-function testEq(id){ return TEST_EQ[id]||[]; }
+function testEq(id){ const t=TMAP[id]; return TEST_EQ[id]||(t&&t.base?TEST_EQ[t.base]:null)||[]; }
 /* Il livello di un test è quello dell'attrezzatura più esigente che richiede. */
 function testLevel(id){
   return testEq(id).reduce((m,k)=>Math.max(m,(EQ[k]&&EQ[k].liv)||1),1);
@@ -7994,7 +8141,7 @@ const USO={
              u:"Legato al rischio di infortunio agli ischiocrurali. Se cala nel tempo, aumenta il lavoro eccentrico."},
   bodyFat:{s:"Percentuale di massa grassa.", u:"Da guardare come tendenza, mai come obiettivo dichiarato all'atleta. Con delle under 18, cautela doppia."},
 };
-function usoOf(id){ return USO[id]||null; }
+function usoOf(id){ const t=TMAP[id]; return USO[id]||(t&&t.base?USO[t.base]:null)||null; }
 
 const BATTERY={
   pallavolo:{
@@ -8458,10 +8605,12 @@ function guideIndex(){
 }
 
 function openGuide(tid){
-  const t=TMAP[tid], p=PROTO[tid]||{};
+  /* Un esercizio tuo non ha una guida sua: usa quella del test da cui nasce,
+     che e' esattamente la stessa procedura con un bilanciere diverso. */
+  const t=TMAP[tid]; const p=PROTO[tid]||(t&&t.base?PROTO[t.base]:null)||{};
   let h='<button class="gback" onclick="guideIndex()">‹ Tutti i test</button>';
   h+='<div class="mh"><div><div class="eyebrow">'+(p.eyebrow||t.cat)+'</div>'+
-     '<div class="mt">'+(ICON[tid]||"")+' '+t.name+'</div>'+
+     '<div class="mt">'+(ICON[tid]||(t.base?ICON[t.base]:"")||"")+' '+t.name+'</div>'+
      '<div class="ms">'+t.full+' · '+t.unit+' · '+(t.dir<0?"più basso = meglio":"più alto = meglio")+'</div></div>'+
      '<button class="mcl" onclick="closeM()">✕</button></div>';
   if(p.what)  h+='<div class="gsec">Cosa misura e a cosa serve</div><div class="gwhat">'+p.what+'</div>';
@@ -8481,6 +8630,54 @@ function openGuide(tid){
   }
   if(p.note) h+='<div class="gnote">'+p.note+'</div>';
   modal(h);
+}
+
+/* ═══════════════ ESERCIZI TUOI: l'elenco ═══════════════════════════════════
+   Cancellare una colonna su cui hai misurato e' una perdita secca e non si
+   annulla da sola: qui si vede PRIMA quante misure ci sono dentro, e con dati
+   dentro si chiede conferma dicendo il numero. */
+function openCustom(){
+  const lista=customList();
+  let h='<div class="mh"><div><div class="eyebrow">Catalogo</div><div class="mt">🧰 Esercizi tuoi</div>'+
+    '<div class="ms">Ogni esercizio è una colonna sua, con il suo andamento</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="gnote" style="margin-top:0">Nascono da <b>xRM→1RM</b>: si creano quando registri una stima e scegli '+
+     '«Nuovo esercizio». Si comportano come i test del catalogo — andamento, gruppi di carico, stima da ripetizioni.</div>';
+  if(!lista.length){
+    h+='<div class="alert info" style="margin-top:14px"><span class="ai">🧰</span><span>'+
+       'Nessuno per ora. Apri la cella <b>xRM→1RM</b> di un\'atleta e scegli <b>➕ Nuovo esercizio</b>.</span></div>';
+  }else{
+    h+='<div class="cuList">'+lista.map(c=>{
+      const n=customConDati(c.id);
+      return '<div class="cuRow"><span class="cuN">'+esc(c.name)+'</span>'+
+        '<span class="cuD">'+(n?n+(n===1?" misura":" misure"):"nessuna misura")+'</span>'+
+        '<button class="cuX" title="Rinomina" onclick="customRename(\''+c.id+'\')">✎</button>'+
+        '<button class="cuX danger" title="Elimina" onclick="customDel(\''+c.id+'\')">🗑</button></div>';
+    }).join("")+'</div>';
+  }
+  modal(h);
+}
+function customRename(id){
+  const c=(S.custom||[]).find(x=>x.id===id); if(!c) return;
+  const n=prompt("Nuovo nome per «"+c.name+"»", c.name);
+  if(n==null) return;
+  const t=String(n).trim(); if(!t) return;
+  c.name=t.slice(0,40); applyCustom(); save(); render(); openCustom();
+}
+function customDel(id){
+  const c=(S.custom||[]).find(x=>x.id===id); if(!c) return;
+  const n=customConDati(id);
+  const msg = n
+    ? "Eliminare «"+c.name+"»?\n\nCi sono "+n+" misurazioni dentro questa colonna e verranno cancellate con lei.\n\nViene salvata una copia: potrai annullare da Impostazioni → Annulla un'operazione."
+    : "Eliminare «"+c.name+"»?\n\nNon contiene nessuna misurazione.";
+  if(!confirm(msg)) return;
+  if(n) snapshotBeforeRisk("eliminazione esercizio "+c.name);
+  S.custom=(S.custom||[]).filter(x=>x.id!==id);
+  (S.athletes||[]).forEach(a=>{ if(S.data[a.id]) delete S.data[a.id][id]; });
+  (S.teams||[]).forEach(t=>{ if(t.tests) t.tests=t.tests.filter(x=>x!==id); });
+  Object.keys(S.gruppi||{}).forEach(k=>{ if(k.indexOf(id+"@")===0) delete S.gruppi[k]; });
+  applyCustom(); save(); render(); openCustom();
+  toast("«"+c.name+"» eliminato");
 }
 
 /* ═══════════════ TOAST ═══════════════ */

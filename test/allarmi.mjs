@@ -253,5 +253,133 @@ prova("il MAT c'è nel catalogo della pallavolo, anche se una squadra non lo mon
     "e la barra deve dire che ce ne sono altri");
 });
 
+console.log("\nEsercizi tuoi: una colonna ciascuno");
+
+const pulisci = () => run(`S.custom=[]; S.data={}; S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}];
+  S.activeTeam="t1"; S.sport="pallavolo"; S.athletes=[{id:"p0",name:"A",team:"t1",sex:"F",profile:{}}];
+  S.gruppi={}; applyCustom();`);
+
+prova("un esercizio nuovo diventa una colonna vera del catalogo", () => {
+  pulisci();
+  const id = run(`customAdd("Leg press","pred")`);
+  assert.ok(id && /^u[A-Za-z0-9]+$/.test(id), "id strano: " + id);
+  assert.ok(run(`!!TMAP[${JSON.stringify(id)}]`), "non è entrato in TMAP");
+  const t = run(`TMAP[${JSON.stringify(id)}]`);
+  assert.equal(t.name, "Leg press");
+  assert.equal(t.unit, "kg");
+  assert.equal(t.dir, 1);
+  assert.equal(t.base, "pred");
+  assert.ok(t.custom, "deve essere riconoscibile come tuo");
+  assert.ok(run(`TESTS.some(x=>x.id===${JSON.stringify(id)})`), "non è entrato in TESTS");
+});
+
+prova("eredita guida, uso e attrezzatura da xRM→1RM: non serve riscriverle", () => {
+  pulisci();
+  const id = run(`customAdd("Affondi bulgari","pred")`);
+  assert.ok(run(`!!usoOf(${JSON.stringify(id)})`), "senza «cosa decidi» sarebbe un numero muto");
+  assert.equal(run(`testEq(${JSON.stringify(id)}).join(",")`), run(`testEq("pred").join(",")`));
+  run(`openGuide(${JSON.stringify(id)})`);
+  const h = run(`document.getElementById("modal").innerHTML`);
+  assert.ok(/class="step"/.test(h), "la guida deve mostrare il protocollo di xRM→1RM");
+  assert.ok(/Affondi bulgari/.test(h), "e il nome dell'esercizio");
+});
+
+prova("lo stesso nome non crea due colonne", () => {
+  pulisci();
+  const a = run(`customAdd("Leg press","pred")`);
+  const b = run(`customAdd("  LEG   PRESS ","pred")`);
+  assert.equal(a, b, "«Leg press» e «LEG PRESS» sono lo stesso esercizio");
+  assert.equal(run(`S.custom.length`), 1);
+});
+
+prova("un nome vuoto non crea niente", () => {
+  pulisci();
+  assert.equal(run(`customAdd("","pred")`), null);
+  assert.equal(run(`customAdd("   ","pred")`), null);
+  assert.equal(run(`S.custom.length`), 0);
+});
+
+prova("applyCustom si può chiamare mille volte senza duplicare colonne", () => {
+  // normalize() gira all'avvio E dopo ogni import: senza idempotenza le
+  // colonne raddoppiavano a ogni ripristino
+  pulisci();
+  run(`customAdd("Leg press","pred")`);
+  const n0 = run(`TESTS.length`);
+  run(`applyCustom(); applyCustom(); normalize(); applyCustom();`);
+  assert.equal(run(`TESTS.length`), n0, "colonne duplicate");
+  assert.equal(run(`TESTS.filter(t=>t.name==="Leg press").length`), 1);
+});
+
+prova("creandolo entra subito nella batteria della squadra", () => {
+  // una squadra con batteria personalizzata non riceve i test nuovi del
+  // catalogo — ed è giusto. Ma questo l'ha creato lui adesso.
+  pulisci();
+  run(`S.teams[0].tests=["cmj","sj"];`);
+  const id = run(`customAdd("Pulley","pred")`);
+  assert.ok(run(`S.teams[0].tests.indexOf(${JSON.stringify(id)})>=0`),
+    "altrimenti lo crei e non lo vedi");
+});
+
+prova("entra fra i test di massimale: stima da ripetizioni e gruppi di carico", () => {
+  pulisci();
+  const id = run(`customAdd("Leg press","pred")`);
+  assert.ok(run(`rmTestList().some(e=>e.test===${JSON.stringify(id)})`),
+    "deve poter ricevere carico e ripetizioni");
+  assert.equal(run(`rmTestEx(${JSON.stringify(id)})`), "Leg press");
+  assert.ok(run(`lgEsercizi().some(e=>e.test===${JSON.stringify(id)})`),
+    "e comparire fra gli esercizi dei gruppi di carico");
+});
+
+prova("le misure finiscono nella colonna dell'esercizio, non nel calderone", () => {
+  pulisci();
+  const id = run(`customAdd("Leg press","pred")`);
+  Object.keys(campi).forEach(k => delete campi[k]);
+  campi.rmD = "2026-10-12";
+  cache.rmSaveBtn = elFor("rmSaveBtn");
+  Object.assign(cache.rmSaveBtn.dataset, { est: "120", lo: "116", hi: "124", w: "100", r: "5", rir: "1" });
+  run(`drawCell=function(){}; render=function(){}; saveRepMax("p0",${JSON.stringify(id)},"cella");`);
+  assert.ok(run(`S.data.p0[${JSON.stringify(id)}]`), "deve finire su Leg press");
+  assert.equal(run(`S.data.p0[${JSON.stringify(id)}][0].v`), 120);
+  assert.equal(run(`S.data.p0.pred`), undefined, "e NON nella colonna generica");
+});
+
+prova("eliminarlo porta via la colonna e quello che c'era dentro", () => {
+  pulisci();
+  const id = run(`customAdd("Leg press","pred")`);
+  run(`S.data.p0={${JSON.stringify(id)}:[{d:"2026-10-12",v:120}]}; S.teams[0].tests=["cmj",${JSON.stringify(id)}];
+       S.gruppi={${JSON.stringify(id + "@t1")}:{d:"2026-10-12",g:[["p0"]]}};`);
+  assert.equal(run(`customConDati(${JSON.stringify(id)})`), 1, "deve sapere quante misure ci sono dentro");
+  run(`snapshotBeforeRisk=function(){}; confirm=function(){return true}; render=function(){}; openCustom=function(){};
+       customDel(${JSON.stringify(id)});`);
+  assert.equal(run(`S.custom.length`), 0);
+  assert.ok(!run(`TMAP[${JSON.stringify(id)}]`), "la colonna deve sparire dal catalogo");
+  assert.equal(run(`S.data.p0[${JSON.stringify(id)}]`), undefined, "e i dati con lei");
+  assert.ok(run(`S.teams[0].tests.indexOf(${JSON.stringify(id)})<0`), "e dalla batteria della squadra");
+  assert.equal(Object.keys(run(`S.gruppi`)).length, 0, "e dai gruppi di carico");
+});
+
+prova("un ripristino da backup non perde gli esercizi tuoi", () => {
+  const b = JSON.stringify({
+    athletes: [{ id: "p0", name: "A" }],
+    data: { p0: { uabc123: [{ d: "2026-10-12", v: 120 }] } },
+    custom: [{ id: "uabc123", name: "Leg press", base: "pred" },
+             { id: "udef456", name: "Pulley", base: "inesistente" }],
+  });
+  const o = run(`sanitizeImport(${b})`);
+  assert.ok(Array.isArray(o.custom), "la chiave deve esistere");
+  assert.equal(o.custom.length, 2);
+  assert.equal(o.custom[0].name, "Leg press");
+  assert.equal(o.custom[1].base, "pred", "un test base inventato ricade su xRM→1RM");
+  assert.ok(o.data.p0.uabc123, "senza la colonna le misure sarebbero invisibili");
+});
+
+prova("una sincronizzazione non cancella gli esercizi creati sull'altro dispositivo", () => {
+  const server = { athletes: [], data: {}, custom: [{ id: "u1", name: "Leg press", base: "pred" }] };
+  const locale = { athletes: [], data: {}, custom: [{ id: "u2", name: "Pulley", base: "pred" }] };
+  const out = run(`mergeState(${JSON.stringify(server)},${JSON.stringify(locale)})`);
+  const nomi = out.custom.map(c => c.name).sort().join(",");
+  assert.equal(nomi, "Leg press,Pulley", "si uniscono per id, non si sostituiscono: " + nomi);
+});
+
 console.log(failed ? "\n" + failed + " PROVE FALLITE\n" : "\ntutto verde\n");
 process.exit(failed ? 1 : 0);

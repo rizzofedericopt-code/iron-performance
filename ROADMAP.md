@@ -35,6 +35,17 @@ esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla ce
 della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
 ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
+**Esercizi tuoi: una colonna ciascuno** — «xRM→1RM» era una colonna sola per tutti
+gli esercizi: leg press, affondi e pulley finivano insieme, e l'andamento nel tempo
+diventava una linea che saliva e scendeva a seconda di cosa avevi fatto quel giorno.
+Ora scegli l'esercizio e ogni esercizio è una colonna sua, con il suo andamento, i
+suoi gruppi di carico e la stima da ripetizioni. Eredita guida, icona e attrezzatura
+da xRM→1RM, quindi non serve riscrivere niente. Le voci vengono iniettate nel
+catalogo all'avvio: tutto il resto dell'app non sa nemmeno che sono personalizzate,
+e nessuna schermata deve ricordarsi di guardare in un secondo elenco. Si gestiscono
+da Impostazioni → Esercizi tuoi, che prima di cancellarne uno dice quante misure
+porta via.
+
 **xRM→1RM accetta la serie, non il risultato** — era l'unica colonna di massimale
 senza la strada «Da ripetizioni», proprio quella il cui senso è non fare il
 massimale: dovevi fare il conto a mano con una formula sola e scrivere il numero

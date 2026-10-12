@@ -105,9 +105,13 @@ prova("ogni test è assegnato allo sport in cui compare", () => {
   // in tabella una colonna che il filtro poi nasconde
   const strani = [];
   SPORT.forEach((sp) => batt2Tests(sp, "completa").forEach((id) => {
+    /* La scappatoia «oppure e' taggato generale» faceva passare 16 coppie che
+       la matrice poi nascondeva davvero: il filtro per sport confronta con lo
+       sport ATTIVO, e «generale» non e' la pallavolo. Se una batteria propone
+       un test a uno sport, quel test e' di quello sport — l'autorita' e' la
+       batteria, e il tag si allinea a lei. */
     const ok = vm.runInContext(
-      "TMAP[" + JSON.stringify(id) + "].sports.indexOf(" + JSON.stringify(sp) + ")>=0 || " +
-      "TMAP[" + JSON.stringify(id) + "].sports.indexOf('generale')>=0", sandbox);
+      "TMAP[" + JSON.stringify(id) + "].sports.indexOf(" + JSON.stringify(sp) + ")>=0", sandbox);
     if (!ok) strani.push(sp + "/" + id);
   }));
   assert.equal(strani.join(","), "", "test fuori sport: " + strani.join(","));
@@ -375,6 +379,29 @@ prova("il Bosco si fa col telefono, non serve la pedana", () => {
     assert.equal(testLevel(id), 1, id + " deve restare alla portata di un telefono");
     assert.ok(testEq(id).indexOf("video") >= 0, id + ": serve il telefono");
   });
+});
+
+prova("il box squat ha una colonna sua, non quella dello squat", () => {
+  // con la stessa atleta i due massimali sono numeri diversi: mescolarli darebbe
+  // un andamento che sale e scende per l'altezza del box, non per la sua forza
+  assert.ok(TMAP.rmBox, "manca il test");
+  assert.notEqual(TMAP.rmBox.id, TMAP.rmSquat.id);
+  const ex = dentro('LV_EX.filter(e=>e.n==="Box squat")[0]');
+  assert.ok(ex, "manca dall'elenco degli esercizi");
+  assert.equal(ex.test, "rmBox", "il box squat non deve scrivere nella colonna dello squat");
+  assert.ok(PROTO.rmBox && USO.rmBox && ICON.rmBox && TEST_EQ.rmBox, "registrato a metà");
+  assert.ok(/altezza del box/i.test(JSON.stringify(PROTO.rmBox)),
+    "l'altezza del box è parte del test: va detto");
+});
+
+prova("xRM→1RM accetta la serie, non solo il risultato", () => {
+  // era l'unica colonna di massimale senza la strada «da ripetizioni», ed è
+  // proprio quella il cui senso è non fare il massimale
+  const lista = dentro("rmTestList().map(e=>e.test)");
+  assert.ok(lista.indexOf("pred") >= 0, "pred deve poter ricevere carico e ripetizioni");
+  assert.ok(dentro('rmTestEx("pred")'), "serve un'etichetta di esercizio");
+  assert.ok(/Da ripetizioni/.test(JSON.stringify(PROTO.pred)),
+    "la guida deve dire dove si inseriscono carico e ripetizioni");
 });
 
 console.log(failed ? "\n" + failed + " test falliti" : "\nTutti i test passati");

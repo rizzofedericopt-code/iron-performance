@@ -979,13 +979,13 @@ const SPORTS=[
 
 const TESTS=[
   // ─ FORZA ─
-  {id:"rm1",  name:"1RM",      full:"Massimale 1RM",            unit:"kg",       dir:1, cat:"Forza", sports:["forza","pallavolo","calcio","basket","generale","combattimento"]},
-  {id:"rm35", name:"3-5RM",    full:"Test 3-5RM",               unit:"kg",       dir:1, cat:"Forza", sports:["forza","generale","combattimento"]},
-  {id:"pred", name:"xRM→1RM",  full:"1RM stimato (submassimale)",unit:"kg",      dir:1, cat:"Forza", sports:["forza","generale"]},
+  {id:"rm1",  name:"1RM",      full:"Massimale 1RM",            unit:"kg",       dir:1, cat:"Forza", sports:["forza","pallavolo","calcio","basket","generale","combattimento","atletica"]},
+  {id:"rm35", name:"3-5RM",    full:"Test 3-5RM",               unit:"kg",       dir:1, cat:"Forza", sports:["forza","generale","combattimento","pallavolo","calcio","basket","atletica"]},
+  {id:"pred", name:"xRM→1RM",  full:"1RM stimato (submassimale)",unit:"kg",      dir:1, cat:"Forza", sports:["forza","generale","pallavolo","calcio","basket","atletica","combattimento"]},
   {id:"vbt",  name:"VBT",      full:"Velocità bilanciere (load-velocity)",unit:"m/s",dir:1,cat:"Forza",sports:["forza","combattimento","pallavolo"]},
   {id:"imtp", name:"IMTP",     full:"Forza isometrica mid-thigh",unit:"N/kg",    dir:1, cat:"Forza", sports:["forza","pallavolo","basket","combattimento","calcio","atletica","generale"], lv:{m:[22,28,34,40],f:[18,24,30,36]}},
   // ─ POTENZA / SALTO ─
-  {id:"cmj",  name:"CMJ",      full:"Countermovement Jump",     unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
+  {id:"cmj",  name:"CMJ",      full:"Countermovement Jump",     unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento","forza"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
   {id:"sj",   name:"SJ",       full:"Squat Jump",               unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","forza","combattimento","atletica","generale"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
   {id:"dj",   name:"Drop Jump",full:"Drop Jump — RSI",          unit:"RSI",      dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","combattimento","forza","generale"], lv:{m:[0.8,1.2,1.6,2.0],f:[0.6,1.0,1.4,1.7]}},
   /* ─── Test che My Jump Lab misura e che qui non c'erano ──────────────────
@@ -1007,7 +1007,7 @@ const TESTS=[
   {id:"rsi105", name:"RSI 10-5", full:"Reactive Strength Index — salti ripetuti 10/5", unit:"RSI", dir:1, cat:"Potenza",
    sports:["pallavolo","basket","atletica"]},
   {id:"bjump",  name:"Salto in lungo", full:"Salto in lungo da fermo", unit:"cm", dir:1, cat:"Potenza",
-   sports:["calcio","atletica","generale","combattimento"]},
+   sports:["calcio","atletica","generale","combattimento","forza"]},
   {id:"fvF0",   name:"F-V vert. F0", full:"Profilo F-V verticale — forza teorica massima", unit:"N/kg", dir:1, cat:"Potenza",
    sports:["pallavolo","basket","atletica","forza"]},
   {id:"fvV0",   name:"F-V vert. V0", full:"Profilo F-V verticale — velocità teorica massima", unit:"m/s", dir:1, cat:"Potenza",
@@ -1027,14 +1027,14 @@ const TESTS=[
   {id:"nordicTq",  name:"Nordic forza", full:"Nordic hamstring — torque al cedimento", unit:"N·m", dir:1,
    cat:"Asimmetria & funzionale", sports:["calcio","atletica","pallavolo","basket"]},
   {id:"hipIR",  name:"Anca IR", full:"Rotazione interna d'anca", unit:"gradi", dir:1, cat:"Mobilità & stabilità",
-   sports:["pallavolo","basket","calcio","combattimento","generale"]},
+   sports:["pallavolo","basket","calcio","combattimento","generale","forza"]},
 
   {id:"eur",  name:"EUR",      full:"Elastic Index (CMJ ÷ SJ)", unit:"ratio",    dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","forza","combattimento","generale"], derived:{from:["cmj","sj"], fn:(c,s)=> s? c/s : null}},
   // ─ SALTO MONOPODALICO ─
   {id:"cmj1lL", name:"CMJ 1L sx", full:"CMJ monopodalico — sinistra", unit:"cm", dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"]},
   {id:"cmj1lR", name:"CMJ 1L dx", full:"CMJ monopodalico — destra",   unit:"cm", dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento"]},
   {id:"cmj1lAsym", name:"Asimm. CMJ 1L", full:"Asimmetria CMJ monopodalico", unit:"%", dir:-1, cat:"Asimmetria & funzionale",
-     sports:["pallavolo","basket","calcio","atletica","generale","combattimento"],
+     sports:["pallavolo","basket","calcio","atletica","generale","combattimento","forza"],
      derived:{from:["cmj1lL","cmj1lR"], fn:(l,r)=>{ const mx=Math.max(l,r); return mx? Math.abs(l-r)/mx*100 : null; }}},
   {id:"dj1lL", name:"DJ 1L sx", full:"Drop Jump monopodalico — sinistra — RSI", unit:"RSI", dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","combattimento"]},
   {id:"dj1lR", name:"DJ 1L dx", full:"Drop Jump monopodalico — destra — RSI",   unit:"RSI", dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","combattimento"]},
@@ -1100,8 +1100,13 @@ const TESTS=[
   {id:"wingMean",  name:"Media anaer.", full:"Potenza anaerobica media (Wingate) — capacità", unit:"W/kg", dir:1, cat:"Anaerobico", sports:["combattimento","atletica"], lv:{m:[4.5,5.5,6.5,7.5],f:[3.5,4.5,5.5,6.5]}},
   // ─ FORZA / PRESA / RESISTENZA ─
   {id:"gripStr",   name:"Presa",        full:"Forza di presa (dinamometro, mano dominante)", unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"], lv:{m:[40,48,55,62],f:[24,30,36,42]}},
-  {id:"pullMax",   name:"Trazioni max", full:"Trazioni massime (resistenza di forza arti superiori)", unit:"rip", dir:1, cat:"Forza", sports:["combattimento","forza","generale"], lv:{m:[5,10,15,20],f:[1,4,8,12]}},
+  {id:"pullMax",   name:"Trazioni max", full:"Trazioni massime (resistenza di forza arti superiori)", unit:"rip", dir:1, cat:"Forza", sports:["combattimento","forza","generale","pallavolo"], lv:{m:[5,10,15,20],f:[1,4,8,12]}},
   {id:"rmSquat",   name:"1RM Squat",   full:"Massimale 1RM — Squat",        unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza","pallavolo","calcio","basket","atletica","generale"]},
+  /* Il box squat ha una colonna sua e NON finisce in quella dello squat: con
+     la stessa atleta i due massimali sono numeri diversi — cambiano con
+     l'altezza del box e con la pausa — e mescolarli darebbe un andamento che
+     sale e scende per il box che hai usato quel giorno, non per la sua forza. */
+  {id:"rmBox",     name:"1RM Box squat", full:"Massimale 1RM — Box squat",  unit:"kg", dir:1, cat:"Forza", sports:["forza","pallavolo","basket","calcio","combattimento","atletica","generale"]},
   {id:"rmBench",   name:"1RM Panca",   full:"Massimale 1RM — Panca piana",  unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
   {id:"rmDead",    name:"1RM Stacco",  full:"Massimale 1RM — Stacco da terra", unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
   /* Hip thrust, military press e trazioni non avevano un posto dove finire:
@@ -1110,7 +1115,7 @@ const TESTS=[
   {id:"rmHip",     name:"1RM Hip thrust", full:"Massimale 1RM — Hip thrust",    unit:"kg", dir:1, cat:"Forza", sports:["forza"]},
   {id:"rmOhp",     name:"1RM Military",   full:"Massimale 1RM — Military press", unit:"kg", dir:1, cat:"Forza", sports:["forza"]},
   {id:"rmPull",    name:"1RM Trazioni",   full:"Massimale 1RM — Trazioni (carico totale mosso)", unit:"kg", dir:1, cat:"Forza", sports:["forza"]},
-  {id:"pushMax",   name:"Push-up max", full:"Push-up massimi (resistenza di forza di spinta)", unit:"rip", dir:1, cat:"Forza", sports:["combattimento","forza","generale"], lv:{m:[20,30,40,50],f:[10,18,25,35]}},
+  {id:"pushMax",   name:"Push-up max", full:"Push-up massimi (resistenza di forza di spinta)", unit:"rip", dir:1, cat:"Forza", sports:["combattimento","forza","generale","pallavolo"], lv:{m:[20,30,40,50],f:[10,18,25,35]}},
   {id:"trmInc",    name:"Tapis increm.",full:"Test incrementale al tapis roulant — velocità finale", unit:"km/h", dir:1, cat:"Aerobico", sports:["combattimento","atletica","generale"], lv:{m:[13,15,16.5,18],f:[11.5,13.5,15,16.5]}},
   {id:"airBike",   name:"Air bike",    full:"Air bike — test incrementale (potenza finale)", unit:"W", dir:1, cat:"Aerobico", sports:["combattimento","forza","generale"]},
   // ─ POTENZA SPECIFICA ─
@@ -3642,6 +3647,7 @@ let LV_ROWS=[], CUR_LV_AID=null;
 const LV_EX=[
   {n:"Back squat",        mvt:0.30, test:"rmSquat"},
   {n:"Front squat",       mvt:0.30, test:"rmSquat"},
+  {n:"Box squat",         mvt:0.30, test:"rmBox"},
   {n:"Panca piana",       mvt:0.17, test:"rmBench"},
   {n:"Stacco da terra",   mvt:0.16, test:"rmDead"},
   {n:"Hip thrust",        mvt:0.25, test:"rmHip"},
@@ -4362,9 +4368,15 @@ function rmExList(){ return LV_EX.filter(e=>e.test); }
    voleva dire una colonna di massimali su cui il clic non faceva niente —
    cioe' di nuovo il difetto che sto correggendo. */
 const RM_GENERICO={test:"rm1", n:"Massimale", ex:"Massimale (generico)"};
+/* `pred` e' la colonna del 1RM STIMATO, e chiedeva solo il risultato: dovevi
+   fare il conto a mano e scrivere il numero finale. Era l'unica colonna di
+   massimale senza la strada «da ripetizioni», proprio quella il cui senso e'
+   non fare il massimale. */
+const RM_STIMA={test:"pred", n:"xRM→1RM", ex:"Esercizio a scelta"};
 function rmTestList(){
   const out=[];
   if(TMAP[RM_GENERICO.test]) out.push({test:RM_GENERICO.test, n:RM_GENERICO.n, ex:RM_GENERICO.ex});
+  if(TMAP[RM_STIMA.test]) out.push({test:RM_STIMA.test, n:RM_STIMA.n, ex:RM_STIMA.ex});
   const visti={};
   rmExList().forEach(e=>{
     if(visti[e.test]) return; visti[e.test]=1;
@@ -5909,8 +5921,9 @@ function drawCell(){
        resta una; a cambiare e' solo il modo in cui ci entri. */
     const exCella=rmTestEx(CUR.t);
     if(exCella){
+      const lblMax = CUR.t==="pred" ? "Numero già calcolato" : "Massimale sollevato";
       h+='<label class="fl">Come ci arrivi</label><div class="seg" style="width:100%;display:flex">'+
-         '<button style="flex:1" class="'+(CUR.mode==="reps"?"":"on")+'" onclick="cellMode(\'max\')">Massimale sollevato</button>'+
+         '<button style="flex:1" class="'+(CUR.mode==="reps"?"":"on")+'" onclick="cellMode(\'max\')">'+lblMax+'</button>'+
          '<button style="flex:1" class="'+(CUR.mode==="reps"?"on":"")+'" onclick="cellMode(\'reps\')">Da ripetizioni</button>'+
          '</div>';
     }
@@ -6042,7 +6055,8 @@ function sessRows(){
   if(mh){
     mh.innerHTML = ex
       ? '<label class="fl">Come ci arrivi</label><div class="seg" style="width:100%;display:flex">'+
-        '<button style="flex:1" class="'+(SESS.mode==="reps"?"":"on")+'" onclick="sessMode(\'max\')">Massimale sollevato</button>'+
+        '<button style="flex:1" class="'+(SESS.mode==="reps"?"":"on")+'" onclick="sessMode(\'max\')">'+
+          (tid==="pred"?"Numero già calcolato":"Massimale sollevato")+'</button>'+
         '<button style="flex:1" class="'+(SESS.mode==="reps"?"on":"")+'" onclick="sessMode(\'reps\')">Da ripetizioni</button>'+
         '</div>'+
         (SESS.mode==="reps"
@@ -7041,7 +7055,7 @@ const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆
   spr10:"⏱️",spr30:"🏁",rsa:"🔄",sdec:"📉",vo2:"🫁",mas:"🏃",yoyo1:"🪀",yoyo2:"🪀",
   fvdef:"📈",cod505:"🔀",ttest:"✖️",mat:"↔️",
   cmj1lL:"◀️",cmj1lR:"▶️",cmj1lAsym:"🪞",dj1lL:"⏪",dj1lR:"⏩",dj1lAsym:"🪞",bosco15:"⏱",bosco30:"⏲",bosco60:"⏰",
-  rmHip:"🦵",rmOhp:"🙆",rmPull:"🧗",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
+  rmHip:"🦵",rmOhp:"🙆",rmPull:"🧗",rmBox:"📦",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
   shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶",
   fmsSquat:"🏋️",fmsHurdle:"🚧",fmsLunge:"🤺",fmsShoulder:"🙆",fmsASLR:"🦵",fmsPushup:"🛟",fmsRotary:"🔁",fmsTotal:"🧮",
   shuttle300:"🔁",shuttleFat:"📉",wingPeak:"⚡",wingMean:"🔋",gripStr:"🤝",pullMax:"🧗",punchPow:"🥊",bodyFat:"⚖️",
@@ -7206,11 +7220,14 @@ const PROTO={
       {t:"Stima il 1RM — Brzycki",d:"<code>1RM = carico / (1.0278 − 0.0278 × rep)</code>"}]},
 
   pred:{eyebrow:"Stima indiretta",
-    what:"Stima il 1RM partendo da un set <b>submassimale</b> portato al limite tecnico. Comodo e sicuro, ma affidabile solo sotto le 10 ripetizioni.",
-    steps:[{t:"Carico tra 60-85% del 1RM stimato",d:"Più ti avvicini all'85%, più la stima è precisa."},
-      {t:"Warm-up specifico",d:"1 set leggero + 1 set di avvicinamento."},
-      {t:"Set al limite tecnico",d:"Fermati quando cede la tecnica, non i muscoli."},
-      {t:"Usa sempre la stessa formula",d:"Solo così il confronto nel tempo resta valido."}]},
+    what:"Stima il 1RM da un set <b>submassimale</b> portato al limite tecnico, su <b>qualunque esercizio</b>. È la colonna da usare per gli esercizi che non hanno una colonna propria — leg press, affondi, pulley. Per squat, panca, stacco, hip thrust, military e trazioni usa le loro colonne: lì la stima alimenta anche i gruppi di carico.",
+    steps:[{t:"Carico fra il 60 e l'85% del 1RM atteso",d:"Più ci si avvicina all'85%, più la stima è precisa — e più ripetizioni fa, più si allarga l'intervallo."},
+      {t:"Riscaldamento specifico",d:"Una serie leggera più una di avvicinamento sullo stesso esercizio."},
+      {t:"Serie al limite tecnico",d:"Ci si ferma quando cede la <b>tecnica</b>, non i muscoli. Con un'atleta giovane il cedimento vero non si cerca: si chiude prima e si dichiara quante ripetizioni restavano."},
+      {t:"Scrivi la serie, non il risultato",d:"Nella cella scegli <b>«Da ripetizioni»</b> e inserisci <b>carico, ripetizioni e riserva (RIR)</b>: l'1RM lo calcola l'app con sei formule, e ti mostra anche quanto sono d'accordo fra loro. Il conto a mano con una formula sola ti dava un numero pulito senza dirti quanto era sbagliato."}],
+    interpret:["Sotto le <b>6 ripetizioni effettive</b> (fatte + riserva) la stima è solida; fra 7 e 10 è utilizzabile; oltre le 10 l'app non la salva, perché a quel punto stai misurando la resistenza.","L'intervallo che compare sotto la stima è la distanza fra la formula più bassa e la più alta: se è largo, il numero non regge una programmazione."],
+    advice:["Rifalla sullo stesso esercizio e con lo stesso schema, altrimenti confronti due cose diverse.","Fra un test vero e l'altro usala per aggiornare le percentuali, ma ricontrolla col massimale ogni 8-10 settimane."],
+    note:"Questa colonna non dice <b>quale</b> esercizio hai usato: scrivilo nelle note dell'atleta, o usa la colonna specifica quando esiste."},
 
   vbt:{eyebrow:"Velocità del bilanciere",
     what:"Un sensore misura la <b>velocità di spostamento del bilanciere</b> (m/s) a un dato carico. Serve a monitorare la forma giorno per giorno e a regolare l'intensità sulla velocità, non a predire il 1RM.",
@@ -7445,6 +7462,16 @@ const PROTO={
     interpret:["Risultato in <b>W/kg</b>. Il confronto che conta è col <b>30 secondi</b>: la differenza fra i due dice quanto regge oltre il minuto di lavoro.","Una caduta molto marcata rispetto al 30 s indica capacità da costruire; una caduta modesta dice che la tenuta c'è e il margine sta altrove."],
     advice:["Se crolla rispetto al 30 s: lavoro di capacità, serie lunghe a intensità sub-massimale, prima che potenza.","Non usarlo come monitoraggio: è una fotografia annuale, non un termometro."],
     note:"Il più aggressivo dei tre per ginocchia e schiena. Fuori stagione, su atlete senza dolore in corso, e mai due volte nella stessa settimana."},
+
+  rmBox:{eyebrow:"Forza massimale — squat con fermata",
+    what:"<b>1RM al box squat.</b> Si scende fino a sedersi sul box, si <b>perde la tensione elastica</b> e si riparte da fermo. Toglie il rimbalzo, quindi misura la forza che ha davvero nel punto più sfavorevole — quello in cui una ragazza si blocca risalendo dall'affondo o dalla difesa bassa.",
+    steps:[{t:"Altezza del box",d:"Scegline una e <b>scrivila</b>: un box più basso dà un massimale più basso. Cambiare altezza fra due test significa confrontare due esercizi diversi, non due momenti della stessa atleta."},
+      {t:"Discesa controllata",d:"Si scende <b>sedendosi</b>, non lasciandosi cadere: il carico va controllato fino al contatto. Tibie verticali, schiena neutra."},
+      {t:"Pausa vera",d:"<b>1 secondo seduta, scarica</b>: se rimbalza sul box il test non serve più a niente — hai rifatto uno squat normale con una pausa finta. Niente oscillazione del tronco per prendere slancio."},
+      {t:"Tentativi",d:"Riscaldamento progressivo, poi singoli con <b>3-5 minuti</b> di recupero. <b>Sotto i 18 anni</b> non il singolo: 3-5 ripetizioni e lascia stimare l'1RM all'app."}],
+    interpret:["Il box squat è quasi sempre <b>più basso</b> dello squat libero: è normale, ed è tutto il punto del test.","Il numero utile è il <b>rapporto</b> con lo squat libero. Se il box squat resta molto indietro, le manca forza nella posizione bassa — è lì che si blocca, e aggiungere ripetizioni allo squat normale non lo risolve.","Se invece i due valori sono vicini, la sua forza nel punto morto è già buona: il margine sta nella velocità, non nella forza."],
+    advice:["Box squat basso rispetto allo squat → lavoro con fermata e partenze da fermo (pin squat, pause squat) per 6-8 settimane, poi rimisura.","È anche un modo per caricare le gambe senza il picco eccentrico del rimbalzo: utile in chi ha il tendine rotuleo irritabile.","Ricontrolla ogni 6-10 settimane, non più spesso."],
+    note:"L'altezza del box è parte del test: annotala nelle note dell'atleta. Senza, fra sei mesi non saprai se è migliorata lei o si è abbassato il box."},
 
   rmHip:{eyebrow:"Forza massimale — estensione d'anca",
     what:"<b>1RM all'hip thrust.</b> Isola l'estensione d'anca dal quadricipite: è la spinta che manca a chi salta di ginocchio. Nel salto e nello sprint l'anca è il motore, il ginocchio trasmette.",
@@ -7859,7 +7886,7 @@ const TEST_EQ={
   cod505:["crono","coni"], ttest:["crono","coni"], mat:["crono","coni","metro"], vcut:["crono","coni"], bronco:["crono","coni"],
   yoyo1:["audio","coni"], yoyo2:["audio","coni"], shuttle300:["crono","coni"], shuttleFat:["crono","coni"],
   rm1:["sala"], rm35:["sala"], pred:["sala"], rmSquat:["sala"], rmBench:["sala"],
-  rmDead:["sala"], rmHip:["sala"], rmOhp:["sala"], rmPull:["sala"],
+  rmDead:["sala"], rmHip:["sala"], rmOhp:["sala"], rmPull:["sala"], rmBox:["sala"],
   pullMax:["sala"], pushMax:["crono"],
   /* Derivati: nessuno strumento in piu' di quello che serve ai test da cui
      nascono, ma la riga ci deve essere o la batteria non sa in che livello
@@ -7919,6 +7946,7 @@ const USO={
   pred:{s:"1RM stimato da una serie submassimale.", u:"Usalo per aggiornare le percentuali fra un test vero e l'altro, e ricontrolla col massimale ogni 8-10 settimane prima che la stima scivoli via."},
   rmBench:{s:"Forza massimale di spinta della parte alta.", u:"Confrontala con la trazione: se spingere è molto più forte di tirare, aumenta il volume di tirate — è lo squilibrio che presenta il conto sulla spalla."},
   rmDead:{s:"Forza massimale della catena posteriore.", u:"Guarda il rapporto con lo squat: se lo stacco resta molto indietro, lavora sulla catena posteriore prima di aggiungere pliometria."},
+  rmBox:{s:"Massimale allo squat con fermata su box: forza dalla posizione bassa, senza rimbalzo.", u:"Confrontalo con lo squat libero: se il box è molto più basso, le manca forza nel punto morto — insisti lì invece di aggiungere ripetizioni."},
   rmHip:{s:"Forza di estensione d'anca, isolata dal quadricipite.", u:"Confrontalo con lo squat: hip thrust basso e squat alto vuol dire che spinge di ginocchio — insisti sull'anca prima di alzare il volume di salti."},
   rmOhp:{s:"Forza massimale di spinta sopra la testa.", u:"Decidi quanto carico overhead regge la spalla: se è bassa rispetto alla panca, prima controllo scapolare e cuffia, poi carico."},
   rmPull:{s:"Forza massimale in trazione, carico totale mosso (corpo + zavorra).", u:"Usala come contrappeso della panca: in chi schiaccia e batte, il rapporto tirata/spinta è quello che tiene insieme la spalla."},
@@ -8179,7 +8207,7 @@ function batt2Tests(sport, liv){
 const T_TEST={ cmj:20, rsiMod:0, cmjA:90, sj:60, eur:0, cmj1lL:60, cmj1lR:60, cmj1lAsym:0,
   dj:90, rsi105:90, bjump:60, spr10:60, spr30:90, cod505:90, ttest:120, mat:120, vcut:120,
   ankleDF:60, shIR:60, hipIR:60, ybtLow:180, hopLSI:120, nordicAng:120,
-  rmSquat:600, rmBench:600, rmDead:600, rm1:600, rm35:420, pred:300, vbt:180, imtp:180,
+  rmSquat:600, rmBench:600, rmDead:600, rmBox:600, rm1:600, rm35:420, pred:300, vbt:180, imtp:180,
   bosco30:90, bosco60:120, gripStr:30, bodyFat:120 };
 function tierMinuti(ids, n){
   let s=0, squadra=false;

@@ -35,6 +35,25 @@ esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla ce
 della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
 ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
+**xRM→1RM accetta la serie, non il risultato** — era l'unica colonna di massimale
+senza la strada «Da ripetizioni», proprio quella il cui senso è non fare il
+massimale: dovevi fare il conto a mano con una formula sola e scrivere il numero
+finale. Ora inserisci carico, ripetizioni e riserva, e il calcolo lo fa l'app con
+sei formule e l'intervallo. È la colonna per gli esercizi che non hanno una colonna
+propria: per squat, panca, stacco e trazioni usa le loro, dove la stima alimenta
+anche i gruppi di carico.
+
+**Box squat** — colonna propria, non quella dello squat libero: con la stessa
+atleta i due massimali sono numeri diversi, e mescolarli darebbe un andamento che
+sale e scende con l'altezza del box invece che con la sua forza. L'altezza del box
+è parte del test e va annotata.
+
+**16 test che le batterie proponevano e la tabella nascondeva** — il filtro per
+sport confronta col campionato attivo, e il tag «generale» non è la pallavolo:
+3-5RM, xRM→1RM, trazioni e push-up massimi comparivano nella batteria e poi non
+avevano una colonna. Tag allineati alle batterie, e il controllo automatico non
+accetta più la scappatoia che li faceva passare.
+
 **La batteria della squadra sopravvive al ripristino** — `tests` (quali colonne
 vuoi vedere per quella squadra) veniva scritta dall'export e buttata via
 dall'import: tornavi da un backup e ti ritrovavi tutte le colonne del catalogo al

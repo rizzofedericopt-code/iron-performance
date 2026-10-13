@@ -35,6 +35,22 @@ esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla ce
 della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
 ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
+**La tabella si usa, non si subisce** — l'intestazione di una colonna conteneva sei
+righe di testo in 96 pixel (categoria, nome, unità, verso, «carichi», «guida»): più
+parole che dati. Ora mostra l'essenziale e **si tocca**, aprendo un posto solo con
+tutto quello che puoi fare con quella colonna — ordina, metti in evidenza, gruppi di
+carico, registra per tutta la squadra, guida.
+
+**Ordinare le righe** — per un test (i migliori in cima, e su un tempo l'ordine si
+rovescia da solo) o per nome. Chi non ha il dato resta in fondo anche invertendo:
+una cella vuota non è un risultato scarso.
+
+**Test in evidenza** — fino a sei per squadra, restano le prime colonne. Con
+quarantasette test, «a sinistra» è l'unica posizione che si trova senza cercare.
+
+**L'età del dato nella cella** — un 42 cm di marzo e uno di ottobre erano identici a
+schermo. Ora sotto il numero c'è «7 mesi», in arancione oltre i quattro.
+
 **Troppo o troppo poco: tre riferimenti, e si sa sempre quale** — ogni cella ha un
 segno colorato che dice come sta andando quel valore. La parte che conta non è il
 colore, è la **forma**: ● pieno = fascia di riferimento da popolazione, ◍ anello =

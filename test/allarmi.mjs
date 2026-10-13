@@ -140,13 +140,17 @@ prova("«nessuna» alle allergie non e' un'allergia", () => {
 
 console.log("\nLa porta dei carichi sull'intestazione");
 
-prova("l'intestazione di un 1RM apre percentuali e gruppi", () => {
+prova("l'intestazione si tocca e porta a tutto quello che puoi farci", () => {
+  // prima erano tre microscritte in una colonna da 96 px; ora è un menu solo
   squadra(["no", "no"]);
   run(`S.data={p0:{rmSquat:[{d:"2026-06-01",v:80}]}}; renderMatrix();`);
   const h = run(`document.getElementById("grid").innerHTML`);
-  assert.ok(/openLoadGroups\('rmSquat'\)/.test(h), "il nome del test deve essere cliccabile");
-  assert.ok(/🏋️ carichi/.test(h), "e deve vedersi che lo e'");
-  assert.ok(/class="tn clic"/.test(h));
+  assert.ok(/openColMenu\('rmSquat'\)/.test(h), "l'intestazione deve aprire il menu della colonna");
+  run(`openColMenu("rmSquat")`);
+  const m = run(`document.getElementById("modal").innerHTML`);
+  assert.ok(/openLoadGroups\('rmSquat'\)/.test(m), "da lì si devono raggiungere i gruppi di carico");
+  assert.ok(/sortBy\('rmSquat'\)/.test(m), "e l'ordinamento");
+  assert.ok(/pinToggle\('rmSquat'\)/.test(m), "e l'evidenza");
 });
 
 prova("le altre colonne restano come prima", () => {
@@ -159,11 +163,11 @@ prova("le altre colonne restano come prima", () => {
   assert.ok(!/openLoadGroups\('cmj'\)/.test(h), "un CMJ non ha percentuali di carico");
 });
 
-prova("la guida resta raggiungibile dove era", () => {
+prova("la guida resta raggiungibile, una porta più in là ma non persa", () => {
   squadra(["no"]);
-  run(`S.data={p0:{rmSquat:[{d:"2026-06-01",v:80}]}}; renderMatrix();`);
-  const h = run(`document.getElementById("grid").innerHTML`);
-  assert.ok(/openGuide\('rmSquat'\)/.test(h), "la ⓘ guida non deve sparire");
+  run(`S.data={p0:{rmSquat:[{d:"2026-06-01",v:80}]}}; renderMatrix(); openColMenu("rmSquat");`);
+  const m = run(`document.getElementById("modal").innerHTML`);
+  assert.ok(/openGuide\('rmSquat'\)/.test(m), "la guida non deve sparire nel riordino");
 });
 
 prova("anche il massimale generico ha la sua porta", () => {
@@ -172,7 +176,9 @@ prova("anche il massimale generico ha la sua porta", () => {
   squadra(["no"]);
   run(`S.data={p0:{rm1:[{d:"2026-06-01",v:80}]}}; renderMatrix();`);
   const h = run(`document.getElementById("grid").innerHTML`);
-  assert.ok(/openLoadGroups\('rm1'\)/.test(h), "la colonna 1RM generica non deve restare muta");
+  run(`openColMenu("rm1")`);
+  assert.ok(/openLoadGroups\('rm1'\)/.test(run(`document.getElementById("modal").innerHTML`)),
+    "la colonna 1RM generica non deve restare muta");
   assert.ok(run(`lgEsercizi().some(e=>e.test==="rm1")`), "e deve comparire fra gli esercizi della finestra");
   assert.equal(run(`rmTestEx("rm1")`), "Massimale (generico)");
 });
@@ -514,6 +520,92 @@ prova("il segno dice sempre da dove viene il giudizio", () => {
   const b = run(`document.getElementById("bar").innerHTML`);
   assert.ok(/fascia di riferimento/.test(b) && /rispetto alla squadra/.test(b) && /rispetto a lei stessa/.test(b),
     "senza legenda i tre segni sono tre pallini uguali");
+});
+
+console.log("\nOrdinare, evidenziare, e sapere quanto è vecchio il dato");
+
+const squadraCMJ = (valori) => {
+  const ath = valori.map((v, i) => `{id:"s${i}",name:"N${i}",team:"t1",sex:"F",profile:{}}`).join(",");
+  const dat = valori.map((v, i) => v == null ? null : `s${i}:{cmj:[{d:"2026-10-01",v:${v}}]}`)
+    .filter(Boolean).join(",");
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; S.sport="pallavolo";
+       S.athletes=[${ath}]; S.data={${dat}}; S.custom=[]; SORT={by:null,desc:false}; applyCustom();`);
+};
+const ordine = () => run(`atleteOrdinate().map(a=>a.name)`).join(",");
+
+prova("ordinare per un salto mette i migliori in cima", () => {
+  squadraCMJ([30, 42, 36]);
+  assert.equal(ordine(), "N0,N1,N2", "senza ordinamento resta l'ordine della rosa");
+  run(`sortBy("cmj")`);
+  assert.equal(ordine(), "N1,N2,N0", "42, 36, 30");
+});
+
+prova("su un tempo l'ordine si rovescia da solo", () => {
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; S.sport="pallavolo";
+       S.athletes=[{id:"s0",name:"Lenta",team:"t1",sex:"F"},{id:"s1",name:"Veloce",team:"t1",sex:"F"}];
+       S.data={s0:{spr10:[{d:"2026-10-01",v:2.4}]},s1:{spr10:[{d:"2026-10-01",v:2.0}]}};
+       SORT={by:null,desc:false}; sortBy("spr10");`);
+  assert.equal(ordine(), "Veloce,Lenta", "2,0 s è meglio di 2,4 s");
+});
+
+prova("toccare di nuovo inverte, ma chi non ha il dato resta in fondo", () => {
+  // una cella vuota non è un risultato scarso: non deve finire in cima
+  squadraCMJ([30, 42, null, 36]);
+  run(`sortBy("cmj")`);
+  assert.equal(ordine(), "N1,N3,N0,N2");
+  run(`sortBy("cmj")`);
+  assert.equal(ordine(), "N0,N3,N1,N2", "invertito, ma N2 (senza dato) resta ultima");
+});
+
+prova("si può ordinare per nome e tornare indietro", () => {
+  squadraCMJ([30, 42, 36]);
+  run(`S.athletes[0].name="Zoe"; S.athletes[1].name="Anna"; S.athletes[2].name="Marta"; sortBy("nome");`);
+  assert.equal(ordine(), "Anna,Marta,Zoe");
+  run(`sortClear()`);
+  assert.equal(ordine(), "Zoe,Anna,Marta", "torna l'ordine della rosa");
+});
+
+prova("i test in evidenza passano davanti a tutti", () => {
+  squadraCMJ([30]);
+  const prima = run(`visibleTests().map(t=>t.id)`);
+  assert.notEqual(prima[0], "spr10");
+  run(`pinToggle("spr10"); pinToggle("cmj");`);
+  const dopo = run(`visibleTests().map(t=>t.id)`);
+  assert.equal(dopo[0], "spr10", "nell'ordine in cui li hai messi");
+  assert.equal(dopo[1], "cmj");
+  assert.equal(dopo.length, prima.length, "evidenziare non aggiunge né toglie colonne");
+});
+
+prova("in evidenza ce ne stanno sei, non quarantasette", () => {
+  squadraCMJ([30]);
+  ["cmj", "sj", "dj", "spr10", "cod505", "mat", "eur"].forEach(id => run(`pinToggle(${JSON.stringify(id)})`));
+  assert.equal(run(`pinSet().length`), 6, "il settimo non deve entrare");
+  run(`pinToggle("cmj")`);
+  assert.equal(run(`pinSet().indexOf("cmj")`), -1, "e si tolgono");
+});
+
+prova("i test in evidenza sopravvivono al ripristino", () => {
+  // stesso difetto che aveva già cancellato la batteria della squadra
+  const b = JSON.stringify({
+    athletes: [{ id: "p0", name: "A" }], data: {},
+    teams: [{ id: "t1", name: "YV", sport: "pallavolo", tests: ["cmj"], pin: ["cmj", "spr10"] }],
+  });
+  const o = run(`sanitizeImport(${b})`);
+  assert.ok(o.teams[0].pin, "l'evidenza è sparita nel ripristino");
+  assert.equal(o.teams[0].pin.join(","), "cmj,spr10");
+});
+
+prova("nella cella si vede quanto è vecchio il numero", () => {
+  const oggi = new Date();
+  const giorniFa = (n) => new Date(oggi.getTime() - n * 864e5).toISOString().slice(0, 10);
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; S.sport="pallavolo";
+       S.athletes=[{id:"p0",name:"Fresca",team:"t1",sex:"F"},{id:"p1",name:"Vecchia",team:"t1",sex:"F"}];
+       S.data={p0:{cmj:[{d:"${giorniFa(2)}",v:30}]},p1:{cmj:[{d:"${giorniFa(200)}",v:30}]}};
+       SORT={by:null,desc:false}; renderMatrix();`);
+  const h = run(`document.getElementById("grid").innerHTML`);
+  assert.ok(/class="cold vecchio"/.test(h), "oltre quattro mesi il dato va segnalato");
+  assert.equal((h.match(/class="cold/g) || []).length, 1,
+    "un dato di due giorni fa non ha bisogno di etichette");
 });
 
 console.log(failed ? "\n" + failed + " PROVE FALLITE\n" : "\ntutto verde\n");

@@ -359,6 +359,19 @@ input.mono{font-family:var(--mono)}
 .thi{margin-top:5px;font-size:9px;color:var(--muted2);cursor:pointer;font-family:var(--mono)}
 .thi:hover{color:var(--accent)}
 .bt-tot{opacity:.6;font-weight:600}
+/* intestazione che si tocca, colonne in evidenza, eta' del dato */
+.th-test{cursor:pointer}
+.th-test .thMore{font-size:9px;color:var(--muted2);margin-top:4px;font-family:var(--mono)}
+.th-test.pinned{background:rgba(230,57,70,0.07);box-shadow:inset 0 2px 0 var(--accent)}
+.th-test.sorted{background:var(--surface3)}
+.th-test.sorted .thMore{color:var(--accent);font-weight:700}
+.thSort{background:none;border:none;color:var(--text);font-family:var(--sans);font-size:12px;
+  font-weight:700;cursor:pointer;padding:0;letter-spacing:.2px}
+.thSort:hover{color:var(--accent)}
+.thOrd{font-size:9px;color:var(--accent);margin-top:3px;font-family:var(--mono)}
+.thOrd button{background:none;border:none;color:var(--muted);cursor:pointer;padding:0 0 0 3px;font-size:10px}
+.cold{font-size:9px;color:var(--muted2);font-family:var(--mono);margin-top:2px}
+.cold.vecchio{color:#FF9F0A}
 /* tre riferimenti, tre forme: pieno = letteratura, anello = squadra,
    triangolo = lei rispetto a se stessa. Il colore dice quanto, la forma dice
    DA DOVE — e senza la forma il quartile di squadra verrebbe letto come un
@@ -2381,7 +2394,17 @@ function visibleTests(){
   });
   const gia={}; base.forEach(t=>gia[t.id]=1);
   const extra=TESTS.filter(t=>conDati[t.id]&&!gia[t.id]);
-  return extra.length ? base.concat(extra) : base;
+  let out = extra.length ? base.concat(extra) : base;
+  /* I test che guardi ogni settimana devono stare davanti: con quarantasette
+     colonne, «a sinistra» e' l'unica posizione che si trova senza cercare. */
+  const pin=pinSet();
+  if(pin.length){
+    const p=[], r=[];
+    out.forEach(t=>{ (pin.indexOf(t.id)>=0 ? p : r).push(t); });
+    p.sort((a,b)=>pin.indexOf(a.id)-pin.indexOf(b.id));
+    out=p.concat(r);
+  }
+  return out;
 }
 
 function renderSports(){
@@ -2430,25 +2453,110 @@ function render(){
   renderMatrix();
 }
 
+/* ═══════════════ ORDINARE E METTERE IN EVIDENZA ═════════════════════════
+   Due domande che si fanno ogni volta davanti alla tabella:
+     «chi e' indietro?»  → ordinare le righe per un test
+     «dove sono i test che guardo sempre?» → tenerli a sinistra
+   Prima la risposta a entrambe era: scorri con l'occhio quarantasette colonne
+   e sedici righe. Con una squadra vera non si fa.                          */
+let SORT={by:null, desc:false};
+function sortBy(k){
+  if(SORT.by===k){ SORT.desc=!SORT.desc; } else { SORT.by=k; SORT.desc=false; }
+  render();
+}
+function sortClear(){ SORT={by:null, desc:false}; render(); }
+/* L'ordine di default e' "il migliore in cima": su un tempo vuol dire il piu'
+   basso, su un salto il piu' alto. Chi non ha il dato resta in fondo SEMPRE,
+   anche invertendo: una cella vuota non e' un risultato scarso. */
+function atleteOrdinate(){
+  const rows=(teamAthletes()||[]).slice();
+  const k=SORT.by;
+  if(!k) return rows;
+  if(k==="nome"){
+    rows.sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"it"));
+    if(SORT.desc) rows.reverse();
+    return rows;
+  }
+  const t=TMAP[k]; if(!t) return rows;
+  const val=a=>{ const s=series(a.id,k); return s.length? s[s.length-1].v : null; };
+  const conDato=rows.filter(a=>val(a)!=null), senza=rows.filter(a=>val(a)==null);
+  conDato.sort((a,b)=>(val(b)-val(a))*t.dir);     // migliore in cima
+  if(SORT.desc) conDato.reverse();
+  return conDato.concat(senza);
+}
+function pinSet(){
+  const t=(S.teams||[]).find(x=>x.id===S.activeTeam);
+  return (t&&Array.isArray(t.pin))?t.pin:[];
+}
+function pinToggle(tid){
+  const t=(S.teams||[]).find(x=>x.id===S.activeTeam);
+  if(!t){ toast("Seleziona prima una squadra"); return; }
+  if(!Array.isArray(t.pin)) t.pin=[];
+  const i=t.pin.indexOf(tid);
+  if(i>=0) t.pin.splice(i,1);
+  else{
+    if(t.pin.length>=6){ toast("In evidenza stanno al massimo 6 test"); return; }
+    t.pin.push(tid);
+  }
+  save(); closeM(); render();
+}
+
+/* Tutto quello che puoi fare con una colonna, in un posto solo. Prima era
+   sparso fra tre microscritte nell'intestazione (guida, carichi) e due
+   schermate diverse (ordina non c'era, evidenzia nemmeno): la colonna era
+   larga 96 pixel e conteneva sei righe di testo. */
+function openColMenu(tid){
+  const t=TMAP[tid]; if(!t) return;
+  const inEv=pinSet().indexOf(tid)>=0;
+  const ord=SORT.by===tid;
+  const riga=(ic,l,sub,fn)=>'<button class="set-row" onclick="'+fn+'">'+
+    '<span class="si">'+ic+'</span><span class="sl">'+l+(sub?'<small>'+sub+'</small>':'')+'</span><span class="sc">›</span></button>';
+  let h='<div class="mh"><div><div class="eyebrow">'+esc(t.cat)+'</div>'+
+    '<div class="mt">'+(ICON[tid]||(t.base?ICON[t.base]:"")||"")+' '+esc(t.name)+'</div>'+
+    '<div class="ms">'+esc(t.full)+' · '+esc(t.unit)+' · '+(t.dir<0?"più basso = meglio":"più alto = meglio")+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="set-group">'+
+     riga("⇅", ord?(SORT.desc?"Ordina: migliori in cima":"Ordina: peggiori in cima")
+                 :"Ordina la squadra per questo test",
+          ord?"Tocca di nuovo per invertire":"I migliori in cima, chi non l'ha fatto in fondo",
+          'closeM();sortBy(\''+tid+'\')')+
+     riga(inEv?"📌":"📍", inEv?"Togli dall'evidenza":"Metti in evidenza",
+          inEv?"Torna in ordine di catalogo":"Resta fra le prime colonne della tabella",
+          'pinToggle(\''+tid+'\')')+
+     (rmTestEx(tid)?riga("🏋️","Percentuali e gruppi di carico","Chi va con chi, e con quanti chili",'closeM();openLoadGroups(\''+tid+'\')'):"")+
+     riga("✏️","Registra per tutta la squadra","Una colonna, un numero per atleta",'closeM();openSessionOn(\''+tid+'\')')+
+     riga("ⓘ","Come si esegue","Protocollo, interpretazione, consigli",'openGuide(\''+tid+'\')')+
+     '</div>';
+  modal(h);
+}
+function openSessionOn(tid){
+  openSession();
+  setTimeout(()=>{ const s=document.getElementById("sT"); if(s){ s.value=tid; SESS.t=tid; sessRows(); } },60);
+}
+
 function renderMatrix(){
   const tests=visibleTests();
   const grid=document.getElementById("grid");
-  const rows=teamAthletes();
+  const rows=atleteOrdinate();
   if(rows.length===0){ grid.innerHTML=emptyTeam(); return; }
-  let h='<table><thead><tr><th class="cAth">Atleta</th>';
+  const pin=pinSet();
+  /* Sei righe di testo in una colonna larga 96 pixel — categoria, nome, unita',
+     verso, «carichi», «guida» — erano piu' parole che dati. Adesso
+     l'intestazione mostra l'essenziale e si TOCCA: tutto quello che puoi fare
+     con quella colonna sta in un posto solo. */
+  let h='<table><thead><tr>'+
+    '<th class="cAth"><button class="thSort" onclick="sortBy(\'nome\')">Atleta '+
+      (SORT.by==="nome"?(SORT.desc?"↑":"↓"):"⇅")+'</button>'+
+      (SORT.by&&SORT.by!=="nome"?'<div class="thOrd">ordinata per '+esc((TMAP[SORT.by]||{}).name||"")+
+        ' <button onclick="sortClear()">✕</button></div>':'')+'</th>';
   tests.forEach(t=>{
-    /* Sull'intestazione di un 1RM la domanda che ti fai davanti alla squadra
-       e' sempre la stessa: «con quanti chili le carico oggi?». Quella schermata
-       esisteva ma si apriva dal menu ⋯, cioe' dove non la cerca nessuno. */
-    const carichi=!!rmTestEx(t.id);
-    h+='<th class="th-test"><div class="cat">'+t.cat+'</div>'+
-       '<div class="tn'+(carichi?' clic':'')+'"'+
-         (carichi?' onclick="openLoadGroups(\''+t.id+'\')" title="Percentuali e gruppi di carico"':'')+'>'+
-         (isCore(t.id)?'<span class="star">★</span>':'')+t.name+'</div>'+
-       '<div class="tu">'+t.unit+'</div>'+
-       '<div class="dir">'+(t.dir<0?"↓ meglio":"↑ meglio")+'</div>'+
-       (carichi?'<div class="thl" onclick="openLoadGroups(\''+t.id+'\')">🏋️ carichi</div>':'')+
-       '<div class="thi" onclick="openGuide(\''+t.id+'\')">ⓘ guida</div></th>';
+    const ord=SORT.by===t.id;
+    h+='<th class="th-test'+(pin.indexOf(t.id)>=0?" pinned":"")+(ord?" sorted":"")+'" '+
+       'onclick="openColMenu(\''+t.id+'\')" title="Tocca: ordina, evidenzia, guida, carichi">'+
+       '<div class="cat">'+t.cat+'</div>'+
+       '<div class="tn">'+(isCore(t.id)?'<span class="star">★</span>':'')+t.name+'</div>'+
+       '<div class="tu">'+t.unit+' '+(t.dir<0?"↓":"↑")+'</div>'+
+       '<div class="thMore">'+(ord?(SORT.desc?"↑ ordinata":"↓ ordinata"):"⋯")+'</div></th>';
   });
   h+='</tr></thead><tbody>';
 
@@ -2475,6 +2583,13 @@ function renderMatrix(){
         h+='<div class="val">'+stim+fmtNum(last.v)+'</div>';
         if(di) h+='<div class="delta '+di.cls+'">'+di.arrow+' '+di.txt+'</div>';
         else   h+='<div class="delta flat" style="opacity:.5">— prima</div>';
+        /* Un 42 cm di marzo e uno di ottobre erano identici a schermo. La data
+           c'era solo aprendo la cella, cioe' per una colonna alla volta. */
+        const gg=rmGiorni(last.d);
+        if(gg!=null && gg>10){
+          h+='<div class="cold'+(gg>120?" vecchio":"")+'" title="Misurato il '+fmtDate(last.d)+'">'+
+             (gg<60?Math.round(gg/7)+" sett.":gg<365?Math.round(gg/30)+" mesi":"oltre un anno")+'</div>';
+        }
         h+=sparkline(arr,t.dir);
       }
       h+='</td>';
@@ -6602,6 +6717,11 @@ function sanitizeImport(o){
     if(Array.isArray(t.tests)){
       const ids=t.tests.slice(0,300).filter(x=>typeof x==="string" && /^[A-Za-z0-9_-]{1,40}$/.test(x));
       if(ids.length) tm.tests=ids;
+    }
+    // `pin` e' i test in evidenza: stessa storia di `tests`, stesso rischio
+    if(Array.isArray(t.pin)){
+      const ids=t.pin.slice(0,6).filter(x=>typeof x==="string" && /^[A-Za-z0-9_-]{1,40}$/.test(x));
+      if(ids.length) tm.pin=ids;
     }
     out.teams.push(tm);
   });

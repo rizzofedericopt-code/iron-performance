@@ -381,5 +381,140 @@ prova("una sincronizzazione non cancella gli esercizi creati sull'altro disposit
   assert.equal(nomi, "Leg press,Pulley", "si uniscono per id, non si sostituiscono: " + nomi);
 });
 
+console.log("\nUnità di misura degli esercizi tuoi");
+
+prova("un plank si misura in secondi, non in chili", () => {
+  pulisci();
+  const id = run(`customAdd("Plank","pred","s")`);
+  const t = run(`TMAP[${JSON.stringify(id)}]`);
+  assert.equal(t.unit, "s");
+  assert.equal(t.dir, 1, "sulla tenuta più alto è meglio");
+  assert.ok(!run(`rmTestList().some(e=>e.test===${JSON.stringify(id)})`),
+    "un plank non ha un massimale da stimare: fuori dai test di carico");
+});
+
+prova("su un tempo da abbassare la direzione si rovescia", () => {
+  // senza, il colore del delta esce al contrario e nessuno se ne accorge
+  pulisci();
+  const id = run(`customAdd("Navetta 5-10-5","pred","s↓")`);
+  const t = run(`TMAP[${JSON.stringify(id)}]`);
+  assert.equal(t.unit, "s", "all'atleta mostri «s», non «s↓»");
+  assert.equal(t.dir, -1, "più basso deve essere meglio");
+  const d = run(`deltaInfo([{d:"2026-01-01",v:5.4},{d:"2026-02-01",v:5.1}], TMAP[${JSON.stringify(id)}].dir)`);
+  assert.equal(d.cls, "up", "da 5,4 a 5,1 secondi è un miglioramento");
+});
+
+prova("solo le colonne in kg entrano nei carichi e nella stima", () => {
+  pulisci();
+  const kg = run(`customAdd("Leg press","pred","kg")`);
+  const rip = run(`customAdd("Trazioni libere","pred","rip")`);
+  assert.ok(run(`rmTestList().some(e=>e.test===${JSON.stringify(kg)})`));
+  assert.ok(!run(`rmTestList().some(e=>e.test===${JSON.stringify(rip)})`));
+  assert.equal(run(`TMAP[${JSON.stringify(kg)}].base`), "pred", "la colonna in kg eredita da xRM→1RM");
+  assert.equal(run(`TMAP[${JSON.stringify(rip)}].base`), undefined, "le altre no");
+});
+
+prova("stesso nome con unità diverse sono due colonne diverse", () => {
+  // «Trazioni» in kg (zavorra) e «Trazioni» in ripetizioni non sono lo stesso test
+  pulisci();
+  const a = run(`customAdd("Trazioni","pred","kg")`);
+  const b = run(`customAdd("Trazioni","pred","rip")`);
+  assert.notEqual(a, b);
+  assert.equal(run(`S.custom.length`), 2);
+});
+
+prova("un ripristino conserva l'unità, e una inventata ricade su kg", () => {
+  const b = JSON.stringify({
+    athletes: [{ id: "p0", name: "A" }], data: {},
+    custom: [{ id: "ua", name: "Plank", unit: "s" },
+             { id: "ub", name: "Strano", unit: "parsec" }],
+  });
+  const o = run(`sanitizeImport(${b})`);
+  assert.equal(o.custom[0].unit, "s");
+  assert.equal(o.custom[1].unit, "kg");
+  assert.equal(o.custom[0].base, null, "un plank non nasce da xRM→1RM");
+});
+
+console.log("\nTroppo o troppo poco: tre riferimenti, e si sa quale");
+
+const squadraCon = (valori, eta) => {
+  const ath = valori.map((v, i) =>
+    `{id:"p${i}",name:"P${i}",team:"t1",sex:"F",profile:{birth:"${eta}"}}`).join(",");
+  const dat = valori.map((v, i) => v == null ? null : `p${i}:{cmj:[{d:"2026-10-01",v:${v}}]}`)
+    .filter(Boolean).join(",");
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; S.sport="pallavolo";
+       S.athletes=[${ath}]; S.data={${dat}}; S.custom=[]; applyCustom();`);
+};
+
+prova("a un'adulta si applica la fascia di letteratura", () => {
+  squadraCon([40], "1995-01-01");
+  const r = run(`valuta(TMAP.cmj, S.athletes[0], series("p0","cmj"))`);
+  assert.ok(r, "nessuna valutazione");
+  assert.equal(r.fonte, "rif");
+  assert.ok(/popolazione adulta/.test(r.nota));
+});
+
+prova("a un'under 18 NON si appiccica la fascia degli adulti", () => {
+  // scriverle «sotto Base» con una tabella di adulti è il modo migliore per
+  // farle credere una cosa falsa su di sé
+  squadraCon([28, 30, 32, 34, 36, 38], "2010-06-01");
+  const r = run(`valuta(TMAP.cmj, S.athletes[0], series("p0","cmj"))`);
+  assert.ok(r, "ma un riferimento ci deve essere lo stesso");
+  assert.notEqual(r.fonte, "rif");
+  assert.equal(r.fonte, "squadra");
+});
+
+prova("con la squadra abbastanza numerosa, dice dove sta fra le compagne", () => {
+  squadraCon([24, 28, 32, 36, 40, 44], "2010-06-01");
+  const peggiore = run(`valuta(TMAP.cmj, S.athletes[0], series("p0","cmj"))`);   // 24
+  const migliore = run(`valuta(TMAP.cmj, S.athletes[5], series("p5","cmj"))`);   // 44
+  assert.equal(peggiore.fonte, "squadra");
+  assert.ok(peggiore.liv < migliore.liv, "24 cm deve stare sotto 44 cm");
+  assert.equal(peggiore.liv, 0);
+  assert.equal(migliore.liv, 4);
+  assert.ok(/non è un giudizio assoluto/.test(peggiore.nota), "va detto cosa NON è");
+});
+
+prova("su un tempo la classifica di squadra si rovescia", () => {
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; S.sport="pallavolo";
+       S.athletes=[0,1,2,3,4,5].map(i=>({id:"q"+i,name:"Q"+i,team:"t1",sex:"F",profile:{birth:"2010-06-01"}}));
+       S.data={}; [2.0,2.1,2.2,2.3,2.4,2.5].forEach((v,i)=>{S.data["q"+i]={spr10:[{d:"2026-10-01",v:v}]};});`);
+  const veloce = run(`valuta(TMAP.spr10, S.athletes[0], series("q0","spr10"))`);
+  const lenta  = run(`valuta(TMAP.spr10, S.athletes[5], series("q5","spr10"))`);
+  assert.ok(veloce.liv > lenta.liv, "2,0 s deve valere più di 2,5 s: " + veloce.liv + " vs " + lenta.liv);
+});
+
+prova("squadra troppo piccola: si ripiega su lei stessa, non si inventa", () => {
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; S.sport="pallavolo";
+       S.athletes=[{id:"p0",name:"A",team:"t1",sex:"F",profile:{birth:"2010-06-01"}}];
+       S.data={p0:{cmj:[{d:"2026-01-01",v:30},{d:"2026-02-01",v:31},{d:"2026-03-01",v:30},{d:"2026-04-01",v:36}]}};`);
+  const r = run(`valuta(TMAP.cmj, S.athletes[0], series("p0","cmj"))`);
+  assert.equal(r.fonte, "lei");
+  assert.ok(/sopra la sua media/.test(r.lab), r.lab);
+  assert.ok(/misure precedenti/.test(r.nota));
+});
+
+prova("con due misure e una compagna sola non si dice niente", () => {
+  // il silenzio è una risposta: un quartile su tre persone è aria fritta
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; S.sport="pallavolo";
+       S.athletes=[{id:"p0",name:"A",team:"t1",sex:"F",profile:{birth:"2010-06-01"}},
+                   {id:"p1",name:"B",team:"t1",sex:"F",profile:{birth:"2010-06-01"}}];
+       S.data={p0:{cmj:[{d:"2026-01-01",v:30},{d:"2026-02-01",v:31}]},p1:{cmj:[{d:"2026-01-01",v:33}]}};`);
+  assert.equal(run(`valuta(TMAP.cmj, S.athletes[0], series("p0","cmj"))`), null);
+});
+
+prova("il segno dice sempre da dove viene il giudizio", () => {
+  squadraCon([24, 28, 32, 36, 40, 44], "2010-06-01");
+  run(`renderMatrix()`);
+  const h = run(`document.getElementById("grid").innerHTML`);
+  assert.ok(/lvdot sq/.test(h), "il riferimento di squadra deve avere la sua forma");
+  assert.ok(!/class="lvdot"[^>]*title="Base"/.test(h), "non deve sembrare una fascia di letteratura");
+  // e la legenda lo spiega
+  run(`S.view="matrix"; renderBar();`);
+  const b = run(`document.getElementById("bar").innerHTML`);
+  assert.ok(/fascia di riferimento/.test(b) && /rispetto alla squadra/.test(b) && /rispetto a lei stessa/.test(b),
+    "senza legenda i tre segni sono tre pallini uguali");
+});
+
 console.log(failed ? "\n" + failed + " PROVE FALLITE\n" : "\ntutto verde\n");
 process.exit(failed ? 1 : 0);

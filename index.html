@@ -359,6 +359,15 @@ input.mono{font-family:var(--mono)}
 .thi{margin-top:5px;font-size:9px;color:var(--muted2);cursor:pointer;font-family:var(--mono)}
 .thi:hover{color:var(--accent)}
 .bt-tot{opacity:.6;font-weight:600}
+/* tre riferimenti, tre forme: pieno = letteratura, anello = squadra,
+   triangolo = lei rispetto a se stessa. Il colore dice quanto, la forma dice
+   DA DOVE — e senza la forma il quartile di squadra verrebbe letto come un
+   giudizio assoluto. */
+.lvdot.sq{background:transparent !important;border:2px solid var(--muted);box-sizing:border-box}
+.lvdot.me{border-radius:1px;transform:rotate(45deg) scale(.82)}
+.vlegend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:10px;color:var(--muted2);margin-top:7px}
+.vlegend .vi{display:flex;align-items:center;gap:5px}
+.vlegend .lvdot{position:static;display:inline-block}
 .cuList{display:flex;flex-direction:column;gap:6px;margin-top:12px}
 .cuRow{display:flex;align-items:center;gap:9px;background:var(--surface2);border:1px solid var(--line);
   border-radius:9px;padding:9px 11px}
@@ -1149,6 +1158,22 @@ const TMAP={}; TESTS.forEach(t=>TMAP[t.id]=t);
    si fossero tenute in un elenco separato, ogni schermata avrebbe dovuto
    ricordarsi di guardare anche li' — e prima o poi una se ne dimentica.    */
 const CUSTOM_MAX=40;
+/* Un esercizio tuo non e' per forza un carico. «Plank» si misura in secondi,
+   «Trazioni» in ripetizioni, «Sit and reach» in centimetri — e sul plank e sul
+   sit and reach piu' alto e' meglio, ma su un tempo sui 10 m e' il contrario.
+   Senza la direzione il colore del delta esce ROVESCIATO: un peggioramento
+   verde, e non te ne accorgi finche' non ci costruisci sopra una decisione. */
+const CUSTOM_UNITA=[
+  {u:"kg",   l:"kg — carico",            dir:1,  cat:"Forza"},
+  {u:"rip",  l:"rip — ripetizioni",      dir:1,  cat:"Forza"},
+  {u:"s",    l:"s — secondi (tenuta)",   dir:1,  cat:"Forza"},
+  {u:"s↓",   l:"s — secondi (tempo da abbassare)", dir:-1, cat:"Velocità", vera:"s"},
+  {u:"cm",   l:"cm — distanza o altezza", dir:1, cat:"Potenza"},
+  {u:"m",    l:"m — metri",              dir:1,  cat:"Aerobico"},
+  {u:"%",    l:"% — percentuale",        dir:1,  cat:"Asimmetria & funzionale"},
+  {u:"AU",   l:"AU — punteggio libero",  dir:1,  cat:"Asimmetria & funzionale"},
+];
+function custUnita(u){ return CUSTOM_UNITA.find(x=>x.u===u)||CUSTOM_UNITA[0]; }
 const CUSTOM_SPORTS=["forza","pallavolo","calcio","basket","atletica","combattimento","generale"];
 
 function customKey(n){
@@ -1165,28 +1190,37 @@ function applyCustom(){
   }
   (S.custom||[]).forEach(c=>{
     if(!c||!c.id||TMAP[c.id]) return;
-    const base=TMAP[c.base]||TMAP.pred;
-    const t={id:c.id, custom:true, base:c.base||"pred",
-      name:String(c.name||"Esercizio").slice(0,28),
-      full:(base?base.full:"1RM stimato")+" — "+String(c.name||"Esercizio").slice(0,40),
-      unit:base?base.unit:"kg", dir:base?base.dir:1, cat:base?base.cat:"Forza",
+    const nome=String(c.name||"Esercizio").slice(0,40);
+    const uu=custUnita(c.unit||"kg");
+    /* Solo le colonne in kg nascono da xRM→1RM: un plank in secondi non ha un
+       massimale da stimare, e farlo ereditare da li' gli darebbe la guida
+       sbagliata e lo metterebbe fra i gruppi di carico. */
+    const comeRM = (uu.u==="kg");
+    const base = comeRM ? (c.base||"pred") : null;
+    const b = base?TMAP[base]:null;
+    const t={id:c.id, custom:true, base:base||undefined,
+      name:nome.slice(0,28),
+      full:(comeRM?"1RM stimato — ":"Esercizio tuo — ")+nome,
+      unit:uu.vera||uu.u, dir:uu.dir, cat:c.cat||uu.cat,
       sports:CUSTOM_SPORTS.slice()};
+    if(b){ t.cat=b.cat; }
     TESTS.push(t); TMAP[t.id]=t;
   });
 }
 /* Crea la colonna se non c'e' gia', e restituisce l'id in ogni caso: due
    esercizi con lo stesso nome sono lo stesso esercizio, anche se li scrivi
    con le maiuscole diverse. */
-function customAdd(nome, base){
+function customAdd(nome, base, unit){
   const n=String(nome||"").trim();
   if(!n) return null;
   if(!S.custom) S.custom=[];
+  const uu=custUnita(unit||"kg");
   const k=customKey(n);
-  const gia=S.custom.find(c=>customKey(c.name)===k && (c.base||"pred")===(base||"pred"));
+  const gia=S.custom.find(c=>customKey(c.name)===k && (c.unit||"kg")===uu.u);
   if(gia) return gia.id;
   if(S.custom.length>=CUSTOM_MAX){ toast("Hai gia' "+CUSTOM_MAX+" esercizi tuoi: cancellane uno"); return null; }
   const id="u"+uid();
-  S.custom.push({id:id, name:n.slice(0,40), base:base||"pred"});
+  S.custom.push({id:id, name:n.slice(0,40), unit:uu.u, base:(uu.u==="kg"?(base||"pred"):null)});
   applyCustom();
   /* Se la squadra ha una batteria personalizzata, un test nuovo del catalogo
      non ci entra da solo — ed e' giusto. Ma questo l'hai creato TU adesso:
@@ -2195,6 +2229,93 @@ function deltaInfo(arr,dir){
   return {raw, cls, arrow, txt:(raw>0?"+":"")+fmtNum(raw)};
 }
 
+/* ═══════════════ TROPPO O TROPPO POCO ═══════════════════════════════════
+   Un numero da solo non dice niente: 38 cm di CMJ sono buoni o scarsi? La
+   risposta dipende da chi e' lei. E qui sta la trappola: le fasce Base→Elite
+   di questo file vengono da popolazioni ADULTE, e applicarle a una ragazza di
+   quindici anni in piena crescita significa scriverle «sotto Base» su una
+   scheda che poi le consegni. Per questo sugli under 18 erano spente — giusto,
+   ma restava un buco: nessun riferimento affatto.
+
+   Adesso ci sono TRE riferimenti, in ordine di forza, e il pallino DICE SEMPRE
+   da quale dei tre viene. E' la parte che conta: un quartile di squadra letto
+   come un giudizio assoluto e' peggio di nessun pallino.
+
+     ● pieno   letteratura — fasce da popolazione, solo dove sono applicabili
+     ◍ anello  la squadra  — dove sta rispetto alle sue compagne, oggi
+     ▲ segno   lei stessa  — rispetto alla sua media, oltre il rumore
+
+   Con sedici atlete la squadra e' un riferimento piu' onesto di una tabella
+   di universitari: imperfetto, ma vero e aggiornato.                       */
+const VAL_COL=["#6C757D","#FF9F0A","#FFD60A","#9BE65A","#34C759"];
+const VAL_LAB=["Base","Discreto","Buono","Ottimo","Elite"];
+const VAL_SQ =["ultimo quinto","sotto la media","in mezzo","sopra la media","primo quinto"];
+const VAL_MIN_SQUADRA=6;   // sotto, un quartile di squadra e' aria fritta
+const VAL_MIN_SUE=3;       // sotto, "la sua media" e' un numero e mezzo
+
+function valSdev(a){
+  if(!a||a.length<2) return null;
+  const m=a.reduce((x,y)=>x+y,0)/a.length;
+  return Math.sqrt(a.reduce((s,x)=>s+(x-m)*(x-m),0)/(a.length-1));
+}
+/* L'ultimo valore di ogni compagna di squadra dello stesso sesso. Stesso
+   sesso perche' confrontare un salto maschile con uno femminile non e' un
+   riferimento, e' rumore con la faccia seria. */
+function valSquadra(tid, sex, escludi){
+  const out=[];
+  (teamAthletes()||[]).forEach(a=>{
+    if(a.id===escludi) return;
+    if((a.sex||"M")!==sex) return;
+    const arr=series(a.id,tid);
+    if(arr.length) out.push(arr[arr.length-1].v);
+  });
+  return out;
+}
+function valuta(t, a, arr){
+  if(!t||!a||!arr||!arr.length) return null;
+  const v=arr[arr.length-1].v;
+  const sex=a.sex||"M";
+
+  // 1 · letteratura, ma solo su chi puo' riceverla
+  if(t.lv && eLevelApplicable(a)){
+    const i=levelIdx(t,sex,v);
+    if(i>=0) return {liv:i, col:VAL_COL[i], lab:VAL_LAB[i], fonte:"rif",
+      nota:"Fascia da riferimenti di popolazione adulta ("+(sex==="F"?"femminile":"maschile")+")"};
+  }
+
+  // 2 · la squadra, oggi
+  const altri=valSquadra(t.id, sex, a.id);
+  if(altri.length>=VAL_MIN_SQUADRA-1){
+    const tutti=altri.concat([v]);
+    const peggiori=tutti.filter(x=> t.dir<0 ? x>v : x<v).length;
+    const pc=peggiori/(tutti.length-1);                 // 0 = ultima, 1 = prima
+    const i=pc<0.2?0:pc<0.4?1:pc<0.6?2:pc<0.8?3:4;
+    return {liv:i, col:VAL_COL[i], lab:VAL_SQ[i], fonte:"squadra",
+      nota:"Posizione fra le "+tutti.length+" della squadra con questo test — non è un giudizio assoluto"};
+  }
+
+  // 3 · lei rispetto a sé stessa
+  const prec=arr.slice(0,-1).map(x=>x.v);
+  if(prec.length>=VAL_MIN_SUE){
+    const m=prec.reduce((x,y)=>x+y,0)/prec.length;
+    const sd=valSdev(prec);
+    if(sd!=null && sd>0){
+      const z=((v-m)/sd)*(t.dir<0?-1:1);
+      const i = z<=-1 ? 1 : z<1 ? 2 : 4;
+      return {liv:i, col:VAL_COL[i], fonte:"lei",
+        lab: z<=-1 ? "sotto la sua media" : z<1 ? "nella sua norma" : "sopra la sua media",
+        nota:"Rispetto alle sue "+prec.length+" misure precedenti (media "+fmtNum(Math.round(m*10)/10)+")"};
+    }
+  }
+  return null;
+}
+function valDot(r){
+  if(!r) return "";
+  const cl = r.fonte==="rif" ? "lvdot" : r.fonte==="squadra" ? "lvdot sq" : "lvdot me";
+  const st = r.fonte==="squadra" ? 'border-color:'+r.col : 'background:'+r.col;
+  return '<span class="'+cl+'" style="'+st+'" title="'+escAttr(r.lab+" — "+r.nota)+'"></span>';
+}
+
 /* livello rispetto ai riferimenti (m/f): 0..4 */
 /* Le soglie Base→Elite di questo file sono riferimenti da popolazione ADULTA:
    `lv:{m:[25,35,45,55]}` sul CMJ vale per un uomo adulto, non per una ragazza
@@ -2350,8 +2471,7 @@ function renderMatrix(){
         const last=arr[arr.length-1], di=deltaInfo(arr,t.dir);
         const stim=(last.fonte==="lv"||last.fonte==="reps")
           ? '<span class="cstim" title="'+(last.fonte==="reps"?"Stimato da una serie a ripetizioni":"Stimato dalla curva carico-velocità")+'">≈</span>' : '';
-        const li=eLevelApplicable(a)?levelIdx(t,a.sex,last.v):-1;
-        if(li>=0) h+='<span class="lvdot" title="'+["Base","Discreto","Buono","Ottimo","Elite"][li]+'" style="background:'+LVCOL[li]+'"></span>';
+        h+=valDot(valuta(t,a,arr));
         h+='<div class="val">'+stim+fmtNum(last.v)+'</div>';
         if(di) h+='<div class="delta '+di.cls+'">'+di.arrow+' '+di.txt+'</div>';
         else   h+='<div class="delta flat" style="opacity:.5">— prima</div>';
@@ -2444,6 +2564,14 @@ function renderBar(){
     h+='<div class="leg"><span class="it"><span class="dot" style="background:var(--up)"></span>Migliora</span>'+
        '<span class="it"><span class="dot" style="background:var(--down)"></span>Peggiora</span>'+
        '<span class="it"><span class="dot" style="background:var(--flat)"></span>Uguale</span></div>'+
+       /* Il pallino in alto a destra di ogni cella dice «troppo o troppo poco»,
+          ma soprattutto dice DA DOVE arriva quel giudizio. Senza questa riga
+          un quartile di squadra si legge come una fascia di letteratura. */
+       '<div class="vlegend">'+
+         '<span class="vi"><span class="lvdot" style="background:#34C759"></span>fascia di riferimento</span>'+
+         '<span class="vi"><span class="lvdot sq" style="border-color:#34C759"></span>rispetto alla squadra</span>'+
+         '<span class="vi"><span class="lvdot me" style="background:#34C759"></span>rispetto a lei stessa</span>'+
+       '</div>'+
        '<div class="mnav" id="mnav" style="display:none">'+
        '<button onclick="matrixScroll(-1)" aria-label="Test precedenti">‹</button>'+
        '<span>scorri i test</span>'+
@@ -4465,7 +4593,9 @@ function rmTestList(){
   if(TMAP[RM_GENERICO.test]) out.push({test:RM_GENERICO.test, n:RM_GENERICO.n, ex:RM_GENERICO.ex});
   if(TMAP[RM_STIMA.test]) out.push({test:RM_STIMA.test, n:RM_STIMA.n, ex:RM_STIMA.ex});
   // gli esercizi tuoi sono colonne di massimale a tutti gli effetti
-  (S.custom||[]).forEach(c=>{ if(TMAP[c.id]) out.push({test:c.id, n:c.name, ex:c.name}); });
+  (S.custom||[]).forEach(c=>{
+    if(TMAP[c.id] && (c.unit||"kg")==="kg") out.push({test:c.id, n:c.name, ex:c.name});
+  });
   const visti={};
   rmExList().forEach(e=>{
     if(visti[e.test]) return; visti[e.test]=1;
@@ -5981,6 +6111,17 @@ function drawCell(){
   h+='<button class="gbtn" onclick="openGuide(\''+CUR.t+'\')">📖 Come si esegue questo test</button>';
 
   // riferimenti
+  /* Prima qui c'era solo la barra Base→Elite, spenta sugli under 18: aprivi
+     la cella di una quindicenne e non c'era nessun riferimento. */
+  const vr=valuta(t,a,arr);
+  if(vr){
+    h+='<div class="alert '+(vr.liv<=1?"warn":"info")+'"><span class="ai">'+
+       (vr.fonte==="rif"?"📊":vr.fonte==="squadra"?"👥":"📈")+'</span><span>'+
+       '<b>'+esc(vr.lab)+'</b> — '+esc(vr.nota)+'.'+
+       (vr.fonte==="squadra"?' Con una squadra sola è un riferimento relativo: dice chi è avanti e chi è indietro <b>fra loro</b>, non quanto vale in assoluto.':'')+
+       (vr.fonte==="lei"?' È il riferimento più onesto che esista su un\'atleta in crescita: confronta lei con lei.':'')+
+       '</span></div>';
+  }
   if(t.lv){
     const th=t.lv[a.sex==="F"?"f":"m"], last=arr.length?arr[arr.length-1].v:null;
     const hit=(last!=null&&eLevelApplicable(a))?levelIdx(t,a.sex,last):-1;
@@ -6094,12 +6235,51 @@ function cellMode(m){ CUR.mode=m; drawCell(); }
    cella giusta per la stessa atleta. */
 function cellEx(v){
   if(v!=="__new"){ openCell(CUR.a, v); return; }
-  const n=prompt("Nome dell'esercizio (diventa una colonna sua)\n\nEsempi: Leg press, Affondi bulgari, Pulley");
-  if(n==null){ drawCell(); return; }
-  const id=customAdd(n, "pred");
-  if(!id){ drawCell(); return; }
-  save(); render(); openCell(CUR.a, id);
-  toast("«"+TMAP[id].name+"» aggiunto: ora è una colonna");
+  openCustomNew(function(id){ openCell(CUR.a, id); }, function(){ drawCell(); });
+}
+/* La schermata per creare una colonna tua. Un prompt() non bastava piu':
+   l'unita' di misura va CHIESTA, non indovinata — e con lei la direzione,
+   perche' su un tempo «piu' basso e' meglio» e il colore del delta altrimenti
+   esce rovesciato senza che nessuno se ne accorga. */
+let CUNEW=null;
+function openCustomNew(ok, annulla){
+  CUNEW={ok:ok, annulla:annulla};
+  let h='<div class="mh"><div><div class="eyebrow">Esercizi tuoi</div>'+
+    '<div class="mt">➕ Nuova colonna</div>'+
+    '<div class="ms">Diventa un test come gli altri: andamento, confronti, batteria</div></div>'+
+    '<button class="mcl" onclick="closeCustomNew()">✕</button></div>';
+  h+='<label class="fl">Nome</label>'+
+     '<input id="cnN" type="text" maxlength="40" placeholder="es. Leg press, Plank, Affondi bulgari">'+
+     '<label class="fl" style="margin-top:12px">Unità di misura</label>'+
+     '<select id="cnU" onchange="cnPrev()">'+
+     CUSTOM_UNITA.map(x=>'<option value="'+escAttr(x.u)+'">'+esc(x.l)+'</option>').join("")+
+     '</select>'+
+     '<div class="fhint" id="cnHint"></div>'+
+     '<div class="alert info"><span class="ai">💡</span><span>Scegli <b>kg</b> solo se è un carico: quelle colonne ricevono anche '+
+     'la <b>stima da ripetizioni</b> e entrano nei <b>gruppi di carico</b>. Un plank in secondi o delle trazioni a corpo libero no, '+
+     'e sarebbe sbagliato il contrario.</span></div>'+
+     '<button class="btn primary" style="width:100%;margin-top:16px" onclick="saveCustomNew()">Crea la colonna</button>';
+  modal(h); cnPrev();
+  setTimeout(()=>{ const e=document.getElementById("cnN"); if(e) e.focus(); },60);
+}
+function cnPrev(){
+  const el=document.getElementById("cnHint"); if(!el) return;
+  const uu=custUnita(document.getElementById("cnU").value);
+  el.innerHTML = uu.dir<0
+    ? 'Con questa unità <b>più basso è meglio</b>: il verde sarà sui numeri che scendono.'
+    : 'Con questa unità <b>più alto è meglio</b>: il verde sarà sui numeri che salgono.';
+}
+function closeCustomNew(){ const f=CUNEW&&CUNEW.annulla; CUNEW=null; closeM(); if(f) f(); }
+function saveCustomNew(){
+  const n=(document.getElementById("cnN").value||"").trim();
+  if(!n){ toast("Serve un nome"); return; }
+  const u=document.getElementById("cnU").value;
+  const id=customAdd(n, "pred", u);
+  if(!id){ return; }
+  const f=CUNEW&&CUNEW.ok; CUNEW=null;
+  save(); render();
+  toast("«"+TMAP[id].name+"» aggiunto: ora è una colonna in "+TMAP[id].unit);
+  if(f) f(id); else closeM();
 }
 function addMeasure(){
   const t=TMAP[CUR.t];
@@ -6227,13 +6407,10 @@ function sessEx(v){
     const sel=document.getElementById("sT"); if(sel) sel.value=v;
     SESS.t=v; sessRows(); return;
   }
-  const n=prompt("Nome dell'esercizio (diventa una colonna sua)\n\nEsempi: Leg press, Affondi bulgari, Pulley");
-  if(n==null){ sessRows(); return; }
-  const id=customAdd(n, "pred");
-  if(!id){ sessRows(); return; }
-  save(); render(); closeM(); openSession();
-  setTimeout(()=>{ const sel=document.getElementById("sT"); if(sel){ sel.value=id; SESS.t=id; sessRows(); } },60);
-  toast("«"+TMAP[id].name+"» aggiunto: ora è una colonna");
+  openCustomNew(function(id){
+    closeM(); openSession();
+    setTimeout(()=>{ const sel=document.getElementById("sT"); if(sel){ sel.value=id; SESS.t=id; sessRows(); } },60);
+  }, function(){ closeM(); openSession(); });
 }
 function sessRirAll(n){
   document.querySelectorAll("#sList .srQ").forEach(sel=>{ sel.value=String(n); });
@@ -6564,7 +6741,9 @@ function sanitizeImport(o){
     o.custom.slice(0,CUSTOM_MAX).forEach(c=>{
       if(!c||!idOk(c.id)||visti[c.id]) return; visti[c.id]=1;
       const nome=str(c.name,40); if(!nome) return;
-      out.custom.push({id:c.id, name:nome, base:(TMAP[c.base]?c.base:"pred")});
+      const u=CUSTOM_UNITA.some(x=>x.u===c.unit)?c.unit:"kg";
+      out.custom.push({id:c.id, name:nome, unit:u,
+        base:(u==="kg" ? (TMAP[c.base]?c.base:"pred") : null)});
     });
   }
   if(o.tomb&&typeof o.tomb==="object") Object.keys(o.tomb).slice(0,2000).forEach(k=>{ out.tomb[k]=str(o.tomb[k],40); });
@@ -8645,7 +8824,7 @@ function openCustom(){
      '«Nuovo esercizio». Si comportano come i test del catalogo — andamento, gruppi di carico, stima da ripetizioni.</div>';
   if(!lista.length){
     h+='<div class="alert info" style="margin-top:14px"><span class="ai">🧰</span><span>'+
-       'Nessuno per ora. Apri la cella <b>xRM→1RM</b> di un\'atleta e scegli <b>➕ Nuovo esercizio</b>.</span></div>';
+       'Nessuno per ora.</span></div>';
   }else{
     h+='<div class="cuList">'+lista.map(c=>{
       const n=customConDati(c.id);
@@ -8655,6 +8834,8 @@ function openCustom(){
         '<button class="cuX danger" title="Elimina" onclick="customDel(\''+c.id+'\')">🗑</button></div>';
     }).join("")+'</div>';
   }
+  h+='<button class="btn primary" style="width:100%;margin-top:16px" '+
+     'onclick="openCustomNew(function(){openCustom();}, function(){openCustom();})">➕ Nuova colonna</button>';
   modal(h);
 }
 function customRename(id){

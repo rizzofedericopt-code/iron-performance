@@ -35,6 +35,22 @@ esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla ce
 della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
 ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
+**Troppo o troppo poco: tre riferimenti, e si sa sempre quale** — ogni cella ha un
+segno colorato che dice come sta andando quel valore. La parte che conta non è il
+colore, è la **forma**: ● pieno = fascia di riferimento da popolazione, ◍ anello =
+posizione nella squadra, ◆ rombo = rispetto alla sua media. Le fasce adulte restano
+spente sugli under 18 — scrivere «sotto Base» a una quindicenne con una tabella di
+universitari è il modo migliore per farle credere una cosa falsa — ma ora al loro
+posto c'è un riferimento onesto invece del vuoto: con sei o più compagne misurate, la
+posizione nel gruppo; altrimenti il confronto con le sue misure precedenti. Sotto
+quelle soglie non si dice niente, perché un quartile su tre persone è aria fritta.
+
+**Unità di misura sugli esercizi tuoi** — erano bloccati sui kg. Ora scegli
+kg / rip / s / cm / m / % / AU, e con l'unità arriva la **direzione**: su un tempo da
+abbassare «più basso è meglio», altrimenti il colore del delta esce rovesciato e un
+peggioramento si colora di verde. Solo le colonne in kg entrano nella stima da
+ripetizioni e nei gruppi di carico: un plank non ha un massimale.
+
 **Esercizi tuoi: una colonna ciascuno** — «xRM→1RM» era una colonna sola per tutti
 gli esercizi: leg press, affondi e pulley finivano insieme, e l'andamento nel tempo
 diventava una linea che saliva e scendeva a seconda di cosa avevi fatto quel giorno.

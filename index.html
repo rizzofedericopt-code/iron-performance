@@ -503,6 +503,36 @@ ul.kb li b{color:#fff;font-weight:600}
 .treadywrap{display:flex;flex-wrap:wrap;gap:7px}
 .tready{font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:6px 11px;cursor:pointer}
 .tready b{color:var(--up)}
+/* cosa è cambiato */
+.cblist{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.cbrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--sans);cursor:pointer}
+.cbn{flex:1;min-width:0;font-weight:600;font-size:14px}
+.cbn small{display:block;font-weight:400;font-size:11px;color:var(--muted2);margin-top:2px}
+.cbcs{display:flex;gap:4px;flex:0 0 auto}
+.cbc{font-size:11px;font-weight:700;border-radius:6px;padding:3px 6px;font-family:var(--mono,monospace)}
+.cbc.su{color:var(--up);background:var(--upbg)}
+.cbc.giu{color:var(--accent);background:rgba(230,57,70,.12)}
+.cbc.rum{color:var(--muted);background:var(--surface)}
+.cbback{background:none;border:none;color:var(--muted);font-size:13px;padding:12px 0 4px;cursor:pointer;font-family:var(--sans)}
+.cbtitle{font-size:17px;font-weight:700;margin:2px 0 8px}
+.cbtitle small{font-size:11px;font-weight:400;color:var(--muted2)}
+.cbsum{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cbmed{font-size:12px;color:var(--muted);margin-left:auto}
+.cbat{background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:10px;padding:9px 12px;cursor:pointer}
+.cbat.su{border-left-color:var(--up)} .cbat.giu{border-left-color:var(--accent)}
+.cbh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.cbnm{font-weight:600;font-size:14px}
+.cbv{font-weight:700;font-size:15px;white-space:nowrap}
+.cbv small{font-size:11px;font-weight:600}
+.cbv.su{color:var(--up)} .cbv.giu{color:var(--accent)} .cbv.rum{color:var(--muted)}
+.cbd{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted);margin-top:3px}
+.cbd small{color:var(--muted2)}
+.cbe{font-size:11px;font-weight:600;white-space:nowrap}
+.cbe.su{color:var(--up)} .cbe.giu{color:var(--accent)}
+.cbnote{font-size:11px;color:var(--muted2);margin-top:4px}
+.cbnote .w{color:#FFB340}
+.cbsoglia{font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.5}
+.cbsoglia span{color:var(--text);text-decoration:underline;cursor:pointer}
 .tready.tass{opacity:.45;text-decoration:line-through}
 .tsv.amber{color:#FFB340;background:none}
 /* presenze */
@@ -2305,24 +2335,33 @@ function fmtNum(v){ return Number.isInteger(v)? String(v) : (Math.round(v*100)/1
 
    Da dove viene la banda, in ordine:
      1. l'errore che hai MISURATO tu su quel test (S.te) — l'unico vero
-     2. per il CMJ, la soglia che hai gia' impostato in cfg.cmjNoise
-     3. altrimenti una percentuale dichiarata (cfg.deltaNoise, default 5%)
-   Il terzo caso e' un segnaposto onesto, non una misura: serve a non lasciare
-   tutto verde, e va sostituito col primo appena hai mezz'ora di palestra.   */
+     2. altrimenti una percentuale dichiarata (cfg.deltaNoise, default 5%)
+   Il secondo caso e' un segnaposto onesto, non una misura: serve a non
+   lasciare tutto verde, e va sostituito col primo appena hai mezz'ora.
+
+   CORREZIONE (ottobre 2026). Qui la soglia era l'errore tipico stesso. E'
+   sbagliato: una variazione e' la differenza fra DUE misure, ciascuna con il
+   suo errore, quindi balla di TE·√2. Con soglia = TE, quasi una variazione
+   inesistente su due (48%) usciva colorata. La differenza minima per dire
+   che un cambiamento individuale c'e', al 95%, e' 1,96·√2·TE ≈ 2,77·TE
+   (Weir 2005, J Strength Cond Res 19:231, doi 10.1519/15184.1).
+
+   Tolto anche un ramo per il CMJ che usava cfg.cmjNoise come centimetri:
+   cmjNoise e' un MOLTIPLICATORE del CV (1,5), usato dall'allarme fatica. Il
+   numero sembrava plausibile proprio perche' era sbagliato in modo piccolo. */
+const MDC_Z=1.96;
+const MDC_K=MDC_Z*Math.SQRT2;          // ≈ 2,77
 function bandaRumore(t, rif){
   if(!t) return null;
   const base=Math.abs(parseFloat(rif));
   if(!isFinite(base)||base<=0) return null;
   const te=(S.te||{})[t.id];
-  if(isFinite(te)&&te>0) return {b:base*te/100, pc:te, fonte:"misurata"};
-  if(t.id==="cmj" && isFinite(S.cfg.cmjNoise) && S.cfg.cmjNoise>0)
-    return {b:S.cfg.cmjNoise, pc:S.cfg.cmjNoise/base*100, fonte:"cmj"};
+  if(isFinite(te)&&te>0) return {b:base*te*MDC_K/100, pc:te*MDC_K, te:te, fonte:"misurata"};
   const pc=isFinite(S.cfg.deltaNoise)?S.cfg.deltaNoise:5;
   if(pc<=0) return null;
   return {b:base*pc/100, pc:pc, fonte:"default"};
 }
-const RUMORE_FONTE={misurata:"errore misurato da te su questo test",
-  cmj:"soglia CMJ impostata nelle soglie di monitoraggio",
+const RUMORE_FONTE={misurata:"differenza minima rilevabile dal tuo errore misurato (2,77 × errore tipico)",
   default:"percentuale di riserva, non misurata su questo test"};
 function deltaInfo(arr,dir,t){
   if(arr.length<2) return null;
@@ -2332,6 +2371,16 @@ function deltaInfo(arr,dir,t){
   let cls = improve>0?"up":improve<0?"down":"flat";
   const arrow = raw>0?"▲":raw<0?"▼":"=";
   const out={raw, cls, arrow, txt:(raw>0?"+":"")+fmtNum(raw)};
+  /* Un indice (asimmetria, decremento) che passa da 4 a 6 non e' «peggiorato»
+     finche' non sai quanto balla in punti: entita' e perfino lato delle
+     asimmetrie cambiano molto da test a test (Bishop et al. 2021, J Strength
+     Cond Res 35:695, doi 10.1519/JSC.0000000000002729). Il numero resta, il
+     colore no. */
+  if(t && INDICI[t.id] && raw!==0){
+    out.cls="flat"; out.indice=true;
+    out.titolo="Indice: variazione in punti, senza giudizio — serve l'errore della misura in punti per dire se è cambiato";
+    return out;
+  }
   const nb=t?bandaRumore(t,prev):null;
   if(nb && Math.abs(raw)<=nb.b && raw!==0){
     out.cls="flat"; out.rumore=true; out.banda=nb;
@@ -2655,6 +2704,7 @@ function openColMenu(tid){
           inEv?"Torna in ordine di catalogo":"Resta fra le prime colonne della tabella",
           'pinToggle(\''+tid+'\')')+
      (rmTestEx(tid)?riga("🏋️","Percentuali e gruppi di carico","Chi va con chi, e con quanti chili",'closeM();openLoadGroups(\''+tid+'\')'):"")+
+     riga("📊","Cosa è cambiato","Chi è migliorata davvero, oltre l'errore della misura",'openCambio(\''+tid+'\')')+
      riga("✏️","Registra per tutta la squadra","Una colonna, un numero per atleta",'closeM();openSessionOn(\''+tid+'\')')+
      riga("ⓘ","Come si esegue","Protocollo, interpretazione, consigli",'openGuide(\''+tid+'\')')+
      '</div>';
@@ -2853,7 +2903,9 @@ function renderTrend(){
 
   h+='<div class="trendhead"><div><span class="thn">'+(ICON[t.id]||"")+' '+t.full+'</span>'+
      '<span class="thu">'+t.unit+' · '+(t.dir<0?"↓ più basso = meglio":"↑ più alto = meglio")+'</span></div>'+
-     '<button class="gbtn" style="width:auto;margin:0;flex:0 0 auto" onclick="openGuide(\''+t.id+'\')">📖 Guida</button></div>';
+     '<div style="display:flex;gap:6px;flex:0 0 auto">'+
+     '<button class="gbtn" style="width:auto;margin:0" onclick="openCambio(\''+t.id+'\')">📊 Cosa è cambiato</button>'+
+     '<button class="gbtn" style="width:auto;margin:0" onclick="openGuide(\''+t.id+'\')">📖 Guida</button></div></div>';
 
   const ath=teamAthletes();
   const lines=[];
@@ -6084,8 +6136,8 @@ function presSalva(d, scelte){
     presSet(a.id, d, PRES_ST[s] ? s : "p");
   });
 }
-function presStats(aid, da){
-  const arr=presArr(aid).filter(e=>!da||e.d>=da);
+function presStats(aid, da, a_){
+  const arr=presArr(aid).filter(e=>(!da||e.d>=da) && (!a_||e.d<=a_));
   let p=0,r=0,a=0;
   arr.forEach(e=>{ if(e.s==="p")p++; else if(e.s==="r")r++; else if(e.s==="a")a++; });
   const tot=p+r+a;
@@ -6234,6 +6286,233 @@ function presCommit(){
   const c=presConta(PRES_DATA);
   save(); closeM(); render();
   toast("Appello del "+fmtDate(PRES_DATA)+": "+c.in+" su "+c.tot);
+}
+
+/* ═══════════════ COSA È CAMBIATO ═══════════════════════════════════════════
+   Il confronto fra due test, atleta per atleta, che dice la verita':
+
+   1. il verdetto viene dalla banda di rumore (bandaRumore): sotto la
+      differenza minima rilevabile non e' «+0,6 cm», e' «non e' successo
+      niente». Il numero resta scritto; il colore no.
+   2. il verso del meglio viene da t.dir: lo sprint migliora scendendo.
+   3. una stima (da ripetizioni o da curva carico-velocita') confrontata con
+      un massimale sollevato e' un confronto zoppo, e lo si dice.
+   4. le sedute fatte in mezzo, se c'e' l'appello. E' il primo numero da
+      guardare quando una non migliora: prima di cambiare il programma,
+      verifica che il programma l'abbia fatto.
+   5. in una minorenne, mesi fra un test e l'altro sono anche mesi di
+      crescita: parte del cambiamento non e' allenamento. Lo si nomina, non
+      lo si quantifica — non abbiamo la statura per farlo.
+
+   Indici (asimmetrie, decrementi, contributo braccia): una variazione
+   «relativa» di un indice che sta vicino a zero non vuol dire niente — da 4%
+   a 6% e' +50%. Il verdetto li' non si da'.                                 */
+const INDICI={armCon:1, cmj1lAsym:1, dj1lAsym:1, cmjAsym:1, sdec:1, fvdef:1, shuttleFat:1};
+const STIMA_FONTI={reps:1, lv:1};
+function cambioPunti(arr, modo, rif){
+  if(!arr||arr.length<2) return null;
+  const dopo=arr[arr.length-1];
+  let prima=null;
+  if(modo==="data"){
+    for(let i=arr.length-1;i>=0;i--){ if(arr[i].d<=rif){ prima=arr[i]; break; } }
+  } else prima=arr[arr.length-2];
+  if(!prima||!(prima.d<dopo.d)) return null;
+  return {prima:prima, dopo:dopo};
+}
+function _mediana(a){
+  const s=a.slice().sort((x,y)=>x-y), n=s.length;
+  if(!n) return null;
+  return n%2 ? s[(n-1)/2] : (s[n/2-1]+s[n/2])/2;
+}
+function cambioCalc(tid, modo, rif){
+  const t=TMAP[tid]; if(!t) return null;
+  const righe=[], senza=[];
+  (teamAthletes()||[]).forEach(a=>{
+    const pp=cambioPunti(series(a.id,tid), modo, rif);
+    if(!pp){ senza.push({id:a.id, nome:a.name}); return; }
+    const pv=pp.prima.v, dv=pp.dopo.v, raw=dv-pv;
+    const migl=raw*(t.dir<0?-1:1);
+    const pc = pv ? migl/Math.abs(pv)*100 : null;
+    let verdetto, nb=null;
+    if(INDICI[tid]) verdetto="indice";
+    else if(raw===0) verdetto="uguale";
+    else {
+      nb=bandaRumore(t, pv);
+      verdetto = (nb && Math.abs(raw)<=nb.b) ? "rumore" : (migl>0 ? "su" : "giu");
+    }
+    const fp=STIMA_FONTI[pp.prima.fonte]?1:0, fd=STIMA_FONTI[pp.dopo.fonte]?1:0;
+    const gg=Math.round((Date.parse(pp.dopo.d)-Date.parse(pp.prima.d))/864e5);
+    const eta=ageFrom((a.profile||{}).birth);
+    const fr=presStats(a.id, pp.prima.d, pp.dopo.d);
+    righe.push({id:a.id, nome:a.name, prima:pp.prima, dopo:pp.dopo, raw:raw, pc:pc,
+      verdetto:verdetto, banda:nb, gg:gg,
+      stima: fp&&fd ? "entrambe" : (fp||fd) ? "misto" : null,
+      crescita: eta!=null && eta<18 && gg>120,
+      freq: fr.tot ? fr : null});
+  });
+  const peso={giu:0, su:1, rumore:2, uguale:3, indice:4};
+  righe.sort((x,y)=>{
+    if(peso[x.verdetto]!==peso[y.verdetto]) return peso[x.verdetto]-peso[y.verdetto];
+    if(x.verdetto==="giu") return (x.pc||0)-(y.pc||0);        // il calo piu' grosso in cima
+    return (y.pc||0)-(x.pc||0);
+  });
+  const conta=k=>righe.filter(x=>x.verdetto===k).length;
+  const pcs=righe.filter(x=>x.verdetto!=="indice"&&x.pc!=null).map(x=>x.pc);
+  const fq=righe.filter(x=>x.freq).map(x=>x.freq.pc);
+  return {t:tid, righe:righe, senza:senza,
+    riepilogo:{n:righe.length, su:conta("su"), giu:conta("giu"), rumore:conta("rumore")+conta("uguale"),
+      indice:conta("indice"), mediana:_mediana(pcs)},
+    freqSquadra: fq.length>=3 ? Math.round(_mediana(fq)) : null,
+    fonte: INDICI[tid] ? null : (isFinite((S.te||{})[tid]) ? "misurata" : "default")};
+}
+function cambioPanoramica(modo, rif){
+  const out=[];
+  visibleTests().forEach(t=>{
+    const r=cambioCalc(t.id, modo, rif);
+    if(r && r.righe.length) out.push({t:t.id, nome:t.name, unit:t.unit, r:r.riepilogo, fonte:r.fonte});
+  });
+  return out;
+}
+
+/* ─── La schermata ──────────────────────────────────────────────────────── */
+let CB={modo:"prec", rif:"", t:null};
+function cbRifDefault(){ const d=new Date(); d.setDate(d.getDate()-90); return d.toISOString().slice(0,10); }
+function openCambio(tid){
+  if(!(teamAthletes()||[]).length){ toast("Nessun atleta in questa squadra"); return; }
+  CB.t = tid===undefined ? CB.t : tid;
+  if(!CB.rif) CB.rif=cbRifDefault();
+  modal('<div class="mh"><div><div class="eyebrow">Report</div><div class="mt">📊 Cosa è cambiato</div>'+
+    '<div class="ms">Solo quello che supera l\'errore della misura</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div><div id="cbBody">'+cbBody()+'</div>');
+}
+function cbSet(k,v){ CB[k]=v; const b=document.getElementById("cbBody"); if(b) b.innerHTML=cbBody(); }
+function cbFmt(v,u){ return fmtNum(Math.round(v*100)/100)+(u?' '+u:''); }
+function cbBody(){
+  let h='<div class="seg" style="display:flex;width:100%">'+
+    '<button style="flex:1" class="'+(CB.modo==="prec"?"on":"")+'" onclick="cbSet(\'modo\',\'prec\')">dal test precedente</button>'+
+    '<button style="flex:1" class="'+(CB.modo==="data"?"on":"")+'" onclick="cbSet(\'modo\',\'data\')">da una data</button></div>';
+  if(CB.modo==="data")
+    h+='<div style="margin-top:10px"><label class="fl">Riferimento: l\'ultimo test fatto entro il</label>'+
+       '<input type="date" value="'+CB.rif+'" onchange="cbSet(\'rif\',this.value)"></div>';
+  if(!CB.t || !TMAP[CB.t]) return h+cbPanoramica();
+  return h+cbDettaglio(CB.t);
+}
+function cbChips(r){
+  return '<span class="cbc su">▲ '+r.su+'</span><span class="cbc rum">= '+r.rumore+'</span><span class="cbc giu">▼ '+r.giu+'</span>';
+}
+function cbPanoramica(){
+  const p=cambioPanoramica(CB.modo, CB.rif);
+  if(!p.length) return '<div class="alert info" style="margin-top:14px"><span class="ai">📊</span><span>'+
+    'Nessun test ha ancora due misure per la stessa atleta'+(CB.modo==="data"?' prima e dopo questa data':'')+
+    '. Il confronto compare dal secondo test in poi.</span></div>';
+  let h='<div class="psec">'+p.length+' test con un confronto</div><div class="cblist">';
+  p.forEach(x=>{
+    const indice=!!INDICI[x.t];
+    h+='<button class="cbrow" onclick="cbSet(\'t\',\''+x.t+'\')">'+
+       '<span class="cbn">'+esc(x.nome)+'<small>'+x.r.n+(x.r.n===1?' atleta':' atlete')+
+         (indice?' · indice, senza verdetto':x.fonte==="misurata"?' · soglia misurata':' · soglia di riserva')+'</small></span>'+
+       (indice?'':'<span class="cbcs">'+cbChips(x.r)+'</span>')+
+       '<span class="sc">›</span></button>';
+  });
+  return h+'</div><div class="gnote">▲ migliorate oltre la soglia · = dentro l\'errore della misura · ▼ calate oltre la soglia</div>';
+}
+function cbDettaglio(tid){
+  const t=TMAP[tid], r=cambioCalc(tid, CB.modo, CB.rif);
+  let h='<button class="cbback" onclick="cbSet(\'t\',null)">‹ tutti i test</button>'+
+    '<div class="cbtitle">'+(ICON[tid]||"")+' '+esc(t.name)+' <small>'+esc(t.unit)+' · '+(t.dir<0?"più basso = meglio":"più alto = meglio")+'</small></div>';
+  if(!r.righe.length){
+    return h+'<div class="alert info"><span class="ai">📊</span><span>Nessuna atleta ha due misure da confrontare'+
+      (CB.modo==="data"?' rispetto a questa data':'')+'.</span></div>';
+  }
+  const s=r.riepilogo;
+  if(INDICI[tid]){
+    h+='<div class="alert info"><span class="ai">ⓘ</span><span>Questo è un <b>indice</b>: da 4% a 6% sarebbe «+50%», '+
+       'un numero che non dice niente. Qui leggi le variazioni in punti, senza verdetto — '+
+       'per dare un verdetto servirebbe l\'errore della misura in punti, che va misurato.</span></div>';
+  } else {
+    h+='<div class="cbsum">'+cbChips(s)+
+       (s.mediana!=null?'<span class="cbmed">mediana '+(s.mediana>0?"+":"")+fmtNum(Math.round(s.mediana*10)/10)+'%</span>':'')+'</div>';
+  }
+  const rif=r.freqSquadra;
+  h+='<div class="cblist">';
+  r.righe.forEach(x=>{
+    const cls={su:"su",giu:"giu",rumore:"rum",uguale:"rum",indice:"rum"}[x.verdetto];
+    const etich={su:"migliorata",giu:"calata",rumore:"nel rumore",uguale:"uguale",indice:"in punti"}[x.verdetto];
+    // giallo solo cio' che cambia la lettura del verdetto; il resto e' contesto
+    const note=[];
+    if(x.stima) note.push({w:1, t:x.stima==="misto" ? "una delle due è una stima" : "entrambe stime"});
+    if(x.freq){ const basso=rif!=null&&x.freq.pc<rif;
+      note.push({w:basso, t:"sedute in mezzo: "+(x.freq.p+x.freq.r)+" su "+x.freq.tot+(basso?" (squadra "+rif+"%)":"")}); }
+    if(x.crescita) note.push({w:0, t:"minorenne, "+Math.round(x.gg/30)+" mesi: conta anche la crescita"});
+    h+='<div class="cbat '+cls+'" onclick="openAthlete(\''+x.id+'\')">'+
+       '<div class="cbh"><span class="cbnm">'+esc(x.nome)+'</span>'+
+         '<span class="cbv '+cls+'">'+(x.raw>0?"+":"")+cbFmt(x.raw,"")+
+         (x.pc!=null&&x.verdetto!=="indice"?' <small>'+(x.pc>0?"+":"")+fmtNum(Math.round(x.pc*10)/10)+'%</small>':'')+'</span></div>'+
+       '<div class="cbd"><span>'+cbFmt(x.prima.v,t.unit)+' <small>'+fmtDate(x.prima.d)+'</small> → '+
+         cbFmt(x.dopo.v,t.unit)+' <small>'+fmtDate(x.dopo.d)+'</small></span>'+
+         '<span class="cbe '+cls+'">'+etich+'</span></div>'+
+       (note.length?'<div class="cbnote">'+note.map(n=>'<span'+(n.w?' class="w"':'')+'>'+esc(n.t)+'</span>').join(" · ")+'</div>':'')+
+       '</div>';
+  });
+  h+='</div>';
+  if(r.senza.length)
+    h+='<div class="gnote" style="margin-top:10px">Senza confronto: '+r.senza.map(x=>esc(x.nome)).join(", ")+'.</div>';
+  if(!INDICI[tid]){
+    const nb=bandaRumore(t, 100);
+    h+='<div class="cbsoglia">'+(r.fonte==="misurata"
+      ? 'Soglia: <b>±'+fmtNum(Math.round(nb.pc*10)/10)+'%</b>, la differenza minima rilevabile calcolata dal tuo errore misurato su questo test.'
+      : 'Soglia: <b>±'+fmtNum(Math.round(nb.pc*10)/10)+'%</b> di riserva — <b>non misurata</b>. Finché non misuri l\'errore del tuo metro, i verdetti sono indicativi.')+
+      ' <span onclick="openTE(\''+tid+'\')">'+(r.fonte==="misurata"?"rifai la misura":"misuralo")+' ›</span></div>';
+  }
+  h+='<div class="lgrow2"><button class="btn sm" onclick="cbPrint()">🖨 Stampa</button></div>';
+  return h;
+}
+function cbPrint(){
+  const tid=CB.t, t=TMAP[tid]; if(!t) return;
+  const r=cambioCalc(tid, CB.modo, CB.rif); if(!r||!r.righe.length){ toast("Niente da stampare"); return; }
+  const tm=S.teams.find(x=>x.id===S.activeTeam);
+  const sq=S.activeTeam==="all" ? "Tutte le squadre" : (tm?tm.name:"Senza squadra");
+  const et={su:"migliorata",giu:"calata",rumore:"nel rumore",uguale:"uguale",indice:"—"};
+  let b='<table><tr><th>Atleta</th><th>Prima</th><th>Dopo</th><th>Variazione</th><th>Esito</th><th>Note</th></tr>';
+  r.righe.forEach(x=>{
+    const note=[];
+    if(x.stima) note.push(x.stima==="misto"?"una è stima":"stime");
+    if(x.freq) note.push("sedute "+(x.freq.p+x.freq.r)+"/"+x.freq.tot);
+    if(x.crescita) note.push("crescita");
+    b+='<tr class="'+x.verdetto+'"><td class="n">'+esc(x.nome)+'</td>'+
+       '<td>'+cbFmt(x.prima.v,t.unit)+'<br><small>'+fmtDate(x.prima.d)+'</small></td>'+
+       '<td>'+cbFmt(x.dopo.v,t.unit)+'<br><small>'+fmtDate(x.dopo.d)+'</small></td>'+
+       '<td>'+(x.raw>0?"+":"")+cbFmt(x.raw,"")+(x.pc!=null&&x.verdetto!=="indice"?' ('+(x.pc>0?"+":"")+fmtNum(Math.round(x.pc*10)/10)+'%)':'')+'</td>'+
+       '<td class="e">'+et[x.verdetto]+'</td><td class="nt">'+esc(note.join(", "))+'</td></tr>';
+  });
+  b+='</table>';
+  const nb=INDICI[tid]?null:bandaRumore(t,100);
+  const doc='<!doctype html><html lang="it"><head><meta charset="utf-8">'+
+    '<title>Cosa è cambiato — '+esc(t.name)+'</title><style>'+
+    '@page{size:A4;margin:14mm}'+
+    'body{font:11px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:0}'+
+    '.br{font-size:9px;letter-spacing:2px;color:#C81E2D;font-weight:700}'+
+    'h1{font-size:17px;margin:0 0 2px}.sub{color:#555;font-size:10px;margin:0 0 12px}'+
+    'table{width:100%;border-collapse:collapse}th{text-align:left;font-size:9px;text-transform:uppercase;color:#666;border-bottom:1px solid #ccc;padding:4px}'+
+    'td{padding:4px;border-bottom:1px solid #eee;font-size:10.5px;vertical-align:top}td small{color:#777}td.n{font-weight:600}'+
+    'tr.su td.e{color:#1E8E3E;font-weight:700}tr.giu td.e{color:#C81E2D;font-weight:700}tr.rumore td.e{color:#777}'+
+    'td.nt{color:#555;font-size:9.5px}'+
+    '.note{font-size:9px;color:#666;margin-top:10px;border-top:1px solid #eee;padding-top:6px}'+
+    '</style></head><body>'+
+    '<div class="br">IRON PERFORMANCE</div><h1>Cosa è cambiato — '+esc(t.name)+'</h1>'+
+    '<p class="sub">'+esc(sq)+' · '+(CB.modo==="data"?"rispetto all\'ultimo test entro il "+fmtDate(CB.rif):"rispetto al test precedente")+
+    ' · '+fmtDate(todayISO())+'</p>'+b+
+    '<p class="note">'+(nb
+      ? (r.fonte==="misurata"
+        ? 'Soglia ±'+fmtNum(Math.round(nb.pc*10)/10)+'%: differenza minima rilevabile al 95% (1,96 × √2 × errore tipico misurato; Weir 2005). '
+        : 'Soglia ±'+fmtNum(Math.round(nb.pc*10)/10)+'% di riserva, non misurata su questo test: i verdetti sono indicativi. ')+
+        '«Nel rumore» non vuol dire che non sia cambiato niente: vuol dire che con questo strumento non si può dire.'
+      : 'Indice: variazioni in punti, senza verdetto.')+'</p>'+
+    '</body></html>';
+  const w=window.open("","_blank");
+  if(!w){ toast("Il browser ha bloccato la finestra di stampa"); return; }
+  w.document.open(); w.document.write(doc); w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} },300);
 }
 
 function renderToday(){
@@ -7041,6 +7320,7 @@ function openSettings(){
     '</div>';
 
   h+='<div class="set-sec">Monitoraggio</div><div class="set-group">'+
+    row("📊","Cosa è cambiato","Tutti i test: chi è migliorata oltre l'errore della misura","openCambio(null)")+
     row("⚙️","Soglie","Readiness, ACWR, calo CMJ, dolore","openThresholds()")+
     row("👥","Squadre","Rinomina, sport, batteria, elimina","manageTeams()", S.teams.length)+
     '</div>';
@@ -8670,7 +8950,7 @@ const PROTO_EXTRA={
     advice:["Regola l'intensità giorno per giorno sulla velocità e ferma il set al velocity loss prefissato.","Velocity loss ~10-20% per forza/potenza; più tollerabile per ipertrofia."]},
   imtp:{interpret:["Esprimila in <b>N/kg</b> (relativa al peso); se hai la pedana guarda anche la forza nei primi 100-250 ms (RFD).","Cali marcati = possibile fatica centrale o sotto-recupero."],
     advice:["Test isometrico sicuro e poco affaticante: utile per monitorare la forza anche in stagione."]},
-  cmj:{interpret:["Oltre all'altezza, guarda <b>RSI-mod, tempi e asimmetrie</b>: dicono <i>come</i> salta, non solo quanto.","Un calo &gt;~5% vs baseline individuale = fatica neuromuscolare (errore tipico ~2-5%)."],
+  cmj:{interpret:["Oltre all'altezza, guarda <b>RSI-mod, tempi e asimmetrie</b>: dicono <i>come</i> salta, non solo quanto.","Un calo oltre la variabilità abituale dell'atleta — spesso nell'ordine del 5% o più rispetto alla sua media — può indicare fatica neuromuscolare. Un singolo salto sotto non basta: l'errore tipico del CMJ è ~2-5%."],
     advice:["Usalo come monitor di readiness (vista Fatica): se cala, riduci salti/intensità.","Per migliorarlo: forza arti inferiori + pliometria; controlla anche la strategia di contromovimento."]},
   sj:{interpret:["Salto da fermo senza contromovimento: isola la <b>forza concentrica</b> pura.","Il confronto CMJ−SJ misura la capacità elastica (vedi EUR)."],
     advice:["SJ basso ma CMJ buono → manca forza concentrica dal basso: lavora forza/potenza.","Cura la posizione di partenza (~90° di ginocchio) per la ripetibilità."]},
@@ -9419,6 +9699,10 @@ function customDel(id){
    E' la formula standard (Hopkins): la differenza fra due prove contiene
    l'errore di ENTRAMBE, quindi si divide per radice di due per averne una. */
 let TE_T=null;
+/* Quanto e' incerto l'errore stesso. Con poche coppie la deviazione standard
+   e' una stima ballerina: intervallo al 90% = s·√(gl/χ²), gl = coppie−1.
+   Moltiplicatori calcolati dai quantili di χ² per gl 2…9. */
+const TE_CI={2:[0.58,4.42],3:[0.62,2.92],4:[0.65,2.37],5:[0.67,2.09],6:[0.69,1.92],7:[0.71,1.8],8:[0.72,1.71],9:[0.73,1.65]};
 function teCalc(coppie){
   const d=coppie.filter(c=>isFinite(c[0])&&isFinite(c[1])).map(c=>c[0]-c[1]);
   if(d.length<3) return null;
@@ -9438,18 +9722,18 @@ function openTE(tid){
     '<div class="ms">Sotto questa soglia una variazione non è un progresso</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
   h+='<div class="alert info"><span class="ai">📏</span><span>'+
-     'Cinque atlete, <b>due prove ravvicinate</b> a testa — stessa seduta, recupero completo, nessun allenamento in mezzo. '+
-     'Da quelle dieci misure esce l\'errore del <b>tuo</b> metro, che è l\'unico che conta.</span></div>';
+     'Più atlete possibile — almeno cinque, meglio otto-dieci — con <b>due prove ravvicinate</b> a testa: stessa seduta, recupero completo, nessun allenamento in mezzo. '+
+     'Ne esce l\'errore del <b>tuo</b> metro, che è l\'unico che conta.</span></div>';
   h+='<label class="fl">Test</label><select id="teT" onchange="openTE(this.value)">'+
      lista.map(x=>'<option value="'+escAttr(x.id)+'"'+(x.id===t.id?" selected":"")+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join("")+
      '</select>';
   const att=(S.te||{})[t.id];
   h+='<div class="fhint">'+(isFinite(att)
-      ? 'Oggi su <b>'+esc(t.name)+'</b> usi <b>'+fmtNum(Math.round(att*10)/10)+'%</b>, misurato da te.'
+      ? 'Oggi su <b>'+esc(t.name)+'</b> l\'errore misurato è <b>'+fmtNum(Math.round(att*10)/10)+'%</b>: una variazione conta oltre il <b>'+fmtNum(Math.round(att*MDC_K*10)/10)+'%</b>.'
       : 'Oggi su <b>'+esc(t.name)+'</b> uso il <b>'+fmtNum(S.cfg.deltaNoise)+'%</b> di riserva — non è una misura, è un segnaposto.')+'</div>';
   h+='<div class="psec">Le due prove, atleta per atleta</div><div class="teList">'+
      '<div class="teHead"><span>atleta</span><span>1ª prova</span><span>2ª prova</span></div>'+
-     [0,1,2,3,4,5].map(i=>'<div class="teRow"><span class="teN">'+(i+1)+'</span>'+
+     [0,1,2,3,4,5,6,7,8,9].map(i=>'<div class="teRow"><span class="teN">'+(i+1)+'</span>'+
        '<input class="mono" type="number" step="any" inputmode="decimal" id="teA'+i+'" oninput="tePrev()">'+
        '<input class="mono" type="number" step="any" inputmode="decimal" id="teB'+i+'" oninput="tePrev()"></div>').join("")+
      '</div><div id="teOut"></div>';
@@ -9460,7 +9744,7 @@ function openTE(tid){
 }
 function teLeggi(){
   const c=[];
-  for(let i=0;i<6;i++){
+  for(let i=0;i<10;i++){
     const a=parseFloat((document.getElementById("teA"+i)||{}).value);
     const b=parseFloat((document.getElementById("teB"+i)||{}).value);
     if(isFinite(a)&&isFinite(b)) c.push([a,b]);
@@ -9474,9 +9758,18 @@ function tePrev(){
   if(btn){ btn.disabled=true; btn.dataset.pc=""; }
   if(!r){ out.innerHTML='<div class="gnote">Servono almeno <b>tre</b> atlete con due prove valide.</div>'; return; }
   const alto=r.pc>10;
-  out.innerHTML='<div class="rmbig"><div class="rmv">±'+fmtNum(Math.round(r.te*100)/100)+'<small>'+esc(t.unit)+'</small></div>'+
-    '<div class="rml">errore tipico — '+fmtNum(Math.round(r.pc*10)/10)+'% su '+r.n+' atlete</div>'+
-    '<div class="rmci">Sotto questa differenza, su questo test, non è successo niente.</div></div>'+
+  /* Due numeri, non uno. L'errore tipico e' quanto balla UNA misura; la
+     soglia e' quanto deve cambiare fra DUE perche' il cambiamento sia vero
+     (×1,96×√2, Weir 2005). Mostrare solo il primo come «soglia» era
+     l'errore che faceva colorare meta' delle variazioni inesistenti. */
+  const mdc=r.te*MDC_K, mdcPc=r.pc*MDC_K;
+  out.innerHTML='<div class="rmbig"><div class="rmv">±'+fmtNum(Math.round(mdc*100)/100)+'<small>'+esc(t.unit)+'</small></div>'+
+    '<div class="rml">variazione minima che conta — '+fmtNum(Math.round(mdcPc*10)/10)+'%</div>'+
+    '<div class="rmci">Sotto questa differenza fra due test, non puoi dire che sia cambiato qualcosa. '+
+    'Errore tipico della singola misura: ±'+fmtNum(Math.round(r.te*100)/100)+' '+esc(t.unit)+' ('+fmtNum(Math.round(r.pc*10)/10)+'%), su '+r.n+' atlete.</div></div>'+
+    (TE_CI[r.n-1]?'<div class="gnote">Con '+r.n+' atlete la stima è grezza: al 90% l\'errore vero sta fra '+
+      fmtNum(Math.round(r.te*TE_CI[r.n-1][0]*100)/100)+' e '+fmtNum(Math.round(r.te*TE_CI[r.n-1][1]*100)/100)+' '+esc(t.unit)+
+      '. Più atlete aggiungi, più l\'intervallo si stringe.</div>':'')+
     (alto?'<div class="alert warn"><span class="ai">⚠️</span><span>Oltre il 10% è tanto: controlla il protocollo — '+
       'riscaldamento diverso, via dato in modo diverso, superficie diversa. Con un errore così grande questo test '+
       'non ti dirà mai niente di utile.</span></div>':'')+
@@ -9491,7 +9784,7 @@ function teSalva(){
   if(!S.te) S.te={};
   S.te[TE_T]=pc;
   save(); closeM(); render();
-  toast((TMAP[TE_T]||{}).name+": sotto ±"+fmtNum(pc)+"% le variazioni diventano grigie");
+  toast((TMAP[TE_T]||{}).name+": sotto ±"+fmtNum(Math.round(pc*MDC_K*10)/10)+"% le variazioni diventano grigie");
 }
 
 /* ═══════════════ TOAST ═══════════════ */

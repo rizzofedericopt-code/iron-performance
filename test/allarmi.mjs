@@ -666,7 +666,46 @@ prova("l'errore misurato da te batte la percentuale di riserva", () => {
   run(`S.te={rmSquat:1.5}`);
   const dopo = run(`bandaRumore(TMAP.rmSquat, 100)`);
   assert.equal(dopo.fonte, "misurata");
-  assert.equal(dopo.b, 1.5, "la banda si stringe quando sai davvero quanto balla");
+  assert.equal(dopo.te, 1.5, "l'errore tipico misurato resta leggibile");
+});
+
+/* L'errore tipico NON e' la soglia. La differenza fra due misure contiene
+   l'errore di entrambe: la sua deviazione standard e' TE·√2. Usare TE come
+   soglia significa colorare il 48% delle variazioni che non esistono —
+   P(|Z| > 1/√2). La differenza minima per dire che un cambiamento c'e' e'
+   1,96·√2·TE (Weir 2005, J Strength Cond Res 19:231, doi 10.1519/15184.1). */
+prova("con l'errore misurato la soglia è la differenza minima rilevabile, non l'errore", () => {
+  run(`S.te={rmSquat:1.5}; S.cfg.deltaNoise=5;`);
+  const nb = run(`bandaRumore(TMAP.rmSquat, 100)`);
+  const atteso = 1.96 * Math.SQRT2 * 1.5;   // 4,16 kg su 100
+  assert.ok(Math.abs(nb.b - atteso) < 0.01, "attesa ±" + atteso.toFixed(2) + ", ottenuta ±" + nb.b);
+  // +2,5 kg: oltre l'errore tipico, sotto la differenza minima → grigio
+  const d = run(`deltaInfo([{d:"2026-01-01",v:100},{d:"2026-02-01",v:102.5}], 1, TMAP.rmSquat)`);
+  assert.equal(d.cls, "flat", "2,5 kg con errore 1,5% non sono un progresso dimostrato");
+  const v = run(`deltaInfo([{d:"2026-01-01",v:100},{d:"2026-02-01",v:105}], 1, TMAP.rmSquat)`);
+  assert.equal(v.cls, "up", "5 kg si'");
+});
+
+prova("una variazione inesistente si colora solo una volta su venti", () => {
+  // senza cambiamento vero, la differenza osservata e' N(0, √2·TE): la quota
+  // che supera la soglia deve essere il 5%, non la meta'
+  run(`S.te={rmSquat:2}; S.cfg.deltaNoise=5;`);
+  const b = run(`bandaRumore(TMAP.rmSquat, 100).b`);
+  const sdDiff = Math.SQRT2 * 2;
+  const z = b / sdDiff;
+  const erf = x => { const t = 1 / (1 + 0.3275911 * x), y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return y; };
+  const falsi = 1 - erf(z / Math.SQRT2);
+  assert.ok(Math.abs(falsi - 0.05) < 0.005, "falsi allarmi attesi 5%, ottenuti " + (falsi * 100).toFixed(1) + "%");
+});
+
+prova("cmjNoise è un moltiplicatore del CV, non centimetri", () => {
+  // Nelle soglie e' «Moltiplicatore del rumore (CV)», 1.5. La banda lo usava
+  // come 1,5 cm: un numero che sembra plausibile proprio perche' e' sbagliato.
+  run(`S.te={}; S.cfg.deltaNoise=5; S.cfg.cmjNoise=4;`);
+  const nb = run(`bandaRumore(TMAP.cmj, 40)`);
+  assert.notEqual(nb.b, 4, "un moltiplicatore 4 non sono 4 cm");
+  assert.equal(nb.fonte, "default");
+  run(`S.cfg.cmjNoise=1.5;`);
 });
 
 prova("l'errore tipico è la deviazione delle differenze diviso radice di 2", () => {

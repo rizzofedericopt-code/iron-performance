@@ -1026,7 +1026,12 @@ const TESTS=[
   {id:"imtp", name:"IMTP",     full:"Forza isometrica mid-thigh",unit:"N/kg",    dir:1, cat:"Forza", sports:["forza","pallavolo","basket","combattimento","calcio","atletica","generale"], lv:{m:[22,28,34,40],f:[18,24,30,36]}},
   // ─ POTENZA / SALTO ─
   {id:"cmj",  name:"CMJ",      full:"Countermovement Jump",     unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","calcio","atletica","generale","combattimento","forza"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
-  {id:"sj",   name:"SJ",       full:"Squat Jump",               unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","forza","combattimento","atletica","generale"], lv:{m:[25,35,45,55],f:[18,28,38,48]}},
+  /* Lo squat jump aveva ESATTAMENTE le stesse fasce del CMJ, e si contraddiceva
+     con l'EUR: un'atleta "Buona" su entrambe le scale avrebbe avuto CMJ = SJ,
+     cioe' EUR 1,00 — che l'app legge come contributo elastico nullo. Il salto
+     senza contromovimento e' tipicamente il 5-15% piu' basso: le fasce ora lo
+     riflettono (circa -9%), e le due misure smettono di darsi torto. */
+  {id:"sj",   name:"SJ",       full:"Squat Jump",               unit:"cm",       dir:1, cat:"Potenza", sports:["pallavolo","basket","forza","combattimento","atletica","generale"], lv:{m:[23,32,41,50],f:[16,25,34,44]}},
   {id:"dj",   name:"Drop Jump",full:"Drop Jump — RSI",          unit:"RSI",      dir:1, cat:"Potenza", sports:["pallavolo","basket","atletica","combattimento","forza","generale"], lv:{m:[0.8,1.2,1.6,2.0],f:[0.6,1.0,1.4,1.7]}},
   /* ─── Test che My Jump Lab misura e che qui non c'erano ──────────────────
      Aggiunti solo quelli che cambiano una decisione. My Jump Lab misura anche
@@ -1269,6 +1274,18 @@ function load(){
   try{ const r=localStorage.getItem(KEY); if(r) S=JSON.parse(r); }catch(e){}
   normalize();
 }
+/* ACWR — una precisazione che cambia come va letto. Il rapporto qui e'
+   calcolato nella forma SCOLLEGATA (acuto = ultimi 7 giorni, cronico = giorni
+   7-27 normalizzati a settimana): e' la variante raccomandata, perche' quella
+   accoppiata condivide i dati fra numeratore e denominatore e gonfia da sola
+   la correlazione con gli infortuni.
+
+   Ma la «zona sicura» 0,8-1,3 non ha il supporto che la sua fama suggerisce:
+   piu' revisioni non hanno trovato evidenza di una fascia associata a un
+   rischio minore, e il carico di allenamento non e' il carico meccanico sui
+   tessuti. Le soglie qui sotto restano perche' servono a far scattare uno
+   SGUARDO, non una diagnosi: leggi l'ACWR come «quanto mi sono allontanato
+   dalla mia norma», non come un semaforo. E restano modificabili. */
 const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acwrCritLow:0.5, acwrCritHigh:1.5, cmjDrop:5, painCut:4,
   rdBaseMin:7, rdZAmber:-1.0, rdZRed:-1.5, cmjMinBase:5, cmjNoise:1.5, acwrMinDays:14,
   cmjBaseDays:42,           // finestra della baseline CMJ: oltre non e' fatica, e' altro
@@ -7944,7 +7961,7 @@ const PROTO={
     steps:[{t:"Non si misura, si ottiene",d:"Registra <b>DJ 1L sx</b> e <b>DJ 1L dx</b> nello stesso giorno e l'asimmetria compare da sola."},
       {t:"Tre prove per lato",d:"Con una prova sola il numero è quasi tutto rumore: la variabilità fra ripetizioni è dello stesso ordine dell'asimmetria."},
       {t:"Stesse condizioni",d:"Stessa altezza di rialzo, stessa superficie, stessa app."}],
-    interpret:["Sotto il <b>10%</b> è in genere fisiologica, fra <b>10 e 15%</b> merita attenzione, <b>oltre il 15%</b> si interviene.","Un'asimmetria di reattività è spesso più tenace di una di potenza: resta quando la forza è già tornata simmetrica. È il motivo per cui vale la pena misurarla a parte dal CMJ monopodalico.","L'app dà la differenza, non quale gamba è indietro: guarda i due valori grezzi prima di decidere da che parte lavorare."],
+    interpret:["<b>Il 10% non è una soglia fisiologica, è una citazione diventata abitudine.</b> Il criterio solido è un altro: la differenza fra i lati conta quando <b>supera la variabilità della misura</b> (Impostazioni → 📏). Sotto, è rumore con la faccia seria.","Un'asimmetria di reattività è spesso più tenace di una di potenza: resta quando la forza è già tornata simmetrica. È il motivo per cui vale la pena misurarla a parte dal CMJ monopodalico.","L'app dà la differenza, non quale gamba è indietro: guarda i due valori grezzi prima di decidere da che parte lavorare."],
     advice:["Oltre il 15%: pliometria progressiva sul lato debole per 6-8 settimane, poi rimisura.","Associala al controllo dell'atterraggio: una reattività asimmetrica convive spesso con un ginocchio che cede verso l'interno."],
     note:"È un numero derivato: cancellando uno dei due lati sparisce da sola."},
 
@@ -7973,7 +7990,7 @@ const PROTO={
     steps:[{t:"Non si misura, si ottiene",d:"Registra <b>CMJ 1L sx</b> e <b>CMJ 1L dx</b> nello stesso giorno: l'asimmetria compare da sola nella colonna."},
       {t:"Tre salti per lato",d:"Con un solo salto per gamba il numero è quasi solo rumore: la variabilità fra salti è dello stesso ordine dell'asimmetria che stai cercando."},
       {t:"Stesse condizioni",d:"Stessa superficie, stesse scarpe, stessa app, stessa ora. Un'asimmetria cambia di pochi punti: basta poco per inventarne una."}],
-    interpret:["Sotto il <b>10%</b> è generalmente considerata fisiologica; fra <b>10 e 15%</b> merita attenzione; <b>oltre il 15%</b> si interviene.","Una asimmetria <b>nuova</b> vale più di una stabile: se una ragazza è sempre stata al 12% e ci resta, è la sua normalità; se passa dal 4% al 12% in sei settimane, è successo qualcosa.","Attenzione al verso: l'app dà la differenza, non dice <b>quale</b> gamba è indietro. Guarda i due valori grezzi, perché il lato debole cambia il tipo di lavoro.","Non inseguire lo zero: un'asimmetria piccola è normale in chi stacca sempre dallo stesso piede."],
+    interpret:["<b>Il 10% non è una soglia fisiologica.</b> Viene da studi dei primi anni '90 che dicevano 15%, diventato 10% per citazione. L'asimmetria è specifica del test: confrontala con la <b>variabilità della misura</b> (Impostazioni → 📏), non con un numero di tabella.","Una asimmetria <b>nuova</b> vale più di una stabile: se una ragazza è sempre stata al 12% e ci resta, è la sua normalità; se passa dal 4% al 12% in sei settimane, è successo qualcosa.","Attenzione al verso: l'app dà la differenza, non dice <b>quale</b> gamba è indietro. Guarda i due valori grezzi, perché il lato debole cambia il tipo di lavoro.","Non inseguire lo zero: un'asimmetria piccola è normale in chi stacca sempre dallo stesso piede."],
     advice:["Oltre il 15%: lavoro unilaterale mirato sul lato debole per 6-8 settimane, poi rimisura.","Associa sempre al controllo dell'atterraggio: un'asimmetria di potenza spesso convive con un atterraggio in valgo.","Se coincide con un infortunio passato sullo stesso lato, trattala come un recupero incompleto, non come un dato di natura."],
     note:"È un numero derivato: se cancelli uno dei due salti, l'asimmetria sparisce da sola. Non c'è niente da aggiornare a mano."},
 
@@ -8068,7 +8085,7 @@ const PROTO={
     steps:[{t:"CMJ su doppia pedana",d:"Esegui i CMJ standard registrando i due arti separatamente."},
       {t:"Calcola l'asimmetria",d:"(arto forte − arto debole) / arto forte × 100."},
       {t:"Media di più salti",d:"Usa 3-5 salti validi per ridurre il rumore."}],
-    interpret:["Sotto ~10% è generalmente fisiologico; <b>oltre 10-15%</b> merita attenzione.","Un'asimmetria <b>nuova</b> è più informativa di una stabile: leggila con la storia infortuni."],
+    interpret:["<b>La soglia del 10% non ha una base solida.</b> Nasce da studi dei primi anni '90 che citavano il 15%, diventato 10% per citazione successiva più che per evidenza. Chris Bishop ha mostrato che la letteratura non concorda su nessun valore unico, e che l'asimmetria è <b>specifica del test e della metrica</b>: 10% al CMJ e 10% a un hop test non vogliono dire la stessa cosa.","Il criterio utilizzabile è un altro (Exell): un'asimmetria conta quando <b>supera la variabilità della misura</b>. Misura l'errore tipico del test (Impostazioni → 📏) e confronta la differenza fra i lati con quello: sotto, stai guardando rumore.","Un'asimmetria <b>nuova</b> è più informativa di una stabile, e una che <b>persiste per 4-6 settimane</b> più di una vista una volta sola. L'asimmetria da sola non è un motivo per intervenire."],
     advice:["Asimmetria alta → lavoro <b>unilaterale</b> mirato sull'arto debole (split squat, step-up, hop monopodalici).","Rivaluta ogni 4-6 settimane; riduci gli squilibri marcati, non inseguire lo 0%."],
     note:"Serve una pedana con misura per-arto; senza, usa gli hop test come proxy."},
 
@@ -8375,8 +8392,15 @@ function lvTable(t){
   const labels=["Base","Discreto","Buono","Ottimo","Elite"]; const op=t.dir<0?"≤":"≥";
   function bar(sex){ const th=t.lv[sex]; let r='<div class="lvbar">';
     labels.forEach((lb,i)=>{ r+='<div class="lvseg">'+lb+(i>0?'<br>'+op+th[i-1]:"")+'</div>'; }); return r+'</div>'; }
-  return '<div style="font-size:10px;color:var(--muted2);font-family:var(--mono);margin:2px 0 4px">Maschile ('+t.unit+') · indicativi</div>'+bar("m")+
-         '<div style="font-size:10px;color:var(--muted2);font-family:var(--mono);margin:9px 0 4px">Femminile ('+t.unit+') · indicativi</div>'+bar("f");
+  return '<div style="font-size:10px;color:var(--muted2);font-family:var(--mono);margin:2px 0 4px">Maschile ('+t.unit+')</div>'+bar("m")+
+         '<div style="font-size:10px;color:var(--muted2);font-family:var(--mono);margin:9px 0 4px">Femminile ('+t.unit+')</div>'+bar("f")+
+         /* Queste fasce sono riferimenti di lavoro su popolazione adulta, non
+            percentili pubblicati — tranne dove la guida cita una fonte (il MAT
+            cita Sassi 2009). Da quando guidano un pallino colorato hanno piu'
+            autorita' di quella che meritano: va scritto dove si vedono. */
+         '<div class="gnote" style="margin-top:9px">Sono <b>riferimenti di lavoro su adulti</b>, non percentili pubblicati: '+
+         'servono a collocare un valore, non a certificarlo. Dove esiste una fonte, la guida la cita. '+
+         'Sotto i 18 anni non vengono applicate: al loro posto trovi il confronto con la squadra o con sé stessa.</div>';
 }
 
 /* ═══════════════ ATTREZZATURA ═══════════════
@@ -8508,7 +8532,7 @@ const USO={
   sfvPmax:{s:"Potenza massima orizzontale.", u:"Usala come tetto dello sprint da confrontare nel tempo; cosa allenare lo decidi guardando F0 e V0, non lei."},
   dj1lL:{s:"Reattività su una gamba sola, lato sinistro: RSI monopodalico.", u:"Usalo per decidere se può tornare a saltare a un piede: se la reattività è molto sotto l'altro lato, prima rinforza, poi rimetti i primi tempi in allenamento."},
   dj1lR:{s:"Reattività su una gamba sola, lato destro: RSI monopodalico.", u:"Leggilo insieme al sinistro: la decisione la prende la differenza fra i due, non il valore singolo."},
-  dj1lAsym:{s:"Differenza percentuale di reattività fra le due gambe.", u:"Oltre il 15% lavora sul lato debole prima di aumentare il volume di salti; sotto il 10% guarda altrove."},
+  dj1lAsym:{s:"Differenza percentuale di reattività fra le due gambe.", u:"Confrontala con la variabilità della misura, non con il 10% di tabella: se la supera e <b>persiste per 4-6 settimane</b>, lavora sul lato debole prima di aumentare i salti."},
   bosco15:{s:"Potenza media su 15 secondi di salti continui.", u:"Usala come riferimento della potenza pura: è il numero che non deve calare quando alzi il volume di lavoro."},
   bosco30:{s:"Potenza media su 30 secondi di salti continui: capacità anaerobica espressa saltando.", u:"Decidi se la tenuta nei finali di set è un problema di gambe: confronta la potenza dei primi 15 secondi con quella dei secondi 15."},
   bosco60:{s:"Potenza media su 60 secondi di salti continui: resistenza alla fatica nel gesto di salto.", u:"Usalo una o due volte l'anno; se crolla molto rispetto al 30 s, il lavoro va sulla capacità di ripetere, non sulla potenza."},

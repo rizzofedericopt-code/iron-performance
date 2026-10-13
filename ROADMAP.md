@@ -35,6 +35,30 @@ esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla ce
 della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
 ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
+**Audit scientifico dei numeri** — passati in rassegna formule, fasce di
+riferimento e soglie. Tre esiti.
+
+*Errore vero:* lo **Squat Jump aveva le stesse identiche fasce del CMJ**, e si
+contraddiceva con l'EUR — un'atleta «Buona» su entrambe le scale avrebbe avuto
+CMJ = SJ, cioè indice elastico 1,00, che l'app legge come contributo elastico nullo.
+Fasce SJ abbassate di circa il 9%, e un test permanente impedisce che tornino uguali.
+
+*Soglia che era leggenda:* il **10% sull'asimmetria** era presentato come fisiologia.
+Nasce da studi dei primi anni '90 che citavano il 15%, diventato 10% per citazione
+successiva. Riscritto in tutte e tre le guide col criterio utilizzabile: un'asimmetria
+conta quando **supera la variabilità della misura**, e quando persiste 4-6 settimane.
+
+*Metodo contestato:* l'**ACWR** è implementato nella forma scollegata (quella
+raccomandata), ma la «zona sicura» 0,8-1,3 non ha il supporto che la sua fama
+suggerisce. Le soglie restano per far scattare uno sguardo, non una diagnosi, e ora
+è scritto nel codice e nelle note.
+
+*Verificate corrette:* potenza di Bosco, tempo di volo da altezza, errore tipico,
+intervallo di confidenza della curva carico-velocità, le sei equazioni dell'1RM, le
+soglie di velocità per esercizio, le fasce del MAT (unica fascia con fonte citata).
+Le altre fasce ora dichiarano di essere riferimenti di lavoro su adulti, non
+percentili pubblicati.
+
 **Sotto il rumore non è successo niente** — ogni variazione era colorata: +0,4 cm sul
 CMJ verde esattamente come +4 cm. Ma la variabilità di una misura ripetuta è di
 quell'ordine: quel verde è lo strumento che respira, e inseguirlo porta a non credere

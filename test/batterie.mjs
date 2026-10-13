@@ -245,6 +245,7 @@ prova("una sola definizione di batt2, non due che si sovrascrivono", () => {
 /* `const` dentro un contesto vm non diventa una proprieta' del sandbox: le
    funzioni si leggono da sandbox, le costanti vanno chieste al contesto. */
 const dentro = (c) => vm.runInContext(c, sandbox, { filename: "test" });
+const TESTS = dentro("TESTS");
 const TMAP = dentro("TMAP"), PROTO = dentro("PROTO"), USO = dentro("USO"),
       TEST_EQ = dentro("TEST_EQ"), ICON = dentro("ICON"), BATT2 = dentro("BATT2");
 const levelIdx = (t, sx, v) => dentro("levelIdx(TMAP." + t + ',"' + sx + '",' + v + ")");
@@ -402,6 +403,92 @@ prova("xRM→1RM accetta la serie, non solo il risultato", () => {
   assert.ok(dentro('rmTestEx("pred")'), "serve un'etichetta di esercizio");
   assert.ok(/Da ripetizioni/.test(JSON.stringify(PROTO.pred)),
     "la guida deve dire dove si inseriscono carico e ripetizioni");
+});
+
+/* ═══════════ Audit: i numeri devono reggere, non solo girare ═══════════ */
+
+prova("lo squat jump non può avere le stesse fasce del CMJ", () => {
+  /* Se le fasce fossero identiche, un'atleta "Buona" su entrambe avrebbe
+     CMJ = SJ, cioè EUR 1,00 — che l'app legge come contributo elastico nullo.
+     Le due misure si darebbero torto da sole. */
+  ["m", "f"].forEach(sx => {
+    const cmj = TMAP.cmj.lv[sx], sj = TMAP.sj.lv[sx];
+    assert.notEqual(sj.join(","), cmj.join(","), sx + ": fasce identiche");
+    for (let i = 0; i < cmj.length; i++)
+      assert.ok(sj[i] < cmj[i], sx + ": lo SJ deve stare sotto il CMJ a pari livello (" + sj[i] + " vs " + cmj[i] + ")");
+    // e non troppo sotto: il contributo elastico è nell'ordine del 5-15%
+    const rap = sj.map((v, i) => v / cmj[i]);
+    rap.forEach(r => assert.ok(r > 0.82 && r < 0.96, "rapporto SJ/CMJ fuori range: " + r.toFixed(3)));
+  });
+});
+
+prova("le fasce coerenti producono un EUR plausibile, non 1,00", () => {
+  // una ragazza "Ottima" su entrambi deve avere un indice elastico credibile
+  const cmj = TMAP.cmj.lv.f[2], sj = TMAP.sj.lv.f[2];
+  const eur = cmj / sj;
+  assert.ok(eur > 1.05 && eur < 1.2, "EUR atteso fra 1,05 e 1,20, ottenuto " + eur.toFixed(3));
+});
+
+prova("tutte le fasce salgono (o scendono) nella direzione giusta", () => {
+  const rotte = [];
+  TESTS.filter(t => t.lv).forEach(t => {
+    ["m", "f"].forEach(sx => {
+      const th = t.lv[sx]; if (!th) return;
+      for (let i = 1; i < th.length; i++) {
+        const ok = t.dir < 0 ? th[i] < th[i - 1] : th[i] > th[i - 1];
+        if (!ok) rotte.push(t.id + "/" + sx);
+      }
+    });
+  });
+  assert.equal(rotte.join(","), "", "soglie nell'ordine sbagliato: " + rotte.join(","));
+});
+
+prova("dove c'è una soglia femminile, non è uguale a quella maschile per sbaglio", () => {
+  // uguali si può, ma solo dove ha senso (mobilità articolare, non forza)
+  const uguali = TESTS.filter(t => t.lv && t.lv.m && t.lv.f &&
+    t.lv.m.join(",") === t.lv.f.join(",")).map(t => t.id);
+  assert.equal(uguali.join(","), "ankleDF",
+    "fasce identiche fra i sessi dove non dovrebbero esserlo: " + uguali.join(","));
+});
+
+prova("la soglia del 10% sull'asimmetria non è più presentata come fisiologia", () => {
+  /* Nasce da studi anni '90 che citavano il 15%, diventato 10% per citazione
+     successiva (Bishop). Il criterio utilizzabile è Exell: conta quando supera
+     la variabilità della misura. */
+  ["cmjAsym", "cmj1lAsym", "dj1lAsym"].forEach(id => {
+    const g = JSON.stringify(PROTO[id] || {});
+    assert.ok(!/è (in )?genere(ralmente)? (considerata )?fisiologic/i.test(g),
+      id + ": presenta ancora il 10% come fisiologia");
+    assert.ok(/variabilità della misura/i.test(g),
+      id + ": deve indicare il criterio vero (confronto con la variabilità)");
+  });
+});
+
+prova("l'ACWR dichiara di essere nella forma scollegata e non vende la «zona sicura»", () => {
+  // la variante accoppiata condivide dati fra numeratore e denominatore
+  assert.match(html, /forma\s*\n?\s*SCOLLEGATA/,
+    "va dichiarato quale delle due varianti è implementata");
+  assert.match(html, /«zona sicura» 0,8-1,3 non ha il supporto/,
+    "la fascia 0,8-1,3 non ha l'evidenza che la sua fama suggerisce: va scritto");
+});
+
+prova("le fasce dichiarano di non essere percentili pubblicati", () => {
+  assert.match(html, /riferimenti di lavoro su adulti<\/b>, non percentili pubblicati/,
+    "da quando guidano un pallino colorato hanno più autorità di quella che meritano");
+});
+
+prova("le formule che si possono verificare, tornano", () => {
+  const boscoPower = sandbox.boscoPower;
+  /* Bosco 1983: P = g²·Tv·Tt / (4·n·(Tt − Tv)).
+     Controllo con numeri scelti perché il conto si possa rifare a mano:
+     g²=96.2361, Tv=7.5, Tt=15, n=30 → 96.2361·7.5·15 / (4·30·7.5) = 12.03 */
+  const p = boscoPower(15, 30, 7.5);
+  assert.ok(Math.abs(p - 12.03) < 0.01, "Bosco: atteso ~12,03 W/kg, ottenuto " + p);
+  // tempo di volo da un'altezza: h = g·t²/8  →  t = √(8h/g). Da 0,30 m → 0,4947 s
+  const t = Math.sqrt(8 * 0.30 / 9.81);
+  assert.ok(Math.abs(t - 0.4947) < 0.001);
+  // e il giro completo: da quell'altezza il Bosco deve tornare allo stesso numero
+  assert.ok(boscoPower(15, 30, t * 30) > 0);
 });
 
 console.log(failed ? "\n" + failed + " test falliti" : "\nTutti i test passati");

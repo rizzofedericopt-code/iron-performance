@@ -35,6 +35,24 @@ esclusa: a una ripetizione restituisce il 109% del carico. Si inserisce dalla ce
 della tabella oppure da **Registra test**, una colonna per tutta la squadra: carico,
 ripetizioni e riserva per ogni atleta, con l'1RM che compare accanto mentre scrivi.
 
+**Sotto il rumore non è successo niente** — ogni variazione era colorata: +0,4 cm sul
+CMJ verde esattamente come +4 cm. Ma la variabilità di una misura ripetuta è di
+quell'ordine: quel verde è lo strumento che respira, e inseguirlo porta a non credere
+più ai colori in generale. Ora sotto la banda il delta è **grigio, «nel rumore»** — il
+numero resta, sparisce la pretesa che significhi qualcosa. La banda viene, in ordine:
+dall'errore che hai **misurato tu** su quel test, dalla soglia CMJ già impostata,
+oppure da una percentuale di riserva del 5% dichiarata come tale.
+
+**Misurare il proprio errore** (Impostazioni → 📏) — cinque atlete, due prove
+ravvicinate, e l'app calcola l'errore tipico come deviazione standard delle differenze
+diviso radice di due. Avvisa se supera il 10% (protocollo da sistemare) e se le seconde
+prove sono sistematicamente migliori (effetto apprendimento: serve una prova in più di
+riscaldamento). È l'unica soglia onesta, perché dipende dal tuo cronometro e dal tuo
+campo, non da un manuale.
+
+**Ordinare le atlete** — per nome, per età (le più giovani in cima) o nell'ordine in cui
+le hai inserite. Chi non ha la data di nascita resta in fondo anche invertendo.
+
 **La tabella si usa, non si subisce** — l'intestazione di una colonna conteneva sei
 righe di testo in 96 pixel (categoria, nome, unità, verso, «carichi», «guida»): più
 parole che dati. Ora mostra l'essenziale e **si tocca**, aprendo un posto solo con

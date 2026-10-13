@@ -608,5 +608,95 @@ prova("nella cella si vede quanto è vecchio il numero", () => {
     "un dato di due giorni fa non ha bisogno di etichette");
 });
 
+prova("si ordina anche per età, e chi non ha la data resta in fondo", () => {
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; S.sport="pallavolo";
+       S.athletes=[{id:"v",name:"Vecchia",team:"t1",sex:"F",profile:{birth:"2006-01-01"}},
+                   {id:"g",name:"Giovane",team:"t1",sex:"F",profile:{birth:"2012-01-01"}},
+                   {id:"x",name:"Ignota",team:"t1",sex:"F",profile:{}}];
+       S.data={}; SORT={by:null,desc:false}; sortBy("eta");`);
+  assert.equal(run(`atleteOrdinate().map(a=>a.name)`).join(","), "Giovane,Vecchia,Ignota");
+  run(`sortBy("eta")`);
+  assert.equal(run(`atleteOrdinate().map(a=>a.name)`).join(","), "Vecchia,Giovane,Ignota",
+    "invertito, ma chi non ha la data resta in fondo");
+});
+
+prova("l'ordine di inserimento si recupera sempre", () => {
+  run(`sortBy("nome")`);
+  assert.equal(run(`atleteOrdinate().map(a=>a.name)`).join(","), "Giovane,Ignota,Vecchia");
+  run(`sortClear()`);
+  assert.equal(run(`atleteOrdinate().map(a=>a.name)`).join(","), "Vecchia,Giovane,Ignota");
+});
+
+console.log("\nQuanto balla la misura");
+
+prova("sotto la banda la variazione diventa grigia, non verde", () => {
+  run(`S.te={}; S.cfg.deltaNoise=5; S.cfg.cmjNoise=1.5;`);
+  // 40 → 40.5 su un CMJ: mezzo centimetro, cioè lo strumento che respira
+  const piccolo = run(`deltaInfo([{d:"2026-01-01",v:40},{d:"2026-02-01",v:40.5}], 1, TMAP.cmj)`);
+  assert.equal(piccolo.cls, "flat", "mezzo centimetro non è un progresso");
+  assert.equal(piccolo.rumore, true);
+  assert.ok(/rumore della misura/.test(piccolo.titolo), piccolo.titolo);
+  // 40 → 44: quattro centimetri sono successi davvero
+  const grosso = run(`deltaInfo([{d:"2026-01-01",v:40},{d:"2026-02-01",v:44}], 1, TMAP.cmj)`);
+  assert.equal(grosso.cls, "up");
+  assert.ok(!grosso.rumore);
+});
+
+prova("vale anche al contrario: un calo dentro il rumore non è un calo", () => {
+  run(`S.te={}; S.cfg.deltaNoise=5;`);
+  const d = run(`deltaInfo([{d:"2026-01-01",v:100},{d:"2026-02-01",v:97}], 1, TMAP.rmSquat)`);
+  assert.equal(d.cls, "flat", "3 kg su 100 sono dentro il 5%");
+  assert.equal(d.rumore, true);
+  const vero = run(`deltaInfo([{d:"2026-01-01",v:100},{d:"2026-02-01",v:90}], 1, TMAP.rmSquat)`);
+  assert.equal(vero.cls, "down");
+});
+
+prova("senza il test non si inventa nessuna banda", () => {
+  // le chiamate vecchie passano solo (arr, dir): devono comportarsi come prima
+  const d = run(`deltaInfo([{d:"2026-01-01",v:40},{d:"2026-02-01",v:40.2}], 1)`);
+  assert.equal(d.cls, "up");
+  assert.ok(!d.rumore);
+});
+
+prova("l'errore misurato da te batte la percentuale di riserva", () => {
+  run(`S.te={}; S.cfg.deltaNoise=5;`);
+  const prima = run(`bandaRumore(TMAP.rmSquat, 100)`);
+  assert.equal(prima.fonte, "default");
+  assert.equal(prima.b, 5);
+  run(`S.te={rmSquat:1.5}`);
+  const dopo = run(`bandaRumore(TMAP.rmSquat, 100)`);
+  assert.equal(dopo.fonte, "misurata");
+  assert.equal(dopo.b, 1.5, "la banda si stringe quando sai davvero quanto balla");
+});
+
+prova("l'errore tipico è la deviazione delle differenze diviso radice di 2", () => {
+  // due prove identiche = errore zero
+  assert.equal(run(`teCalc([[40,40],[38,38],[42,42],[36,36]]).te`), 0);
+  // differenze costanti: nessuna dispersione, errore zero ma bias segnalato
+  const costante = run(`teCalc([[40,41],[38,39],[42,43],[36,37]])`);
+  assert.equal(Math.round(costante.te * 1000) / 1000, 0);
+  assert.equal(costante.bias, -1, "le seconde prove sono sistematicamente più alte");
+  // caso reale: differenze -1,+1,-1,+1 → sd=1.155, te=0.816
+  const r = run(`teCalc([[40,41],[38,37],[42,43],[36,35]])`);
+  assert.ok(Math.abs(r.te - 0.816) < 0.01, "atteso ~0,816, ottenuto " + r.te);
+  assert.equal(r.n, 4);
+});
+
+prova("con meno di tre atlete non si calcola niente", () => {
+  assert.equal(run(`teCalc([[40,41],[38,37]])`), null);
+  assert.equal(run(`teCalc([])`), null);
+});
+
+prova("la soglia misurata sopravvive al ripristino", () => {
+  // mezz'ora di palestra con cinque atlete: perderla in un backup sarebbe una beffa
+  const b = JSON.stringify({ athletes: [{ id: "p0", name: "A" }], data: {},
+    te: { cmj: 2.4, spr10: 1.8, "../evil": 3, bosco30: 900 } });
+  const o = run(`sanitizeImport(${b})`);
+  assert.equal(o.te.cmj, 2.4);
+  assert.equal(o.te.spr10, 1.8);
+  assert.equal(o.te["../evil"], undefined, "chiave non valida");
+  assert.equal(o.te.bosco30, undefined, "un errore del 900% non è un errore, è un refuso");
+});
+
 console.log(failed ? "\n" + failed + " PROVE FALLITE\n" : "\ntutto verde\n");
 process.exit(failed ? 1 : 0);

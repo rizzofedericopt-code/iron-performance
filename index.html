@@ -370,8 +370,19 @@ input.mono{font-family:var(--mono)}
 .thSort:hover{color:var(--accent)}
 .thOrd{font-size:9px;color:var(--accent);margin-top:3px;font-family:var(--mono)}
 .thOrd button{background:none;border:none;color:var(--muted);cursor:pointer;padding:0 0 0 3px;font-size:10px}
+.set-row.on{background:rgba(230,57,70,0.08)}
+.set-row.on .sl{color:var(--accent)}
 .cold{font-size:9px;color:var(--muted2);font-family:var(--mono);margin-top:2px}
 .cold.vecchio{color:#FF9F0A}
+.delta.rumore{opacity:.75}
+.delta.rumore small{font-size:8.5px;opacity:.8;font-weight:600}
+.teList{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:6px}
+.teHead{display:flex;gap:8px;padding:7px 10px;background:var(--surface2);font-size:9.5px;
+  text-transform:uppercase;letter-spacing:.4px;color:var(--muted2)}
+.teHead span:first-child{flex:0 0 26px}.teHead span{flex:1 1 0;text-align:center}
+.teRow{display:flex;gap:8px;align-items:center;padding:5px 10px;border-top:1px solid var(--line)}
+.teRow .teN{flex:0 0 26px;font-family:var(--mono);font-size:11px;color:var(--muted2)}
+.teRow input{flex:1 1 0;min-width:0;text-align:center;padding:8px 4px}
 /* tre riferimenti, tre forme: pieno = letteratura, anello = squadra,
    triangolo = lei rispetto a se stessa. Il colore dice quanto, la forma dice
    DA DOVE — e senza la forma il quartile di squadra verrebbe letto come un
@@ -1265,7 +1276,8 @@ const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acw
   lvMVT:0.30,               // velocità minima (m/s) usata per stimare l'1RM, regolabile per esercizio
   lvRelStrengthGate:1.5,    // 1RM stimato ÷ peso corporeo: sopra questa soglia si considera "forza relativa sufficiente"
   rmBar:20,                 // peso del bilanciere: i carichi dei gruppi si scompongono in dischi su questo
-  rmStep:2.5};              // incremento minimo caricabile = doppio del disco più piccolo che hai
+  rmStep:2.5,               // incremento minimo caricabile = doppio del disco più piccolo che hai
+  deltaNoise:5};            // % sotto cui una variazione è rumore, finché non misuri l'errore vero
 /* ═══════════════ INFORMATIVA PRIVACY ═══════════════
    L'informativa è un DATO, non un testo fisso nel codice: cambia con i tuoi
    recapiti, con i tempi di conservazione che decidi, con chi la riceve.
@@ -1344,6 +1356,7 @@ function normalize(){
   if(!S.lv) S.lv={};           // sessioni di curva carico-velocità
   if(!S.gruppi) S.gruppi={};   // gruppi di lavoro decisi a mano, per test
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
+  if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
   applyCustom();
   if(!S.cvar) S.cvar="percussione";
   if(!S.cfg) S.cfg={};
@@ -1590,6 +1603,7 @@ function mergeState(server, local){
   /* I gruppi di lavoro non sono misure datate: sono una decisione del
      preparatore, come le soglie. Vince l'ultima fatta su questo dispositivo. */
   out.gruppi=local.gruppi||server.gruppi||{};
+  out.te=Object.assign({}, server.te||{}, local.te||{});
   /* Gli esercizi personalizzati sono decisioni, come le soglie: vince
      l'ultima fatta su questo dispositivo. Ma se il server ne ha di piu'
      (li hai creati sul telefono) non si buttano via: si uniscono per id. */
@@ -2232,14 +2246,52 @@ function derivedSeries(aid,t){
 }
 function fmtNum(v){ return Number.isInteger(v)? String(v) : (Math.round(v*100)/100).toString(); }
 
-function deltaInfo(arr,dir){
+/* ═══════════════ QUANTO BALLA LA MISURA ═════════════════════════════════
+   Ogni variazione era colorata: +0,4 cm sul CMJ verde esattamente come +4 cm.
+   Ma la variabilita' di una misura ripetuta — stesso atleta, stesso giorno,
+   stesso strumento — e' di quell'ordine: quel verde non e' un progresso, e'
+   lo strumento che respira. Colorarlo significa inseguire fantasmi, e dopo
+   qualche settimana smetti di credere ai colori in generale.
+
+   Sotto la banda il delta diventa GRIGIO e dice «nel rumore». Non nasconde il
+   numero: dice che non ci si costruisce sopra una decisione.
+
+   Da dove viene la banda, in ordine:
+     1. l'errore che hai MISURATO tu su quel test (S.te) — l'unico vero
+     2. per il CMJ, la soglia che hai gia' impostato in cfg.cmjNoise
+     3. altrimenti una percentuale dichiarata (cfg.deltaNoise, default 5%)
+   Il terzo caso e' un segnaposto onesto, non una misura: serve a non lasciare
+   tutto verde, e va sostituito col primo appena hai mezz'ora di palestra.   */
+function bandaRumore(t, rif){
+  if(!t) return null;
+  const base=Math.abs(parseFloat(rif));
+  if(!isFinite(base)||base<=0) return null;
+  const te=(S.te||{})[t.id];
+  if(isFinite(te)&&te>0) return {b:base*te/100, pc:te, fonte:"misurata"};
+  if(t.id==="cmj" && isFinite(S.cfg.cmjNoise) && S.cfg.cmjNoise>0)
+    return {b:S.cfg.cmjNoise, pc:S.cfg.cmjNoise/base*100, fonte:"cmj"};
+  const pc=isFinite(S.cfg.deltaNoise)?S.cfg.deltaNoise:5;
+  if(pc<=0) return null;
+  return {b:base*pc/100, pc:pc, fonte:"default"};
+}
+const RUMORE_FONTE={misurata:"errore misurato da te su questo test",
+  cmj:"soglia CMJ impostata nelle soglie di monitoraggio",
+  default:"percentuale di riserva, non misurata su questo test"};
+function deltaInfo(arr,dir,t){
   if(arr.length<2) return null;
   const last=arr[arr.length-1].v, prev=arr[arr.length-2].v;
   const raw=last-prev;
   const improve=raw*dir;            // >0 meglio, <0 peggio
-  const cls = improve>0?"up":improve<0?"down":"flat";
+  let cls = improve>0?"up":improve<0?"down":"flat";
   const arrow = raw>0?"▲":raw<0?"▼":"=";
-  return {raw, cls, arrow, txt:(raw>0?"+":"")+fmtNum(raw)};
+  const out={raw, cls, arrow, txt:(raw>0?"+":"")+fmtNum(raw)};
+  const nb=t?bandaRumore(t,prev):null;
+  if(nb && Math.abs(raw)<=nb.b && raw!==0){
+    out.cls="flat"; out.rumore=true; out.banda=nb;
+    out.titolo="Variazione dentro il rumore della misura (±"+fmtNum(Math.round(nb.b*100)/100)+" "+
+      (t.unit||"")+", "+RUMORE_FONTE[nb.fonte]+")";
+  }
+  return out;
 }
 
 /* ═══════════════ TROPPO O TROPPO POCO ═══════════════════════════════════
@@ -2465,6 +2517,28 @@ function sortBy(k){
   render();
 }
 function sortClear(){ SORT={by:null, desc:false}; render(); }
+/* Tre modi di guardare la stessa rosa, e servono tutti: alfabetico per
+   cercare un nome, per eta' quando decidi i carichi su chi sta crescendo,
+   d'inserimento perche' e' l'ordine in cui le hai in testa tu. */
+function openOrdMenu(){
+  const riga=(ic,l,sub,k)=>{
+    const on=(k==null?SORT.by==null:SORT.by===k);
+    return '<button class="set-row'+(on?" on":"")+'" onclick="'+
+      (k==null?'closeM();sortClear()':'closeM();sortBy(\''+k+'\')')+'">'+
+      '<span class="si">'+ic+'</span><span class="sl">'+l+(sub?'<small>'+sub+'</small>':'')+'</span>'+
+      (on?'<span class="sv">'+(k!=null&&SORT.desc?"↑":"↓")+'</span>':'')+'<span class="sc">›</span></button>';
+  };
+  let h='<div class="mh"><div><div class="eyebrow">Tabella</div><div class="mt">⇅ Ordina le atlete</div>'+
+    '<div class="ms">Tocca di nuovo la stessa voce per invertire</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="set-group">'+
+    riga("🔤","Nome","In ordine alfabetico","nome")+
+    riga("🎂","Età","Le più giovani in cima — chi non ha la data di nascita in fondo","eta")+
+    riga("📋","Ordine di inserimento","Come le hai aggiunte alla rosa",null)+
+    '</div>'+
+    '<div class="gnote">Per ordinare in base a un <b>test</b>, tocca l\'intestazione di quella colonna.</div>';
+  modal(h);
+}
 /* L'ordine di default e' "il migliore in cima": su un tempo vuol dire il piu'
    basso, su un salto il piu' alto. Chi non ha il dato resta in fondo SEMPRE,
    anche invertendo: una cella vuota non e' un risultato scarso. */
@@ -2476,6 +2550,16 @@ function atleteOrdinate(){
     rows.sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"it"));
     if(SORT.desc) rows.reverse();
     return rows;
+  }
+  /* Eta': la piu' giovane in cima. Chi non ha la data di nascita va in fondo e
+     ci resta anche invertendo — come per i test, un dato che manca non e' un
+     valore estremo. */
+  if(k==="eta"){
+    const d=a=>{ const b=(a.profile||{}).birth; const t=Date.parse(b||""); return isFinite(t)?t:null; };
+    const con=rows.filter(a=>d(a)!=null), senza=rows.filter(a=>d(a)==null);
+    con.sort((a,b)=>d(b)-d(a));                 // nata dopo = piu' giovane = in cima
+    if(SORT.desc) con.reverse();
+    return con.concat(senza);
   }
   const t=TMAP[k]; if(!t) return rows;
   const val=a=>{ const s=series(a.id,k); return s.length? s[s.length-1].v : null; };
@@ -2544,11 +2628,13 @@ function renderMatrix(){
      verso, «carichi», «guida» — erano piu' parole che dati. Adesso
      l'intestazione mostra l'essenziale e si TOCCA: tutto quello che puoi fare
      con quella colonna sta in un posto solo. */
+  const ORD_L={nome:"nome", eta:"età"};
+  const ordAttivo = SORT.by ? (ORD_L[SORT.by] || ((TMAP[SORT.by]||{}).name||"")) : "";
   let h='<table><thead><tr>'+
-    '<th class="cAth"><button class="thSort" onclick="sortBy(\'nome\')">Atleta '+
-      (SORT.by==="nome"?(SORT.desc?"↑":"↓"):"⇅")+'</button>'+
-      (SORT.by&&SORT.by!=="nome"?'<div class="thOrd">ordinata per '+esc((TMAP[SORT.by]||{}).name||"")+
-        ' <button onclick="sortClear()">✕</button></div>':'')+'</th>';
+    '<th class="cAth"><button class="thSort" onclick="openOrdMenu()">Atleta '+
+      (SORT.by?(SORT.desc?"↑":"↓"):"⇅")+'</button>'+
+      (ordAttivo?'<div class="thOrd">per '+esc(ordAttivo)+
+        ' <button onclick="event.stopPropagation();sortClear()">✕</button></div>':'')+'</th>';
   tests.forEach(t=>{
     const ord=SORT.by===t.id;
     h+='<th class="th-test'+(pin.indexOf(t.id)>=0?" pinned":"")+(ord?" sorted":"")+'" '+
@@ -2576,12 +2662,14 @@ function renderMatrix(){
       h+='<td class="cell" onclick="openCell(\''+a.id+'\',\''+t.id+'\')">';
       if(arr.length===0){ h+='<span class="empty">+</span>'; }
       else{
-        const last=arr[arr.length-1], di=deltaInfo(arr,t.dir);
+        const last=arr[arr.length-1], di=deltaInfo(arr,t.dir,t);
         const stim=(last.fonte==="lv"||last.fonte==="reps")
           ? '<span class="cstim" title="'+(last.fonte==="reps"?"Stimato da una serie a ripetizioni":"Stimato dalla curva carico-velocità")+'">≈</span>' : '';
         h+=valDot(valuta(t,a,arr));
         h+='<div class="val">'+stim+fmtNum(last.v)+'</div>';
-        if(di) h+='<div class="delta '+di.cls+'">'+di.arrow+' '+di.txt+'</div>';
+        if(di) h+='<div class="delta '+di.cls+(di.rumore?" rumore":"")+'"'+
+                  (di.rumore?' title="'+escAttr(di.titolo)+'"':'')+'>'+
+                  (di.rumore?"≈":di.arrow)+' '+di.txt+(di.rumore?' <small>nel rumore</small>':'')+'</div>';
         else   h+='<div class="delta flat" style="opacity:.5">— prima</div>';
         /* Un 42 cm di marzo e uno di ottobre erano identici a schermo. La data
            c'era solo aprendo la cella, cioe' per una colonna alla volta. */
@@ -5583,7 +5671,7 @@ function printAthlete(id){
   if(withData.length){
     h+='<div class="psc">Quadro test</div><table><thead><tr><th>Test</th><th>Ultimo</th><th>Livello</th><th>Δ prec.</th><th>Data</th></tr></thead><tbody>';
     withData.forEach(t=>{ const arr=series(a.id,t.id); const last=arr[arr.length-1];
-      const li=eLevelApplicable(a)?levelIdx(t,a.sex,last.v):-1; const di=deltaInfo(arr,t.dir);
+      const li=eLevelApplicable(a)?levelIdx(t,a.sex,last.v):-1; const di=deltaInfo(arr,t.dir,t);
       h+='<tr><td>'+t.name+' <span style="color:#888">('+t.unit+')</span></td><td>'+fmtNum(last.v)+'</td><td>'+(li>=0?L[li]:"—")+'</td><td>'+(di?(di.arrow+" "+di.txt):"—")+'</td><td>'+fmtDate(last.d)+'</td></tr>';
     });
     h+='</tbody></table>';
@@ -6640,6 +6728,7 @@ function openSettings(){
     row("🎯","Batteria consigliata","Quali test usare e quando","openBattery()")+
     row("🎚","Batteria della squadra", team?("Test monitorati da "+esc(team.name)):"Seleziona prima una squadra","chooseTests()", nTests?nTests:"auto")+
     row("🧰","Esercizi tuoi","Colonne che hai aggiunto tu (leg press, affondi…)","openCustom()", (S.custom||[]).length||"")+
+    row("📏","Quanto balla la tua misura","Sotto quale variazione non è successo niente","openTE()", Object.keys(S.te||{}).length||"")+
     '</div>';
 
   h+='<div class="set-sec">Monitoraggio</div><div class="set-group">'+
@@ -6704,7 +6793,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},gruppi:{},custom:[],tomb:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},gruppi:{},custom:[],te:{},tomb:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -6864,6 +6953,14 @@ function sanitizeImport(o){
       const u=CUSTOM_UNITA.some(x=>x.u===c.unit)?c.unit:"kg";
       out.custom.push({id:c.id, name:nome, unit:u,
         base:(u==="kg" ? (TMAP[c.base]?c.base:"pred") : null)});
+    });
+  }
+  // l'errore misurato e' il parametro piu' costoso da riottenere: mezz'ora di
+  // palestra con cinque atlete. Perderlo in un ripristino sarebbe una beffa.
+  if(o.te&&typeof o.te==="object"&&!Array.isArray(o.te)){
+    Object.keys(o.te).slice(0,200).forEach(k=>{
+      if(!/^[A-Za-z0-9_-]{1,40}$/.test(k)) return;
+      const n=num(o.te[k]); if(n!=null&&n>0&&n<80) out.te[k]=n;
     });
   }
   if(o.tomb&&typeof o.tomb==="object") Object.keys(o.tomb).slice(0,2000).forEach(k=>{ out.tomb[k]=str(o.tomb[k],40); });
@@ -8979,6 +9076,91 @@ function customDel(id){
   Object.keys(S.gruppi||{}).forEach(k=>{ if(k.indexOf(id+"@")===0) delete S.gruppi[k]; });
   applyCustom(); save(); render(); openCustom();
   toast("«"+c.name+"» eliminato");
+}
+
+/* ═══════════════ MISURARE IL PROPRIO ERRORE ═══════════════════════════════
+   La soglia sotto cui una variazione non conta non si copia da un manuale: il
+   tuo errore dipende dal tuo cronometro, dal tuo telefono, dal tuo campo e da
+   come dai il via. Si misura in mezz'ora: cinque atlete, due prove ravvicinate
+   a testa, nessun allenamento in mezzo.
+
+   Errore tipico = deviazione standard delle differenze / radice di 2.
+   E' la formula standard (Hopkins): la differenza fra due prove contiene
+   l'errore di ENTRAMBE, quindi si divide per radice di due per averne una. */
+let TE_T=null;
+function teCalc(coppie){
+  const d=coppie.filter(c=>isFinite(c[0])&&isFinite(c[1])).map(c=>c[0]-c[1]);
+  if(d.length<3) return null;
+  const m=d.reduce((a,b)=>a+b,0)/d.length;
+  const sd=Math.sqrt(d.reduce((s,x)=>s+(x-m)*(x-m),0)/(d.length-1));
+  const te=sd/Math.SQRT2;
+  const tutti=coppie.filter(c=>isFinite(c[0])&&isFinite(c[1])).reduce((a,c)=>a.concat(c),[]);
+  const media=tutti.reduce((a,b)=>a+b,0)/tutti.length;
+  if(!(media>0)) return null;
+  return {te:te, pc:te/media*100, n:d.length, media:media, bias:m};
+}
+function openTE(tid){
+  TE_T = tid || TE_T || "cmj";
+  const t=TMAP[TE_T]||TMAP.cmj;
+  const lista=visibleTests().filter(x=>!x.derived);
+  let h='<div class="mh"><div><div class="eyebrow">Soglie</div><div class="mt">📏 Quanto balla la tua misura</div>'+
+    '<div class="ms">Sotto questa soglia una variazione non è un progresso</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="alert info"><span class="ai">📏</span><span>'+
+     'Cinque atlete, <b>due prove ravvicinate</b> a testa — stessa seduta, recupero completo, nessun allenamento in mezzo. '+
+     'Da quelle dieci misure esce l\'errore del <b>tuo</b> metro, che è l\'unico che conta.</span></div>';
+  h+='<label class="fl">Test</label><select id="teT" onchange="openTE(this.value)">'+
+     lista.map(x=>'<option value="'+escAttr(x.id)+'"'+(x.id===t.id?" selected":"")+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join("")+
+     '</select>';
+  const att=(S.te||{})[t.id];
+  h+='<div class="fhint">'+(isFinite(att)
+      ? 'Oggi su <b>'+esc(t.name)+'</b> usi <b>'+fmtNum(Math.round(att*10)/10)+'%</b>, misurato da te.'
+      : 'Oggi su <b>'+esc(t.name)+'</b> uso il <b>'+fmtNum(S.cfg.deltaNoise)+'%</b> di riserva — non è una misura, è un segnaposto.')+'</div>';
+  h+='<div class="psec">Le due prove, atleta per atleta</div><div class="teList">'+
+     '<div class="teHead"><span>atleta</span><span>1ª prova</span><span>2ª prova</span></div>'+
+     [0,1,2,3,4,5].map(i=>'<div class="teRow"><span class="teN">'+(i+1)+'</span>'+
+       '<input class="mono" type="number" step="any" inputmode="decimal" id="teA'+i+'" oninput="tePrev()">'+
+       '<input class="mono" type="number" step="any" inputmode="decimal" id="teB'+i+'" oninput="tePrev()"></div>').join("")+
+     '</div><div id="teOut"></div>';
+  h+='<button class="btn primary" id="teSave" style="width:100%;margin-top:14px" disabled onclick="teSalva()">Salva la soglia</button>'+
+     '<div class="gnote">Si può rifare quando cambi strumento o superficie. Vale per quel test e basta: '+
+     'il cronometro a mano e il telefono non hanno lo stesso errore.</div>';
+  modal(h); tePrev();
+}
+function teLeggi(){
+  const c=[];
+  for(let i=0;i<6;i++){
+    const a=parseFloat((document.getElementById("teA"+i)||{}).value);
+    const b=parseFloat((document.getElementById("teB"+i)||{}).value);
+    if(isFinite(a)&&isFinite(b)) c.push([a,b]);
+  }
+  return c;
+}
+function tePrev(){
+  const out=document.getElementById("teOut"), btn=document.getElementById("teSave");
+  if(!out) return;
+  const r=teCalc(teLeggi()); const t=TMAP[TE_T]||TMAP.cmj;
+  if(btn){ btn.disabled=true; btn.dataset.pc=""; }
+  if(!r){ out.innerHTML='<div class="gnote">Servono almeno <b>tre</b> atlete con due prove valide.</div>'; return; }
+  const alto=r.pc>10;
+  out.innerHTML='<div class="rmbig"><div class="rmv">±'+fmtNum(Math.round(r.te*100)/100)+'<small>'+esc(t.unit)+'</small></div>'+
+    '<div class="rml">errore tipico — '+fmtNum(Math.round(r.pc*10)/10)+'% su '+r.n+' atlete</div>'+
+    '<div class="rmci">Sotto questa differenza, su questo test, non è successo niente.</div></div>'+
+    (alto?'<div class="alert warn"><span class="ai">⚠️</span><span>Oltre il 10% è tanto: controlla il protocollo — '+
+      'riscaldamento diverso, via dato in modo diverso, superficie diversa. Con un errore così grande questo test '+
+      'non ti dirà mai niente di utile.</span></div>':'')+
+    (Math.abs(r.bias)>r.te?'<div class="alert warn"><span class="ai">↗</span><span>Le seconde prove sono '+
+      'sistematicamente '+(r.bias<0?"migliori":"peggiori")+': c\'è un effetto apprendimento o di fatica. '+
+      'Aggiungi una prova di riscaldamento prima di misurare.</span></div>':'');
+  if(btn){ btn.disabled=false; btn.dataset.pc=String(Math.round(r.pc*10)/10); }
+}
+function teSalva(){
+  const btn=document.getElementById("teSave");
+  const pc=parseFloat(btn.dataset.pc); if(!isFinite(pc)||pc<=0) return;
+  if(!S.te) S.te={};
+  S.te[TE_T]=pc;
+  save(); closeM(); render();
+  toast((TMAP[TE_T]||{}).name+": sotto ±"+fmtNum(pc)+"% le variazioni diventano grigie");
 }
 
 /* ═══════════════ TOAST ═══════════════ */

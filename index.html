@@ -503,6 +503,35 @@ ul.kb li b{color:#fff;font-weight:600}
 .treadywrap{display:flex;flex-wrap:wrap;gap:7px}
 .tready{font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:6px 11px;cursor:pointer}
 .tready b{color:var(--up)}
+.tready.tass{opacity:.45;text-decoration:line-through}
+.tsv.amber{color:#FFB340;background:none}
+/* presenze */
+.prtag{font-size:10px;font-weight:700;border-radius:6px;padding:2px 6px;margin-left:7px;vertical-align:middle}
+.prtag.down{color:var(--accent);background:rgba(230,57,70,.12)}
+.prtag.amber{color:#FFB340;background:rgba(255,159,10,.12)}
+.prcnt{font-size:13px;color:var(--muted);margin:4px 0 10px}
+.prcnt b{color:var(--text);font-size:16px}
+.prlist{display:flex;flex-direction:column;gap:6px}
+.prrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:7px 8px 7px 12px}
+.prrow.down{border-color:rgba(230,57,70,.45)}
+.prrow .prn{color:var(--text)}
+.prrow.amber{background:var(--surface2)}
+.prrow.down .prn{opacity:.55;text-decoration:line-through}
+.prrow.amber{border-color:rgba(255,159,10,.45)}
+.prn{font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prseg{display:flex;gap:4px;flex:0 0 auto}
+.prseg button{width:42px;height:38px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--muted);font-size:16px;font-weight:700;cursor:pointer}
+.prseg button.on.up{background:var(--upbg);color:var(--up);border-color:var(--up)}
+.prseg button.on.amber{background:rgba(255,159,10,.14);color:#FFB340;border-color:#FFB340}
+.prseg button.on.down{background:rgba(230,57,70,.14);color:var(--accent);border-color:var(--accent)}
+.preschip{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12px;color:var(--muted);background:var(--surface2);border:1px dashed var(--line2);border-radius:9px;padding:8px 11px;margin:0 0 12px}
+.preschip span{color:var(--text);text-decoration:underline;cursor:pointer;margin-left:auto}
+.preschip.off{border-style:solid}
+.presriga{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.presriga>div{flex:1 1 120px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.presriga .prl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted2)}
+.presriga b{font-size:20px;display:block;margin:2px 0}
+.presriga small{font-size:11px;color:var(--muted)}
 .tactions{display:flex;gap:8px;margin-top:20px}
 .tsugg{font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--line2);border-radius:9px;padding:7px 10px;line-height:1.4}
 .bar-tests{margin-left:8px}
@@ -1371,6 +1400,7 @@ function normalize(){
   if(!S.load) S.load={};
   if(!S.screen) S.screen={};   // valutazioni posturali/funzionali, una per data
   if(!S.lv) S.lv={};           // sessioni di curva carico-velocità
+  if(!S.pres) S.pres={};       // appello: uno stato per atleta e per data
   if(!S.gruppi) S.gruppi={};   // gruppi di lavoro decisi a mano, per test
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
   if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
@@ -1533,7 +1563,7 @@ function tombSet(key){
   if(!S.tomb) S.tomb={};
   S.tomb[key]=new Date().toISOString();
 }
-const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v"};
+const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v", pres:"p"};
 
 /* Le curve carico-velocità ammettono più esercizi nella stessa data: la chiave
    di merge non può essere la sola data, o il secondo esercizio sparisce. */
@@ -1592,7 +1622,7 @@ function mergeState(server, local){
   out.athletes=Object.keys(aid).filter(id=>!T["ath:"+id]).map(id=>mergeAthlete(sa[id], la[id]));
 
   const live={}; out.athletes.forEach(a=>live[a.id]=1);
-  ["data","readiness","load","screen","lv"].forEach(k=>{ if(!out[k]) out[k]={}; });
+  ["data","readiness","load","screen","lv","pres"].forEach(k=>{ if(!out[k]) out[k]={}; });
 
   Object.keys(Object.assign({},server.data||{},local.data||{})).forEach(aid=>{
     if(!live[aid]){ delete out.data[aid]; return; }
@@ -1604,7 +1634,7 @@ function mergeState(server, local){
       if(arr.length) out.data[aid][t]=arr; // un test svuotato non resta come chiave vuota
     });
   });
-  ["readiness","load","screen","lv"].forEach(k=>{
+  ["readiness","load","screen","lv","pres"].forEach(k=>{
     Object.keys(Object.assign({},server[k]||{},local[k]||{})).forEach(aid=>{
       if(!live[aid]){ delete out[k][aid]; return; }
       const arr=mergeByDate((server[k]||{})[aid],(local[k]||{})[aid],TOMB_PREFIX[k]+":"+aid+":",T);
@@ -3674,6 +3704,7 @@ function openAthlete(id, isNew){
   const _flags=SCREEN_KEYS.filter(k=>p[k]).length;
   if(_flags) h+='<div class="alert danger" style="margin-top:10px"><span class="ai">⚠️</span><span>'+
     '<b>Screening: '+_flags+' voce/i positive.</b> Consigliata una verifica medica prima di proporre carichi intensi.</span></div>';
+  if(!isNew) h+=presRiga(id);
   // sezioni profilo (wrapper per aggiornare la guida dal vivo)
   h+='<div oninput="updateBrief(\''+id+'\')" onchange="updateBrief(\''+id+'\')">';
   /* Le otto sezioni erano tutte aperte insieme: 48 campi in una finestra sola,
@@ -3788,6 +3819,8 @@ function delAthlete(id){
   if(S.load) delete S.load[id];
   if(S.screen) delete S.screen[id];
   if(S.lv) delete S.lv[id];
+  // un'assenza e' un dato personale: se resta qui, resta anche nel cloud
+  if(S.pres) delete S.pres[id];
   gruppiTogli(id);
   tombSet("ath:"+id);   // impedisce che il merge lo resusciti
   save(); closeM(); render(); toast("Atleta e dati eliminati");
@@ -4981,7 +5014,8 @@ let LG={ex:null, pct:75, size:3, mode:"media", man:"auto", ord:"asc", sel:{}};
    Qui si ragiona per TEST, che e' dove i dati stanno davvero; il nome
    dell'esercizio serve solo a precompilare il modulo della stima. */
 function lgEsercizi(){
-  const rows=teamAthletes()||[];
+  // stesso conteggio dei gruppi: «Squat 6» sopra e «5 atlete» sotto confonde
+  const rows=presFiltra(teamAthletes()||[]);
   return rmTestList().map(e=>{
     let n=0; rows.forEach(a=>{ if(rm1RM(a.id,e.test)) n++; });
     return {n:e.n, ex:e.ex, test:e.test, conta:n};
@@ -5041,7 +5075,7 @@ function lgHint(){
 }
 function lgBody(){
   const lista=lgEsercizi();
-  let h='<div class="lgex">'+lista.map(e=>
+  let h=presChip()+'<div class="lgex">'+lista.map(e=>
     '<button class="chip'+(e.test===LG.ex?" on":"")+'" onclick="lgSetEx(\''+e.test+'\')">'+
     esc(e.n)+' <span class="lgn">'+e.conta+'</span></button>').join("")+'</div>';
 
@@ -5102,7 +5136,9 @@ function lgEquip(){
    prima o poi una delle tre dimentica un pezzo.                            */
 function lgCandidate(test){
   const con=[], senza=[];
-  (teamAthletes()||[]).forEach(a=>{
+  // chi oggi e' a casa non entra nei gruppi: un carico medio calcolato anche
+  // su di lei e' un carico sbagliato per le altre due
+  presFiltra(teamAthletes()||[]).forEach(a=>{
     const m=rm1RM(a.id,test);
     if(m) con.push({id:a.id, nome:a.name, kg:m.kg, m:m}); else senza.push(a);
   });
@@ -5171,7 +5207,11 @@ function lgDaAuto(){
   if(!con.length){ toast("Nessun 1RM su questo test"); return; }
   lgScrivi(lgKey(), rmGruppi(con, LG.size).map(g=>g.map(x=>x.id)));
   LG.sel={}; lgRefresh();
-  toast("Gruppi automatici copiati: ora puoi spostare chi vuoi");
+  // i gruppi a mano restano per le settimane dopo: chi oggi e' a casa non c'e'
+  const fuori=PRES_F ? presFuoriOggi().length : 0;
+  toast(fuori
+    ? "Gruppi fatti con chi c'è oggi: "+fuori+(fuori===1?" assente la ritrovi":" assenti le ritrovi")+" in «Da assegnare»"
+    : "Gruppi automatici copiati: ora puoi spostare chi vuoi");
 }
 function lgAzzera(){
   lgScrivi(lgKey(), null); LG.sel={}; lgRefresh();
@@ -5271,10 +5311,15 @@ function lgResMan(nome, ex){
   const dentro={}; salvati.forEach(g=>g.forEach(id=>dentro[id]=1));
   // chi e' nei gruppi salvati ma oggi non ha un 1RM su questo test non si puo'
   // caricare: resta nel gruppo, ma va detto invece di sparire in silenzio
-  const senzaDato=[];
+  const senzaDato=[], assenti=[];
+  const oggi=todayISO();
   const blocchi=salvati.map(g=>{
     const dati=g.map(id=>idx[id]).filter(Boolean);
-    g.forEach(id=>{ if(!idx[id]){ const a=(S.athletes||[]).find(x=>x.id===id); if(a) senzaDato.push(a.name); } });
+    /* Un'assente non e' un'atleta «senza 1RM»: dirlo cosi' ti farebbe
+       cercare un dato che c'e'. Resta nel gruppo salvato — torna la
+       settimana dopo — ma oggi il carico si calcola su chi c'e'. */
+    g.forEach(id=>{ if(!idx[id]){ const a=(S.athletes||[]).find(x=>x.id===id); if(!a) return;
+      if(PRES_F && presGet(id,oggi)==="a") assenti.push(a.name); else senzaDato.push(a.name); } });
     return dati;
   });
   const ordinati=blocchi.map((g,i)=>({g:g, gi:i}))
@@ -5303,6 +5348,11 @@ function lgResMan(nome, ex){
     h+='<div class="psec">'+ordinati.length+' gruppi'+(quando?' · formati il '+fmtDate(quando):'')+'</div>';
     h+=lgAvvisi(pesanti, larghi);
     h+='<div class="lgwrap">'+corpo+'</div>'+lgLegenda();
+    if(assenti.length){
+      h+='<div class="alert info"><span class="ai">🏠</span><span>'+
+         esc(assenti.join(", "))+': '+(assenti.length===1?'assente oggi':'assenti oggi')+
+         '. Resta'+(assenti.length===1?'':'no')+' nel gruppo, ma il carico di oggi è calcolato su chi c\'è.</span></div>';
+    }
     if(senzaDato.length){
       h+='<div class="alert warn"><span class="ai">⚠️</span><span>'+
          esc(senzaDato.join(", "))+': '+(senzaDato.length===1?'è in un gruppo ma non ha':'sono nei gruppi ma non hanno')+
@@ -5980,6 +6030,212 @@ function markAllSheetsSeen(){
   if(n){ save(); render(); toast(n+(n===1?" scheda segnata come letta":" schede segnate come lette")); }
 }
 
+/* ═══════════════ PRESENZE ═══════════════
+   Il dato piu' banale del software e il piu' facile da rendere inutile.
+
+   Tre stati, non due. «Presente» e «assente» lasciano fuori il caso piu'
+   frequente di tutti: c'e', ma lavora a meta' — caviglia, ciclo, rientro da
+   un fastidio. Segnarla presente falsa il confronto con il carico svolto;
+   segnarla assente cancella un allenamento che ha fatto.
+
+   Il motivo dell'assenza NON si scrive. Sembra un'omissione, e' una scelta:
+   «assente per infortunio» su una minorenne e' un dato sanitario (art. 9
+   GDPR) e finirebbe in un elenco che apri a bordo campo davanti a tutti. Il
+   motivo, quando conta, sta nella scheda dell'atleta, dove il consenso lo
+   copre. Qui serve solo sapere chi c'era.
+
+   Una riga per data, non per seduta: due allenamenti nello stesso giorno
+   contano come uno. Se un giorno diventeranno due, serve una chiave diversa
+   e una migrazione — meglio saperlo adesso che scoprirlo dopo. */
+const PRES_ST={
+  p:{l:"Presente", ic:"✔", c:"up"},
+  r:{l:"Ridotto",  ic:"½", c:"amber"},
+  a:{l:"Assente",  ic:"✖", c:"down"},
+};
+function presArr(aid){ const a=(S.pres||{})[aid]; return Array.isArray(a)?a:[]; }
+function presGet(aid,d){ const e=presArr(aid).find(x=>x&&x.d===d); return e?e.s:null; }
+function presSet(aid,d,s){
+  if(!idOk(aid)||!/^\d{4}-\d{2}-\d{2}$/.test(String(d||""))) return;
+  if(!S.pres) S.pres={};
+  const k="p:"+aid+":"+d;
+  if(!s){
+    const arr=presArr(aid).filter(e=>e.d!==d);
+    if(arr.length) S.pres[aid]=arr; else delete S.pres[aid];
+    tombSet(k);       // senza, al primo conflitto il server la rimette
+    return;
+  }
+  if(!PRES_ST[s]) return;
+  if(!Array.isArray(S.pres[aid])) S.pres[aid]=[];
+  const arr=S.pres[aid], i=arr.findIndex(e=>e&&e.d===d);
+  if(i>=0) arr[i].s=s;
+  else { arr.push({d:d, s:s}); arr.sort((x,y)=> x.d<y.d?-1:1); }
+  /* Riscrivere una riga cancellata deve togliere la tombstone: altrimenti la
+     correzione vive solo su questo telefono e sparisce alla sincronizzazione
+     successiva. E' lo stesso difetto che aveva fatto sparire l'informativa. */
+  if(S.tomb) delete S.tomb[k];
+}
+/* Chiudere l'appello scrive una riga per OGNI atleta della squadra: chi non
+   hai toccato e' presente. Senza questo, segnando solo le assenti, dopo tre
+   mesi la frequenza sarebbe calcolata sui soli giorni con un'assenza — un
+   numero che sembra un dato e non lo e'. */
+function presSalva(d, scelte){
+  (teamAthletes()||[]).forEach(a=>{
+    const s=(scelte||{})[a.id];
+    presSet(a.id, d, PRES_ST[s] ? s : "p");
+  });
+}
+function presStats(aid, da){
+  const arr=presArr(aid).filter(e=>!da||e.d>=da);
+  let p=0,r=0,a=0;
+  arr.forEach(e=>{ if(e.s==="p")p++; else if(e.s==="r")r++; else if(e.s==="a")a++; });
+  const tot=p+r+a;
+  // zero su zero non e' 0%: e' «non lo so». Mostrare 0% direbbe una bugia.
+  return {p:p, r:r, a:a, tot:tot, pc: tot ? Math.round((p+r)/tot*100) : null};
+}
+function presConta(d){
+  const ath=teamAthletes()||[];
+  let p=0,r=0,a=0,none=0;
+  ath.forEach(x=>{ const s=presGet(x.id,d);
+    if(s==="p")p++; else if(s==="r")r++; else if(s==="a")a++; else none++; });
+  return {tot:ath.length, p:p, r:r, a:a, none:none, in:p+r, segnato:(p+r+a)>0};
+}
+/* Il filtro toglie SOLO chi e' segnata assente. Un'atleta non segnata non e'
+   un'assente: e' un'atleta su cui non hai ancora detto niente. Se il filtro
+   escludesse anche lei, un appello iniziato e non finito — due tocchi e una
+   telefonata — ti svuoterebbe la palestra proprio mentre stai lavorando. */
+let PRES_F=true;
+function presFiltra(ath, data){
+  if(!PRES_F) return ath||[];
+  const d=data||todayISO();
+  const fuori=(ath||[]).filter(a=>presGet(a.id,d)==="a");
+  if(!fuori.length) return ath||[];
+  return (ath||[]).filter(a=>presGet(a.id,d)!=="a");
+}
+function presFuoriOggi(data){
+  const d=data||todayISO();
+  return (teamAthletes()||[]).filter(a=>presGet(a.id,d)==="a");
+}
+/* La riga che spiega il filtro dove sta agendo. Un filtro silenzioso che
+   nasconde due atlete e' peggio di nessun filtro: ti accorgi del buco a
+   seduta finita. */
+function presChip(data){
+  const d=data||todayISO();
+  const f=presFuoriOggi(d); if(!f.length) return "";
+  const quando = d===todayISO() ? "oggi" : "il "+fmtDate(d);
+  return PRES_F
+    ? '<div class="preschip">Assenti '+quando+': '+f.map(a=>esc(a.name)).join(", ")+
+      '<span onclick="presToggleF()">mostra tutte</span></div>'
+    : '<div class="preschip off">Mostro tutte, '+(f.length===1?'compresa 1 assente ':'comprese '+f.length+' assenti ')+quando+
+      '<span onclick="presToggleF()">solo chi c\'è</span></div>';
+}
+function presToggleF(){
+  PRES_F=!PRES_F;
+  const lb=document.getElementById("lgBody");
+  if(lb && typeof LG==="object" && LG) lb.innerHTML=lgBody();
+  if(document.getElementById("sList")) sessRowsKeep();
+  render();
+}
+
+/* La frequenza nella scheda. E' il primo numero da guardare quando una non
+   migliora: prima di cambiare programma, verifica che l'abbia fatto. Due
+   finestre, perche' la media di tutta la stagione nasconde il mese in cui ha
+   smesso di venire. */
+function presRiga(aid){
+  const tutto=presStats(aid);
+  if(!tutto.tot) return '';
+  const d=new Date(); d.setDate(d.getDate()-28);
+  const da=d.toISOString().slice(0,10);
+  const ult=presStats(aid, da);
+  /* Niente colori: una soglia «buona frequenza» non esiste in letteratura in
+     una forma che si possa applicare qui, e inventarla sarebbe esattamente il
+     tipo di numero falso che questo software non deve dare. Il confronto
+     onesto e' con la sua squadra, sulle stesse sedute. */
+  const me=a=>{ const s=a.slice().sort((x,y)=>x-y), n=s.length; return n ? (n%2 ? s[(n-1)/2] : Math.round((s[n/2-1]+s[n/2])/2)) : null; };
+  const at=(S.athletes||[]).find(x=>x.id===aid);
+  const comp=(S.athletes||[]).filter(x=>at && x.team===at.team && x.id!==aid)
+    .map(x=>presStats(x.id).pc).filter(v=>v!=null);
+  const sq=comp.length>=3 ? me(comp) : null;
+  return '<div class="presriga">'+
+    '<div><span class="prl">Frequenza</span><b>'+tutto.pc+'%</b>'+
+      '<small>'+(tutto.p+tutto.r)+' su '+tutto.tot+' sedute'+(tutto.r?' · '+tutto.r+' a carico ridotto':'')+'</small></div>'+
+    (ult.tot && ult.tot<tutto.tot
+      ? '<div><span class="prl">Ultime 4 settimane</span><b>'+ult.pc+'%</b>'+
+        '<small>'+(ult.p+ult.r)+' su '+ult.tot+'</small></div>'
+      : '')+
+    (sq!=null ? '<div><span class="prl">Mediana squadra</span><b>'+sq+'%</b><small>delle compagne</small></div>' : '')+
+    '</div>';
+}
+
+/* ─── L'appello ─────────────────────────────────────────────────────────── */
+let PRES_D=null, PRES_DATA="";
+function openPres(d){
+  const ath=teamAthletes()||[];
+  if(!ath.length){ toast("Nessun atleta in questa squadra"); return; }
+  PRES_DATA=d||todayISO();
+  PRES_D={};
+  // se l'appello di quel giorno c'e' gia', si riapre, non si ricomincia
+  ath.forEach(a=>{ const s=presGet(a.id,PRES_DATA); if(s) PRES_D[a.id]=s; });
+  modal('<div class="mh"><div><div class="mt">Appello</div>'+
+    '<div class="ms">Tocca solo chi non c\'è o lavora a metà: le altre restano presenti.</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="mb">'+
+    '<div class="row2"><div><label class="fl">Data</label>'+
+      '<input id="prD" type="date" value="'+PRES_DATA+'" onchange="presData(this.value)"></div>'+
+    '<div><label class="fl">Tutte</label>'+
+      '<div class="seg" style="display:flex"><button style="flex:1" onclick="presTutte(\'p\')">presenti</button>'+
+      '<button style="flex:1" onclick="presTutte(\'a\')">assenti</button></div></div></div>'+
+    '<div id="prCnt" class="prcnt"></div>'+
+    '<div id="prList" class="prlist"></div>'+
+    '<div style="height:14px"></div>'+
+    '<button class="btn primary" style="width:100%" onclick="presCommit()">Salva appello</button>'+
+    '<div class="fhint" style="margin-top:8px">Il motivo dell\'assenza non si scrive qui: se è di salute va nella scheda dell\'atleta, dove il consenso lo copre.</div>'+
+    '</div>');
+  presList();
+}
+function presData(v){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||""))) return;
+  PRES_DATA=v; PRES_D={};
+  (teamAthletes()||[]).forEach(a=>{ const s=presGet(a.id,PRES_DATA); if(s) PRES_D[a.id]=s; });
+  presList();
+}
+function presTap(aid,s){
+  if(!PRES_D) return;
+  if(PRES_D[aid]===s) delete PRES_D[aid]; else PRES_D[aid]=s;
+  presList();
+}
+function presTutte(s){
+  if(!PRES_D) return;
+  PRES_D={};
+  if(s!=="p") (teamAthletes()||[]).forEach(a=>{ PRES_D[a.id]=s; });
+  presList();
+}
+function presList(){
+  const el=document.getElementById("prList"); if(!el) return;
+  // alfabetico sempre: all'appello cerchi un nome, non una classifica
+  const ath=(teamAthletes()||[]).slice().sort((x,y)=>String(x.name||"").localeCompare(String(y.name||""),"it"));
+  let nIn=0, nA=0, nR=0;
+  let h="";
+  ath.forEach(a=>{
+    const s=PRES_D[a.id]||"p";
+    if(s==="a") nA++; else { nIn++; if(s==="r") nR++; }
+    h+='<div class="prrow '+PRES_ST[s].c+'"><span class="prn">'+esc(a.name)+'</span><div class="prseg">'+
+       ["p","r","a"].map(k=>'<button class="'+(s===k?"on "+PRES_ST[k].c:"")+'" onclick="presTap(\''+a.id+'\',\''+k+'\')" title="'+PRES_ST[k].l+'">'+
+         PRES_ST[k].ic+'</button>').join("")+
+       '</div></div>';
+  });
+  el.innerHTML=h;
+  const c=document.getElementById("prCnt");
+  if(c) c.innerHTML='<b>'+nIn+'</b> su '+ath.length+' in palestra'+
+    (nR?' · '+nR+' a carico ridotto':'')+(nA?' · '+nA+(nA===1?' assente':' assenti'):'');
+}
+function presCommit(){
+  if(!PRES_D){ closeM(); return; }
+  presSalva(PRES_DATA, PRES_D);
+  const c=presConta(PRES_DATA);
+  save(); closeM(); render();
+  toast("Appello del "+fmtDate(PRES_DATA)+": "+c.in+" su "+c.tot);
+}
+
 function renderToday(){
   const grid=document.getElementById("grid");
   const ath=teamAthletes();
@@ -6023,11 +6279,19 @@ function renderToday(){
   const ready=items.filter(x=>!x.flags.length);
   const checkinToday=items.filter(x=>x.rToday).length;
   const _gaps=consentGaps();
+  /* «Da gestire» e «Pronti» parlano di chi e' in palestra. Un'assente con la
+     readiness bassa di ieri non e' un problema di oggi: resta nella sua
+     sezione, ma con l'etichetta, cosi' non ti metti a cercarla. */
+  const _pc=presConta(today);
+  const _ass={}; ath.forEach(a=>{ if(presGet(a.id,today)==="a") _ass[a.id]=1; });
+  const _rid={}; ath.forEach(a=>{ if(presGet(a.id,today)==="r") _rid[a.id]=1; });
+  const presTag=id=> _ass[id] ? '<span class="prtag down">assente</span>'
+                    : _rid[id] ? '<span class="prtag amber">ridotto</span>' : '';
   let h='<div class="today">'+
      (_gaps.length?'<div class="alert danger" style="margin-bottom:12px"><span class="ai">🛡</span><span><b>'+_gaps.length+
        (_gaps.length===1?' atleta ha':' atleti hanno')+' dati clinici senza consenso tracciato.</b> <span onclick="openPrivacy()" style="text-decoration:underline;cursor:pointer">Verifica</span></span></div>':'')+
      '<div class="tstats">'+
-     tstat(ath.length,"Atleti")+
+     tstat(_pc.segnato ? _pc.in+"/"+_pc.tot : "—", _pc.segnato ? "In palestra" : "Appello da fare", _pc.segnato?"":"amber")+
      tstat(checkinToday+"/"+ath.length,"Check-in oggi")+
      tstat(manage.length,"Da gestire", manage.length?"down":"up")+
      tstat(ready.length,"Pronti","up")+'</div>';
@@ -6086,7 +6350,7 @@ function renderToday(){
             .concat(d.righe.filter(r=>r.c!=="mute" && !/^🚩|^⚠|^Dolore/.test(r.t)))
         : [];
       h+='<div class="tcard" onclick="openAthlete(\''+x.a.id+'\')">'+
-         '<div class="tname">'+esc(x.a.name)+'<span class="sx">'+(x.a.sex||"M")+'</span></div>'+
+         '<div class="tname">'+esc(x.a.name)+'<span class="sx">'+(x.a.sex||"M")+'</span>'+presTag(x.a.id)+'</div>'+
          '<div class="tflags">'+x.flags.map(f=>'<span class="tflag '+f.c+'">'+f.t+'</span>').join("")+'</div>'+
          (righe.length?'<div class="tdig">'+righe.map(r=>'<div class="tdrow '+r.c+'">'+esc(r.t)+'</div>').join("")+'</div>':'')+
          (x.sug?'<div class="tsugg">💡 '+x.sug+'</div>':'')+'</div>';
@@ -6098,10 +6362,11 @@ function renderToday(){
     h+='<div class="tsec">Pronti ('+ready.length+')</div><div class="treadywrap">';
     ready.forEach(x=>{ const pc=x.rl?readinessScore(x.rl):null;
       /* punteggio grezzo: qui serve solo come etichetta */
-      h+='<span class="tready" onclick="openAthlete(\''+x.a.id+'\')">'+esc(x.a.name)+(pc!=null?' <b>'+pc+'</b>':'')+'</span>'; });
+      h+='<span class="tready'+(_ass[x.a.id]?' tass':'')+'" onclick="openAthlete(\''+x.a.id+'\')">'+esc(x.a.name)+(pc!=null?' <b>'+pc+'</b>':'')+'</span>'; });
     h+='</div>';
   }
-  h+='<div class="tactions"><button class="btn primary sm" onclick="openCheckin()">+ Check-in di oggi</button>'+
+  h+='<div class="tactions"><button class="btn primary sm" onclick="openPres()">'+(_pc.segnato?'✔ Appello':'+ Appello')+'</button>'+
+     '<button class="btn sm" onclick="openCheckin()">+ Check-in di oggi</button>'+
      '<button class="btn sm" onclick="openLoad()">+ Carico seduta</button></div></div>';
   grid.innerHTML=h;
 }
@@ -6547,7 +6812,7 @@ function openSession(){
     '</div>'+
     '<div class="row2"><div><label class="fl">Test</label>'+
     '<select id="sT" onchange="sessRows()">'+opt+'</select></div>'+
-    '<div><label class="fl">Data</label><input id="sD" type="date" value="'+todayISO()+'"></div></div>'+
+    '<div><label class="fl">Data</label><input id="sD" type="date" value="'+todayISO()+'" onchange="sessRowsKeep()"></div></div>'+
     '<div id="sMode"></div>'+
     '<label class="fl">Atleti</label><div class="sess-list" id="sList"></div>'+
     '<div style="height:14px"></div>'+
@@ -6597,7 +6862,13 @@ function sessRows(){
   let h = SESS.mode==="reps"
     ? '<div class="srhead"><span>carico</span><span>ripetiz.</span><span>riserva</span><span>1RM</span></div>'
     : "";
-  teamAthletes().forEach(a=>{
+  // l'appello che conta e' quello del giorno della sessione, non di oggi:
+  // registrando stasera il test di ieri, le assenti sono quelle di ieri
+  const dSess=(document.getElementById("sD")||{}).value||todayISO();
+  h=presChip(dSess)+h;
+  // le assenti non hanno righe: una casella vuota per chi non c'e' e' una
+  // casella in cui prima o poi scrivi il numero della ragazza accanto
+  presFiltra(teamAthletes(), dSess).forEach(a=>{
     const arr=series(a.id,tid); const u=arr.length?arr[arr.length-1]:null;
     const lastv=u?fmtNum(u.v):"";
     const prec = lastv!=="" ? 'ultimo: '+lastv+' '+t.unit+(u.fonte==="reps"||u.fonte==="lv"?" (stima)":"") : "—";
@@ -6620,6 +6891,27 @@ function sessRows(){
     }
   });
   document.getElementById("sList").innerHTML=h;
+}
+/* Cambiare la data ricostruisce le righe (le assenti di quel giorno spariscono,
+   le presenti ricompaiono) — senza buttare via quello che hai gia' scritto. */
+function sessRowsKeep(){
+  const tieni={};
+  Array.prototype.forEach.call(document.querySelectorAll("#sList input[data-a]"),i=>{
+    if(i.value!=="") tieni[i.getAttribute("data-a")]={v:i.value}; });
+  Array.prototype.forEach.call(document.querySelectorAll("#sList .sess-rm"),r=>{
+    const q=c=>r.querySelector(c), w=q(".srW"), rr=q(".srR"), rq=q(".srQ");
+    if((w&&w.value!=="")||(rr&&rr.value!==""))
+      tieni[r.getAttribute("data-a")]={w:w&&w.value, r:rr&&rr.value, q:rq&&rq.value};
+  });
+  sessRows();
+  Object.keys(tieni).forEach(aid=>{
+    const t=tieni[aid];
+    if(t.v!=null){ const i=document.querySelector('#sList input[data-a="'+aid+'"]'); if(i) i.value=t.v; return; }
+    const r=document.querySelector('#sList .sess-rm[data-a="'+aid+'"]'); if(!r) return;
+    const q=c=>r.querySelector(c);
+    if(q(".srW")) q(".srW").value=t.w||""; if(q(".srR")) q(".srR").value=t.r||""; if(q(".srQ")&&t.q!=null) q(".srQ").value=t.q;
+    sessCalc(aid);
+  });
 }
 function sessMode(m){ SESS.mode=m; sessRows(); }
 function sessEx(v){
@@ -6810,7 +7102,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},gruppi:{},custom:[],te:{},tomb:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -6942,6 +7234,20 @@ function sanitizeImport(o){
       else out.policy[k]=str(v,2000);
     });
   }
+  /* Presenze: uno stato per atleta e per data. Stesso difetto che aveva
+     cancellato screen, lv e la batteria di squadra — un campo che l'export
+     scrive e l'import non legge. Qui costerebbe mesi di appello. */
+  if(o.pres&&typeof o.pres==="object"&&!Array.isArray(o.pres)){
+    Object.keys(o.pres).forEach(aid=>{
+      if(!live[aid]||!Array.isArray(o.pres[aid])) return;
+      const visti={}, arr=[];
+      o.pres[aid].slice(0,3000).forEach(e=>{
+        if(!e||!isDate(e.d)||!PRES_ST[e.s]||visti[e.d]) return;
+        visti[e.d]=1; arr.push({d:e.d, s:e.s});
+      });
+      if(arr.length){ arr.sort((x,y)=> x.d<y.d?-1:1); out.pres[aid]=arr; }
+    });
+  }
   /* Gruppi di lavoro: id di atleti vivi, niente doppioni, niente gruppi vuoti.
      Un id che non esiste piu' qui non entra: in palestra un nome fantasma in
      un gruppo e' peggio di un gruppo in meno. */
@@ -7005,7 +7311,8 @@ document.getElementById("fileIn").addEventListener("change",function(e){
       "· "+o.athletes.length+" atleti, "+o.teams.length+" squadre\n"+
       "· "+nMis+" misurazioni di test\n"+
       "· "+cnt(o.readiness)+" check-in readiness, "+cnt(o.load)+" registrazioni di carico\n"+
-      "· "+cnt(o.screen)+" valutazioni posturali, "+cnt(o.lv)+" curve carico-velocità\n\n"+
+      "· "+cnt(o.screen)+" valutazioni posturali, "+cnt(o.lv)+" curve carico-velocità\n"+
+      "· "+cnt(o.pres)+" righe di appello\n\n"+
       (S.athletes&&S.athletes.length
         ? "ATTENZIONE: i dati attuali ("+S.athletes.length+" atleti) verranno SOSTITUITI, non uniti."
         : "");
@@ -7582,7 +7889,7 @@ function loadDemo(){
     if(!S.tomb) S.tomb={};
     S.athletes.forEach(a=>{
       S.tomb["ath:"+a.id]=ora;
-      ["data","readiness","load","screen","lv"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
+      ["data","readiness","load","screen","lv","pres"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
       gruppiTogli(a.id);
     });
     (S.teams||[]).forEach(x=>{ S.tomb["team:"+x.id]=ora; });

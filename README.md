@@ -48,7 +48,7 @@ npx vercel dev
 
 - **Un utente = un blob JSON.** Tutto lo stato (atleti, misure, anamnesi, readiness,
   carichi, screening, curve carico-velocità, presenze, gruppi, schede di seduta,
-  calendario gare) sta in una riga della tabella `payloads`,
+  calendario gare, archivio My Jump) sta in una riga della tabella `payloads`,
   colonna `jsonb`. Ogni salvataggio riscrive tutto.
 - **Concorrenza ottimistica.** Il client dichiara su quale versione ha lavorato
   (`baseVersion`). Se il server è più avanti risponde 409 e il client fa il merge.

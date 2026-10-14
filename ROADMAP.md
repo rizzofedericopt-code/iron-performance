@@ -273,6 +273,14 @@ forza relativa la segue. Le colonne tue con quei nomi confluiscono da sole (con 
 copia prima); le altre si spostano a mano. Front squat con colonna sua: prima la curva
 carico-velocità lo scriveva nel back squat. Forza relativa per tutti i massimali.
 
+**Archivio My Jump** (barra in basso → My Jump) — ogni salto con tutti i numeri di
+My Jump (altezza, tempo di volo, forza, potenza, velocità, impulso), prova per prova,
+da inserire a mano o dal CSV (che ora finisce intero nell'archivio). Tabella per
+metrica con il salto migliore di ogni giorno, storico per atleta, esportazione CSV.
+Controlli: un salto a zero non entra; altezza, tempo di volo e velocità di decollo
+devono tornare fra loro (h = g·t²/8). Nella colonna CMJ va il migliore del giorno.
+Nessun colore: sono calcoli sullo stesso salto, il verdetto resta nella colonna CMJ.
+
 **Promemoria** (Oggi → Da misurare) — test scaduti rispetto alla frequenza della
 batteria dello sport, chi manca dall'ultima sessione, test in batteria mai usati.
 

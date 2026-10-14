@@ -503,6 +503,24 @@ ul.kb li b{color:#fff;font-weight:600}
 .treadywrap{display:flex;flex-wrap:wrap;gap:7px}
 .tready{font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:6px 11px;cursor:pointer}
 .tready b{color:var(--up)}
+/* archivio My Jump */
+.mjtop{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
+.mjmet{margin-top:-4px}
+.mjwrap{overflow-x:auto}
+.mjtab{width:100%;border-collapse:collapse;font-size:13px}
+.mjtab th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted2);padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.mjtab th small{display:block;text-transform:none;letter-spacing:0;font-size:10px}
+.mjtab td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.mjtab td small{display:block;font-size:10.5px;color:var(--muted2)}
+.mjtab td.n{font-weight:600}
+.mjtab tbody tr{cursor:pointer}
+.mjtab td b{font-size:15px}
+.mjstor td{font-family:var(--mono);font-size:12px}
+.mjstor td.n{font-family:var(--sans)}
+.mjform{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.mjform label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted)}
+.mjform label small{color:var(--muted2)}
+#modal .mjform input{margin:0;padding:7px 9px}
 /* gare */
 .garaban{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:10px 0 0;cursor:pointer;font-size:13px}
 .gmd{font-weight:800;font-size:12px;color:#0A0A0A;background:#FFB340;border-radius:6px;padding:3px 7px;white-space:nowrap}
@@ -1672,6 +1690,7 @@ function normalize(){
   if(!S.load) S.load={};
   if(!S.screen) S.screen={};   // valutazioni posturali/funzionali, una per data
   if(!S.lv) S.lv={};           // sessioni di curva carico-velocità
+  if(!S.mjl || typeof S.mjl!=="object" || Array.isArray(S.mjl)) S.mjl={};   // archivio My Jump, salto per salto
   if(!S.pres) S.pres={};       // appello: uno stato per atleta e per data
   if(!S.gruppi) S.gruppi={};   // gruppi di lavoro decisi a mano, per test
   if(!S.sedute || typeof S.sedute!=="object" || Array.isArray(S.sedute)) S.sedute={};   // scheda di seduta, per squadra
@@ -1842,7 +1861,7 @@ function tombSet(key){
   if(!S.tomb) S.tomb={};
   S.tomb[key]=new Date().toISOString();
 }
-const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v", pres:"p"};
+const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v", pres:"p", mjl:"j"};
 
 /* Le curve carico-velocità ammettono più esercizi nella stessa data: la chiave
    di merge non può essere la sola data, o il secondo esercizio sparisce. */
@@ -1901,7 +1920,7 @@ function mergeState(server, local){
   out.athletes=Object.keys(aid).filter(id=>!T["ath:"+id]).map(id=>mergeAthlete(sa[id], la[id]));
 
   const live={}; out.athletes.forEach(a=>live[a.id]=1);
-  ["data","readiness","load","screen","lv","pres"].forEach(k=>{ if(!out[k]) out[k]={}; });
+  ["data","readiness","load","screen","lv","pres","mjl"].forEach(k=>{ if(!out[k]) out[k]={}; });
 
   Object.keys(Object.assign({},server.data||{},local.data||{})).forEach(aid=>{
     if(!live[aid]){ delete out.data[aid]; return; }
@@ -1913,7 +1932,7 @@ function mergeState(server, local){
       if(arr.length) out.data[aid][t]=arr; // un test svuotato non resta come chiave vuota
     });
   });
-  ["readiness","load","screen","lv","pres"].forEach(k=>{
+  ["readiness","load","screen","lv","pres","mjl"].forEach(k=>{
     Object.keys(Object.assign({},server[k]||{},local[k]||{})).forEach(aid=>{
       if(!live[aid]){ delete out[k][aid]; return; }
       const arr=mergeByDate((server[k]||{})[aid],(local[k]||{})[aid],TOMB_PREFIX[k]+":"+aid+":",T);
@@ -2971,6 +2990,7 @@ function render(){
   if(S.view==="today"){ renderToday(); return; }
   if(S.view==="trend"){ renderTrend(); return; }
   if(S.view==="readiness"){ renderReadiness(); return; }
+  if(S.view==="mj"){ renderMJ(); return; }
   renderMatrix();
 }
 
@@ -3213,7 +3233,8 @@ const TABS=[
   {v:"today",  l:"Oggi", d:"Chi gestire prima della seduta",      ic:'<path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2.4"/>'},
   {v:"matrix", l:"Matrice", d:"Tutti i test di tutti, in tabella",   ic:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/>'},
   {v:"trend",  l:"Andamento", d:"Un test nel tempo, a confronto", ic:'<path d="M3 17.5l5.5-6 4 3.5L21 6"/><path d="M21 6h-5"/><path d="M21 6v5"/>'},
-  {v:"readiness", l:"Fatica", d:"Carico, recupero e segnali di allarme", ic:'<path d="M3 12h4l2.5-6 4 12 2.5-6h5"/>'}
+  {v:"readiness", l:"Fatica", d:"Carico, recupero e segnali di allarme", ic:'<path d="M3 12h4l2.5-6 4 12 2.5-6h5"/>'},
+  {v:"mj", l:"My Jump", d:"Ogni salto con tutti i suoi numeri", ic:'<path d="M12 20V7"/><path d="M7.5 11.5L12 7l4.5 4.5"/><path d="M5 21h14"/><circle cx="12" cy="3.8" r="1.6"/>'}
 ];
 function renderTabs(){
   const el=document.getElementById("tabbar"); if(!el) return;
@@ -3266,6 +3287,8 @@ function renderBar(){
     h+='<div class="barhint">una linea per atleta nel tempo</div>';
   } else if(S.view==="readiness"){
     h+='<div class="barhint">readiness + fatica neuromuscolare</div>';
+  } else if(S.view==="mj"){
+    h+='<div class="barhint">archivio My Jump: ogni salto, ogni numero</div>';
   } else {
     h+='<div class="leg"><span class="it"><span class="dot" style="background:var(--up)"></span>Migliora</span>'+
        '<span class="it"><span class="dot" style="background:var(--down)"></span>Peggiora</span>'+
@@ -4297,6 +4320,7 @@ function delAthlete(id){
   if(S.lv) delete S.lv[id];
   // un'assenza e' un dato personale: se resta qui, resta anche nel cloud
   if(S.pres) delete S.pres[id];
+  if(S.mjl) delete S.mjl[id];
   gruppiTogli(id);
   tombSet("ath:"+id);   // impedisce che il merge lo resusciti
   save(); closeM(); render(); toast("Atleta e dati eliminati");
@@ -8842,7 +8866,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -9011,6 +9035,25 @@ function sanitizeImport(o){
       }
     });
   }
+  // archivio My Jump: salti con data, tipo e numeri; chiavi delle metriche controllate
+  if(o.mjl&&typeof o.mjl==="object"&&!Array.isArray(o.mjl)){
+    Object.keys(o.mjl).forEach(aid=>{
+      if(!live[aid]||!Array.isArray(o.mjl[aid])) return;
+      const visti={}, l=[];
+      o.mjl[aid].slice(0,5000).forEach(e=>{
+        if(!e||!isDate(e.d)) return;
+        const ex=str(e.exercise,30), tipo=str(e.tipo,20)||"Salto";
+        if(!ex||visti[e.d+"|"+ex]) return; visti[e.d+"|"+ex]=1;
+        const m={};
+        if(e.m&&typeof e.m==="object") Object.keys(e.m).slice(0,40).forEach(k=>{
+          if(!/^[A-Za-z0-9_]{1,34}$/.test(k)) return; const v=num(e.m[k]); if(v!=null) m[k]=v; });
+        if(!Object.keys(m).length) return;
+        const r={d:e.d, exercise:ex, tipo:tipo, m:m}; if(e.fonte==="csv") r.fonte="csv";
+        l.push(r);
+      });
+      if(l.length){ l.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:(a.exercise<b.exercise?-1:1)); out.mjl[aid]=l; }
+    });
+  }
   // calendario gare: date valide, avversario come testo, casa/trasferta/non detto
   if(o.gare&&typeof o.gare==="object"&&!Array.isArray(o.gare)){
     Object.keys(o.gare).slice(0,100).forEach(k=>{
@@ -9069,7 +9112,7 @@ function sanitizeImport(o){
   out.sport=str(o.sport,40)||"pallavolo";
   // "fatigue" era il vecchio nome della vista, rinominata "readiness" e mai
   // aggiornata qui: chi importava un backup stando in Fatica finiva in Matrice.
-  out.view=["matrix","today","trend","readiness"].indexOf(o.view)>=0?o.view:"today";
+  out.view=["matrix","today","trend","readiness","mj"].indexOf(o.view)>=0?o.view:"today";
   out.activeTeam=idOk(o.activeTeam)?o.activeTeam:"all";
   return out;
 }
@@ -9267,7 +9310,7 @@ function previewMJL(){
     if(Object.keys(vals).length) righe.push({aid:a.id, nome:a.name, d, vals});
   });
 
-  MJL_PLAN={righe, cols, ignoti, scartate};
+  MJL_PLAN={righe, cols, ignoti, scartate, iNome:m.name, iData:m.date};
 
   let nuovi=0, agg=0;
   righe.forEach(x=>{ Object.keys(x.vals).forEach(t=>{
@@ -9340,9 +9383,266 @@ function applyMJL(){
       n++;
     });
   });
+  // e nell'archivio My Jump va la riga intera, con tutte le colonne numeriche
+  const nArch=(MJL_CSV&&plan.iNome>=0) ? mjDaCSV(MJL_CSV.hdr, MJL_CSV.rows, plan.iNome, plan.iData, {colonna:false}) : 0;
   save(); closeM(); render();
-  toast(n+" misurazioni importate da My Jump Lab");
+  toast(n+" misurazioni importate da My Jump Lab"+(nArch?" · "+nArch+" salti nell'archivio":""));
   MJL_CSV=null; MJL_PLAN=null;
+}
+
+/* ═══════════════ ARCHIVIO MY JUMP ═══════════════════════════════════════════
+   Il posto dove tenere TUTTO quello che My Jump dice di un salto: altezza,
+   tempo di volo, forza, potenza, velocita', impulso — prova per prova.
+
+   Perche' un archivio a parte e non nove colonne in tabella: di quei numeri
+   uno solo e' misurato (il tempo di volo; l'altezza ne e' la conversione), gli
+   altri sono calcoli dal tempo di volo piu' peso e distanza di spinta
+   (Samozino 2008). Nove colonne sarebbero lo stesso salto ripetuto nove
+   volte, con nove colori che dicono la stessa cosa. Qui si conservano tutti,
+   si guardano nel tempo, si esportano — e nella tabella va solo l'altezza,
+   il migliore del giorno, che e' il dato su cui lavorano report e allarmi.
+
+   Due controlli che servono davvero:
+   · un salto a zero non entra: in My Jump vuol dire salto non elaborato, e
+     salvarlo darebbe un «record» falso
+   · altezza, tempo di volo e velocita' di decollo sono lo stesso dato in tre
+     unita': se non tornano, uno e' stato copiato male. h = g·t²/8, v = √(2gh) */
+const MJ_MET=[
+  {k:"h",    l:"Altezza",             u:"cm",     kw:["altezza salto","altezza","jump height","height"]},
+  {k:"tv",   l:"Tempo di volo",       u:"ms",     kw:["tempo di volo","flight time"]},
+  {k:"Frel", l:"Forza relativa",      u:"N/kg",   kw:["forza relativa","relative force"]},
+  {k:"F",    l:"Forza",               u:"N",      kw:["forza","force"]},
+  {k:"Prel", l:"Potenza relativa",    u:"W/kg",   kw:["potenza relativa","relative power"]},
+  {k:"P",    l:"Potenza",             u:"W",      kw:["potenza","power"]},
+  {k:"vm",   l:"Velocità media",      u:"m/s",    kw:["velocita media","mean velocity","average velocity"]},
+  {k:"v0",   l:"Velocità di decollo", u:"m/s",    kw:["velocita di decollo","take off velocity","takeoff velocity"]},
+  {k:"imp",  l:"Impulso",             u:"kg·m/s", kw:["impulso","impulse"]},
+  {k:"rsi",  l:"RSI",                 u:"",       kw:["rsi"]},
+  {k:"tc",   l:"Tempo di contatto",   u:"ms",     kw:["tempo di contatto","contact time"]},
+];
+const MJ_TIPI=[{k:"CMJ",t:"cmj"},{k:"SJ",t:"sj"},{k:"Abalakov",t:"cmjA"},{k:"Drop Jump",t:"dj",metrica:"rsi"}];
+const MJ_G=9.81;
+function mjMet(k){ return MJ_MET.find(x=>x.k===k) || {k:k, l:String(k).replace(/^x_/,"").replace(/_/g," "), u:""}; }
+function mjChiave(intest){
+  const h=normHdr(intest);
+  for(const x of MJ_MET){ if(x.kw.some(w=>h===w || h.indexOf(w+" ")===0)) return x.k; }
+  const s=h.replace(/\s+/g,"_").slice(0,30);
+  return s ? "x_"+s : null;
+}
+function mjTipoDa(v){
+  const s=normHdr(v);
+  if(!s) return null;
+  if(/abalakov|braccia|arm/.test(s)) return "Abalakov";
+  if(/drop|^dj\b/.test(s)) return "Drop Jump";
+  if(/squat jump|^sj\b/.test(s)) return "SJ";
+  if(/cmj|countermovement|contromovimento/.test(s)) return "CMJ";
+  return String(v).trim().slice(0,20);
+}
+function mjCoerenza(m){
+  const w=[];
+  if(m.h>0 && m.tv>0){
+    const hc=MJ_G*Math.pow(m.tv/1000,2)/8*100;
+    if(Math.abs(hc-m.h)/m.h>0.03) w.push("Altezza e tempo di volo non tornano: "+fmtNum(m.tv)+" ms fanno "+fmtNum(Math.round(hc*10)/10)+" cm, non "+fmtNum(m.h)+". Uno dei due è copiato male.");
+  }
+  if(m.h>0 && m.v0>0){
+    const vc=Math.sqrt(2*MJ_G*m.h/100);
+    if(Math.abs(vc-m.v0)/vc>0.03) w.push("Altezza e velocità di decollo non tornano: "+fmtNum(m.h)+" cm vogliono "+fmtNum(Math.round(vc*100)/100)+" m/s.");
+  }
+  return w;
+}
+function mjArr(aid){ const a=(S.mjl||{})[aid]; return Array.isArray(a)?a:[]; }
+/* Il migliore del giorno (per altezza, o RSI sul drop jump) va nella colonna del
+   test. Una misura scritta a mano piu' alta non si abbassa. */
+function mjColonna(aid, d, tipo){
+  const T=MJ_TIPI.find(x=>x.k===tipo); if(!T||!TMAP[T.t]) return;
+  const k=T.metrica||"h";
+  const best=mjArr(aid).filter(e=>e.d===d && e.tipo===tipo && e.m && e.m[k]>0).reduce((m,e)=>Math.max(m,e.m[k]),0);
+  if(!S.data[aid]) S.data[aid]={};
+  const serie=S.data[aid][T.t]||[];
+  const i=serie.findIndex(e=>e.d===d);
+  if(i>=0 && serie[i].fonte!=="mjl"){ if(!(best>serie[i].v)) return; }
+  if(best>0){
+    const v={d:d, v:Math.round(best*100)/100, fonte:"mjl"};
+    if(i>=0) serie[i]=v; else serie.push(v);
+  } else if(i>=0 && serie[i].fonte==="mjl"){ serie.splice(i,1); }
+  serie.sort((a,b)=>a.d<b.d?-1:1);
+  if(serie.length) S.data[aid][T.t]=serie; else delete S.data[aid][T.t];
+}
+function mjSalva(aid, d, tipo, m, opz){
+  opz=opz||{};
+  if(!idOk(aid) || !/^\d{4}-\d{2}-\d{2}$/.test(String(d||""))) return {ok:false, msg:"Data non valida"};
+  const pulito={};
+  Object.keys(m||{}).forEach(k=>{ const v=parseFloat(String(m[k]).replace(",",".")); if(isFinite(v) && v!==0) pulito[k]=Math.round(v*1000)/1000; });
+  if(!(pulito.h>0) && !(pulito.rsi>0)) return {ok:false, msg:"Altezza a zero: in My Jump vuol dire salto non elaborato (decollo e atterraggio non segnati). Non lo salvo."};
+  if(!S.mjl) S.mjl={};
+  const arr=mjArr(aid).slice();
+  const stessi=arr.filter(e=>e.d===d && e.tipo===tipo);
+  // la stessa prova importata due volte e' una prova sola
+  if(stessi.some(e=>JSON.stringify(e.m)===JSON.stringify(pulito))) return {ok:true, doppio:true};
+  let n=1; while(arr.some(e=>e.d===d && e.exercise===tipo+"#"+n)) n++;
+  const rec={d:d, exercise:tipo+"#"+n, tipo:tipo, m:pulito};
+  if(opz.fonte) rec.fonte=opz.fonte;
+  arr.push(rec); arr.sort((a,b)=> a.d<b.d?-1 : a.d>b.d?1 : (a.exercise<b.exercise?-1:1));
+  S.mjl[aid]=arr;
+  if(S.tomb) delete S.tomb["j:"+aid+":"+d+"|"+rec.exercise];
+  if(opz.colonna!==false) mjColonna(aid, d, tipo);
+  return {ok:true, rec:rec, avvisi:mjCoerenza(pulito)};
+}
+function mjTogli(aid, d, ex){
+  const arr=mjArr(aid), e=arr.find(x=>x.d===d && x.exercise===ex); if(!e) return;
+  S.mjl[aid]=arr.filter(x=>x!==e);
+  if(!S.mjl[aid].length) delete S.mjl[aid];
+  tombSet("j:"+aid+":"+d+"|"+ex);
+  mjColonna(aid, d, e.tipo);
+}
+/* Dal CSV: ogni riga con un'atleta in rosa e una data leggibile diventa un
+   salto, con TUTTE le colonne numeriche. Le altezze in metri si riconoscono
+   dalla mediana, come per l'import nella tabella. */
+function mjDaCSV(hdr, rows, iNome, iData, opz){
+  const idx={};
+  (S.athletes||[]).forEach(a=>{ const n=normHdr(a.name); (idx[n]=idx[n]||[]).push(a);
+    const p=n.split(" "); if(p.length===2){ const r=p[1]+" "+p[0]; (idx[r]=idx[r]||[]).push(a); } });
+  const kw=["test","tipo","jump type","type","salto","esercizio","exercise"];
+  const iTipo=hdr.findIndex((h,i)=>i!==iNome && i!==iData && kw.indexOf(normHdr(h))>=0);
+  const cols=[];
+  hdr.forEach((h,i)=>{ if(i===iNome||i===iData||i===iTipo) return; const k=mjChiave(h); if(k) cols.push({i:i,k:k}); });
+  const hCol=cols.find(c=>c.k==="h");
+  let fh=1;
+  if(hCol){ const v=rows.map(r=>parseFloat(String(r[hCol.i]||"").replace(",","."))).filter(x=>isFinite(x)&&x>0).sort((a,b)=>a-b);
+    const med=v[Math.floor(v.length/2)]; if(med<3) fh=100; }
+  let n=0;
+  rows.forEach(r=>{
+    const c=idx[normHdr(r[iNome])]; const a=(c&&c.length===1)?c[0]:null; if(!a) return;
+    const d=toISODate(String(r[iData]||"")); if(!d) return;
+    const m={};
+    cols.forEach(cc=>{ const v=parseFloat(String(r[cc.i]==null?"":r[cc.i]).replace(",",".")); if(isFinite(v)) m[cc.k]= cc.k==="h" ? Math.round(v*fh*100)/100 : v; });
+    const tipo=(iTipo>=0 ? mjTipoDa(r[iTipo]) : null) || (opz&&opz.tipo) || "Salto";
+    const res=mjSalva(a.id, d, tipo, m, {fonte:"csv", colonna:!(opz&&opz.colonna===false)});
+    if(res.ok && !res.doppio) n++;
+  });
+  return n;
+}
+function mjCSV(){
+  const ath=teamAthletes()||[];
+  const metr=[]; ath.forEach(a=>mjArr(a.id).forEach(e=>Object.keys(e.m||{}).forEach(k=>{ if(metr.indexOf(k)<0) metr.push(k); })));
+  const ord=MJ_MET.map(x=>x.k).filter(k=>metr.indexOf(k)>=0).concat(metr.filter(k=>!MJ_MET.some(x=>x.k===k)));
+  const cella=v=> v==null ? "" : String(v).replace(".",",");
+  const righe=[["Atleta","Data","Tipo","Prova"].concat(ord.map(k=>{ const x=mjMet(k); return x.l+(x.u?" ("+x.u+")":""); }))];
+  ath.forEach(a=>mjArr(a.id).forEach(e=>{
+    righe.push([a.name, e.d, e.tipo, String(e.exercise).split("#")[1]||"1"].concat(ord.map(k=>cella((e.m||{})[k]))));
+  }));
+  return righe.map(r=>r.map(c=>{ const s=String(c==null?"":c); return /[;"\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }).join(";")).join("\n");
+}
+/* Per la tabella: il salto migliore di ogni giorno (per altezza), e di quel
+   salto la metrica scelta. Il migliore e' il dato di riferimento in tutti i
+   protocolli di salto; la media di tre prove si puo' guardare nello storico. */
+function mjGiorni(aid, tipo){
+  const per={};
+  mjArr(aid).filter(e=>e.tipo===tipo && e.m).forEach(e=>{
+    const k=(MJ_TIPI.find(x=>x.k===tipo)||{}).metrica||"h";
+    const p=per[e.d];
+    if(!p || (e.m[k]||0)>(p.m[k]||0)) per[e.d]=e;
+  });
+  return Object.keys(per).sort().map(d=>per[d]);
+}
+function mjRighe(tipo, k){
+  return (atleteOrdinate()||[]).map(a=>{
+    const g=mjGiorni(a.id, tipo).filter(e=>e.m[k]!=null);
+    const u=g[g.length-1], p=g[g.length-2];
+    return {id:a.id, nome:a.name, n:mjArr(a.id).filter(e=>e.tipo===tipo).length,
+      ultimo: u ? {d:u.d, v:u.m[k]} : null, prima: p ? {d:p.d, v:p.m[k]} : null, serie:g.map(e=>e.m[k])};
+  });
+}
+
+/* ─── La vista ──────────────────────────────────────────────────────────── */
+let MJV={tipo:"CMJ", k:"h"};
+function mjTipiPresenti(){
+  const s={}; (teamAthletes()||[]).forEach(a=>mjArr(a.id).forEach(e=>s[e.tipo]=1));
+  const l=MJ_TIPI.map(x=>x.k).filter(k=>s[k]).concat(Object.keys(s).filter(k=>!MJ_TIPI.some(x=>x.k===k)));
+  return l.length ? l : ["CMJ"];
+}
+function mjMetPresenti(tipo){
+  const s={}; (teamAthletes()||[]).forEach(a=>mjArr(a.id).filter(e=>e.tipo===tipo).forEach(e=>Object.keys(e.m||{}).forEach(k=>s[k]=1)));
+  const l=MJ_MET.map(x=>x.k).filter(k=>s[k]).concat(Object.keys(s).filter(k=>!MJ_MET.some(x=>x.k===k)));
+  return l.length ? l : ["h"];
+}
+function renderMJ(){
+  const grid=document.getElementById("grid");
+  const tipi=mjTipiPresenti(); if(tipi.indexOf(MJV.tipo)<0) MJV.tipo=tipi[0];
+  const met=mjMetPresenti(MJV.tipo); if(met.indexOf(MJV.k)<0) MJV.k=met[0];
+  const M=mjMet(MJV.k);
+  let h='<div class="mjtop"><button class="btn primary sm" onclick="openMJSalto()">+ Salto</button>'+
+    '<button class="btn sm" onclick="importMJL()">📲 Importa CSV</button>'+
+    '<button class="btn sm" onclick="mjEsporta()">⬇️ Esporta CSV</button></div>';
+  h+='<div class="chips">'+tipi.map(t=>'<button class="chip'+(t===MJV.tipo?" on":"")+'" onclick="MJV.tipo=\''+escAttr(t)+'\';render()">'+esc(t)+'</button>').join("")+'</div>';
+  h+='<div class="chips mjmet">'+met.map(k=>{ const x=mjMet(k); return '<button class="chip'+(k===MJV.k?" on":"")+'" onclick="MJV.k=\''+escAttr(k)+'\';render()">'+esc(x.l)+'</button>'; }).join("")+'</div>';
+  const R=mjRighe(MJV.tipo, MJV.k);
+  if(!R.some(r=>r.n)){
+    h+='<div class="empty-state"><p>Ancora nessun salto in archivio.<br>Aggiungine uno a mano dal risultato di My Jump, oppure importa il CSV esportato dall\'app.</p></div>';
+    grid.innerHTML=h; return;
+  }
+  h+='<div class="mjwrap"><table class="mjtab"><thead><tr><th>Atleta</th><th>'+esc(M.l)+(M.u?' <small>'+esc(M.u)+'</small>':'')+'</th><th>Prima</th><th>Salti</th><th></th></tr></thead><tbody>';
+  R.forEach(r=>{
+    h+='<tr onclick="openMJAtleta(\''+r.id+'\')"><td class="n">'+esc(r.nome)+'</td>'+
+      '<td>'+(r.ultimo?'<b>'+fmtNum(r.ultimo.v)+'</b><small>'+fmtDate(r.ultimo.d)+'</small>':'—')+'</td>'+
+      '<td>'+(r.prima?fmtNum(r.prima.v)+'<small>'+fmtDate(r.prima.d)+'</small>':'—')+'</td>'+
+      '<td>'+(r.n||'—')+'</td><td>'+_spark(r.serie.slice(-8))+'</td></tr>';
+  });
+  h+='</tbody></table></div>'+
+    '<div class="gnote">Per ogni giorno conta il salto più alto, e di quel salto la metrica scelta. Qui niente colori: '+
+    'forza, potenza e velocità sono calcoli fatti da My Jump sull\'altezza, il peso e la distanza di spinta che hai inserito lì — '+
+    'il verdetto sul salto sta nella colonna CMJ della tabella, che prende il migliore del giorno da questo archivio.</div>';
+  grid.innerHTML=h;
+}
+function mjEsporta(){ dl("my-jump-"+todayISO()+".csv", "﻿"+mjCSV(), "text/csv"); toast("Archivio My Jump esportato"); }
+function openMJAtleta(aid){
+  const a=(S.athletes||[]).find(x=>x.id===aid); if(!a) return;
+  const arr=mjArr(aid).filter(e=>e.tipo===MJV.tipo).slice().reverse();
+  const met=mjMetPresenti(MJV.tipo);
+  let h='<div class="mh"><div><div class="eyebrow">My Jump · '+esc(MJV.tipo)+'</div><div class="mt">'+esc(a.name)+'</div>'+
+    '<div class="ms">'+arr.length+' salti</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<button class="btn primary sm" style="width:100%;margin-bottom:10px" onclick="openMJSalto(\''+aid+'\')">+ Salto per '+esc(a.name)+'</button>';
+  if(!arr.length){ modal(h+'<div class="fhint">Nessun salto.</div>'); return; }
+  h+='<div class="mjwrap"><table class="mjtab mjstor"><thead><tr><th>Data</th>'+met.map(k=>{ const x=mjMet(k); return '<th>'+esc(x.l)+(x.u?'<small>'+esc(x.u)+'</small>':'')+'</th>'; }).join("")+'<th></th></tr></thead><tbody>';
+  arr.forEach(e=>{
+    h+='<tr><td class="n">'+fmtDate(e.d)+'<small>prova '+(String(e.exercise).split("#")[1]||1)+'</small></td>'+
+      met.map(k=>'<td>'+(e.m[k]!=null?fmtNum(e.m[k]):'—')+'</td>').join("")+
+      '<td><button class="lgx" title="Elimina il salto" onclick="if(confirm(\'Eliminare questo salto?\')){mjTogli(\''+aid+'\',\''+e.d+'\',\''+escAttr(e.exercise)+'\');save();openMJAtleta(\''+aid+'\');render();}">🗑</button></td></tr>';
+  });
+  modal(h+'</tbody></table></div>');
+}
+function openMJSalto(aid){
+  const ath=teamAthletes()||[];
+  if(!ath.length){ toast("Nessun atleta in questa squadra"); return; }
+  let h='<div class="mh"><div><div class="eyebrow">My Jump</div><div class="mt">+ Salto</div>'+
+    '<div class="ms">Copia i numeri dalla schermata del risultato</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="row2"><div><label class="fl">Atleta</label><select id="mjA">'+ath.map(a=>'<option value="'+a.id+'"'+(a.id===aid?" selected":"")+'>'+esc(a.name)+'</option>').join("")+'</select></div>'+
+    '<div><label class="fl">Data</label><input id="mjD" type="date" value="'+todayISO()+'"></div></div>'+
+    '<label class="fl">Salto</label><select id="mjT">'+MJ_TIPI.map(x=>'<option'+(x.k===MJV.tipo?" selected":"")+'>'+esc(x.k)+'</option>').join("")+'</select>'+
+    '<div class="mjform">'+MJ_MET.filter(x=>x.k!=="rsi"&&x.k!=="tc").map(x=>
+      '<label><span>'+esc(x.l)+(x.u?' <small>'+esc(x.u)+'</small>':'')+'</span>'+
+      '<input class="mono" id="mj_'+x.k+'" type="number" inputmode="decimal" step="any" oninput="mjPrev()"></label>').join("")+
+    '<label><span>RSI <small>solo drop jump</small></span><input class="mono" id="mj_rsi" type="number" inputmode="decimal" step="any" oninput="mjPrev()"></label>'+
+    '</div><div id="mjW"></div>'+
+    '<label class="tchk"><input type="checkbox" id="mjCol" checked><span>Metti il migliore del giorno anche nella colonna del test (CMJ, SJ…)</span></label>'+
+    '<button class="btn primary" style="width:100%;margin-top:10px" onclick="mjSalvaForm(false)">Salva</button>'+
+    '<button class="btn sm" style="width:100%;margin-top:6px" onclick="mjSalvaForm(true)">Salva e aggiungi un altro salto</button>';
+  modal(h);
+}
+function mjLeggiForm(){ const m={}; MJ_MET.forEach(x=>{ const el=document.getElementById("mj_"+x.k); if(el && el.value!=="") m[x.k]=el.value; }); return m; }
+function mjPrev(){
+  const el=document.getElementById("mjW"); if(!el) return;
+  const m={}; Object.entries(mjLeggiForm()).forEach(([k,v])=>{ const n=parseFloat(String(v).replace(",",".")); if(isFinite(n)) m[k]=n; });
+  const w=mjCoerenza(m);
+  el.innerHTML = w.map(t=>'<div class="alert warn"><span class="ai">⚠️</span><span>'+esc(t)+'</span></div>').join("");
+}
+function mjSalvaForm(altro){
+  const aid=document.getElementById("mjA").value, d=document.getElementById("mjD").value, tipo=document.getElementById("mjT").value;
+  const r=mjSalva(aid, d, tipo, mjLeggiForm(), {colonna:document.getElementById("mjCol").checked});
+  if(!r.ok){ toast(r.msg); return; }
+  save(); render();
+  if(altro){ MJ_MET.forEach(x=>{ const el=document.getElementById("mj_"+x.k); if(el) el.value=""; }); mjPrev(); toast("Salvato: il prossimo"); return; }
+  closeM(); toast(r.doppio?"Questo salto c'era già":"Salto salvato"+(r.avvisi&&r.avvisi.length?" — controlla i numeri: non tornano":""));
 }
 
 function parseCSV(text){
@@ -9667,7 +9967,7 @@ function loadDemo(){
     if(!S.tomb) S.tomb={};
     S.athletes.forEach(a=>{
       S.tomb["ath:"+a.id]=ora;
-      ["data","readiness","load","screen","lv","pres"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
+      ["data","readiness","load","screen","lv","pres","mjl"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
       gruppiTogli(a.id);
     });
     (S.teams||[]).forEach(x=>{ S.tomb["team:"+x.id]=ora; });

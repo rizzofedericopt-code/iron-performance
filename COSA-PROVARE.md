@@ -52,6 +52,23 @@ Gruppi di carico → **✏️ Personalizza i gruppi** (oppure «a mano» in «Co
 - [ ] Le stime già scritte in xRM→1RM «senza esercizio»: intestazione della colonna
       → *↪ Sposta in un massimale* → scegli dove vanno. Solo tu sai che esercizio erano.
 
+## Archivio My Jump
+
+Barra in basso → **My Jump**.
+
+- [ ] *+ Salto*: copia i numeri dalla schermata di My Jump (altezza, tempo di volo,
+      forza, potenza, velocità, impulso). *Salva e aggiungi un altro salto* per le 3 prove.
+      → Se altezza e tempo di volo non tornano, lo dice prima di salvare.
+      Un salto con altezza 0 (non elaborato in My Jump) non si salva.
+- [ ] Nella tabella scegli **CMJ** e la metrica (es. *Potenza relativa*).
+      → Per ogni ragazza: l'ultimo giorno (il salto più alto), il precedente, quanti salti.
+      Tocca una ragazza: tutte le prove con tutti i numeri; 🗑 per eliminare una prova.
+- [ ] Vai in **Matrice**: nella colonna **CMJ** c'è il **migliore del giorno**
+      (una misura scritta a mano più alta non viene abbassata).
+- [ ] *⬇️ Esporta CSV*: il file con tutti i salti si apre in Excel.
+- [ ] Se esporti il CSV da My Jump: *📲 Importa CSV* → le altezze vanno in tabella
+      e le righe intere, con tutte le colonne, nell'archivio.
+
 ## Una volta a settimana
 
 - [ ] **Da misurare** in Oggi — controlla che i test segnalati siano davvero quelli

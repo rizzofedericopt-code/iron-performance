@@ -1,6 +1,6 @@
 # Roadmap
 
-Aggiornata il 20/08/2026, dopo la revisione completa.
+Aggiornata il 14/10/2026, dopo il blocco «gestione della squadra» (presenze → calendario gare).
 
 ---
 
@@ -63,9 +63,16 @@ percentili pubblicati.
 CMJ verde esattamente come +4 cm. Ma la variabilità di una misura ripetuta è di
 quell'ordine: quel verde è lo strumento che respira, e inseguirlo porta a non credere
 più ai colori in generale. Ora sotto la banda il delta è **grigio, «nel rumore»** — il
-numero resta, sparisce la pretesa che significhi qualcosa. La banda viene, in ordine:
-dall'errore che hai **misurato tu** su quel test, dalla soglia CMJ già impostata,
-oppure da una percentuale di riserva del 5% dichiarata come tale.
+numero resta, sparisce la pretesa che significhi qualcosa. La banda viene dall'errore
+che hai **misurato tu** su quel test, oppure da una percentuale di riserva del 5%
+dichiarata come tale.
+
+*Corretto il 13/10/2026:* la banda era l'errore tipico stesso. Sbagliato — una
+variazione è la differenza fra due misure, e balla di TE·√2: con soglia = TE, il 48%
+delle variazioni inesistenti usciva colorato. Ora la soglia è la differenza minima
+rilevabile al 95%, **1,96·√2·TE ≈ 2,77·TE** (Weir 2005, J Strength Cond Res 19:231).
+Tolto anche un ramo che usava il moltiplicatore CMJ (1,5) come se fossero centimetri.
+Su peso e statura il 5% di riserva non si applica (8 cm di «rumore» su un metro).
 
 **Misurare il proprio errore** (Impostazioni → 📏) — cinque atlete, due prove
 ravvicinate, e l'app calcola l'errore tipico come deviazione standard delle differenze
@@ -223,6 +230,63 @@ le schede arrivavano una alla volta:
 
 ---
 
+## ✅ Fatto — ottobre 2026: gestione della squadra
+
+**Presenze** (Oggi → + Appello) — tre stati: presente, ridotto, assente. Chiudere
+l'appello scrive una riga per ogni atleta, così la frequenza ha un denominatore vero.
+I gruppi di carico e «Registra test» escludono solo chi è segnata assente (un appello
+lasciato a metà non svuota la palestra). Frequenza nella scheda, accanto alla mediana
+della squadra — nessuna soglia «buona frequenza», perché non ne esiste una fondata.
+Il motivo dell'assenza non si scrive: su una minorenne sarebbe un dato sanitario.
+
+**Cosa è cambiato** (Andamento, menu colonna, Impostazioni) — per ogni test e ogni
+atleta: migliorata, nel rumore, calata, col verdetto della soglia qui sopra. Cali in
+cima. Accanto: le sedute fatte fra i due test, se una delle due misure è una stima,
+e se mesi di crescita spiegano parte del cambiamento. Indici (asimmetrie, decrementi)
+senza verdetto: «+50%» da 4 a 6 non vuol dire niente (Bishop et al. 2021).
+
+**Peso e statura nel tempo** — due colonne che non hanno verso: niente colori,
+pallini, record o classifiche. Il peso non compare in tabella finché non lo scegli
+nella batteria; non si può ordinare la squadra per peso. Scheda e tabella restano
+allineate nei due versi. Ne nascono:
+- **forza relativa** (Squat, Stacco, Panca, Hip thrust ÷ peso misurato entro 90
+  giorni); in squadra il confronto usa la scala allometrica kg/peso^0,67 (Jaric
+  et al. 2005), perché il rapporto semplice favorisce le più leggere;
+- **velocità di crescita** (cm/anno) nella scheda, solo con due misure ad almeno
+  sei mesi, accanto alla mediana di squadra.
+
+**Scheda di seduta** (Oggi) — fino a 4 esercizi, gli stessi gruppi per tutta la seduta.
+Di default i gruppi si formano su tutti gli esercizi insieme (media dei massimali
+normalizzati sulla mediana di squadra). Per ogni esercizio: chi lavora fuori
+percentuale e chi, alla sua percentuale effettiva, non chiude le ripetizioni scritte.
+
+**Gruppi di carico a mano, più liberi** — dentro il gruppo anche chi non ha il
+massimale (fuori dalla media, «carico non verificato» scritto ogni volta); carico
+scritto a mano (vale solo per la percentuale per cui l'hai deciso); note di gruppo.
+Note e carichi seguono il loro gruppo anche quando un altro si scioglie.
+
+**Promemoria** (Oggi → Da misurare) — test scaduti rispetto alla frequenza della
+batteria dello sport, chi manca dall'ultima sessione, test in batteria mai usati.
+
+**Profilo prestazioni** (scheda atleta → 📊 Profilo) — il foglio da consegnare: solo
+prestazioni, verdetto per test, ruolo, presenze, crescita, note. **Niente dati
+sanitari**: la cartella con l'anamnesi resta un'altra cosa (🖨 Cartella). Peso e
+posizione fra le compagne solo se li scegli.
+
+**Ruoli** — il testo libero («banda», «Schiacc.») riportato al ruolo dell'elenco;
+tabella raggruppata per ruolo; confronto fra ruoli con la mediana solo da tre
+atlete in su.
+
+**Calendario gare** (Impostazioni) — MD-n in Oggi, avviso sui carichi ≥80% a due
+giorni dalla gara (un avviso, non un blocco).
+
+**Controllo d'insieme** (`test/completo.mjs`) — uno stato con tutto dentro deve
+sopravvivere a backup, ripristino e sincronizzazione. Se compare una chiave nuova
+nello stato e il test non la conosce, fallisce: è il difetto più ripetuto del
+progetto, ora ha una rete.
+
+---
+
 ## ⬜ Da fare — codice
 
 ### Prossimo passo naturale
@@ -255,7 +319,13 @@ le schede arrivavano una alla volta:
 
 ## ⬜ Da fare — Federico
 
-- [ ] **Lanciare il SQL su Neon** prima del push — `MIGRAZIONE-modulo-squadra.md`
+Vedi `DA-FARE-TU.md` e `COSA-PROVARE.md` per questo rilascio. In sintesi:
+
+- [ ] **Push** di tutto il blocco di ottobre (un solo commit)
+- [ ] **Backup** subito dopo: l'unico è del 19 agosto
+- [ ] **Misurare l'errore** di CMJ e sprint 10 m (8-10 atlete, due prove ravvicinate):
+      finché manca, ogni verdetto si appoggia sul 5% di riserva
+- [ ] Scrivere il **ruolo** di ciascuna nella scheda
 - [ ] **Compilare l'informativa** — Impostazioni → Informativa privacy
 - [ ] **Farla leggere a chi se ne intende** prima del primo link a una famiglia
 - [ ] **Esportare il backup PRIMA di cancellare le 17 atlete** — non per i dati,
@@ -280,3 +350,10 @@ le schede arrivavano una alla volta:
   Il punto in cui agganciare normative federali è `eLevelApplicable`.
 - **`render()` ricostruisce tutto il DOM a ogni azione.** Regge oggi, non a 50 atleti.
 - **`ageFrom` sbaglia di un giorno a ovest di Greenwich.** In Italia è corretta.
+- **Le tolleranze del promemoria** (una settimana sul settimanale, due sul ciclo,
+  due mesi sulla stagione) sono una scelta, non un dato. Da tarare sull'uso vero.
+- **L'avviso carichi-gara** (≥80% a ≤2 giorni) è la prudenza più comune, non una
+  soglia dimostrata con un numero di ore.
+- **Un appello al giorno, non una per seduta**: due allenamenti nello stesso giorno
+  contano come uno. Cambiarlo richiede una chiave nuova e una migrazione.
+- **Il carico «a mano» non si arrotonda ai dischi**: se scrivi 46, resta 46.

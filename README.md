@@ -47,7 +47,8 @@ npx vercel dev
 ## Come funziona
 
 - **Un utente = un blob JSON.** Tutto lo stato (atleti, misure, anamnesi, readiness,
-  carichi, screening, curve carico-velocità) sta in una riga della tabella `payloads`,
+  carichi, screening, curve carico-velocità, presenze, gruppi, schede di seduta,
+  calendario gare) sta in una riga della tabella `payloads`,
   colonna `jsonb`. Ogni salvataggio riscrive tutto.
 - **Concorrenza ottimistica.** Il client dichiara su quale versione ha lavorato
   (`baseVersion`). Se il server è più avanti risponde 409 e il client fa il merge.
@@ -83,6 +84,19 @@ Da tenere presente:
 - Dopo `erase` l'email resta in `audit_log` come prova della cancellazione.
   È una scelta difendibile, ma va dichiarata nell'informativa.
 - Le tabelle non si potano da sole. Vedi la sezione MANUTENZIONE di `schema.sql`.
+
+---
+
+## Test
+
+```bash
+npm install     # serve solo per le due suite che usano un Postgres in memoria
+npm test
+```
+
+Ogni suite estrae il JavaScript **vero** da `index.html` e lo esegue in un DOM finto:
+non si testa una copia. `test/completo.mjs` è il controllo d'insieme — se aggiungi una
+chiave allo stato e non la gestisci in export, import e unione, fallisce.
 
 ---
 

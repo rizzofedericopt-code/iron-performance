@@ -12,3 +12,6 @@ _da_eliminare/
 
 # script di aggiornamento personale, non va nel repository
 aggiorna.bat
+
+# diario dello script di aggiornamento: contiene percorsi e indirizzo del repository
+aggiorna-log.txt

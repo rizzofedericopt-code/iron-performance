@@ -62,7 +62,8 @@ const prova = (nome, fn) => {
 };
 
 
-const fa = (gg) => { const d = new Date(); d.setDate(d.getDate() - gg); return d.toISOString().slice(0, 10); };
+// data locale, come todayISO: con toISOString, di notte in Italia sarebbe «ieri»
+const fa = (gg) => { const d = new Date(); d.setDate(d.getDate() - gg); return run(`isoLoc(new Date(${d.getTime()}))`); };
 const squadra = (tests) => run(`{
   S.teams=[{id:"t1",name:"U18",sport:"pallavolo",tests:${JSON.stringify(tests)}}];
   S.activeTeam="t1"; S.sport="pallavolo"; S.pres={}; S.tomb={}; S.te={};

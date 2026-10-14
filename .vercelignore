@@ -15,3 +15,6 @@ schema.sql
 test/
 .env.example
 _da_eliminare/
+
+# diario dello script di aggiornamento: contiene percorsi e indirizzo del repository
+aggiorna-log.txt

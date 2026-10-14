@@ -128,22 +128,36 @@ prova("nessuna classifica per peso", () => {
   run(`sortClear();`);
 });
 
-prova("il peso più vicino entro 90 giorni, e non oltre", () => {
+/* Cambiato su richiesta (ottobre 2026): prima, oltre 90 giorni fra peso e
+   massimale il rapporto non si calcolava. Ora si calcola sempre con il peso
+   piu' vicino — ma se e' lontano piu' di 90 giorni la cella lo dice, perche' in
+   una ragazza che cresce qualche chilo in un anno sposta il rapporto di qualche
+   punto percentuale. Il numero c'e'; la sua affidabilita' e' scritta accanto. */
+prova("il peso più vicino, a qualunque distanza", () => {
   squadra();
   run(`S.data.a1={bw:[{d:"2026-03-01",v:52},{d:"2026-09-20",v:56},{d:"2026-11-15",v:57}]};`);
   assert.equal(run(`pesoAl("a1","2026-10-01").v`), 56, "il 20 settembre e' a 11 giorni, il 15 novembre a 45");
-  assert.equal(run(`pesoAl("a1","2026-06-15")`), null, "marzo e settembre sono entrambi oltre 90 giorni");
+  assert.equal(run(`pesoAl("a1","2025-11-01").v`), 52, "il peso di marzo e' a 120 giorni: si usa lo stesso");
+  assert.equal(run(`pesoAl("a1","2025-11-01").gg`), 120);
+  run(`S.data.a1={};`);
+  assert.equal(run(`pesoAl("a1","2026-06-15")`), null, "senza nessun peso, niente");
 });
 
-prova("forza relativa: massimale diviso il peso più vicino", () => {
+prova("forza relativa: sempre, ma con il segno quando il peso è lontano", () => {
   squadra();
   run(`S.data.a1={bw:[{d:"2026-09-20",v:56}],
                   rmSquat:[{d:"2026-03-01",v:60},{d:"2026-10-01",v:84,fonte:"reps"}]};`);
   const s = j(`series("a1","rmSquatRel")`);
-  assert.equal(s.length, 1, "il massimale di marzo non ha un peso vicino: niente rapporto inventato");
-  assert.equal(s[0].v, 1.5);
-  assert.equal(s[0].fonte, "reps", "una stima resta una stima anche divisa per il peso");
+  assert.equal(s.length, 2, "anche il massimale di marzo ha il suo rapporto");
+  assert.equal(s[0].v, run(`Math.round(60/56*100)/100`));
+  assert.equal(s[0].pesoLontano, true, "peso di sei mesi dopo: va detto");
+  assert.equal(s[1].v, 1.5);
+  assert.ok(!s[1].pesoLontano, "11 giorni: nessun segno");
+  assert.equal(s[1].fonte, "reps", "una stima resta una stima anche divisa per il peso");
   assert.ok(run(`!!TMAP.rmSquatRel.derived`), "non si inserisce a mano");
+  run(`globalThis.requestAnimationFrame=function(){}; S.teams[0].tests=["rmSquatRel"]; S.activeTeam="t1"; SORT={by:null,desc:false}; S.data.a1.rmSquat=[{d:"2026-03-01",v:60}]; renderMatrix();`);
+  assert.ok(/peso del 20\/09\/26/.test(run(`document.getElementById("grid").innerHTML`)), "la cella dice di quando e' il peso usato");
+  run(`delete S.teams[0].tests;`);
 });
 
 prova("in squadra la forza relativa si confronta in scala allometrica", () => {

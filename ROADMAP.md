@@ -249,8 +249,8 @@ senza verdetto: «+50%» da 4 a 6 non vuol dire niente (Bishop et al. 2021).
 pallini, record o classifiche. Il peso non compare in tabella finché non lo scegli
 nella batteria; non si può ordinare la squadra per peso. Scheda e tabella restano
 allineate nei due versi. Ne nascono:
-- **forza relativa** (Squat, Stacco, Panca, Hip thrust ÷ peso misurato entro 90
-  giorni); in squadra il confronto usa la scala allometrica kg/peso^0,67 (Jaric
+- **forza relativa** (ogni massimale ÷ il peso misurato più vicino; se è a più di
+  90 giorni la cella lo segnala); in squadra il confronto usa la scala allometrica kg/peso^0,67 (Jaric
   et al. 2005), perché il rapporto semplice favorisce le più leggere;
 - **velocità di crescita** (cm/anno) nella scheda, solo con due misure ad almeno
   sei mesi, accanto alla mediana di squadra.

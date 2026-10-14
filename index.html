@@ -976,6 +976,7 @@ tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
 #modal .lgnota{width:100%;margin-top:6px;font-size:12px;padding:7px 9px;resize:vertical;min-height:34px;font-family:var(--sans)}
 .lgnotav{font-size:12px;color:var(--muted);margin-top:6px}
 .lgpns .lg1{color:#FFB340}
+.cpeso{font-size:9.5px;color:#FFB340;margin-top:2px;white-space:nowrap}
 #modal .lgnome{background:transparent;border:1px dashed var(--line2);border-radius:6px;color:var(--text);font-weight:700;font-size:13px;padding:3px 7px;width:150px;margin:0}
 .lgpg{color:#FFB340}
 .lgsuo{font-size:11px;font-weight:700;color:#0A0A0A;background:#FFB340;border-radius:5px;padding:1px 6px;white-space:nowrap}
@@ -2572,23 +2573,28 @@ function series(aid,tid){
   return (S.data[aid]&&S.data[aid][tid])||[];
 }
 /* ═══════════ PESO, STATURA, FORZA RELATIVA ═══════════ */
-const PESO_FINESTRA=90;     // giorni: oltre, il peso non descrive piu' quel massimale
+/* Si usa sempre il peso piu' vicino al massimale, a qualunque distanza (scelta
+   di Federico, ottobre 2026: meglio un rapporto con un'avvertenza che nessun
+   rapporto). Oltre PESO_FINESTRA giorni la cella lo segnala: in una ragazza
+   che cresce qualche chilo in un anno sposta il rapporto di qualche punto. */
+const PESO_FINESTRA=90;
 function pesoAl(aid,d){
   const arr=(S.data[aid]&&S.data[aid].bw)||[];
   const t0=Date.parse(d); let best=null, bd=Infinity;
   arr.forEach(e=>{
     if(!(e&&e.v>0)) return;
     const g=Math.abs(Date.parse(e.d)-t0)/864e5;
-    if(g<=PESO_FINESTRA && g<bd){ best=e; bd=g; }
+    if(g<bd){ best=e; bd=g; }
   });
-  return best;
+  return best ? Object.assign({gg:Math.round(bd)}, best) : null;
 }
 function relSeries(aid,t){
   const base=(S.data[aid]&&S.data[aid][t.rel])||[];
   const out=[];
   base.forEach(e=>{
     const bw=pesoAl(aid,e.d); if(!bw) return;
-    const r={d:e.d, v:Math.round(e.v/bw.v*100)/100, kg:e.v, bw:bw.v, bwd:bw.d};
+    const r={d:e.d, v:Math.round(e.v/bw.v*100)/100, kg:e.v, bw:bw.v, bwd:bw.d, bwgg:bw.gg};
+    if(bw.gg>PESO_FINESTRA) r.pesoLontano=true;
     if(e.fonte) r.fonte=e.fonte;          // una stima resta una stima anche divisa
     out.push(r);
   });
@@ -3161,6 +3167,9 @@ function renderMatrix(){
           ? '<span class="cstim" title="'+(last.fonte==="reps"?"Stimato da una serie a ripetizioni":"Stimato dalla curva carico-velocità")+'">≈</span>' : '';
         h+=valDot(valuta(t,a,arr));
         h+='<div class="val">'+stim+fmtNum(last.v)+'</div>';
+        // forza relativa con un peso lontano dal massimale: il numero c'e', il dubbio pure
+        if(last.pesoLontano) h+='<div class="cpeso" title="Rapporto calcolato con il peso del '+fmtDate(last.bwd)+', a '+
+          Math.round(last.bwgg/30)+' mesi dal massimale">⚖ peso del '+fmtDate(last.bwd)+'</div>';
         if(di) h+='<div class="delta '+di.cls+(di.rumore?" rumore":"")+'"'+
                   (di.rumore?' title="'+escAttr(di.titolo)+'"':'')+'>'+
                   (di.rumore?"≈":di.arrow)+' '+di.txt+(di.rumore?' <small>nel rumore</small>':'')+'</div>';
@@ -8353,7 +8362,7 @@ function drawCell(){
     const fromNames=t.derived.from.map(id=>TMAP[id].name).join(" e ");
     h+='<div class="alert info"><span class="ai">⚙️</span><span>Valore <b>calcolato in automatico</b> da '+fromNames+
        '. Non si inserisce a mano: aggiorna '+fromNames+' e questo valore si ricalcola da solo.'+
-       (t.rel?' Il peso usato è quello misurato più vicino al massimale, entro '+PESO_FINESTRA+' giorni: senza un peso vicino, il rapporto non si calcola.':'')+
+       (t.rel?' Il peso usato è quello misurato più vicino al massimale. Se è a più di '+PESO_FINESTRA+' giorni la cella lo segnala: in una ragazza che cresce, qualche chilo in un anno sposta il rapporto di qualche punto.':'')+
        '</span></div>';
   } else {
     /* Un massimale si puo' MISURARE o STIMARE da una serie a ripetizioni, e i
@@ -8418,13 +8427,16 @@ function drawCell(){
       // segno, fra sei mesi non c'e' modo di distinguerli.
       const stimato=(e.fonte==="lv"||e.fonte==="reps")
         ? '<span class="stima" title="'+(e.fonte==="reps"?"Stimato da una serie a ripetizioni, non sollevato":"Stimato dalla curva carico-velocità, non sollevato")+'">stima</span> ' : '';
+      const pesoInfo = (t.rel && e.bwd) ? '<span class="stima" title="Peso usato per il rapporto"'+(e.pesoLontano?' style="color:#FFB340"':'')+'>'+fmtNum(e.kg)+' kg ÷ '+fmtNum(e.bw)+' kg del '+fmtDate(e.bwd)+'</span> ' : '';
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
-         '<span class="hv">'+stimato+pr+fmtNum(e.v)+' <span style="color:var(--muted2);font-size:10px">'+t.unit+'</span></span>'+
+         '<span class="hv">'+stimato+pesoInfo+pr+fmtNum(e.v)+' <span style="color:var(--muted2);font-size:10px">'+t.unit+'</span></span>'+
          dl+(t.derived?'':'<span class="hdl" onclick="delMeasure('+i+')">🗑</span>')+'</div>';
     }
     h+='</div>';
   } else {
-    h+='<p class="hint">'+(t.derived
+    h+='<p class="hint">'+(t.rel
+      ? 'Nessun valore ancora: servono il massimale e almeno un peso. Il peso si scrive nella scheda dell\'atleta o nella colonna Peso.'
+      : t.derived
       ? 'Nessun valore ancora: serve almeno una data in cui siano presenti entrambi i test sorgente.'
       : 'Nessuna misurazione ancora. La prima crea il punto di partenza; dalla seconda in poi vedrai la variazione colorata.')+'</p>';
   }

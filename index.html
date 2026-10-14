@@ -503,6 +503,29 @@ ul.kb li b{color:#fff;font-weight:600}
 .treadywrap{display:flex;flex-wrap:wrap;gap:7px}
 .tready{font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:6px 11px;cursor:pointer}
 .tready b{color:var(--up)}
+/* scheda di seduta */
+.sedex{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px}
+.sedex1{display:flex;gap:8px;align-items:center}.sedex1 select{flex:1}
+.sedex2{display:flex;gap:8px;align-items:center;margin-top:7px;flex-wrap:wrap}
+.sedex2 label{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+#modal .sedex2 input{width:64px;padding:7px 8px;flex:0 0 auto;margin:0}
+#modal .sedex2 label:nth-child(2) input{width:78px}
+#modal .sedex2 .seg{margin-left:auto}
+.sedlist{display:flex;flex-direction:column;gap:8px}
+.sedg{border:1px solid var(--line);border-radius:12px;padding:9px 11px;background:var(--surface)}
+.sedgh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:4px}
+.sedgn{font-size:13px;font-weight:600}
+.sedr{padding:6px 0 6px 8px;border-left:3px solid var(--up);margin-top:5px}
+.sedr.warn{border-left-color:#FFB340}.sedr.bad{border-left-color:var(--accent)}
+.sedr1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.seden{font-weight:600;font-size:13px}.seden small{font-weight:400;color:var(--muted2)}
+.sedkg{font-size:19px;font-weight:800}.sedkg small{font-size:11px;font-weight:600;color:var(--muted);margin-left:2px}
+.sedpl{font-size:11px;color:var(--muted2)}
+.sedchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.sedc{font-size:11px;border-radius:6px;padding:2px 6px;background:var(--upbg);color:var(--up)}
+.sedc.warn{background:rgba(255,159,10,.14);color:#FFB340}.sedc.bad{background:rgba(230,57,70,.14);color:var(--accent)}
+.sednote{font-size:11px;color:#FFB340;margin-top:3px}
+.sedsing{font-size:12px;color:var(--muted);padding:4px 0}
 /* cosa è cambiato */
 .cblist{display:flex;flex-direction:column;gap:7px;margin-top:8px}
 .cbrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--sans);cursor:pointer}
@@ -1444,6 +1467,7 @@ function normalize(){
   if(!S.lv) S.lv={};           // sessioni di curva carico-velocità
   if(!S.pres) S.pres={};       // appello: uno stato per atleta e per data
   if(!S.gruppi) S.gruppi={};   // gruppi di lavoro decisi a mano, per test
+  if(!S.sedute || typeof S.sedute!=="object" || Array.isArray(S.sedute)) S.sedute={};   // scheda di seduta, per squadra
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
   if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
   applyCustom();
@@ -1696,6 +1720,8 @@ function mergeState(server, local){
   /* I gruppi di lavoro non sono misure datate: sono una decisione del
      preparatore, come le soglie. Vince l'ultima fatta su questo dispositivo. */
   out.gruppi=local.gruppi||server.gruppi||{};
+  // la scheda di seduta e' una decisione come i gruppi: per squadra, vince il locale
+  out.sedute=Object.assign({}, server.sedute||{}, local.sedute||{});
   out.te=Object.assign({}, server.te||{}, local.te||{});
   /* Gli esercizi personalizzati sono decisioni, come le soglie: vince
      l'ultima fatta su questo dispositivo. Ma se il server ne ha di piu'
@@ -2835,6 +2861,7 @@ function openColMenu(tid){
           inEv?"Torna in ordine di catalogo":"Resta fra le prime colonne della tabella",
           'pinToggle(\''+tid+'\')')+
      (rmTestEx(tid)?riga("🏋️","Percentuali e gruppi di carico","Chi va con chi, e con quanti chili",'closeM();openLoadGroups(\''+tid+'\')'):"")+
+     (rmTestEx(tid)?riga("📋","Scheda di seduta","Più esercizi, gli stessi gruppi per tutta la seduta",'closeM();openSeduta()'):"")+
      riga("📊","Cosa è cambiato","Chi è migliorata davvero, oltre l'errore della misura",'openCambio(\''+tid+'\')')+
      riga("✏️","Registra per tutta la squadra","Una colonna, un numero per atleta",'closeM();openSessionOn(\''+tid+'\')')+
      riga("ⓘ","Come si esegue","Protocollo, interpretazione, consigli",'openGuide(\''+tid+'\')')+
@@ -5483,7 +5510,8 @@ function lgResAuto(nome, ex){
     h+='<div class="lgwrap">'+corpo+'</div>'+lgLegenda();
     h+='<div class="lgrow2">'+
        '<button class="btn sm" onclick="lgPrint()">🖨 Stampa</button>'+
-       '<button class="btn sm" onclick="lgSetMan(\'man\');lgDaAuto()">✏️ Aggiusta a mano</button></div>';
+       '<button class="btn sm" onclick="lgSetMan(\'man\');lgDaAuto()">✏️ Aggiusta a mano</button>'+
+       '<button class="btn sm" onclick="openSeduta()">📋 Più esercizi</button></div>';
   }
   return h+lgMancanti(senza, nome, ex);
 }
@@ -5646,6 +5674,257 @@ function lgPrint(){
     '<p class="note">«punti» è lo scarto in punti di percentuale fra il carico del gruppo e quello previsto per lei. '+
     'Oltre +6 il carico è pesante per quell\'atleta: toglile un paio di ripetizioni o spostala di gruppo. '+
     'Sotto −8 è solo più leggero: si recupera con una serie in più.</p>'+
+    '</body></html>';
+  const w=window.open("", "_blank");
+  if(!w){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
+  w.document.write(doc); w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 400);
+}
+
+/* ═══════════════ SCHEDA DI SEDUTA ═══════════════════════════════════════
+   Un foglio per la seduta intera, non uno per esercizio.
+
+   Il punto non e' la stampa: e' che i gruppi RESTANO gli stessi per tutta la
+   seduta — ogni gruppo al suo bilanciere, dallo squat allo stacco. Con i
+   gruppi salvati per esercizio, fra squat e stacco le ragazze cambiavano
+   compagne e rack, cioe' esattamente il caos che i gruppi servono a evitare.
+
+   Il prezzo e' scritto qui sotto e va pagato in chiaro: due ragazze vicine
+   nello squat possono essere lontane nello stacco. Per questo, di default, i
+   gruppi si formano su TUTTI gli esercizi insieme: per ognuna si fa la media
+   dei suoi massimali divisi per la mediana di squadra di quell'esercizio, e
+   si raggruppa su quella. E' il modo piu' semplice di fare gruppi che
+   reggono su tutto. Chi vuole i suoi gruppi a mano li puo' prendere da un
+   esercizio solo; la scheda dice comunque, esercizio per esercizio, chi
+   lavora fuori percentuale.
+
+   Il secondo controllo e' sulle ripetizioni: al 75% teorico una puo' stare
+   al 79% effettivo, e a quel punto 4×8 per lei e' a cedimento. Il massimo
+   teorico viene dalle stesse sei equazioni dell'1RM (rmRepsAtPct).        */
+const SED_MAX=4;
+function sedKey(){ return S.activeTeam||"all"; }
+function sedCfg(){
+  const c=(S.sedute||{})[sedKey()];
+  if(c && Array.isArray(c.ex) && c.ex.length) return JSON.parse(JSON.stringify(c));
+  const lista=lgEsercizi().filter(e=>e.conta>0).sort((a,b)=>b.conta-a.conta).slice(0,2);
+  return {ex:lista.map(e=>({t:e.test, pct:75, sr:"4×5", mode:"media"})), rif:"tutti", size:3};
+}
+function sedReps(sr){
+  // «4×5», «4x5», «3×8-10», «5» → ripetizioni per serie (la piu' alta)
+  const s=String(sr||"").replace(/\s/g,"").toLowerCase();
+  const m=s.match(/[x×*](\d+)(?:[-–](\d+))?$/) || s.match(/^(\d+)(?:[-–](\d+))?$/);
+  if(!m) return null;
+  const r=parseInt(m[2]||m[1],10);
+  return (r>0 && r<=30) ? r : null;
+}
+function _sedMedia(g){ return g.reduce((s,x)=>s+x.kg,0)/g.length; }
+function sedutaCalc(c){
+  const exs=((c&&c.ex)||[]).filter(e=>e&&TMAP[e.t]).slice(0,SED_MAX);
+  const presenti=presFiltra(teamAthletes()||[]);
+  const med={};
+  exs.forEach(e=>{
+    const v=presenti.map(a=>rm1RM(a.id,e.t)).filter(Boolean).map(m=>m.kg);
+    med[e.t]=v.length ? _mediana(v) : null;
+  });
+  let base=[], fuori=[], fonte="tutti";
+  if(c.rif && c.rif!=="tutti" && TMAP[c.rif]){
+    fonte=c.rif;
+    presenti.forEach(a=>{ const m=rm1RM(a.id,c.rif);
+      if(m) base.push({id:a.id, nome:a.name, kg:m.kg}); else fuori.push(a); });
+  } else {
+    presenti.forEach(a=>{
+      const r=[];
+      exs.forEach(e=>{ const m=rm1RM(a.id,e.t); if(m && med[e.t]>0) r.push(m.kg/med[e.t]); });
+      if(r.length) base.push({id:a.id, nome:a.name, kg:r.reduce((x,y)=>x+y,0)/r.length});
+      else fuori.push(a);
+    });
+  }
+  base.sort((x,y)=>x.kg-y.kg);
+  let gruppi=null, salvati=false;
+  if(fonte!=="tutti"){
+    const sv=lgSalvati(fonte+"@"+(S.activeTeam||"all"));
+    if(sv && sv.length){
+      const ix={}; base.forEach(x=>ix[x.id]=x);
+      const dentro={};
+      gruppi=sv.map(g=>g.filter(id=>ix[id]).map(id=>{ dentro[id]=1; return ix[id]; })).filter(g=>g.length);
+      const resto=base.filter(x=>!dentro[x.id]);
+      if(resto.length) gruppi=gruppi.concat(rmGruppi(resto, c.size||3));
+      salvati=true;
+    }
+  }
+  if(!gruppi) gruppi=rmGruppi(base, c.size||3);
+  gruppi.sort((a,b)=>_sedMedia(a)-_sedMedia(b));
+
+  const out=gruppi.map((g,i)=>({n:i+1, membri:g.map(x=>({id:x.id, nome:x.nome})),
+    ex:exs.map(e=>{
+      const con=[], mancano=[];
+      g.forEach(x=>{ const m=rm1RM(x.id,e.t);
+        if(m) con.push({id:x.id, nome:x.nome, kg:m.kg, m:m}); else mancano.push(x.nome); });
+      const r=con.length ? rmGruppoCarico(con, e.pct, e.mode) : null;
+      const reps=sedReps(e.sr), cedono=[];
+      if(r && reps) r.righe.forEach(x=>{ const mx=rmRepsAtPct(Math.min(100,x.eff)); if(mx!=null && reps>mx) cedono.push({nome:x.a.nome, max:mx}); });
+      return {t:e.t, pct:e.pct, sr:e.sr, mode:e.mode, r:r, mancano:mancano, cedono:cedono};
+    })}));
+  const avvisi=exs.map((e,k)=>{
+    let sopra=0, cedono=0;
+    out.forEach(g=>{ const x=g.ex[k]; if(x.r) sopra+=x.r.sopra; cedono+=x.cedono.length; });
+    const reps=sedReps(e.sr), mx=rmRepsAtPct(e.pct);
+    return {t:e.t, sopra:sopra, cedono:cedono, impossibile: reps!=null && mx!=null && reps>mx, maxReps:mx};
+  });
+  const singole=[], senzaNulla=[];
+  fuori.forEach(a=>{
+    const v=exs.map(e=>{ const m=rm1RM(a.id,e.t); return m ? rmRound(m.kg*e.pct/100) : null; });
+    if(v.some(x=>x!=null)) singole.push({id:a.id, nome:a.name, ex:v}); else senzaNulla.push(a.name);
+  });
+  return {ex:exs, gruppi:out, avvisi:avvisi, singole:singole, senzaNulla:senzaNulla, salvati:salvati, fonte:fonte};
+}
+
+/* ─── La schermata ──────────────────────────────────────────────────────── */
+let SED=null;
+function openSeduta(){
+  if(!(teamAthletes()||[]).length){ toast("Nessun atleta in questa squadra"); return; }
+  if(!lgEsercizi().some(e=>e.conta>0)){ toast("Nessun massimale registrato in questa squadra"); return; }
+  SED=sedCfg();
+  modal('<div class="mh"><div><div class="eyebrow">Forza</div><div class="mt">🏋️ Scheda di seduta</div>'+
+    '<div class="ms">Più esercizi, gli stessi gruppi dall\'inizio alla fine</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div id="sedCfg"></div><div id="sedRes"></div>');
+  sedDraw();
+}
+function sedTocca(){ if(!S.sedute) S.sedute={}; S.sedute[sedKey()]=JSON.parse(JSON.stringify(SED)); save(); }
+function sedDraw(){ const c=document.getElementById("sedCfg"); if(c) c.innerHTML=sedCfgHtml(); sedRes(); }
+function sedRes(){ const r=document.getElementById("sedRes"); if(r) r.innerHTML=sedResHtml(); }
+function sedEx(i,k,v){
+  if(!SED||!SED.ex[i]) return;
+  if(k==="pct"){ const n=parseFloat(String(v).replace(",",".")); if(!(n>0&&n<=100)) return; v=n; }
+  SED.ex[i][k]=v; sedTocca();
+  if(k==="t"||k==="mode") sedDraw(); else sedRes();
+}
+function sedAdd(){
+  if(SED.ex.length>=SED_MAX) return;
+  const usati={}; SED.ex.forEach(e=>usati[e.t]=1);
+  const e=lgEsercizi().filter(x=>x.conta>0&&!usati[x.test])[0];
+  if(!e){ toast("Non ci sono altri esercizi con dei massimali"); return; }
+  SED.ex.push({t:e.test, pct:75, sr:"4×5", mode:"media"}); sedTocca(); sedDraw();
+}
+function sedDel(i){ SED.ex.splice(i,1); if(SED.rif!=="tutti" && !SED.ex.some(e=>e.t===SED.rif)) SED.rif="tutti"; sedTocca(); sedDraw(); }
+function sedSet(k,v){ SED[k]=v; sedTocca(); sedDraw(); }
+function sedCfgHtml(){
+  const lista=lgEsercizi().filter(e=>e.conta>0);
+  let h='<div class="psec">Esercizi</div>';
+  SED.ex.forEach((e,i)=>{
+    h+='<div class="sedex"><div class="sedex1">'+
+       '<select onchange="sedEx('+i+',\'t\',this.value)">'+
+         lista.map(x=>'<option value="'+escAttr(x.test)+'"'+(x.test===e.t?" selected":"")+'>'+esc(x.n)+' ('+x.conta+')</option>').join("")+
+       '</select><button class="lgx" title="Togli" onclick="sedDel('+i+')">✕</button></div>'+
+       '<div class="sedex2"><label><input class="mono" type="number" inputmode="decimal" value="'+fmtNum(e.pct)+'" oninput="sedEx('+i+',\'pct\',this.value)"><span>%</span></label>'+
+       '<label><input class="mono" value="'+escAttr(e.sr||"")+'" placeholder="4×5" oninput="sedEx('+i+',\'sr\',this.value)"><span>serie×rip</span></label>'+
+       '<div class="seg">'+[["media","media"],["min","più leggera"]].map(m=>
+         '<button class="'+(m[0]===e.mode?"on":"")+'" onclick="sedEx('+i+',\'mode\',\''+m[0]+'\')">'+m[1]+'</button>').join("")+'</div></div></div>';
+  });
+  if(SED.ex.length<SED_MAX) h+='<button class="btn sm" style="width:100%;margin-top:6px" onclick="sedAdd()">+ esercizio</button>';
+  h+='<div class="psec">I gruppi</div><div class="lgopt">'+
+     '<div><label class="fl">Formati su</label><select onchange="sedSet(\'rif\',this.value)">'+
+       '<option value="tutti"'+(SED.rif==="tutti"?" selected":"")+'>tutti gli esercizi (consigliato)</option>'+
+       SED.ex.map(e=>{ const x=lista.find(y=>y.test===e.t)||{n:(TMAP[e.t]||{}).name};
+         return '<option value="'+escAttr(e.t)+'"'+(SED.rif===e.t?" selected":"")+'>solo '+esc(x.n)+'</option>'; }).join("")+
+     '</select></div>'+
+     '<div><label class="fl">Atlete per gruppo</label><div class="seg">'+
+       [2,3,4].map(v=>'<button class="'+(v===SED.size?"on":"")+'" onclick="sedSet(\'size\','+v+')">'+v+'</button>').join("")+
+     '</div></div></div>';
+  return h;
+}
+function sedNomeEx(t){ const x=lgEsercizi().find(y=>y.test===t); return x ? x.n : (TMAP[t]||{}).name||t; }
+function sedResHtml(){
+  if(!SED.ex.length) return '<div class="fhint" style="margin-top:12px">Aggiungi almeno un esercizio.</div>';
+  const r=sedutaCalc(SED);
+  let h=presChip();
+  if(r.salvati) h+='<div class="fhint" style="margin-top:8px">Uso i tuoi gruppi di <b>'+esc(sedNomeEx(r.fonte))+'</b>; chi non c\'era dentro è raggruppato a parte.</div>';
+  // avvisi per esercizio
+  r.avvisi.forEach(a=>{
+    const n=sedNomeEx(a.t);
+    if(a.impossibile)
+      h+='<div class="alert danger"><span class="ai">⛔</span><span><b>'+esc(n)+'</b>: alla percentuale scelta il massimo teorico è <b>'+a.maxReps+' ripetizioni</b>. Le serie scritte non si chiudono.</span></div>';
+    else if(a.cedono)
+      h+='<div class="alert warn"><span class="ai">⚠️</span><span><b>'+esc(n)+'</b>: con il carico del gruppo, '+a.cedono+' '+(a.cedono===1?'atleta non chiude':'atlete non chiudono')+' le serie da '+sedReps((SED.ex.find(e=>e.t===a.t)||{}).sr)+'. Nomi sotto ogni gruppo.</span></div>';
+    else if(a.sopra)
+      h+='<div class="alert warn"><span class="ai">⚠️</span><span><b>'+esc(n)+'</b>: '+a.sopra+' '+(a.sopra===1?'atleta lavora':'atlete lavorano')+' oltre 6 punti sopra la percentuale. Prova «più leggera» su questo esercizio.</span></div>';
+  });
+  h+='<div class="psec">'+r.gruppi.length+' gruppi · un bilanciere ciascuno</div><div class="sedlist">';
+  r.gruppi.forEach(g=>{
+    h+='<div class="sedg"><div class="sedgh"><span class="lgt">Gruppo '+g.n+'</span><span class="sedgn">'+g.membri.map(m=>esc(m.nome)).join(" · ")+'</span></div>';
+    g.ex.forEach(x=>{
+      h+='<div class="sedr'+(x.r?' '+x.r.cls:'')+'"><div class="sedr1"><span class="seden">'+esc(sedNomeEx(x.t))+
+         ' <small>'+fmtNum(x.pct)+'% · '+esc(x.sr||"")+'</small></span>'+
+         (x.r?'<span class="sedkg">'+fmtNum(x.r.load)+'<small>kg</small></span>':'<span class="sedkg">—</span>')+'</div>';
+      if(x.r){
+        h+='<div class="sedpl">'+esc(rmPlatesText(x.r.load))+'</div><div class="sedchips">'+
+           x.r.righe.map(y=>'<span class="sedc '+y.cls+'" title="1RM '+fmtNum(Math.round(y.a.kg))+'">'+esc(y.a.nome)+' '+fmtNum(Math.round(y.eff))+'%</span>').join("")+'</div>';
+      }
+      const note=[];
+      if(x.mancano.length) note.push(x.mancano.join(", ")+": senza 1RM, fuori dal calcolo");
+      x.cedono.forEach(c=>note.push(c.nome+": al suo % il massimo è "+c.max+" rip"));
+      if(note.length) h+='<div class="sednote">'+note.map(esc).join(" · ")+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  });
+  h+='</div>';
+  if(r.singole.length){
+    h+='<div class="psec">Senza gruppo</div><div class="fhint">Non hanno un massimale sull\'esercizio che forma i gruppi: carico individuale.</div>';
+    r.singole.forEach(s=>{
+      h+='<div class="sedsing"><b>'+esc(s.nome)+'</b> '+r.ex.map((e,k)=>s.ex[k]!=null?esc(sedNomeEx(e.t))+' '+fmtNum(s.ex[k])+' kg':'').filter(Boolean).join(' · ')+'</div>';
+    });
+  }
+  if(r.senzaNulla.length)
+    h+='<div class="gnote">Senza massimali su questi esercizi: '+r.senzaNulla.map(esc).join(", ")+'.</div>';
+  h+='<div class="lgleg">I gruppi restano gli stessi per tutta la seduta. Sotto ogni carico, la percentuale che tocca davvero a ciascuna: '+
+     'giallo e rosso dicono chi è fuori dal previsto <b>su quell\'esercizio</b>. '+
+     'Il controllo delle ripetizioni vale per una serie fresca: con la fatica delle serie successive il margine è più stretto.</div>'+
+     '<div class="lgrow2"><button class="btn sm" onclick="sedPrint()">🖨 Stampa la seduta</button></div>';
+  return h;
+}
+function sedPrint(){
+  const r=sedutaCalc(SED);
+  if(!r.gruppi.length && !r.singole.length){ toast("Niente da stampare"); return; }
+  const tm=S.teams.find(x=>x.id===S.activeTeam);
+  const sq=S.activeTeam==="all" ? "Tutte le squadre" : (tm?tm.name:"Senza squadra");
+  let b='';
+  r.gruppi.forEach(g=>{
+    b+='<div class="g"><div class="gh"><span class="gt">Gruppo '+g.n+'</span><span class="gn">'+g.membri.map(m=>esc(m.nome)).join(" · ")+'</span></div><table>';
+    g.ex.forEach(x=>{
+      const fuori=x.r ? x.r.righe.filter(y=>y.cls!=="ok").map(y=>esc(y.a.nome)+' '+fmtNum(Math.round(y.eff))+'%') : [];
+      const ced=x.cedono.map(c=>esc(c.nome)+' max '+c.max+' rip');
+      b+='<tr><td class="n">'+esc(sedNomeEx(x.t))+'</td><td>'+fmtNum(x.pct)+'%</td><td>'+esc(x.sr||"")+'</td>'+
+         '<td class="k">'+(x.r?fmtNum(x.r.load)+' kg':'—')+'</td><td class="p">'+(x.r?esc(rmPlatesText(x.r.load)):'')+'</td>'+
+         '<td class="d">'+fuori.concat(ced).join(", ")+(x.mancano.length?(fuori.length||ced.length?"; ":"")+esc(x.mancano.join(", "))+": senza 1RM":"")+'</td></tr>';
+    });
+    b+='</table></div>';
+  });
+  if(r.singole.length){
+    b+='<div class="g"><div class="gh"><span class="gt">Senza gruppo</span></div><table>';
+    r.singole.forEach(s=>{ b+='<tr><td class="n">'+esc(s.nome)+'</td><td colspan="5">'+
+      r.ex.map((e,k)=>s.ex[k]!=null?esc(sedNomeEx(e.t))+' '+fmtNum(s.ex[k])+' kg':'').filter(Boolean).join(' · ')+'</td></tr>'; });
+    b+='</table></div>';
+  }
+  const doc='<!doctype html><html lang="it"><head><meta charset="utf-8">'+
+    '<title>Seduta — '+esc(sq)+'</title><style>'+
+    '@page{size:A4;margin:12mm}'+
+    'body{font:11px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:0}'+
+    '.br{font-size:9px;letter-spacing:2px;color:#C81E2D;font-weight:700}'+
+    'h1{font-size:17px;margin:0 0 2px}.sub{color:#555;font-size:10px;margin:0 0 10px}'+
+    '.g{border:1px solid #ccc;border-radius:6px;padding:7px 10px;margin-bottom:7px;break-inside:avoid}'+
+    '.gh{display:flex;gap:10px;align-items:baseline;border-bottom:1px solid #eee;padding-bottom:4px;margin-bottom:3px}'+
+    '.gt{font-weight:700;font-size:12px}.gn{font-size:11px;color:#333}'+
+    'table{width:100%;border-collapse:collapse}td{padding:3px 4px 3px 0;font-size:10.5px;vertical-align:top}'+
+    'td.n{font-weight:600;width:22%}td.k{font-weight:700;font-size:13px;color:#C81E2D;white-space:nowrap}'+
+    'td.p{font-size:9px;color:#666}td.d{font-size:9px;color:#8a5a00}'+
+    '.note{font-size:9px;color:#666;margin-top:8px;border-top:1px solid #eee;padding-top:5px}'+
+    '</style></head><body>'+
+    '<div class="br">IRON PERFORMANCE</div><h1>Scheda di seduta</h1>'+
+    '<p class="sub">'+esc(sq)+' · '+fmtDate(todayISO())+' · gruppi '+(r.fonte==="tutti"?"formati su tutti gli esercizi":"di "+esc(sedNomeEx(r.fonte)))+'</p>'+
+    b+'<p class="note">Ogni gruppo resta al suo bilanciere per tutta la seduta. In giallo/marrone chi lavora fuori dalla percentuale prevista: '+
+    'sopra di oltre 6 punti va alleggerita o spostata; «max N rip» vuol dire che alla sua percentuale effettiva le ripetizioni scritte sono oltre il suo massimo teorico.</p>'+
     '</body></html>';
   const w=window.open("", "_blank");
   if(!w){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
@@ -6823,6 +7102,7 @@ function renderToday(){
     h+='</div>';
   }
   h+='<div class="tactions"><button class="btn primary sm" onclick="openPres()">'+(_pc.segnato?'✔ Appello':'+ Appello')+'</button>'+
+     '<button class="btn sm" onclick="openSeduta()">🏋️ Scheda di seduta</button>'+
      '<button class="btn sm" onclick="openCheckin()">+ Check-in di oggi</button>'+
      '<button class="btn sm" onclick="openLoad()">+ Carico seduta</button></div></div>';
   grid.innerHTML=h;
@@ -7562,7 +7842,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -7724,6 +8004,26 @@ function sanitizeImport(o){
         if(p.length) g.push(p);
       });
       if(g.length) out.gruppi[tid]={d:isDate(v.d)?v.d:todayISO(), g:g};
+    });
+  }
+  /* La scheda di seduta: esercizi, percentuali, serie. Solo id di test noti
+     (o di esercizi tuoi appena ripristinati), percentuali sensate, niente
+     codice dentro le serie×rip. */
+  if(o.sedute&&typeof o.sedute==="object"&&!Array.isArray(o.sedute)){
+    const custOk={}; (Array.isArray(o.custom)?o.custom:[]).forEach(c=>{ if(c&&idOk(c.id)) custOk[c.id]=1; });
+    Object.keys(o.sedute).slice(0,100).forEach(k=>{
+      if(!(k==="all"||k==="none"||idOk(k))) return;
+      const v=o.sedute[k]; if(!v||typeof v!=="object"||!Array.isArray(v.ex)) return;
+      const ex=[];
+      v.ex.slice(0,SED_MAX).forEach(e=>{
+        if(!e||typeof e.t!=="string"||!(TMAP[e.t]||custOk[e.t])) return;
+        const pc=num(e.pct); if(pc==null||pc<=0||pc>100) return;
+        ex.push({t:e.t, pct:pc, sr:str(e.sr,12).replace(/[^0-9xX×*\-– ]/g,""), mode:(e.mode==="min"?"min":"media")});
+      });
+      if(!ex.length) return;
+      const sz=num(v.size);
+      out.sedute[k]={ex:ex, rif:(typeof v.rif==="string"&&(v.rif==="tutti"||ex.some(e=>e.t===v.rif)))?v.rif:"tutti",
+        size:(sz===2||sz===3||sz===4)?sz:3};
     });
   }
   /* Gli esercizi tuoi: senza di loro il ripristino lascerebbe le misure in

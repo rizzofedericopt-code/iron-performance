@@ -20,15 +20,25 @@ deve succedere. Se succede altro, **scrivi cosa hai fatto e cosa hai visto**
       → Gli stessi gruppi su tutti e due; sotto ogni carico la % vera di ciascuna.
       Prova 4×10 all'85%: deve dire che non si chiude. Stampa il foglio.
 
-## Gruppi a mano
+## Gruppi personalizzati
 
-- [ ] Aggiungi a un gruppo una ragazza **senza massimale** (menu «+ aggiungi…»).
+Gruppi di carico → **✏️ Personalizza i gruppi** (oppure «a mano» in «Come si formano»).
+
+- [ ] Aggiungi a un gruppo una ragazza **senza massimale** (menu «+ aggiungi un'atleta…»),
+      oppure spuntala in «Da assegnare» e premi *Forma il gruppo* — anche **da sola**.
       → Compare con «senza 1RM · carico non verificato»; il carico del gruppo non cambia.
-- [ ] Scrivi un **carico a mano** su un gruppo.
-      → Segno «a mano», le % di ciascuna si ricalcolano. Cambia la percentuale:
+- [ ] Dai al gruppo un **nome**, una **% sua** (es. 60% per i rientri) e le **serie×rip**.
+      → Il carico del gruppo si ricalcola sulla sua %; nome e serie escono in stampa.
+- [ ] Scrivi un **carico a mano** sul gruppo.
+      → Segno «a mano», le % di ciascuna si ricalcolano. Cambia la % del gruppo:
       il carico a mano non deve applicarsi, e deve dirlo.
-- [ ] Scrivi una **nota** di gruppo, chiudi, riapri.
-      → La nota c'è ancora, ed esce in stampa e nella scheda di seduta.
+- [ ] Su una ragazza premi **✏️**: scrivi il **suo carico** e una **nota per lei**.
+      → Il suo carico compare in giallo accanto al nome, lei esce dalla media del gruppo;
+      la nota resta sotto il nome.
+- [ ] Sempre da **✏️**: **sposta** una ragazza in un altro gruppo o in uno nuovo.
+      → Carico e nota la seguono.
+- [ ] Chiudi, riapri, **stampa**, apri la **scheda di seduta** con «solo Squat».
+      → Nomi dei gruppi, note di gruppo e note individuali ci sono dappertutto.
 
 ## Una volta a settimana
 

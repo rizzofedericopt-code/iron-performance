@@ -196,5 +196,112 @@ prova("la scheda di seduta usa i gruppi a mano con tutto dentro", () => {
   assert.ok(!r.singole.some(s => s.id === "Nuova"), "non deve comparire anche fra le senza gruppo");
 });
 
+
+console.log("\nGruppi a mano: massima personalizzazione");
+
+prova("un gruppo si può fare anche con una sola atleta", () => {
+  squadra([80], ["Nuova"]);
+  run(`LG.sel={Nuova:1}; lgForma();`);
+  assert.deepEqual(j(`S.gruppi[${key}].g`), [["Nuova"]], "chi lavora da sola ha il suo bilanciere");
+});
+
+prova("nome, percentuale e serie×rip propri del gruppo", () => {
+  squadra([80, 60]);
+  run(`S.gruppi[${key}]={d:"2026-10-01", g:[["p0","p1"]]};
+       lgSetMeta(0,"nome","Rientri"); lgSetMeta(0,"pg","65"); lgSetMeta(0,"sr","3×8");`);
+  const x = j(`S.gruppi[${key}].x[0]`);
+  assert.equal(x.nome, "Rientri"); assert.equal(x.pg, 65); assert.equal(x.sr, "3×8");
+  const c = j(`lgCalcGruppo(lgBlocchiMan(lgCandidate("rmSquat").con, lgCandidate("rmSquat").senza).blocchi[0])`);
+  assert.equal(c.pct, 65, "il gruppo lavora alla SUA percentuale");
+  assert.equal(c.load, run(`rmRound((80+60)/2*0.65)`));
+  const h = run(`lgResMan("Squat","Back squat")`);
+  assert.ok(/Rientri/.test(h) && /3×8/.test(h) && /65%/.test(h));
+});
+
+prova("il carico a mano segue la percentuale del gruppo, non quella generale", () => {
+  squadra([80, 60]);
+  run(`S.gruppi[${key}]={d:"2026-10-01", g:[["p0","p1"]]}; lgSetMeta(0,"pg","65"); lgSetKg(0,"40");`);
+  assert.equal(run(`S.gruppi[${key}].x[0].pct`), 65);
+  const c = j(`lgCalcGruppo(lgBlocchiMan(lgCandidate("rmSquat").con, lgCandidate("rmSquat").senza).blocchi[0])`);
+  assert.equal(c.load, 40);
+  assert.equal(c.mano, true);
+});
+
+prova("carico e nota di una singola atleta dentro il gruppo", () => {
+  squadra([80, 70, 60]);
+  run(`S.gruppi[${key}]={d:"2026-10-01", g:[["p0","p1","p2"]]};
+       lgSetInd(0,"p2","kg","40"); lgSetInd(0,"p2","nota","schiena: niente ultima serie");`);
+  const c = j(`lgCalcGruppo(lgBlocchiMan(lgCandidate("rmSquat").con, lgCandidate("rmSquat").senza).blocchi[0])`);
+  assert.equal(c.load, run(`rmRound((80+70)/2*0.75)`), "chi ha il suo carico esce dalla media del gruppo");
+  const p2 = c.righe.find(r => r.id === "p2");
+  assert.equal(p2.carico, 40);
+  assert.equal(p2.propria, true);
+  assert.ok(Math.abs(p2.eff - 40 / 60 * 100) < 0.01, "la sua percentuale vera");
+  assert.equal(p2.nota, "schiena: niente ultima serie");
+  const h = run(`lgResMan("Squat","Back squat")`);
+  assert.ok(/schiena: niente ultima serie/.test(h));
+});
+
+prova("anche chi non ha il massimale può avere il suo carico e la sua nota", () => {
+  squadra([80, 60], ["Nuova"]);
+  run(`S.gruppi[${key}]={d:"2026-10-01", g:[["p0","p1","Nuova"]]};
+       lgSetInd(0,"Nuova","kg","30"); lgSetInd(0,"Nuova","nota","prima volta: tecnica");`);
+  const c = j(`lgCalcGruppo(lgBlocchiMan(lgCandidate("rmSquat").con, lgCandidate("rmSquat").senza).blocchi[0])`);
+  const n = c.righe.find(r => r.id === "Nuova");
+  assert.equal(n.carico, 30);
+  assert.equal(n.eff, null, "senza massimale una percentuale non esiste");
+  assert.equal(n.nota, "prima volta: tecnica");
+});
+
+prova("il carico individuale vale per la sua percentuale", () => {
+  squadra([80, 70, 60]);
+  run(`S.gruppi[${key}]={d:"2026-10-01", g:[["p0","p1","p2"]]}; lgSetInd(0,"p2","kg","40"); LG.pct=85;`);
+  const c = j(`lgCalcGruppo(lgBlocchiMan(lgCandidate("rmSquat").con, lgCandidate("rmSquat").senza).blocchi[0])`);
+  assert.equal(c.righe.find(r => r.id === "p2").propria, false, "deciso al 75%, all'85% non si applica");
+  assert.ok(c.vecchi.indexOf("P2") >= 0, "e lo dice");
+  run(`LG.pct=75;`);
+});
+
+prova("spostare un'atleta da un gruppo all'altro si porta dietro carico e nota", () => {
+  squadra([80, 70, 60, 50]);
+  run(`S.gruppi[${key}]={d:"2026-10-01", g:[["p0","p1"],["p2","p3"]]};
+       lgSetInd(0,"p1","nota","occhio al ginocchio"); lgSposta(0,"p1","1");`);
+  assert.deepEqual(j(`S.gruppi[${key}].g`), [["p0"],["p2","p3","p1"]]);
+  assert.equal(run(`S.gruppi[${key}].x[1].ind.p1.nota`), "occhio al ginocchio");
+  assert.ok(!run(`(S.gruppi[${key}].x[0]||{}).ind`), "e non resta nel gruppo di prima");
+  run(`lgSposta(1,"p3","nuovo");`);
+  assert.deepEqual(j(`S.gruppi[${key}].g`), [["p0"],["p2","p1"],["p3"]], "«nuovo gruppo» ne crea uno");
+});
+
+prova("cancellare un'atleta toglie anche le sue impostazioni individuali", () => {
+  squadra([80, 70, 60]);
+  run(`S.gruppi[${key}]={d:"2026-10-01", g:[["p0","p1","p2"]], x:[{nota:"G", ind:{p1:{nota:"x"},p2:{nota:"y"}}}]};
+       delAthlete("p1");`);
+  assert.deepEqual(j(`Object.keys(S.gruppi[${key}].x[0].ind)`), ["p2"]);
+});
+
+prova("il ripristino tiene tutto e scarta il resto", () => {
+  const o = j(`sanitizeImport({athletes:[{id:"a1",name:"A"},{id:"a2",name:"B"}], data:{},
+    gruppi:{"rmSquat@t1":{d:"2026-10-01", g:[["a1","a2"]],
+      x:[{nome:"Rientri", pg:65, sr:"3×8<script>", ind:{a1:{kg:40,pct:65,nota:"n"}, fuori:{nota:"z"}, "../x":{nota:"q"}}}]}}})`);
+  const x = o.gruppi["rmSquat@t1"].x[0];
+  assert.equal(x.nome, "Rientri"); assert.equal(x.pg, 65); assert.equal(x.sr, "3×8");
+  assert.deepEqual(Object.keys(x.ind), ["a1"], "solo chi e' nel gruppo");
+  assert.equal(x.ind.a1.kg, 40);
+});
+
+prova("stampa e scheda di seduta portano nome, nota individuale e serie×rip", () => {
+  squadra([80, 60]);
+  run(`S.data.p0.rmDead=[{d:"2026-06-01",v:100}]; S.data.p1.rmDead=[{d:"2026-06-01",v:80}];
+       S.gruppi[${key}]={d:"2026-10-01", g:[["p0","p1"]], x:[{nome:"Rientri", sr:"3×8", ind:{p1:{kg:40,pct:75,nota:"piano"}}}]};`);
+  const B = j(`lgDaStampare()`);
+  assert.equal(B[0].x.nome, "Rientri");
+  const r = j(`sedutaCalc({ex:[{t:"rmSquat",pct:75,sr:"4×5",mode:"media"},{t:"rmDead",pct:75,sr:"4×5",mode:"media"}], rif:"rmSquat", size:3})`);
+  assert.equal(r.gruppi[0].nome, "Rientri");
+  assert.ok(r.gruppi[0].note.some(n => /P1: piano/.test(n)), "la nota individuale arriva alla scheda di seduta");
+  const sq = r.gruppi[0].ex[0].r.righe.find(y => y.a.id === "p1");
+  assert.equal(sq.carico, 40, "sullo squat al 75% P1 lavora con il suo carico");
+});
+
 console.log(failed ? "\n" + failed + " PROVE FALLITE\n" : "\ntutto verde\n");
 process.exit(failed ? 1 : 0);

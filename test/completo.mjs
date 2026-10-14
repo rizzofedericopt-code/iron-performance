@@ -81,7 +81,7 @@ const PIENO = `{
   screen:{a1:[{d:"2026-09-01",posture:{ant:{devs:[1],note:"x"}},items:{}}]},
   lv:{a1:[{d:"2026-09-15",exercise:"Squat",points:[{load:40,v:1},{load:60,v:0.7}],mvt:0.3,est1RM:95,vType:"MPV",mvtSource:"riferimento"}]},
   pres:{a1:[{d:"2026-10-01",s:"p"},{d:"2026-10-03",s:"r"}], a2:[{d:"2026-10-01",s:"a"}]},
-  gruppi:{"rmSquat@t1":{d:"2026-10-01",g:[["a1","a2"]],x:[{kg:50,pct:75,nota:"occhio"}]}},
+  gruppi:{"rmSquat@t1":{d:"2026-10-01",g:[["a1","a2"]],x:[{kg:50,pct:75,nota:"occhio",nome:"Rientri",pg:70,sr:"3×8",ind:{a1:{kg:40,pct:70,nota:"schiena"}}}]}},
   sedute:{t1:{ex:[{t:"rmSquat",pct:75,sr:"4×5",mode:"min"}],rif:"rmSquat",size:3}},
   gare:{t1:[{d:"2026-11-02",avv:"Rossi",casa:true}]},
   custom:[{id:"cx1",name:"Leg press",unit:"kg",base:"pred"}],
@@ -105,7 +105,8 @@ const CHIAVI = {
   screen:  o => o.screen.a1[0].posture.ant.devs[0] === 1,
   lv:      o => o.lv.a1[0].vType === "MPV" && o.lv.a1[0].mvtSource === "riferimento",
   pres:    o => o.pres.a1.length === 2 && o.pres.a1[1].s === "r" && o.pres.a2[0].s === "a",
-  gruppi:  o => o.gruppi["rmSquat@t1"].x[0].nota === "occhio" && o.gruppi["rmSquat@t1"].x[0].kg === 50,
+  gruppi:  o => { const x=o.gruppi["rmSquat@t1"].x[0]; return x.nota === "occhio" && x.kg === 50 && x.nome === "Rientri" &&
+                  x.pg === 70 && x.sr === "3×8" && x.ind.a1.kg === 40 && x.ind.a1.nota === "schiena"; },
   sedute:  o => o.sedute.t1.ex[0].mode === "min" && o.sedute.t1.rif === "rmSquat",
   gare:    o => o.gare.t1[0].avv === "Rossi" && o.gare.t1[0].casa === true,
   custom:  o => o.custom[0].name === "Leg press",

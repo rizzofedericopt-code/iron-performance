@@ -412,12 +412,20 @@ prova("un gruppo formato a mano resta salvato, e con la data", () => {
   assert.equal(Object.keys(run(`LG.sel`)).length, 0, "la selezione si azzera dopo");
 });
 
-prova("un gruppo da una sola non si forma", () => {
+/* Cambiato su richiesta (ottobre 2026): a mano un gruppo da una SI forma —
+   chi rientra da un infortunio o lavora sulla tecnica ha il suo bilanciere, ed
+   e' una decisione del preparatore. In automatico, invece, mai: li' una da sola
+   e' solo un cambio dischi in piu'. */
+prova("a mano un gruppo da una si forma; in automatico mai", () => {
   squadra([90, 80, 70]);
   run(`LG.man="man"; LG.sel={p0:1};`);
   run(`lgForma()`);
-  assert.equal(run(`S.gruppi["rmSquat@t1"]`), undefined, "non deve salvare niente");
-  assert.ok(/almeno due/.test(run(`LASTT`)), "e deve dirlo");
+  assert.equal(JSON.stringify(run(`S.gruppi["rmSquat@t1"].g`)), JSON.stringify([["p0"]]));
+  run(`LG.sel={};`);
+  run(`lgForma()`);
+  assert.ok(/almeno un/.test(run(`LASTT`)), "senza nessuna spuntata deve dirlo");
+  const auto = run(`rmGruppi(lgCandidate("rmSquat").con, 2).map(g=>g.length)`);
+  assert.ok(auto.every(n => n >= 2), "l'automatico non lascia nessuna da sola: " + auto.join(","));
 });
 
 prova("togliere un'atleta dal gruppo la rimette fra quelle da assegnare", () => {

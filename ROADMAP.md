@@ -260,10 +260,12 @@ Di default i gruppi si formano su tutti gli esercizi insieme (media dei massimal
 normalizzati sulla mediana di squadra). Per ogni esercizio: chi lavora fuori
 percentuale e chi, alla sua percentuale effettiva, non chiude le ripetizioni scritte.
 
-**Gruppi di carico a mano, più liberi** — dentro il gruppo anche chi non ha il
-massimale (fuori dalla media, «carico non verificato» scritto ogni volta); carico
-scritto a mano (vale solo per la percentuale per cui l'hai deciso); note di gruppo.
-Note e carichi seguono il loro gruppo anche quando un altro si scioglie.
+**Gruppi di carico personalizzati** — per ogni gruppo: nome, percentuale propria,
+serie×ripetizioni, carico scritto a mano (vale solo alla percentuale per cui l'hai
+deciso), nota. Per ogni atleta: il suo carico (esce dalla media del gruppo), una nota,
+lo spostamento in un altro gruppo o in uno nuovo — e carico e nota la seguono.
+Dentro il gruppo anche chi non ha il massimale («carico non verificato», sempre) e
+anche un gruppo da una sola. Tutto arriva in stampa e nella scheda di seduta.
 
 **Promemoria** (Oggi → Da misurare) — test scaduti rispetto alla frequenza della
 batteria dello sport, chi manca dall'ultima sessione, test in batteria mai usati.

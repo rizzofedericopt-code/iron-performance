@@ -40,6 +40,18 @@ Gruppi di carico → **✏️ Personalizza i gruppi** (oppure «a mano» in «Co
 - [ ] Chiudi, riapri, **stampa**, apri la **scheda di seduta** con «solo Squat».
       → Nomi dei gruppi, note di gruppo e note individuali ci sono dappertutto.
 
+## Un massimale, una colonna
+
+- [ ] Se avevi creato da xRM→1RM una colonna «Squat» (o «Stacco», «Panca»…), dopo
+      l'aggiornamento **non c'è più**: le sue stime sono dentro **1RM Squat**, ancora
+      marcate «stima», e **Squat rel.** si è aggiornata. Prima dell'unione l'app ha
+      salvato una copia (Impostazioni → Annulla un'operazione).
+- [ ] In una cella di **xRM→1RM** apri «Esercizio»: ci sono i massimali (1RM Squat,
+      Front squat, Box squat, Panca, Stacco, Hip thrust, Military, Trazioni).
+      Scegli 1RM Squat → si apre la stima da ripetizioni **nella colonna dello squat**.
+- [ ] Le stime già scritte in xRM→1RM «senza esercizio»: intestazione della colonna
+      → *↪ Sposta in un massimale* → scegli dove vanno. Solo tu sai che esercizio erano.
+
 ## Una volta a settimana
 
 - [ ] **Da misurare** in Oggi — controlla che i test segnalati siano davvero quelli

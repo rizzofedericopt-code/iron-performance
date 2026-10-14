@@ -267,6 +267,12 @@ lo spostamento in un altro gruppo o in uno nuovo — e carico e nota la seguono.
 Dentro il gruppo anche chi non ha il massimale («carico non verificato», sempre) e
 anche un gruppo da una sola. Tutto arriva in stampa e nella scheda di seduta.
 
+**Un massimale, una colonna** — una stima da xRM→1RM su squat, stacco, panca, box
+squat, front squat, hip thrust o military va nella colonna di quel massimale, e la
+forza relativa la segue. Le colonne tue con quei nomi confluiscono da sole (con una
+copia prima); le altre si spostano a mano. Front squat con colonna sua: prima la curva
+carico-velocità lo scriveva nel back squat. Forza relativa per tutti i massimali.
+
 **Promemoria** (Oggi → Da misurare) — test scaduti rispetto alla frequenza della
 batteria dello sport, chi manca dall'ultima sessione, test in batteria mai usati.
 

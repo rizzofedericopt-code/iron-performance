@@ -1296,6 +1296,7 @@ const TESTS=[
      la stessa atleta i due massimali sono numeri diversi — cambiano con
      l'altezza del box e con la pausa — e mescolarli darebbe un andamento che
      sale e scende per il box che hai usato quel giorno, non per la sua forza. */
+  {id:"rmFront",   name:"1RM Front squat", full:"Massimale 1RM — Front squat", unit:"kg", dir:1, cat:"Forza", sports:["forza","pallavolo","basket","calcio","atletica","generale"]},
   {id:"rmBox",     name:"1RM Box squat", full:"Massimale 1RM — Box squat",  unit:"kg", dir:1, cat:"Forza", sports:["forza","pallavolo","basket","calcio","combattimento","atletica","generale"]},
   {id:"rmBench",   name:"1RM Panca",   full:"Massimale 1RM — Panca piana",  unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
   {id:"rmDead",    name:"1RM Stacco",  full:"Massimale 1RM — Stacco da terra", unit:"kg", dir:1, cat:"Forza", sports:["combattimento","forza"]},
@@ -1323,9 +1324,15 @@ const TESTS=[
   {id:"rmDeadRel",  name:"Stacco rel.", full:"1RM Stacco ÷ peso corporeo", unit:"×peso", dir:1, cat:"Forza", rel:"rmDead",  derived:{from:["rmDead","bw"]},  sports:["combattimento","forza"]},
   {id:"rmBenchRel", name:"Panca rel.",  full:"1RM Panca ÷ peso corporeo",  unit:"×peso", dir:1, cat:"Forza", rel:"rmBench", derived:{from:["rmBench","bw"]}, sports:["combattimento","forza"]},
   {id:"rmHipRel",   name:"Hip thrust rel.", full:"1RM Hip thrust ÷ peso corporeo", unit:"×peso", dir:1, cat:"Forza", rel:"rmHip", derived:{from:["rmHip","bw"]}, sports:["forza"]},
+  {id:"rmFrontRel", name:"Front squat rel.", full:"1RM Front squat ÷ peso corporeo", unit:"×peso", dir:1, cat:"Forza", rel:"rmFront", derived:{from:["rmFront","bw"]}, sports:["forza"]},
+  {id:"rmBoxRel",   name:"Box squat rel.", full:"1RM Box squat ÷ peso corporeo", unit:"×peso", dir:1, cat:"Forza", rel:"rmBox", derived:{from:["rmBox","bw"]}, sports:["forza"]},
+  {id:"rmOhpRel",   name:"Military rel.",  full:"1RM Military press ÷ peso corporeo", unit:"×peso", dir:1, cat:"Forza", rel:"rmOhp", derived:{from:["rmOhp","bw"]}, sports:["forza"]},
+  {id:"rmPullRel",  name:"Trazioni rel.",  full:"1RM Trazioni (carico totale) ÷ peso corporeo", unit:"×peso", dir:1, cat:"Forza", rel:"rmPull", derived:{from:["rmPull","bw"]}, sports:["forza"]},
   {id:"bodyFat",   name:"Massa grassa", full:"Percentuale di massa grassa",  unit:"%",  dir:-1, cat:"Composizione corporea", sports:["combattimento","forza","generale"]},
 ];
 const TMAP={}; TESTS.forEach(t=>TMAP[t.id]=t);
+// la forza relativa compare dove compare il suo massimale, ne' piu' ne' meno
+TESTS.forEach(t=>{ if(t.rel && TMAP[t.rel]) t.sports=TMAP[t.rel].sports.slice(); });
 
 /* ═══════════════ ESERCIZI TUOI ═══════════════════════════════════════════
    La colonna «xRM→1RM» era una sola per tutti gli esercizi: ci finivano leg
@@ -1393,6 +1400,140 @@ function applyCustom(){
     TESTS.push(t); TMAP[t.id]=t;
   });
 }
+/* ═══════════ UN MASSIMALE, UNA COLONNA ═══════════
+   Da xRM→1RM si poteva creare una colonna «Squat» accanto a «1RM Squat». Il
+   massimale dello squat finiva in due posti: la forza relativa, i gruppi di
+   carico e il report ne leggevano uno solo, e l'altro invecchiava senza che
+   nessuno se ne accorgesse.
+
+   Ora un esercizio che ha gia' la sua colonna di massimale la usa — qualunque
+   strada tu prenda per scriverci. Il riconoscimento e' per nome ESATTO, non
+   per somiglianza: il front squat non e' il back squat (massimali diversi), lo
+   stacco rumeno non e' lo stacco da terra. Le trazioni sono escluse dal
+   riconoscimento automatico: la colonna 1RM Trazioni e' a carico TOTALE
+   (corpo + zavorra), e una «Trazioni» tua potrebbe essere la sola zavorra —
+   mescolarle darebbe una linea senza senso. Si scelgono a mano dal selettore. */
+const RM_STD=[
+  {t:"rmSquat", k:["squat","back squat","squat bilanciere","1rm squat","squat 1rm","back squat 1rm","1rm back squat"]},
+  {t:"rmFront", k:["front squat","1rm front squat","front squat 1rm","squat frontale"]},
+  {t:"rmBox",   k:["box squat","1rm box squat","box squat 1rm"]},
+  {t:"rmBench", k:["panca","panca piana","bench","bench press","1rm panca","panca 1rm"]},
+  {t:"rmDead",  k:["stacco","stacco da terra","deadlift","stacco classico","1rm stacco","stacco 1rm"]},
+  {t:"rmHip",   k:["hip thrust","1rm hip thrust","hip thrust 1rm"]},
+  {t:"rmOhp",   k:["military","military press","lento avanti","overhead press","ohp","1rm military"]},
+  {t:"rmPull",  k:[]},
+];
+function rmStdPerNome(nome){
+  const k=customKey(nome);
+  const r=RM_STD.find(x=>x.k.indexOf(k)>=0 && TMAP[x.t]);
+  return r ? r.t : null;
+}
+/* Le scelte del selettore di xRM→1RM: senza esercizio, i massimali con la loro
+   colonna, poi gli esercizi tuoi. */
+function xrmScelte(){
+  return [{id:"pred", n:"— senza esercizio —", g:""}]
+    .concat(RM_STD.filter(x=>TMAP[x.t]).map(x=>({id:x.t, n:TMAP[x.t].name, g:"Massimali"})))
+    .concat((S.custom||[]).filter(c=>(c.base||"pred")==="pred" && TMAP[c.id]).map(c=>({id:c.id, n:c.name, g:"Esercizi tuoi"})));
+}
+function xrmOpzioni(sel){
+  const L=xrmScelte(); let h="", gruppo=null;
+  L.forEach(x=>{
+    if(x.g!==gruppo){ if(gruppo) h+='</optgroup>'; if(x.g) h+='<optgroup label="'+escAttr(x.g)+'">'; gruppo=x.g; }
+    h+='<option value="'+escAttr(x.id)+'"'+(x.id===sel?" selected":"")+'>'+esc(x.n)+'</option>';
+  });
+  if(gruppo) h+='</optgroup>';
+  return h+'<option value="__new">➕ Nuovo esercizio…</option>';
+}
+/* Una colonna tua che e' in realta' un massimale standard confluisce nella sua
+   colonna, con tutto quello che la riguarda. Nello stesso giorno una misura
+   vera batte una stima. Idempotente: un secondo dispositivo che riporta la
+   colonna vecchia viene riassorbito senza doppioni. */
+function customUnisci(cid, std){
+  (S.athletes||[]).forEach(a=>{
+    const d=(S.data||{})[a.id]; if(!d||!Array.isArray(d[cid])) return;
+    const byD={}; (d[std]||[]).forEach(e=>{ if(e&&e.d) byD[e.d]=e; });
+    d[cid].forEach(e=>{
+      if(!e||!e.d) return;
+      const ex=byD[e.d];
+      if(!ex || (STIMA_FONTI[ex.fonte] && !STIMA_FONTI[e.fonte])) byD[e.d]=Object.assign({}, e);
+    });
+    d[std]=Object.keys(byD).sort().map(k=>byD[k]);
+    delete d[cid];
+  });
+  (S.teams||[]).forEach(t=>{
+    ["tests","pin"].forEach(k=>{
+      if(!Array.isArray(t[k])) return;
+      const l=t[k].map(x=>x===cid?std:x), v={};
+      t[k]=l.filter(x=>v[x]?false:(v[x]=1));
+    });
+  });
+  Object.keys(S.gruppi||{}).forEach(k=>{
+    if(k.indexOf(cid+"@")!==0) return;
+    const nk=std+k.slice(cid.length);
+    if(!S.gruppi[nk]) S.gruppi[nk]=S.gruppi[k];
+    delete S.gruppi[k];
+  });
+  Object.keys(S.sedute||{}).forEach(k=>{
+    const c=S.sedute[k]; if(!c) return;
+    if(Array.isArray(c.ex)){ const v={}; c.ex=c.ex.map(e=>Object.assign({}, e, {t:e.t===cid?std:e.t})).filter(e=>v[e.t]?false:(v[e.t]=1)); }
+    if(c.rif===cid) c.rif=std;
+  });
+  if(S.te && S.te[cid]!=null){ if(S.te[std]==null) S.te[std]=S.te[cid]; delete S.te[cid]; }
+  if(SORT && SORT.by===cid) SORT.by=std;
+  S.custom=(S.custom||[]).filter(c=>c.id!==cid);
+}
+/* Le stime gia' scritte in xRM→1RM «senza esercizio», o in una colonna tua
+   con un nome che l'app non riconosce («Squat profondo»), non si possono
+   spostare da sole: solo tu sai che esercizio erano. Si spostano a mano, una
+   colonna alla volta, con una copia di sicurezza prima. */
+function colonnaSposta(src, dst){
+  if(!TMAP[src] || !TMAP[dst] || src===dst) return 0;
+  snapshotBeforeRisk("spostamento di "+TMAP[src].name+" in "+TMAP[dst].name);
+  let n=0;
+  if(TMAP[src].custom){
+    (S.athletes||[]).forEach(a=>{ n+=(((S.data||{})[a.id]||{})[src]||[]).length; });
+    customUnisci(src, dst); applyCustom();
+  } else {
+    // xRM→1RM e' una colonna di tutte le squadre: si spostano solo le atlete di questa
+    (teamAthletes()||[]).forEach(a=>{
+      const d=(S.data||{})[a.id]; if(!d||!Array.isArray(d[src])||!d[src].length) return;
+      const byD={}; (d[dst]||[]).forEach(e=>{ if(e&&e.d) byD[e.d]=e; });
+      d[src].forEach(e=>{ const ex=byD[e.d]; n++;
+        if(!ex || (STIMA_FONTI[ex.fonte] && !STIMA_FONTI[e.fonte])) byD[e.d]=Object.assign({}, e); });
+      d[dst]=Object.keys(byD).sort().map(k=>byD[k]);
+      delete d[src];
+    });
+  }
+  save(); return n;
+}
+function openSposta(src){
+  const t=TMAP[src]; if(!t) return;
+  let n=0; (TMAP[src].custom ? (S.athletes||[]) : (teamAthletes()||[])).forEach(a=>{ n+=(((S.data||{})[a.id]||{})[src]||[]).length; });
+  modal('<div class="mh"><div><div class="eyebrow">'+esc(t.name)+'</div><div class="mt">↪ Sposta in un massimale</div>'+
+    '<div class="ms">'+n+' misure'+(t.custom?'':' delle atlete di questa squadra')+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="fhint" style="margin-top:0">Se queste stime erano, per esempio, di squat, spostale in <b>1RM Squat</b>: '+
+    'da lì aggiornano la forza relativa, i gruppi di carico e il report. Nello stesso giorno una misura vera batte una stima. '+
+    'Prima dello spostamento si salva una copia: puoi annullare da Impostazioni → Annulla un\'operazione.</div>'+
+    '<label class="fl">In quale colonna</label><select id="spD">'+
+    RM_STD.filter(x=>TMAP[x.t] && x.t!==src).map(x=>'<option value="'+x.t+'">'+esc(TMAP[x.t].name)+'</option>').join("")+'</select>'+
+    '<button class="btn primary" style="width:100%;margin-top:12px" onclick="spostaConferma(\''+src+'\')">Sposta</button>');
+}
+function spostaConferma(src){
+  const dst=(document.getElementById("spD")||{}).value;
+  if(!dst || !confirm("Spostare le misure di «"+TMAP[src].name+"» in «"+TMAP[dst].name+"»?")) return;
+  const n=colonnaSposta(src, dst);
+  closeM(); render(); toast(n+" misure spostate in "+TMAP[dst].name);
+}
+function customUnisciTutti(){
+  const da=(S.custom||[]).filter(c=>c && (c.unit||"kg")==="kg" && rmStdPerNome(c.name));
+  if(!da.length) return 0;
+  snapshotBeforeRisk("unione di "+da.map(c=>c.name).join(", ")+" nelle colonne dei massimali");
+  da.forEach(c=>customUnisci(c.id, rmStdPerNome(c.name)));
+  applyCustom();
+  S._dirty=true;
+  return da.length;
+}
 /* Crea la colonna se non c'e' gia', e restituisce l'id in ogni caso: due
    esercizi con lo stesso nome sono lo stesso esercizio, anche se li scrivi
    con le maiuscole diverse. */
@@ -1401,6 +1542,8 @@ function customAdd(nome, base, unit){
   if(!n) return null;
   if(!S.custom) S.custom=[];
   const uu=custUnita(unit||"kg");
+  // un massimale che ha gia' la sua colonna non ne ottiene una seconda
+  if(uu.u==="kg"){ const std=rmStdPerNome(n); if(std) return std; }
   const k=customKey(n);
   const gia=S.custom.find(c=>customKey(c.name)===k && (c.unit||"kg")===uu.u);
   if(gia) return gia.id;
@@ -1535,6 +1678,7 @@ function normalize(){
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
   if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
   applyCustom();
+  customUnisciTutti();         // «Squat» tuo → 1RM Squat: un massimale, una colonna
   antroSync();                 // peso e statura della scheda ↔ serie datate
   if(!S.cvar) S.cvar="percussione";
   if(!S.cfg) S.cfg={};
@@ -2948,6 +3092,7 @@ function openColMenu(tid){
      (rmTestEx(tid)?riga("📋","Scheda di seduta","Più esercizi, gli stessi gruppi per tutta la seduta",'closeM();openSeduta()'):"")+
      riga("📊","Cosa è cambiato","Chi è migliorata davvero, oltre l'errore della misura",'openCambio(\''+tid+'\')')+
      riga("✏️","Registra per tutta la squadra","Una colonna, un numero per atleta",'closeM();openSessionOn(\''+tid+'\')')+
+     ((tid==="pred" || (t.custom && t.base==="pred")) ? riga("↪","Sposta in un massimale","Erano stime di squat, stacco…? Portale nella loro colonna",'openSposta(\''+tid+'\')') : "")+
      riga("ⓘ","Come si esegue","Protocollo, interpretazione, consigli",'openGuide(\''+tid+'\')')+
      '</div>';
   modal(h);
@@ -4436,7 +4581,9 @@ let LV_ROWS=[], CUR_LV_AID=null;
    in ogni sessione, ed è giusto che lo siano.                              */
 const LV_EX=[
   {n:"Back squat",        mvt:0.30, test:"rmSquat"},
-  {n:"Front squat",       mvt:0.30, test:"rmSquat"},
+  // il front squat ha un massimale suo, di solito piu' basso del back squat:
+  // scriverlo nella colonna dello squat sporcava l'andamento con un altro esercizio
+  {n:"Front squat",       mvt:0.30, test:"rmFront"},
   {n:"Box squat",         mvt:0.30, test:"rmBox"},
   {n:"Panca piana",       mvt:0.17, test:"rmBench"},
   {n:"Stacco da terra",   mvt:0.16, test:"rmDead"},
@@ -8219,13 +8366,9 @@ function drawCell(){
       /* Su xRM→1RM (e sulle colonne che ne nascono) la domanda vera e' «quale
          esercizio?»: ogni esercizio ha la sua colonna, quindi il selettore
          non cambia un campo — cambia colonna. */
-      if(CUR.t==="pred" || t.custom){
-        const scelte=[{id:"pred", n:"— senza esercizio —"}]
-          .concat((S.custom||[]).filter(c=>(c.base||"pred")==="pred").map(c=>({id:c.id, n:c.name})));
+      if(CUR.t==="pred" || t.custom || RM_STD.some(x=>x.t===CUR.t)){
         h+='<label class="fl">Esercizio</label>'+
-           '<select id="cEx" onchange="cellEx(this.value)">'+
-           scelte.map(x=>'<option value="'+escAttr(x.id)+'"'+(x.id===CUR.t?" selected":"")+'>'+esc(x.n)+'</option>').join("")+
-           '<option value="__new">➕ Nuovo esercizio…</option></select>'+
+           '<select id="cEx" onchange="cellEx(this.value)">'+xrmOpzioni(CUR.t)+'</select>'+
            '<div class="fhint">Ogni esercizio è una <b>colonna sua</b>: così l\'andamento nel tempo resta leggibile. '+
            'Leg press e affondi nella stessa colonna darebbero una linea che sale e scende a seconda di cosa hai fatto quel giorno.</div>';
       }
@@ -8299,7 +8442,13 @@ function cellMode(m){ CUR.mode=m; drawCell(); }
 /* Cambiare esercizio significa cambiare colonna, non campo: si riapre la
    cella giusta per la stessa atleta. */
 function cellEx(v){
-  if(v!=="__new"){ openCell(CUR.a, v); return; }
+  if(v!=="__new"){
+    // si arriva da xRM→1RM: la strada e' la serie a ripetizioni, anche sulla colonna del massimale
+    const daStima = CUR.mode==="reps" || CUR.t==="pred" || (TMAP[CUR.t]||{}).custom;
+    openCell(CUR.a, v);
+    if(daStima && rmTestEx(v)){ CUR.mode="reps"; drawCell(); }
+    return;
+  }
   openCustomNew(function(id){ openCell(CUR.a, id); }, function(){ drawCell(); });
 }
 /* La schermata per creare una colonna tua. Un prompt() non bastava piu':
@@ -8426,13 +8575,9 @@ function sessRows(){
       : '';
     /* Stessa logica della cella: su xRM→1RM si sceglie l'esercizio, e la
        scelta cambia la COLONNA su cui stai registrando. */
-    if(tid==="pred" || (t&&t.custom)){
-      const scelte=[{id:"pred", n:"— senza esercizio —"}]
-        .concat((S.custom||[]).filter(c=>(c.base||"pred")==="pred").map(c=>({id:c.id, n:c.name})));
+    if(tid==="pred" || (t&&t.custom) || RM_STD.some(x=>x.t===tid)){
       mh.innerHTML += '<label class="fl" style="margin-top:12px">Esercizio</label>'+
-        '<select id="sEx" onchange="sessEx(this.value)">'+
-        scelte.map(x=>'<option value="'+escAttr(x.id)+'"'+(x.id===tid?" selected":"")+'>'+esc(x.n)+'</option>').join("")+
-        '<option value="__new">➕ Nuovo esercizio…</option></select>';
+        '<select id="sEx" onchange="sessEx(this.value)">'+xrmOpzioni(tid)+'</select>';
     }
   }
 
@@ -8497,6 +8642,7 @@ function sessMode(m){ SESS.mode=m; sessRows(); }
 function sessEx(v){
   if(v!=="__new"){
     const sel=document.getElementById("sT"); if(sel) sel.value=v;
+    if(SESS.mode==="reps" || SESS.t==="pred") SESS.mode="reps";
     SESS.t=v; sessRows(); return;
   }
   openCustomNew(function(id){
@@ -9542,11 +9688,11 @@ const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆
   spr10:"⏱️",spr30:"🏁",rsa:"🔄",sdec:"📉",vo2:"🫁",mas:"🏃",yoyo1:"🪀",yoyo2:"🪀",
   fvdef:"📈",cod505:"🔀",ttest:"✖️",mat:"↔️",
   cmj1lL:"◀️",cmj1lR:"▶️",cmj1lAsym:"🪞",dj1lL:"⏪",dj1lR:"⏩",dj1lAsym:"🪞",bosco15:"⏱",bosco30:"⏲",bosco60:"⏰",
-  rmHip:"🦵",rmOhp:"🙆",rmPull:"🧗",rmBox:"📦",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
+  rmHip:"🦵",rmOhp:"🙆",rmPull:"🧗",rmBox:"📦",rmFront:"🏋️",rmFrontRel:"🏋️",cmjAsym:"⚖️",ybtLow:"🧭",hopLSI:"🦵",tripleHop:"🐇",
   shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶",
   fmsSquat:"🏋️",fmsHurdle:"🚧",fmsLunge:"🤺",fmsShoulder:"🙆",fmsASLR:"🦵",fmsPushup:"🛟",fmsRotary:"🔁",fmsTotal:"🧮",
   shuttle300:"🔁",shuttleFat:"📉",wingPeak:"⚡",wingMean:"🔋",gripStr:"🤝",pullMax:"🧗",punchPow:"🥊",bodyFat:"⚖️",
-  bw:"⚖️",stat:"📏",rmSquatRel:"🏋️",rmDeadRel:"🏋️",rmBenchRel:"🏋️",rmHipRel:"🏋️",
+  bw:"⚖️",stat:"📏",rmSquatRel:"🏋️",rmDeadRel:"🏋️",rmBenchRel:"🏋️",rmHipRel:"🏋️",rmBoxRel:"🏋️",rmOhpRel:"🏋️",rmPullRel:"🏋️",
   rmSquat:"🦵",rmBench:"🛏️",rmDead:"🪝",pushMax:"🤸",trmInc:"🏃",airBike:"🚴"};
 
 const PROTO={
@@ -9951,6 +10097,15 @@ const PROTO={
     advice:["Se crolla rispetto al 30 s: lavoro di capacità, serie lunghe a intensità sub-massimale, prima che potenza.","Non usarlo come monitoraggio: è una fotografia annuale, non un termometro."],
     note:"Il più aggressivo dei tre per ginocchia e schiena. Fuori stagione, su atlete senza dolore in corso, e mai due volte nella stessa settimana."},
 
+  rmFront:{eyebrow:"Forza massimale — squat con bilanciere davanti",
+    what:"<b>1RM al front squat.</b> Il bilanciere sta sulle spalle davanti: il busto resta più verticale e lavora di più il quadricipite. È un esercizio diverso dal back squat, con un massimale suo — per questo ha una colonna sua.",
+    steps:[{t:"Presa",d:"Presa pulita (gomiti alti) o a braccia incrociate: scegline una e tienila, perché cambia il massimale."},
+      {t:"Profondità",d:"Almeno la coscia parallela, sempre la stessa. Gomiti alti per tutta la salita: se cadono, il bilanciere scivola e l'alzata non vale."},
+      {t:"Tentativi",d:"Riscaldamento progressivo, poi singoli con 3-5 minuti di recupero. <b>Sotto i 18 anni</b> non il singolo: 3-5 ripetizioni e lascia stimare l'1RM all'app."}],
+    interpret:["È di solito più basso del back squat: confronta lei con lei, non i due numeri fra loro come se fossero lo stesso esercizio.","Se il front squat cresce e il back squat no, spesso il limite è la posizione del busto o la schiena, non le gambe."],
+    advice:["Utile quando vuoi caricare le gambe con meno carico sulla colonna lombare.","Ricontrolla ogni 6-10 settimane, non più spesso."],
+    note:"La presa e la profondità sono parte del test: annotale."},
+
   rmBox:{eyebrow:"Forza massimale — squat con fermata",
     what:"<b>1RM al box squat.</b> Si scende fino a sedersi sul box, si <b>perde la tensione elastica</b> e si riparte da fermo. Toglie il rimbalzo, quindi misura la forza che ha davvero nel punto più sfavorevole — quello in cui una ragazza si blocca risalendo dall'affondo o dalla difesa bassa.",
     steps:[{t:"Altezza del box",d:"Scegline una e <b>scrivila</b>: un box più basso dà un massimale più basso. Cambiare altezza fra due test significa confrontare due esercizi diversi, non due momenti della stessa atleta."},
@@ -10316,7 +10471,7 @@ const PROTO={
     note:"Le air bike non sono calibrate tra loro: usa <b>sempre la stessa macchina</b>."}
 };
 
-["rmDeadRel","rmBenchRel","rmHipRel"].forEach(id=>{ PROTO[id]=PROTO.rmSquatRel; });
+["rmDeadRel","rmBenchRel","rmHipRel","rmBoxRel","rmOhpRel","rmPullRel","rmFrontRel"].forEach(id=>{ PROTO[id]=PROTO.rmSquatRel; });
 const PROTO_EXTRA={
   rm1:{interpret:["Confronta nel tempo e in <b>forza relativa</b> (1RM/peso): per lo sport conta questa, non il valore assoluto.","Salti grossi nei già allenati di solito = miglior tecnica/apprendimento, non solo più forza."],
     advice:["Programma le percentuali di lavoro sul 1RM; ricontrollalo ogni 6-10 settimane, non più spesso.","Se stalla: agisci su tecnica, gestione fatica o varia lo stimolo prima di forzare il carico."]},
@@ -10420,7 +10575,7 @@ const TEST_EQ={
   cod505:["crono","coni"], ttest:["crono","coni"], mat:["crono","coni","metro"], vcut:["crono","coni"], bronco:["crono","coni"],
   yoyo1:["audio","coni"], yoyo2:["audio","coni"], shuttle300:["crono","coni"], shuttleFat:["crono","coni"],
   rm1:["sala"], rm35:["sala"], pred:["sala"], rmSquat:["sala"], rmBench:["sala"],
-  rmDead:["sala"], rmHip:["sala"], rmOhp:["sala"], rmPull:["sala"], rmBox:["sala"],
+  rmDead:["sala"], rmHip:["sala"], rmOhp:["sala"], rmPull:["sala"], rmBox:["sala"], rmFront:["sala"],
   pullMax:["sala"], pushMax:["crono"],
   /* Derivati: nessuno strumento in piu' di quello che serve ai test da cui
      nascono, ma la riga ci deve essere o la batteria non sa in che livello
@@ -10433,6 +10588,7 @@ const TEST_EQ={
   mas:["crono","coni"], bodyFat:["plico"],
   bw:["bilancia"], stat:["metro"],
   rmSquatRel:["sala","bilancia"], rmDeadRel:["sala","bilancia"], rmBenchRel:["sala","bilancia"], rmHipRel:["sala","bilancia"],
+  rmBoxRel:["sala","bilancia"], rmOhpRel:["sala","bilancia"], rmPullRel:["sala","bilancia"], rmFrontRel:["sala","bilancia"],
 };
 function testEq(id){ const t=TMAP[id]; return TEST_EQ[id]||(t&&t.base?TEST_EQ[t.base]:null)||[]; }
 /* Il livello di un test è quello dell'attrezzatura più esigente che richiede. */
@@ -10535,6 +10691,11 @@ const USO={
   rmDeadRel:{s:"1RM stacco diviso il peso corporeo.", u:"Come lo squat relativo: leggila accanto al massimale assoluto."},
   rmBenchRel:{s:"1RM panca diviso il peso corporeo.", u:"Come lo squat relativo: leggila accanto al massimale assoluto."},
   rmHipRel:{s:"1RM hip thrust diviso il peso corporeo.", u:"Come lo squat relativo: leggila accanto al massimale assoluto."},
+  rmFront:{s:"Massimale al front squat: bilanciere davanti, busto verticale.", u:"Confrontalo con il suo front squat precedente, non con il back squat: sono due esercizi."},
+  rmFrontRel:{s:"1RM front squat diviso il peso corporeo.", u:"Come lo squat relativo: leggila accanto al massimale assoluto."},
+  rmBoxRel:{s:"1RM box squat diviso il peso corporeo.", u:"Come lo squat relativo: leggila accanto al massimale assoluto."},
+  rmOhpRel:{s:"1RM military press diviso il peso corporeo.", u:"Come lo squat relativo: leggila accanto al massimale assoluto."},
+  rmPullRel:{s:"Carico totale delle trazioni diviso il peso corporeo.", u:"Sopra 1 vuol dire che tira il suo corpo più una zavorra: è il numero che conta nelle trazioni."},
   bodyFat:{s:"Percentuale di massa grassa.", u:"Da guardare come tendenza, mai come obiettivo dichiarato all'atleta. Con delle under 18, cautela doppia."},
 };
 function usoOf(id){ const t=TMAP[id]; return USO[id]||(t&&t.base?USO[t.base]:null)||null; }
@@ -10750,9 +10911,9 @@ function batt2Tests(sport, liv){
 const T_TEST={ cmj:20, rsiMod:0, cmjA:90, sj:60, eur:0, cmj1lL:60, cmj1lR:60, cmj1lAsym:0,
   dj:90, rsi105:90, bjump:60, spr10:60, spr30:90, cod505:90, ttest:120, mat:120, vcut:120,
   ankleDF:60, shIR:60, hipIR:60, ybtLow:180, hopLSI:120, nordicAng:120,
-  rmSquat:600, rmBench:600, rmDead:600, rmBox:600, rm1:600, rm35:420, pred:300, vbt:180, imtp:180,
+  rmSquat:600, rmBench:600, rmDead:600, rmBox:600, rm1:600, rmFront:600, rm35:420, pred:300, vbt:180, imtp:180,
   bosco30:90, bosco60:120, gripStr:30, bodyFat:120, bw:30, stat:45,
-  rmSquatRel:0, rmDeadRel:0, rmBenchRel:0, rmHipRel:0 };
+  rmSquatRel:0, rmDeadRel:0, rmBenchRel:0, rmHipRel:0, rmBoxRel:0, rmOhpRel:0, rmPullRel:0, rmFrontRel:0 };
 function tierMinuti(ids, n){
   let s=0, squadra=false;
   ids.forEach(id=>{

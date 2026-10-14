@@ -503,6 +503,15 @@ ul.kb li b{color:#fff;font-weight:600}
 .treadywrap{display:flex;flex-wrap:wrap;gap:7px}
 .tready{font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:6px 11px;cursor:pointer}
 .tready b{color:var(--up)}
+/* promemoria */
+.promwrap{display:flex;flex-direction:column;gap:6px}
+.prom{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface2);border:1px solid var(--line);border-left:3px solid #FFB340;border-radius:10px;padding:8px 10px 8px 12px}
+.prom.part{border-left-color:var(--line2)}
+.prom b{font-size:13.5px;display:block}
+.prom small{font-size:11.5px;color:var(--muted)}
+.prommai{font-size:12px;color:var(--muted);padding:4px 2px}
+.prommai summary{cursor:pointer}
+.prommai>div{margin-top:5px}
 /* scheda di seduta */
 .sedex{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px}
 .sedex1{display:flex;gap:8px;align-items:center}.sedex1 select{flex:1}
@@ -925,6 +934,16 @@ ul.kb li b{color:#fff;font-weight:600}
 
 /* ── Gruppi a mano: pool con spunte e riepilogo della selezione ── */
 .lgx{background:none;border:none;color:var(--muted2);font-size:12px;cursor:pointer;padding:0 0 0 7px;line-height:1}
+.lgnot .lgnm{opacity:.85}
+.lgnv{font-size:11px;color:#FFB340;flex:1;text-align:right}
+.lgman{font-size:9.5px;font-weight:700;color:#FFB340;border:1px solid rgba(255,159,10,.5);border-radius:5px;padding:1px 5px;margin-left:6px;vertical-align:middle}
+.lgwarn{font-size:11.5px;color:#FFB340;margin-top:6px}
+.lgctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+#modal .lgctl .lgkgin{width:130px;flex:0 0 auto;margin:0;padding:6px 9px}
+#modal .lgctl .lgadd{flex:1;min-width:120px;margin:0;padding:6px 9px}
+#modal .lgnota{width:100%;margin-top:6px;font-size:12px;padding:7px 9px;resize:vertical;min-height:34px;font-family:var(--sans)}
+.lgnotav{font-size:12px;color:var(--muted);margin-top:6px}
+.lgpns .lg1{color:#FFB340}
 .lgx:active{color:var(--down)}
 .lgrow2{display:flex;gap:8px;margin-top:12px}
 .lgrow2>.btn{flex:1}
@@ -4013,8 +4032,16 @@ function gruppiTogli(id){
   Object.keys(S.gruppi||{}).forEach(tid=>{
     const o=S.gruppi[tid];
     if(!o||!Array.isArray(o.g)) { delete S.gruppi[tid]; return; }
-    o.g=o.g.map(g=>g.filter(x=>x!==id)).filter(g=>g.length);
-    if(!o.g.length) delete S.gruppi[tid];
+    // g e x si potano insieme: un gruppo che si svuota porta via la SUA nota
+    const xs=Array.isArray(o.x)?o.x:[];
+    const g=[], x=[];
+    o.g.forEach((arr,i)=>{
+      const m=(Array.isArray(arr)?arr:[]).filter(v=>v!==id);
+      if(m.length){ g.push(m); x.push(xs[i]||null); }
+    });
+    if(!g.length){ delete S.gruppi[tid]; return; }
+    o.g=g;
+    if(x.some(Boolean)) o.x=x; else delete o.x;
   });
 }
 function delAthlete(id){
@@ -5020,12 +5047,15 @@ const RM_RANK={ok:0, warn:1, bad:2};
 /* Il carico del gruppo e cosa costa a ciascuna.
    `mode`: "media" (quello che chiedi tu) oppure "min", che allinea tutte sul
    carico della piu' leggera — nessuno lavora piu' pesante del previsto. */
-function rmGruppoCarico(g, pct, mode){
+function rmGruppoCarico(g, pct, mode, fisso){
   const ideali=g.map(x=>x.kg*pct/100);
   const grezzo = mode==="min" ? Math.min.apply(null,ideali)
                : mode==="max" ? Math.max.apply(null,ideali)
                : ideali.reduce((a,b)=>a+b,0)/ideali.length;
-  const load=rmRound(grezzo);
+  /* `fisso` = carico scritto a mano dal preparatore. Non si arrotonda: se ha
+     scritto 46, vuole 46. Le percentuali sotto si ricalcolano su quello, cosi'
+     vede subito cosa costa la sua scelta a ciascuna. */
+  const load=(isFinite(fisso)&&fisso>0) ? fisso : rmRound(grezzo);
   const righe=g.map((x,i)=>{
     const eff=x.kg>0 ? load/x.kg*100 : 0;
     const dpp=eff-pct;                       // scarto in PUNTI di percentuale
@@ -5370,6 +5400,54 @@ function lgById(con){ const m={}; con.forEach(x=>m[x.id]=x); return m; }
    «senza dato» — e peggio: il primo ritocco li avrebbe riscritti perdendo
    l'altra squadra. Ogni squadra ha i suoi. */
 function lgKey(){ return LG.ex+"@"+(S.activeTeam||"all"); }
+/* Oltre ai nomi, ogni gruppo puo' avere un carico scritto a mano e una nota.
+   Stanno in `x`, allineato a `g` posizione per posizione:
+       S.gruppi[test@squadra] = {d, g:[[id…],…], x:[{kg,pct,nota}|null,…]}
+   L'allineamento e' il punto delicato: ogni funzione che toglie un gruppo da
+   `g` deve togliere lo stesso da `x`, o la nota di un gruppo finisce
+   sull'altro. Per questo `g` e `x` si leggono e si scrivono SOLO in coppia,
+   da lgSalvatiX / lgScriviX (e da gruppiTogli e sanitizeImport, che lo fanno
+   allo stesso modo).
+
+   Il carico a mano ricorda a quale percentuale e' stato deciso. Se poi
+   cambi percentuale, non si applica piu': 50 kg scelti per il 75% non sono
+   una scelta per l'85%, e applicarli in silenzio sarebbe il modo peggiore di
+   sbagliare — uno che non si vede.                                        */
+function lgMetaOk(x){
+  if(!x||typeof x!=="object") return null;
+  const o={};
+  const kg=parseFloat(x.kg), pc=parseFloat(x.pct);
+  if(isFinite(kg)&&kg>0&&kg<500&&isFinite(pc)&&pc>0&&pc<=100){ o.kg=kg; o.pct=pc; }
+  const n=String(x.nota==null?"":x.nota).slice(0,300).trim();
+  if(n) o.nota=n;
+  return Object.keys(o).length ? o : null;
+}
+function lgSalvatiX(test){
+  const o=(S.gruppi||{})[test];
+  if(!o||!Array.isArray(o.g)) return null;
+  const vivi={}; (S.athletes||[]).forEach(a=>vivi[a.id]=1);
+  const xs=Array.isArray(o.x)?o.x:[];
+  const visto={}, out=[];
+  o.g.forEach((arr,i)=>{
+    if(!Array.isArray(arr)) return;
+    const pulito=[];
+    arr.forEach(id=>{ if(vivi[id] && !visto[id]){ visto[id]=1; pulito.push(id); } });
+    if(pulito.length) out.push({m:pulito, x:lgMetaOk(xs[i])});
+  });
+  return out.length ? out : null;
+}
+function lgScriviX(test, X){
+  if(!S.gruppi) S.gruppi={};
+  const v=(X||[]).filter(o=>o&&Array.isArray(o.m)&&o.m.length);
+  if(!v.length) delete S.gruppi[test];
+  else {
+    const rec={d:todayISO(), g:v.map(o=>o.m.slice())};
+    const x=v.map(o=>lgMetaOk(o.x));
+    if(x.some(Boolean)) rec.x=x;
+    S.gruppi[test]=rec;
+  }
+  save();
+}
 function lgSalvati(test){
   const o=(S.gruppi||{})[test];
   if(!o||!Array.isArray(o.g)) return null;
@@ -5387,34 +5465,63 @@ function lgSalvati(test){
   });
   return g.length ? g : null;
 }
-function lgScrivi(test, g){
-  if(!S.gruppi) S.gruppi={};
-  if(!g||!g.length) delete S.gruppi[test];
-  else S.gruppi[test]={d:todayISO(), g:g.map(x=>x.slice())};
-  save();
-}
+function lgScrivi(test, g){ lgScriviX(test, (g||[]).map(m=>({m:m, x:null}))); }
 function lgTog(aid){ if(LG.sel[aid]) delete LG.sel[aid]; else LG.sel[aid]=1; lgRefresh(); }
 function lgForma(){
   const ids=Object.keys(LG.sel);
   if(ids.length<2){ toast("Servono almeno due atlete"); return; }
-  const g=lgSalvati(lgKey())||[];
-  g.push(ids); LG.sel={};
-  lgScrivi(lgKey(), g); lgRefresh();
+  const X=lgSalvatiX(lgKey())||[];
+  X.push({m:ids, x:null}); LG.sel={};
+  lgScriviX(lgKey(), X); lgRefresh();
 }
 function lgTogli(gi, aid){
-  const g=lgSalvati(lgKey())||[];
-  if(!g[gi]) return;
-  g[gi]=g[gi].filter(x=>x!==aid);
-  lgScrivi(lgKey(), g.filter(x=>x.length)); lgRefresh();
+  const X=lgSalvatiX(lgKey())||[];
+  if(!X[gi]) return;
+  X[gi].m=X[gi].m.filter(x=>x!==aid);
+  lgScriviX(lgKey(), X); lgRefresh();        // un gruppo vuoto se ne va con la sua nota
 }
 function lgSciogli(gi){
-  const g=lgSalvati(lgKey())||[];
-  g.splice(gi,1);
-  lgScrivi(lgKey(), g); lgRefresh();
+  const X=lgSalvatiX(lgKey())||[];
+  if(!X[gi]) return;
+  if(X[gi].x && X[gi].x.nota && !confirm("Sciogliere il gruppo? La nota «"+X[gi].x.nota.slice(0,60)+"» va persa.")) return;
+  X.splice(gi,1);
+  lgScriviX(lgKey(), X); lgRefresh();
+}
+/* Aggiungere UNA atleta a un gruppo che c'e' gia' — anche senza massimale.
+   Se era in un altro gruppo, ne esce: un nome sta su un bilanciere solo. */
+function lgAggiungi(gi, aid){
+  if(!aid) return;
+  const X=lgSalvatiX(lgKey())||[];
+  if(!X[gi]) return;
+  X.forEach(o=>{ o.m=o.m.filter(x=>x!==aid); });
+  X[gi].m.push(aid);
+  delete LG.sel[aid];
+  lgScriviX(lgKey(), X); lgRefresh();
+}
+function lgSetKg(gi, v){
+  const X=lgSalvatiX(lgKey())||[];
+  if(!X[gi]) return;
+  const kg=parseFloat(String(v==null?"":v).replace(",","."));
+  const x=Object.assign({}, X[gi].x||{});
+  if(isFinite(kg) && kg>0 && kg<500){ x.kg=kg; x.pct=LG.pct; }
+  else { delete x.kg; delete x.pct; }
+  X[gi].x=x;
+  lgScriviX(lgKey(), X); lgRefresh();
+}
+function lgSetNota(gi, v){
+  const X=lgSalvatiX(lgKey())||[];
+  if(!X[gi]) return;
+  const x=Object.assign({}, X[gi].x||{});
+  x.nota=String(v==null?"":v).slice(0,300);
+  X[gi].x=x;
+  lgScriviX(lgKey(), X);                      // niente refresh: stai ancora scrivendo
 }
 function lgDaAuto(){
   const {con}=lgCandidate(LG.ex);
   if(!con.length){ toast("Nessun 1RM su questo test"); return; }
+  const prima=lgSalvatiX(lgKey())||[];
+  const conMeta=prima.filter(o=>o.x).length;
+  if(conMeta && !confirm("Rifare i gruppi in automatico cancella "+conMeta+(conMeta===1?" gruppo con nota o carico scritto a mano":" gruppi con note o carichi scritti a mano")+". Procedere?")) return;
   lgScrivi(lgKey(), rmGruppi(con, LG.size).map(g=>g.map(x=>x.id)));
   LG.sel={}; lgRefresh();
   // i gruppi a mano restano per le settimane dopo: chi oggi e' a casa non c'e'
@@ -5424,28 +5531,64 @@ function lgDaAuto(){
     : "Gruppi automatici copiati: ora puoi spostare chi vuoi");
 }
 function lgAzzera(){
+  const prima=lgSalvatiX(lgKey())||[];
+  if(prima.some(o=>o.x) && !confirm("Svuotare i gruppi? Note e carichi scritti a mano vanno persi.")) return;
   lgScrivi(lgKey(), null); LG.sel={}; lgRefresh();
 }
 
 /* La scheda di un gruppo. `gi` non nullo = modalita' a mano, con i comandi
-   per togliere un'atleta o sciogliere il gruppo. */
-function lgCard(g, etichetta, gi){
-  const r=rmGruppoCarico(g, LG.pct, LG.mode);
+   per togliere un'atleta, aggiungerne una, scrivere il carico e la nota.
+   opz = {extra:[{id,nome}] senza massimale, x:{kg,pct,nota}, liberi:[{id,nome}]} */
+function lgCaricoMano(x){
+  if(!x || !isFinite(x.kg)) return {applica:false, vecchio:false};
+  return {applica: x.pct===LG.pct, vecchio: x.pct!==LG.pct};
+}
+function lgCard(g, etichetta, gi, opz){
+  opz=opz||{};
+  const x=opz.x||null, cm=lgCaricoMano(x), extra=opz.extra||[];
+  const r = g.length
+    ? rmGruppoCarico(g, LG.pct, LG.mode, cm.applica ? x.kg : null)
+    : {load: cm.applica ? x.kg : null, righe:[], sopra:0, cls: cm.applica ? "ok" : "warn"};
   let b='<div class="lgg '+r.cls+'"><div class="lgh"><span class="lgt">'+esc(etichetta)+
     (gi!=null?'<button class="lgx" title="Sciogli il gruppo" onclick="lgSciogli('+gi+')">🗑</button>':'')+'</span>'+
-    '<span class="lgkg">'+fmtNum(r.load)+'<small>kg</small></span></div>'+
-    '<div class="lgpl">'+esc(rmPlatesText(r.load))+'</div>';
-  b+=r.righe.map(x=>{
-    const m=x.a.m;
+    '<span class="lgkg">'+(r.load!=null?fmtNum(r.load):'—')+'<small>kg</small>'+
+      (cm.applica?'<span class="lgman" title="Carico scritto a mano">a mano</span>':'')+'</span></div>'+
+    (r.load!=null?'<div class="lgpl">'+esc(rmPlatesText(r.load))+'</div>':'');
+  b+=r.righe.map(y=>{
+    const m=y.a.m;
     const vec = m.gg!=null && m.gg>120 ? '<span class="lgold" title="Dato di oltre 4 mesi fa">vecchio</span>' : '';
     const st  = m.stima ? '<span class="lgst" title="'+escAttr(m.titolo)+'">'+esc(m.tag)+'</span>' : '';
-    return '<div class="lgrow"><span class="lgnm">'+esc(x.a.nome)+st+vec+'</span>'+
-      '<span class="lg1">1RM '+fmtNum(Math.round(x.a.kg))+'</span>'+
-      '<span class="lgef '+x.cls+'">'+fmtNum(Math.round(x.eff))+'%</span>'+
-      '<span class="lgd '+x.cls+'">'+(x.dpp>0?"+":"")+fmtNum(Math.round(x.dpp*10)/10)+'</span>'+
-      (gi!=null?'<button class="lgx" title="Togli dal gruppo" onclick="lgTogli('+gi+',\''+x.a.id+'\')">✕</button>':'')+
+    return '<div class="lgrow"><span class="lgnm">'+esc(y.a.nome)+st+vec+'</span>'+
+      '<span class="lg1">1RM '+fmtNum(Math.round(y.a.kg))+'</span>'+
+      '<span class="lgef '+y.cls+'">'+fmtNum(Math.round(y.eff))+'%</span>'+
+      '<span class="lgd '+y.cls+'">'+(y.dpp>0?"+":"")+fmtNum(Math.round(y.dpp*10)/10)+'</span>'+
+      (gi!=null?'<button class="lgx" title="Togli dal gruppo" onclick="lgTogli('+gi+',\''+y.a.id+'\')">✕</button>':'')+
       '</div>';
   }).join("");
+  /* Chi non ha fatto il test sta nel gruppo, ma non nella media: il suo
+     carico NON e' verificato da niente, e la scheda lo dice a ogni seduta. */
+  b+=extra.map(a=>'<div class="lgrow lgnot"><span class="lgnm">'+esc(a.nome)+'</span>'+
+      '<span class="lgnv">senza 1RM · carico non verificato</span>'+
+      (gi!=null?'<button class="lgx" title="Togli dal gruppo" onclick="lgTogli('+gi+',\''+a.id+'\')">✕</button>':'')+
+      '</div>').join("");
+  if(cm.vecchio)
+    b+='<div class="lgwarn">Carico a mano di <b>'+fmtNum(x.kg)+' kg</b> deciso per il '+fmtNum(x.pct)+'%: con il '+fmtNum(LG.pct)+'% non lo applico.</div>';
+  if(!g.length && !cm.applica)
+    b+='<div class="lgwarn">Nessuna ha un massimale su questo test: scrivi tu il carico.</div>';
+  if(gi!=null){
+    const lib=opz.liberi||[];
+    b+='<div class="lgctl">'+
+       '<input class="mono lgkgin" type="number" inputmode="decimal" step="0.5" placeholder="carico a mano" '+
+         'value="'+(cm.applica?fmtNum(x.kg):'')+'" onchange="lgSetKg('+gi+',this.value)">'+
+       (cm.applica?'<button class="btn sm" onclick="lgSetKg('+gi+',\'\')" title="Torna al carico calcolato">↺ calcolato</button>':'')+
+       (lib.length?'<select class="lgadd" onchange="lgAggiungi('+gi+',this.value)"><option value="">+ aggiungi…</option>'+
+         lib.map(a=>'<option value="'+escAttr(a.id)+'">'+esc(a.nome)+(a.kg==null?' (senza 1RM)':'')+'</option>').join("")+'</select>':'')+
+       '</div>'+
+       '<textarea class="lgnota" rows="1" maxlength="300" placeholder="Nota del gruppo (es. «Marta: niente ultima serie»)" '+
+         'onchange="lgSetNota('+gi+',this.value)">'+esc((x&&x.nota)||"")+'</textarea>';
+  } else if(x && x.nota){
+    b+='<div class="lgnotav">📝 '+esc(x.nota)+'</div>';
+  }
   return {html:b+'</div>', r:r};
 }
 function lgLegenda(){
@@ -5518,39 +5661,23 @@ function lgResAuto(nome, ex){
 function lgResMan(nome, ex){
   const {con, senza}=lgCandidate(LG.ex);
   const idx=lgById(con);
-  const salvati=lgSalvati(lgKey())||[];
-  const dentro={}; salvati.forEach(g=>g.forEach(id=>dentro[id]=1));
-  // chi e' nei gruppi salvati ma oggi non ha un 1RM su questo test non si puo'
-  // caricare: resta nel gruppo, ma va detto invece di sparire in silenzio
-  const senzaDato=[], assenti=[];
-  const oggi=todayISO();
-  const blocchi=salvati.map(g=>{
-    const dati=g.map(id=>idx[id]).filter(Boolean);
-    /* Un'assente non e' un'atleta «senza 1RM»: dirlo cosi' ti farebbe
-       cercare un dato che c'e'. Resta nel gruppo salvato — torna la
-       settimana dopo — ma oggi il carico si calcola su chi c'e'. */
-    g.forEach(id=>{ if(!idx[id]){ const a=(S.athletes||[]).find(x=>x.id===id); if(!a) return;
-      if(PRES_F && presGet(id,oggi)==="a") assenti.push(a.name); else senzaDato.push(a.name); } });
-    return dati;
-  });
-  const ordinati=blocchi.map((g,i)=>({g:g, gi:i}))
-    .filter(x=>x.g.length)
-    .sort((a,b)=>{
-      const ma=a.g.reduce((s,x)=>s+x.kg,0)/a.g.length, mb=b.g.reduce((s,x)=>s+x.kg,0)/b.g.length;
-      return LG.ord==="desc" ? mb-ma : ma-mb;
-    });
+  const B=lgBlocchiMan(con, senza);
+  const dentro=B.dentro, assenti=B.assenti;
+  const ordinati=B.blocchi;
+  // chi si puo' aggiungere a un gruppo: con o senza massimale, purche' libera
+  const liberiTutte=con.filter(x=>!dentro[x.id]).map(x=>({id:x.id, nome:x.nome, kg:x.kg}))
+    .concat(senza.filter(a=>!dentro[a.id]).map(a=>({id:a.id, nome:a.name, kg:null})));
 
   let h="";
-  if(!con.length){
-    return '<div class="alert warn" style="margin-top:14px"><span class="ai">⚠️</span><span>'+
-      'Nessuna ha un 1RM su <b>'+esc(nome)+'</b>: non c\'è niente da raggruppare.</span></div>'+
-      lgMancanti(senza, nome, ex);
+  if(!con.length && !ordinati.length){
+    h+='<div class="alert warn" style="margin-top:14px"><span class="ai">⚠️</span><span>'+
+      'Nessuna ha un 1RM su <b>'+esc(nome)+'</b>. Puoi comunque formare dei gruppi qui sotto e scrivere tu il carico.</span></div>';
   }
 
   if(ordinati.length){
     let larghi=0, pesanti=0;
     const corpo=ordinati.map((x,i)=>{
-      const c=lgCard(x.g, "Gruppo "+(i+1), x.gi);
+      const c=lgCard(x.g, "Gruppo "+(i+1), x.gi, {extra:x.extra, x:x.x, liberi:liberiTutte});
       if(c.r.cls==="bad") larghi++;
       pesanti+=c.r.sopra;
       return c.html;
@@ -5564,10 +5691,13 @@ function lgResMan(nome, ex){
          esc(assenti.join(", "))+': '+(assenti.length===1?'assente oggi':'assenti oggi')+
          '. Resta'+(assenti.length===1?'':'no')+' nel gruppo, ma il carico di oggi è calcolato su chi c\'è.</span></div>';
     }
-    if(senzaDato.length){
+    const nv=ordinati.reduce((n,x)=>n+x.extra.length,0);
+    if(nv){
       h+='<div class="alert warn"><span class="ai">⚠️</span><span>'+
-         esc(senzaDato.join(", "))+': '+(senzaDato.length===1?'è in un gruppo ma non ha':'sono nei gruppi ma non hanno')+
-         ' un 1RM su '+esc(nome)+', quindi non '+(senzaDato.length===1?'entra':'entrano')+' nel calcolo del carico.</span></div>';
+         (nv===1?'Un\'atleta lavora':nv+' atlete lavorano')+' con il carico del gruppo <b>senza un massimale su '+esc(nome)+'</b>: '+
+         (nv===1?'non entra nel calcolo del carico e nessuno ha verificato che quel carico vada bene per lei. '
+                :'non entrano nel calcolo del carico e nessuno ha verificato che quel carico vada bene per loro. ')+
+         'Una serie da 3-6 ripetizioni a fine riscaldamento e il dubbio sparisce.</span></div>';
     }
     h+='<div class="lgrow2">'+
        '<button class="btn sm" onclick="lgPrint()">🖨 Stampa</button>'+
@@ -5581,8 +5711,9 @@ function lgResMan(nome, ex){
   }
 
   const liberi=con.filter(x=>!dentro[x.id]);
-  h+='<div class="psec">Da assegnare ('+liberi.length+')</div>';
-  if(!liberi.length){
+  const liberiSenza=senza.filter(a=>!dentro[a.id]);
+  h+='<div class="psec">Da assegnare ('+(liberi.length+liberiSenza.length)+')</div>';
+  if(!liberi.length && !liberiSenza.length){
     h+='<div class="fhint">Tutte assegnate.</div>';
   }else{
     h+='<div class="lgpool">'+liberi.map(x=>{
@@ -5593,10 +5724,23 @@ function lgResMan(nome, ex){
         '<span class="lgnm">'+esc(x.nome)+(x.m.stima?'<span class="lgst">'+esc(x.m.tag)+'</span>':'')+'</span>'+
         '<span class="lg1">1RM '+fmtNum(Math.round(x.kg))+'</span>'+
         '<span class="lgpi">'+fmtNum(ideale)+' kg</span></button>';
+    }).join("")+
+    /* Chi non ha fatto il test si puo' mettere in un gruppo: in palestra c'e',
+       e lasciarla fuori dalla scheda non la fa sparire dal bilanciere. */
+    liberiSenza.map(a=>{
+      const on=!!LG.sel[a.id];
+      return '<button class="lgp lgpns'+(on?" on":"")+'" onclick="lgTog(\''+a.id+'\')">'+
+        '<span class="lgpb">'+(on?"✓":"")+'</span>'+
+        '<span class="lgnm">'+esc(a.name)+'</span><span class="lg1">senza 1RM</span><span class="lgpi">—</span></button>';
     }).join("")+'</div>';
     /* La media dei selezionati, mentre li selezioni: e' la domanda vera —
        «se metto insieme queste tre, con quanti chili le carico?» */
     const sel=liberi.filter(x=>LG.sel[x.id]);
+    const selSenza=liberiSenza.filter(a=>LG.sel[a.id]);
+    if(!sel.length && selSenza.length){
+      h+='<div class="lgsum warn"><div class="lgsh">'+selSenza.length+' selezionate, nessuna con un massimale: il carico lo scriverai tu sul gruppo.</div>'+
+         (selSenza.length>=2?'<button class="btn primary" style="width:100%;margin-top:10px" onclick="lgForma()">Forma il gruppo</button>':'')+'</div>';
+    }
     if(sel.length){
       const r=rmGruppoCarico(sel, LG.pct, LG.mode);
       h+='<div class="lgsum '+r.cls+'"><div class="lgsh">'+sel.length+' selezionate · carico '+
@@ -5606,8 +5750,9 @@ function lgResMan(nome, ex){
          r.righe.map(x=>'<div class="lgrow"><span class="lgnm">'+esc(x.a.nome)+'</span>'+
            '<span class="lgef '+x.cls+'">'+fmtNum(Math.round(x.eff))+'%</span>'+
            '<span class="lgd '+x.cls+'">'+(x.dpp>0?"+":"")+fmtNum(Math.round(x.dpp*10)/10)+'</span></div>').join("")+
+         (selSenza.length?'<div class="lgrow lgnot"><span class="lgnm">+ '+selSenza.map(a=>esc(a.name)).join(", ")+'</span><span class="lgnv">senza 1RM, fuori dalla media</span></div>':'')+
          '<button class="btn primary" style="width:100%;margin-top:10px" onclick="lgForma()">Forma il gruppo</button></div>';
-    }else{
+    }else if(!selSenza.length){
       h+='<div class="fhint">Spunta due o più atlete: qui sotto compare il carico medio che le unisce, '+
          'e cosa significa per ciascuna.</div>';
     }
@@ -5620,6 +5765,38 @@ function lgResMan(nome, ex){
 /* I gruppi che si stanno guardando adesso: quelli decisi a mano se ci sono,
    altrimenti la proposta automatica. La stampa deve mostrare esattamente cio'
    che c'e' sullo schermo, altrimenti in palestra si lavora su due versioni. */
+/* I gruppi a mano come li vede la schermata (e la stampa, e nient'altro):
+   per ognuno chi ha il massimale (entra nella media), chi no (extra), le
+   assenti di oggi, la nota e il carico a mano. Una funzione sola, perche'
+   schermo e foglio devono dire la stessa cosa. */
+function lgBlocchiMan(con, senza){
+  const idx=lgById(con);
+  const inSquadra={}; (senza||[]).forEach(a=>inSquadra[a.id]=a);
+  const X=lgSalvatiX(lgKey())||[];
+  const dentro={}, assenti=[];
+  const oggi=todayISO();
+  const blocchi=X.map((o,gi)=>{
+    const g=[], extra=[];
+    o.m.forEach(id=>{
+      dentro[id]=1;
+      if(idx[id]){ g.push(idx[id]); return; }
+      const a=(S.athletes||[]).find(x=>x.id===id); if(!a) return;
+      /* Un'assente non e' un'atleta «senza 1RM»: resta nel gruppo salvato —
+         torna la settimana dopo — ma oggi il carico si calcola su chi c'e'. */
+      if(PRES_F && presGet(id,oggi)==="a"){ assenti.push(a.name); return; }
+      if(inSquadra[id]) extra.push({id:id, nome:a.name});
+    });
+    return {g:g, extra:extra, x:o.x, gi:gi};
+  }).filter(b=>b.g.length||b.extra.length);
+  const media=b=> b.g.length ? b.g.reduce((s,x)=>s+x.kg,0)/b.g.length : null;
+  blocchi.sort((a,b)=>{
+    const ma=media(a), mb=media(b);
+    if(ma==null&&mb==null) return a.gi-b.gi;
+    if(ma==null) return 1; if(mb==null) return -1;      // senza nessun 1RM: in fondo
+    return LG.ord==="desc" ? mb-ma : ma-mb;
+  });
+  return {blocchi:blocchi, dentro:dentro, assenti:assenti};
+}
 function lgCorrenti(){
   const {con}=lgCandidate(LG.ex);
   if(LG.man!=="man") return rmGruppi(con, LG.size);
@@ -5631,25 +5808,41 @@ function lgCorrenti(){
     return LG.ord==="desc" ? mb-ma : ma-mb;
   });
 }
+/* Cosa va sul foglio: in automatico i gruppi calcolati, a mano i tuoi —
+   con chi non ha il massimale, il carico scritto da te e la nota. Prima la
+   stampa dei gruppi a mano perdeva tutte e tre le cose. */
+function lgDaStampare(){
+  const {con, senza}=lgCandidate(LG.ex);
+  if(LG.man==="man"){
+    const B=lgBlocchiMan(con, senza).blocchi;
+    if(B.length) return B;
+  }
+  return rmGruppi(con, LG.size).map(g=>({g:g, extra:[], x:null}));
+}
 function lgPrint(){
   const voce=lgEsercizi().find(e=>e.test===LG.ex)||{}, nome=voce.n||"";
-  const gruppi=lgCorrenti();
+  const gruppi=lgDaStampare();
   if(!gruppi.length){ toast("Niente da stampare"); return; }
   const t=S.teams.find(x=>x.id===S.activeTeam);
   const sq = S.activeTeam==="all" ? "Tutte le squadre" : (t?t.name:"Senza squadra");
 
   let b="";
-  gruppi.forEach((g,i)=>{
-    const r=rmGruppoCarico(g, LG.pct, LG.mode);
+  gruppi.forEach((bl,i)=>{
+    const cm=lgCaricoMano(bl.x);
+    const r=bl.g.length ? rmGruppoCarico(bl.g, LG.pct, LG.mode, cm.applica?bl.x.kg:null)
+                        : {load: cm.applica?bl.x.kg:null, righe:[]};
     b+='<div class="g"><div class="gh"><span class="gt">Gruppo '+(i+1)+'</span>'+
-       '<span class="gk">'+fmtNum(r.load)+' kg</span></div>'+
-       '<div class="gp">'+esc(rmPlatesText(r.load))+'</div><table>';
+       '<span class="gk">'+(r.load!=null?fmtNum(r.load)+' kg':'— kg')+(cm.applica?' <small>(a mano)</small>':'')+'</span></div>'+
+       (r.load!=null?'<div class="gp">'+esc(rmPlatesText(r.load))+'</div>':'')+'<table>';
     r.righe.forEach(x=>{
       b+='<tr><td class="n">'+esc(x.a.nome)+'</td><td>1RM '+fmtNum(Math.round(x.a.kg))+'</td>'+
          '<td>'+fmtNum(Math.round(x.eff))+'% del suo</td>'+
          '<td class="d">'+(x.dpp>0?"+":"")+fmtNum(Math.round(x.dpp*10)/10)+' punti</td></tr>';
     });
-    b+='</table></div>';
+    bl.extra.forEach(a=>{
+      b+='<tr><td class="n">'+esc(a.nome)+'</td><td colspan="3" class="d">senza 1RM — carico non verificato</td></tr>';
+    });
+    b+='</table>'+(bl.x&&bl.x.nota?'<div class="gnt">📝 '+esc(bl.x.nota)+'</div>':'')+'</div>';
   });
 
   const doc='<!doctype html><html lang="it"><head><meta charset="utf-8">'+
@@ -5662,6 +5855,7 @@ function lgPrint(){
     '.gh{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:4px}'+
     '.gt{font-weight:700;font-size:12px}.gk{font-size:19px;font-weight:700;color:#C81E2D}'+
     '.gp{font-size:9px;color:#666;margin:3px 0 5px}'+
+    '.gnt{font-size:10px;margin-top:5px;padding-top:4px;border-top:1px dashed #ddd}'+
     'table{width:100%;border-collapse:collapse}td{padding:2px 0;font-size:10.5px}'+
     'td.n{font-weight:600;width:38%}td.d{text-align:right;color:#666}'+
     '.note{font-size:9px;color:#666;margin-top:10px;border-top:1px solid #eee;padding-top:6px}'+
@@ -5740,27 +5934,42 @@ function sedutaCalc(c){
     });
   }
   base.sort((x,y)=>x.kg-y.kg);
-  let gruppi=null, salvati=false;
+  let gruppi=null, salvati=false, meta=[];
   if(fonte!=="tutti"){
-    const sv=lgSalvati(fonte+"@"+(S.activeTeam||"all"));
+    /* I gruppi a mano entrano con TUTTO quello che hai deciso: anche chi non
+       ha il massimale (resta nel gruppo, fuori dalle medie), la nota, e il
+       carico a mano — quest'ultimo solo sull'esercizio per cui l'hai scritto
+       e alla stessa percentuale. */
+    const sv=lgSalvatiX(fonte+"@"+(S.activeTeam||"all"));
     if(sv && sv.length){
       const ix={}; base.forEach(x=>ix[x.id]=x);
+      const pres={}; presenti.forEach(a=>pres[a.id]=a);
       const dentro={};
-      gruppi=sv.map(g=>g.filter(id=>ix[id]).map(id=>{ dentro[id]=1; return ix[id]; })).filter(g=>g.length);
+      gruppi=[];
+      sv.forEach(o=>{
+        const g=o.m.filter(id=>pres[id]).map(id=>{ dentro[id]=1; return ix[id] || {id:id, nome:pres[id].name, kg:null}; });
+        if(g.length){ gruppi.push(g); meta.push(o.x); }
+      });
+      fuori=fuori.filter(a=>!dentro[a.id]);
       const resto=base.filter(x=>!dentro[x.id]);
-      if(resto.length) gruppi=gruppi.concat(rmGruppi(resto, c.size||3));
+      if(resto.length) rmGruppi(resto, c.size||3).forEach(g=>{ gruppi.push(g); meta.push(null); });
       salvati=true;
     }
   }
-  if(!gruppi) gruppi=rmGruppi(base, c.size||3);
-  gruppi.sort((a,b)=>_sedMedia(a)-_sedMedia(b));
+  if(!gruppi){ gruppi=rmGruppi(base, c.size||3); meta=gruppi.map(()=>null); }
+  const _m=g=>{ const v=g.filter(x=>x.kg!=null); return v.length ? _sedMedia(v) : Infinity; };
+  const ord=gruppi.map((g,i)=>({g:g, x:meta[i]})).sort((a,b)=>_m(a.g)-_m(b.g));
 
-  const out=gruppi.map((g,i)=>({n:i+1, membri:g.map(x=>({id:x.id, nome:x.nome})),
+  const out=ord.map((o,i)=>({n:i+1, membri:o.g.map(x=>({id:x.id, nome:x.nome})), nota:(o.x&&o.x.nota)||"",
     ex:exs.map(e=>{
+      const g=o.g;
       const con=[], mancano=[];
       g.forEach(x=>{ const m=rm1RM(x.id,e.t);
         if(m) con.push({id:x.id, nome:x.nome, kg:m.kg, m:m}); else mancano.push(x.nome); });
-      const r=con.length ? rmGruppoCarico(con, e.pct, e.mode) : null;
+      const mano = (o.x && isFinite(o.x.kg) && e.t===fonte && o.x.pct===e.pct) ? o.x.kg : null;
+      const r=con.length ? rmGruppoCarico(con, e.pct, e.mode, mano)
+             : (mano!=null ? {load:mano, righe:[], sopra:0, cls:"ok"} : null);
+      if(r) r.mano = mano!=null;
       const reps=sedReps(e.sr), cedono=[];
       if(r && reps) r.righe.forEach(x=>{ const mx=rmRepsAtPct(Math.min(100,x.eff)); if(mx!=null && reps>mx) cedono.push({nome:x.a.nome, max:mx}); });
       return {t:e.t, pct:e.pct, sr:e.sr, mode:e.mode, r:r, mancano:mancano, cedono:cedono};
@@ -5852,11 +6061,12 @@ function sedResHtml(){
   });
   h+='<div class="psec">'+r.gruppi.length+' gruppi · un bilanciere ciascuno</div><div class="sedlist">';
   r.gruppi.forEach(g=>{
-    h+='<div class="sedg"><div class="sedgh"><span class="lgt">Gruppo '+g.n+'</span><span class="sedgn">'+g.membri.map(m=>esc(m.nome)).join(" · ")+'</span></div>';
+    h+='<div class="sedg"><div class="sedgh"><span class="lgt">Gruppo '+g.n+'</span><span class="sedgn">'+g.membri.map(m=>esc(m.nome)).join(" · ")+'</span></div>'+
+       (g.nota?'<div class="lgnotav">📝 '+esc(g.nota)+'</div>':'');
     g.ex.forEach(x=>{
       h+='<div class="sedr'+(x.r?' '+x.r.cls:'')+'"><div class="sedr1"><span class="seden">'+esc(sedNomeEx(x.t))+
          ' <small>'+fmtNum(x.pct)+'% · '+esc(x.sr||"")+'</small></span>'+
-         (x.r?'<span class="sedkg">'+fmtNum(x.r.load)+'<small>kg</small></span>':'<span class="sedkg">—</span>')+'</div>';
+         (x.r?'<span class="sedkg">'+fmtNum(x.r.load)+'<small>kg</small>'+(x.r.mano?'<span class="lgman">a mano</span>':'')+'</span>':'<span class="sedkg">—</span>')+'</div>';
       if(x.r){
         h+='<div class="sedpl">'+esc(rmPlatesText(x.r.load))+'</div><div class="sedchips">'+
            x.r.righe.map(y=>'<span class="sedc '+y.cls+'" title="1RM '+fmtNum(Math.round(y.a.kg))+'">'+esc(y.a.nome)+' '+fmtNum(Math.round(y.eff))+'%</span>').join("")+'</div>';
@@ -5891,12 +6101,13 @@ function sedPrint(){
   const sq=S.activeTeam==="all" ? "Tutte le squadre" : (tm?tm.name:"Senza squadra");
   let b='';
   r.gruppi.forEach(g=>{
-    b+='<div class="g"><div class="gh"><span class="gt">Gruppo '+g.n+'</span><span class="gn">'+g.membri.map(m=>esc(m.nome)).join(" · ")+'</span></div><table>';
+    b+='<div class="g"><div class="gh"><span class="gt">Gruppo '+g.n+'</span><span class="gn">'+g.membri.map(m=>esc(m.nome)).join(" · ")+'</span></div>'+
+       (g.nota?'<div class="gnt">📝 '+esc(g.nota)+'</div>':'')+'<table>';
     g.ex.forEach(x=>{
       const fuori=x.r ? x.r.righe.filter(y=>y.cls!=="ok").map(y=>esc(y.a.nome)+' '+fmtNum(Math.round(y.eff))+'%') : [];
       const ced=x.cedono.map(c=>esc(c.nome)+' max '+c.max+' rip');
       b+='<tr><td class="n">'+esc(sedNomeEx(x.t))+'</td><td>'+fmtNum(x.pct)+'%</td><td>'+esc(x.sr||"")+'</td>'+
-         '<td class="k">'+(x.r?fmtNum(x.r.load)+' kg':'—')+'</td><td class="p">'+(x.r?esc(rmPlatesText(x.r.load)):'')+'</td>'+
+         '<td class="k">'+(x.r?fmtNum(x.r.load)+' kg'+(x.r.mano?' <small>(a mano)</small>':''):'—')+'</td><td class="p">'+(x.r?esc(rmPlatesText(x.r.load)):'')+'</td>'+
          '<td class="d">'+fuori.concat(ced).join(", ")+(x.mancano.length?(fuori.length||ced.length?"; ":"")+esc(x.mancano.join(", "))+": senza 1RM":"")+'</td></tr>';
     });
     b+='</table></div>';
@@ -5920,6 +6131,7 @@ function sedPrint(){
     'td.n{font-weight:600;width:22%}td.k{font-weight:700;font-size:13px;color:#C81E2D;white-space:nowrap}'+
     'td.p{font-size:9px;color:#666}td.d{font-size:9px;color:#8a5a00}'+
     '.note{font-size:9px;color:#666;margin-top:8px;border-top:1px solid #eee;padding-top:5px}'+
+    '.gnt{font-size:10px;margin:2px 0 4px}'+
     '</style></head><body>'+
     '<div class="br">IRON PERFORMANCE</div><h1>Scheda di seduta</h1>'+
     '<p class="sub">'+esc(sq)+' · '+fmtDate(todayISO())+' · gruppi '+(r.fonte==="tutti"?"formati su tutti gli esercizi":"di "+esc(sedNomeEx(r.fonte)))+'</p>'+
@@ -6972,6 +7184,91 @@ function cbPrint(){
   setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} },300);
 }
 
+/* ═══════════════ PROMEMORIA: COSA NON MISURI DA TROPPO ═══════════════════
+   Il report «cosa è cambiato», la forza relativa e la crescita valgono solo
+   se le misure si rifanno con regolarità. Qui l'app guarda la batteria della
+   squadra e dice cosa è scaduto.
+
+   La frequenza attesa viene dalla batteria consigliata dello sport (BATT2):
+   «ogni settimana», «ogni 6-8 settimane», «inizio stagione». Le TOLLERANZE
+   prima di dire «scaduto» sono una scelta mia, non un dato di letteratura:
+   una settimana di margine sul settimanale, due sul ciclo, due mesi sulla
+   stagione. Peso e statura hanno la loro: la crescita chiede misure a mesi.
+
+   Un test mai fatto non è «scaduto»: è un test che hai messo in batteria e
+   non usi. Va detto, ma a parte e in piccolo — altrimenti il promemoria
+   diventa un elenco di sensi di colpa e smetti di leggerlo.               */
+const PROM_TIER={
+  sett: {atteso:7,   scad:14,  l:"ogni settimana"},
+  ciclo:{atteso:56,  scad:70,  l:"ogni 6-8 settimane"},
+  anno: {atteso:182, scad:240, l:"1-2 volte l'anno"},
+  bw:   {atteso:30,  scad:45,  l:"ogni mese"},
+  stat: {atteso:90,  scad:120, l:"ogni 3 mesi"},
+};
+const PROM_BLOCCO=14;        // giorni: chi ha il test entro due settimane dall'ultima sessione l'ha fatto
+function promTier(tid, sport){
+  if(tid==="bw"||tid==="stat") return tid;
+  const t=TMAP[tid]; if(!t) return null;
+  const id = (t.custom && t.base) ? t.base : tid;
+  const cerca=sp=>{ const b=BATT2[sp]; if(!b) return null;
+    for(const liv of ["campo","sala","completa"]){ const L=b[liv]||{};
+      for(const k of ["sett","ciclo","anno"]) if((L[k]||[]).indexOf(id)>=0) return k; }
+    return null; };
+  const mio=cerca(sport); if(mio) return mio;
+  // non e' nella batteria del suo sport: la frequenza piu' comune negli altri
+  const conta={sett:0,ciclo:0,anno:0};
+  Object.keys(BATT2).forEach(sp=>{ const k=cerca(sp); if(k) conta[k]++; });
+  const best=Object.keys(conta).sort((a,b)=>conta[b]-conta[a])[0];
+  return conta[best] ? best : "ciclo";
+}
+function promemoria(){
+  const ath=teamAthletes()||[];
+  const tm=S.teams.find(x=>x.id===S.activeTeam);
+  const sport=(tm&&tm.sport)||S.sport||"generale";
+  const oggi=Date.parse(todayISO());
+  const scaduti=[], parziali=[], mai=[];
+  if(!ath.length) return {scaduti, parziali, mai};
+  visibleTests().forEach(t=>{
+    if(t.derived) return;
+    const ult={}; let max=null;
+    ath.forEach(a=>{ const arr=((S.data||{})[a.id]||{})[t.id]||[];
+      if(arr.length){ const d=arr[arr.length-1].d; ult[a.id]=d; if(!max||d>max) max=d; } });
+    if(!max){ mai.push({t:t.id, nome:t.name}); return; }
+    const k=promTier(t.id, sport), T=PROM_TIER[k]||PROM_TIER.ciclo;
+    const gg=Math.round((oggi-Date.parse(max))/864e5);
+    if(gg>T.scad){ scaduti.push({t:t.id, nome:t.name, gg:gg, ultima:max, freq:T.l, peso:gg/T.atteso}); return; }
+    const soglia=new Date(Date.parse(max)-PROM_BLOCCO*864e5).toISOString().slice(0,10);
+    const mancano=ath.filter(a=>!ult[a.id]||ult[a.id]<soglia);
+    if(mancano.length) parziali.push({t:t.id, nome:t.name, ultima:max, fatte:ath.length-mancano.length, tot:ath.length,
+      mancano:mancano.map(a=>a.name)});
+  });
+  scaduti.sort((a,b)=>b.peso-a.peso);
+  parziali.sort((a,b)=>a.mancano.length-b.mancano.length);
+  return {scaduti:scaduti, parziali:parziali, mai:mai};
+}
+function promGg(gg){ return gg<14 ? gg+" giorni" : gg<70 ? Math.round(gg/7)+" settimane" : Math.round(gg/30)+" mesi"; }
+function promHtml(){
+  const p=promemoria();
+  if(!p.scaduti.length && !p.parziali.length && !p.mai.length) return "";
+  let h='<div class="tsec">Da misurare'+(p.scaduti.length?' ('+p.scaduti.length+')':'')+'</div><div class="promwrap">';
+  p.scaduti.slice(0,5).forEach(x=>{
+    h+='<div class="prom"><div><b>'+esc(x.nome)+'</b><small>ultimo '+promGg(x.gg)+' fa · da fare '+esc(x.freq)+'</small></div>'+
+       '<button class="btn sm" onclick="openSessionOn(\''+x.t+'\')">Registra</button></div>';
+  });
+  if(p.scaduti.length>5) h+='<div class="fhint">e altri '+(p.scaduti.length-5)+'.</div>';
+  // chi manca dall'ultima sessione: di solito le assenti di quel giorno
+  p.parziali.filter(x=>x.mancano.length<=Math.max(3,Math.ceil(x.tot/3))).slice(0,4).forEach(x=>{
+    h+='<div class="prom part"><div><b>'+esc(x.nome)+'</b><small>fatto il '+fmtDate(x.ultima)+' da '+x.fatte+' su '+x.tot+
+       ' · manca'+(x.mancano.length===1?'':'no')+' '+esc(x.mancano.join(", "))+'</small></div>'+
+       '<button class="btn sm" onclick="openSessionOn(\''+x.t+'\')">Recupera</button></div>';
+  });
+  if(p.mai.length)
+    h+='<details class="prommai"><summary>'+p.mai.length+' test in batteria mai misurati</summary>'+
+       '<div>'+p.mai.map(x=>esc(x.nome)).join(" · ")+'</div>'+
+       '<div class="fhint">Se non li fai, toglili dalla batteria: una colonna sempre vuota è rumore.</div></details>';
+  return h+'</div>';
+}
+
 function renderToday(){
   const grid=document.getElementById("grid");
   const ath=teamAthletes();
@@ -7101,6 +7398,7 @@ function renderToday(){
       h+='<span class="tready'+(_ass[x.a.id]?' tass':'')+'" onclick="openAthlete(\''+x.a.id+'\')">'+esc(x.a.name)+(pc!=null?' <b>'+pc+'</b>':'')+'</span>'; });
     h+='</div>';
   }
+  h+=promHtml();
   h+='<div class="tactions"><button class="btn primary sm" onclick="openPres()">'+(_pc.segnato?'✔ Appello':'+ Appello')+'</button>'+
      '<button class="btn sm" onclick="openSeduta()">🏋️ Scheda di seduta</button>'+
      '<button class="btn sm" onclick="openCheckin()">+ Check-in di oggi</button>'+
@@ -7996,14 +8294,19 @@ function sanitizeImport(o){
       if(!/^[A-Za-z0-9_@-]{1,60}$/.test(tid)) return;   // <test>@<squadra>
       const v=o.gruppi[tid];
       if(!v||typeof v!=="object"||!Array.isArray(v.g)) return;
-      const visto={}, g=[];
-      v.g.slice(0,40).forEach(arr=>{
+      const visto={}, g=[], x=[];
+      const xs=Array.isArray(v.x)?v.x:[];
+      v.g.slice(0,40).forEach((arr,i)=>{
         if(!Array.isArray(arr)) return;
         const p=[];
         arr.slice(0,40).forEach(id=>{ if(idOk(id)&&live[id]&&!visto[id]){ visto[id]=1; p.push(id); } });
-        if(p.length) g.push(p);
+        // la nota e il carico a mano seguono il LORO gruppo, non la posizione
+        if(p.length){ g.push(p); x.push(lgMetaOk(xs[i])); }
       });
-      if(g.length) out.gruppi[tid]={d:isDate(v.d)?v.d:todayISO(), g:g};
+      if(g.length){
+        out.gruppi[tid]={d:isDate(v.d)?v.d:todayISO(), g:g};
+        if(x.some(Boolean)) out.gruppi[tid].x=x;
+      }
     });
   }
   /* La scheda di seduta: esercizi, percentuali, serie. Solo id di test noti

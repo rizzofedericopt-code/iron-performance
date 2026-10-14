@@ -503,6 +503,38 @@ ul.kb li b{color:#fff;font-weight:600}
 .treadywrap{display:flex;flex-wrap:wrap;gap:7px}
 .tready{font-size:12px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:6px 11px;cursor:pointer}
 .tready b{color:var(--up)}
+/* gare */
+.garaban{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:10px 0 0;cursor:pointer;font-size:13px}
+.gmd{font-weight:800;font-size:12px;color:#0A0A0A;background:#FFB340;border-radius:6px;padding:3px 7px;white-space:nowrap}
+.garow{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px}
+.garow.pass{opacity:.55}
+.garow .gd{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.garow .gv{flex:1}.garow .gv small{color:var(--muted2);margin-left:4px}
+.garow .gm{font-size:11px;font-weight:700;color:#FFB340}
+/* ruoli */
+tr.rsep td{background:var(--surface3);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:6px 12px;position:sticky;left:0}
+tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
+.rtwrap{overflow-x:auto;margin:0 -4px}
+.rtab{border-collapse:collapse;width:100%;font-size:12.5px}
+.rtab th{font-size:11px;text-align:right;padding:6px 8px;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap}
+.rtab th:first-child{text-align:left}
+.rtab th small{display:block;font-weight:400;color:var(--muted2)}
+.rtab td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.rtab td b{font-size:14px}
+.rtab td small{display:block;font-size:10px;color:var(--muted2)}
+.rtab td.rtn{text-align:left;font-weight:600}
+.rtv{color:var(--muted);font-size:11.5px}
+/* profilo prestazioni: anteprima nella finestra */
+.profprev{margin-top:14px;background:#fff;color:#111;border-radius:10px;padding:14px;font:11px/1.4 var(--sans);overflow-x:auto}
+.profprev .br{font-size:9px;letter-spacing:2px;color:#C81E2D;font-weight:700}
+.profprev h1{font-size:18px;margin:2px 0;color:#111}.profprev .sub{color:#555;font-size:10.5px;margin:0 0 8px}
+.profprev h2{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#C81E2D;margin:12px 0 4px}
+.profprev .box{display:flex;gap:8px;flex-wrap:wrap}.profprev .box div{border:1px solid #ddd;border-radius:6px;padding:5px 9px}
+.profprev .box span{display:block;font-size:8.5px;text-transform:uppercase;color:#777}.profprev .box b{display:block;font-size:14px}
+.profprev table{width:100%;border-collapse:collapse}.profprev th{text-align:left;font-size:8.5px;text-transform:uppercase;color:#777;border-bottom:1px solid #ccc;padding:3px}
+.profprev td{padding:4px 3px;border-bottom:1px solid #eee;vertical-align:top;font-size:10.5px;color:#111}.profprev td small{color:#666}
+.profprev tr.su small.v{color:#1E8E3E;font-weight:700}.profprev tr.giu small.v{color:#C81E2D;font-weight:700}
+.profprev .note{font-size:9px;color:#666;margin-top:10px}
 /* promemoria */
 .promwrap{display:flex;flex-direction:column;gap:6px}
 .prom{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface2);border:1px solid var(--line);border-left:3px solid #FFB340;border-radius:10px;padding:8px 10px 8px 12px}
@@ -1487,6 +1519,7 @@ function normalize(){
   if(!S.pres) S.pres={};       // appello: uno stato per atleta e per data
   if(!S.gruppi) S.gruppi={};   // gruppi di lavoro decisi a mano, per test
   if(!S.sedute || typeof S.sedute!=="object" || Array.isArray(S.sedute)) S.sedute={};   // scheda di seduta, per squadra
+  if(!S.gare || typeof S.gare!=="object" || Array.isArray(S.gare)) S.gare={};             // calendario gare, per squadra
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
   if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
   applyCustom();
@@ -1741,6 +1774,10 @@ function mergeState(server, local){
   out.gruppi=local.gruppi||server.gruppi||{};
   // la scheda di seduta e' una decisione come i gruppi: per squadra, vince il locale
   out.sedute=Object.assign({}, server.sedute||{}, local.sedute||{});
+  // il calendario di una squadra e' una lista che decidi tu: vince il locale,
+  // ma il calendario di un'altra squadra non si perde
+  out.gare=Object.assign({}, server.gare||{}, local.gare||{});
+  ["gare","sedute"].forEach(k=>Object.keys(out[k]).forEach(id=>{ if(T["team:"+id]) delete out[k][id]; }));
   out.te=Object.assign({}, server.te||{}, local.te||{});
   /* Gli esercizi personalizzati sono decisioni, come le soglie: vince
      l'ultima fatta su questo dispositivo. Ma se il server ne ha di piu'
@@ -2593,7 +2630,7 @@ function valSquadra(tid, sex, escludi, leggi){
   });
   return out;
 }
-function valuta(t, a, arr){
+function valuta(t, a, arr, opz){
   if(!t||!a||!arr||!arr.length) return null;
   // peso e statura non sono prestazioni: nessun giudizio, da nessun riferimento
   if(t.neutro) return null;
@@ -2610,7 +2647,7 @@ function valuta(t, a, arr){
   // 2 · la squadra, oggi — per la forza relativa, in scala allometrica
   const leggi = t.rel ? relAllo : null;
   const vq = t.rel ? relAllo(arr[arr.length-1]) : v;
-  const altri = vq==null ? [] : valSquadra(t.id, sex, a.id, leggi);
+  const altri = (vq==null || (opz&&opz.noSquadra)) ? [] : valSquadra(t.id, sex, a.id, leggi);
   if(altri.length>=VAL_MIN_SQUADRA-1){
     const tutti=altri.concat([vq]);
     const peggiori=tutti.filter(x=> t.dir<0 ? x>vq : x<vq).length;
@@ -2805,7 +2842,11 @@ function openOrdMenu(){
     '<div class="set-group">'+
     riga("🔤","Nome","In ordine alfabetico","nome")+
     riga("🎂","Età","Le più giovani in cima — chi non ha la data di nascita in fondo","eta")+
+    riga("🏐","Ruolo","Raggruppate per ruolo, poi per nome","ruolo")+
     riga("📋","Ordine di inserimento","Come le hai aggiunte alla rosa",null)+
+    '</div>'+
+    '<div class="set-group">'+
+    '<button class="set-row" onclick="openRuoli()"><span class="si">📊</span><span class="sl">Confronto fra ruoli<small>Mediana di ogni ruolo, test per test</small></span><span class="sc">›</span></button>'+
     '</div>'+
     '<div class="gnote">Per ordinare in base a un <b>test</b>, tocca l\'intestazione di quella colonna.</div>';
   modal(h);
@@ -2831,6 +2872,16 @@ function atleteOrdinate(){
     con.sort((a,b)=>d(b)-d(a));                 // nata dopo = piu' giovane = in cima
     if(SORT.desc) con.reverse();
     return con.concat(senza);
+  }
+  /* Ruolo: nell'ordine dell'elenco dello sport, poi per nome. Chi non ha un
+     ruolo scritto va in fondo, come chi non ha la data di nascita. */
+  if(k==="ruolo"){
+    const pos=a=>{ const r=ruoloDi(a); if(!r) return 999;
+      const l=(SPORTKB[sportDi(a)]||{}).roleList||[]; const i=l.indexOf(r); return i>=0?i:500; };
+    rows.sort((a,b)=> (pos(a)-pos(b)) || String(ruoloDi(a)||"").localeCompare(String(ruoloDi(b)||""),"it")
+                     || String(a.name||"").localeCompare(String(b.name||""),"it"));
+    if(SORT.desc){ const con=rows.filter(a=>ruoloDi(a)), senza=rows.filter(a=>!ruoloDi(a)); return con.reverse().concat(senza); }
+    return rows;
   }
   const t=TMAP[k]; if(!t) return rows;
   const val=a=>{ const s=series(a.id,k); return s.length? s[s.length-1].v : null; };
@@ -2902,7 +2953,7 @@ function renderMatrix(){
      verso, «carichi», «guida» — erano piu' parole che dati. Adesso
      l'intestazione mostra l'essenziale e si TOCCA: tutto quello che puoi fare
      con quella colonna sta in un posto solo. */
-  const ORD_L={nome:"nome", eta:"età"};
+  const ORD_L={nome:"nome", eta:"età", ruolo:"ruolo"};
   const ordAttivo = SORT.by ? (ORD_L[SORT.by] || ((TMAP[SORT.by]||{}).name||"")) : "";
   let h='<table><thead><tr>'+
     '<th class="cAth"><button class="thSort" onclick="openOrdMenu()">Atleta '+
@@ -2920,7 +2971,17 @@ function renderMatrix(){
   });
   h+='</tr></thead><tbody>';
 
+  let _ruoloPrec;
   rows.forEach(a=>{
+    // ordinate per ruolo: una riga di intestazione a ogni cambio di ruolo
+    if(SORT.by==="ruolo"){
+      const r=ruoloDi(a)||"Senza ruolo";
+      if(r!==_ruoloPrec){
+        const n=rows.filter(x=>(ruoloDi(x)||"Senza ruolo")===r).length;
+        h+='<tr class="rsep"><td colspan="'+(tests.length+1)+'"><span>'+esc(ruoloEtichetta(r,a.sex))+'</span> <small>'+n+'</small></td></tr>';
+        _ruoloPrec=r;
+      }
+    }
     const team=S.teams.find(t=>t.id===a.team);
     const tl=(S.activeTeam==="all"&&team)?esc(team.name)+" · ":"";
     const flag=haInfortunio(a.profile)?'<span class="medflag" title="Infortunio/dolore attuale">⚠ </span>':"";
@@ -3224,6 +3285,10 @@ function delTeam(id){
   mem.forEach(a=>a.team=null);
   S.teams=S.teams.filter(x=>x.id!==id);
   tombSet("team:"+id);   // mergeState filtrava già su questa chiave; nessuno la scriveva
+  // le decisioni di quella squadra se ne vanno con lei
+  if(S.gare) delete S.gare[id];
+  if(S.sedute) delete S.sedute[id];
+  Object.keys(S.gruppi||{}).forEach(k=>{ if(k.slice(-(id.length+1))==="@"+id) delete S.gruppi[k]; });
   if(S.activeTeam===id) S.activeTeam="all";
   save(); manageTeams(); render(); toast("Squadra eliminata");
 }
@@ -3916,7 +3981,8 @@ function openAthlete(id, isNew){
   let h='<div class="mh"><div><div class="mt">'+(isNew?"Anamnesi — nuovo atleta":"Scheda atleta")+'</div>'+
     '<div class="ms">'+esc(a.name)+(age!=null?' · '+age+' anni':'')+'</div></div>'+
     '<div style="display:flex;gap:6px;align-items:center">'+
-    (isNew?'':'<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Esporta / stampa in PDF">🖨 PDF</button>')+
+    (isNew?'':'<button class="btn sm" onclick="openProfilo(\''+id+'\')" title="Solo prestazioni: da consegnare ad atleta, famiglia o società">📊 Profilo</button>'+
+      '<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Cartella completa con anamnesi: riservata">🖨 Cartella</button>')+
     '<button class="mcl" onclick="closeM()">✕</button></div></div>';
   if(isNew) h+='<div class="alert info" style="margin-bottom:14px"><span class="ai">📋</span><span>'+
     '<b>'+esc(a.name)+'</b> è stato aggiunto. Compila ora l\'anamnesi: bastano i campi che conosci, potrai completarla in qualsiasi momento.</span></div>';
@@ -5621,7 +5687,7 @@ function lgMancanti(senza, nome, ex){
 }
 function lgRes(){
   const voce=lgEsercizi().find(e=>e.test===LG.ex)||{}, nome=voce.n||"", ex=voce.ex||nome;
-  return (LG.man==="man" ? lgResMan(nome,ex) : lgResAuto(nome,ex));
+  return garaAvviso(LG.pct)+(LG.man==="man" ? lgResMan(nome,ex) : lgResAuto(nome,ex));
 }
 function lgResAuto(nome, ex){
   const {con, senza}=lgCandidate(LG.ex);
@@ -6047,7 +6113,7 @@ function sedNomeEx(t){ const x=lgEsercizi().find(y=>y.test===t); return x ? x.n 
 function sedResHtml(){
   if(!SED.ex.length) return '<div class="fhint" style="margin-top:12px">Aggiungi almeno un esercizio.</div>';
   const r=sedutaCalc(SED);
-  let h=presChip();
+  let h=presChip()+garaAvviso(Math.max.apply(null, SED.ex.map(e=>e.pct)));
   if(r.salvati) h+='<div class="fhint" style="margin-top:8px">Uso i tuoi gruppi di <b>'+esc(sedNomeEx(r.fonte))+'</b>; chi non c\'era dentro è raggruppato a parte.</div>';
   // avvisi per esercizio
   r.avvisi.forEach(a=>{
@@ -6413,7 +6479,7 @@ function printAthlete(id){
     h+='<div class="psc">Quadro test</div><table><thead><tr><th>Test</th><th>Ultimo</th><th>Livello</th><th>Δ prec.</th><th>Data</th></tr></thead><tbody>';
     withData.forEach(t=>{ const arr=series(a.id,t.id); const last=arr[arr.length-1];
       const li=eLevelApplicable(a)?levelIdx(t,a.sex,last.v):-1; const di=deltaInfo(arr,t.dir,t);
-      h+='<tr><td>'+t.name+' <span style="color:#888">('+t.unit+')</span></td><td>'+fmtNum(last.v)+'</td><td>'+(li>=0?L[li]:"—")+'</td><td>'+(di?(di.arrow+" "+di.txt):"—")+'</td><td>'+fmtDate(last.d)+'</td></tr>';
+      h+='<tr><td>'+t.name+' <span style="color:#888">('+t.unit+')</span></td><td>'+fmtNum(last.v)+'</td><td>'+(li>=0?L[li]:"—")+'</td><td>'+(di?(di.arrow+" "+di.txt+(di.rumore?" (nel rumore)":"")):"—")+'</td><td>'+fmtDate(last.d)+'</td></tr>';
     });
     h+='</tbody></table>';
   }
@@ -6989,22 +7055,28 @@ function _mediana(a){
   if(!n) return null;
   return n%2 ? s[(n-1)/2] : (s[n/2-1]+s[n/2])/2;
 }
+/* Il verdetto su una variazione, in un posto solo: il report, il profilo
+   dell'atleta e chiunque altro lo chieda devono dire la stessa cosa. */
+function cambioVerdetto(t, prima, dopo){
+  const pv=prima.v, raw=dopo.v-pv;
+  const migl=raw*(t.dir<0?-1:1);
+  const pc = pv ? migl/Math.abs(pv)*100 : null;
+  let verdetto, nb=null;
+  if(INDICI[t.id] || t.neutro) verdetto="indice";
+  else if(raw===0) verdetto="uguale";
+  else {
+    nb=bandaRumore(t, pv);
+    verdetto = (nb && Math.abs(raw)<=nb.b) ? "rumore" : (migl>0 ? "su" : "giu");
+  }
+  return {raw:raw, pc:pc, verdetto:verdetto, banda:nb};
+}
 function cambioCalc(tid, modo, rif){
   const t=TMAP[tid]; if(!t) return null;
   const righe=[], senza=[];
   (teamAthletes()||[]).forEach(a=>{
     const pp=cambioPunti(series(a.id,tid), modo, rif);
     if(!pp){ senza.push({id:a.id, nome:a.name}); return; }
-    const pv=pp.prima.v, dv=pp.dopo.v, raw=dv-pv;
-    const migl=raw*(t.dir<0?-1:1);
-    const pc = pv ? migl/Math.abs(pv)*100 : null;
-    let verdetto, nb=null;
-    if(INDICI[tid] || t.neutro) verdetto="indice";
-    else if(raw===0) verdetto="uguale";
-    else {
-      nb=bandaRumore(t, pv);
-      verdetto = (nb && Math.abs(raw)<=nb.b) ? "rumore" : (migl>0 ? "su" : "giu");
-    }
+    const {raw, pc, verdetto, banda:nb}=cambioVerdetto(t, pp.prima, pp.dopo);
     const fp=STIMA_FONTI[pp.prima.fonte]?1:0, fd=STIMA_FONTI[pp.dopo.fonte]?1:0;
     const gg=Math.round((Date.parse(pp.dopo.d)-Date.parse(pp.prima.d))/864e5);
     const eta=ageFrom((a.profile||{}).birth);
@@ -7269,6 +7341,301 @@ function promHtml(){
   return h+'</div>';
 }
 
+/* ═══════════════ RUOLO, NORMALIZZATO ═══════════════════════════════════════
+   Il ruolo nella scheda e' testo libero: «schiacciatrice», «banda», «Schiacc.».
+   Per confrontare le atlete dello stesso ruolo serve una forma sola: si
+   riporta al nome dell'elenco dello sport (SPORTKB.roleList) per radice
+   comune, poi per sinonimi noti. Quello che non si riconosce resta com'e':
+   meglio un ruolo in piu' che una ragazza messa nel ruolo sbagliato.        */
+const RUOLO_SIN={pallavolo:{Schiacciatore:["banda","martello","posto 4"],
+                            Palleggiatore:["alzat","regist"], Opposto:["posto 2"]},
+                 calcio:{Attaccante:["punta"], Difensore:["terzin"], Portiere:["portier"]}};
+function _normTxt(v){ return String(v==null?"":v).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+  .replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim(); }
+function sportDi(a){ const tm=(S.teams||[]).find(t=>t.id===(a&&a.team)); return (tm&&tm.sport)||S.sport||"generale"; }
+function ruoloDi(a){
+  const testo=String(((a&&a.profile)||{}).role||"").trim();
+  const raw=_normTxt(testo); if(!raw) return null;
+  const sp=sportDi(a), kb=SPORTKB[sp]||{};
+  const lista=kb.roleList&&kb.roleList.length ? kb.roleList : Object.keys(kb.roles||{});
+  const esatto=lista.find(r=>_normTxt(r)===raw); if(esatto) return esatto;
+  let best=null;
+  lista.forEach(r=>{
+    const c=_normTxt(r), n=Math.max(5, c.length-3), rad=c.slice(0,n);
+    if((raw.indexOf(rad)===0 || raw.indexOf(" "+rad)>=0) && (!best || c.length>_normTxt(best).length)) best=r;
+  });
+  if(best) return best;
+  // abbreviato («Schiacc.», «Pallegg»): vale solo se porta a un ruolo e uno solo
+  if(raw.length>=4){
+    const pref=lista.filter(r=>_normTxt(r).indexOf(raw)===0);
+    if(pref.length===1) return pref[0];
+  }
+  const sin=RUOLO_SIN[sp]||{};
+  for(const r in sin){ if(sin[r].some(k=>raw.indexOf(k)>=0)) return r; }
+  return testo.slice(0,30);
+}
+/* L'elenco dei ruoli e' al maschile; una squadra femminile legge «Schiacciatrice».
+   Solo etichetta: il confronto usa sempre il nome dell'elenco. */
+const RUOLO_F={Schiacciatore:"Schiacciatrice", Palleggiatore:"Palleggiatrice", Opposto:"Opposta",
+};
+function ruoloEtichetta(r, sesso){ return (sesso==="F" && RUOLO_F[r]) ? RUOLO_F[r] : r; }
+/* Mediana del ruolo su un test: stessa squadra, stesso sesso, stesso ruolo.
+   Con meno di tre atlete non e' una mediana, e' un aneddoto: non si mostra. */
+const RUOLO_MIN=3;
+function ruoloMediana(a, tid){
+  const r=ruoloDi(a); if(!r) return null;
+  const v=(S.athletes||[]).filter(x=>x.team===a.team && (x.sex||"M")===(a.sex||"M") && ruoloDi(x)===r)
+    .map(x=>{ const s=series(x.id,tid); return s.length ? s[s.length-1].v : null; }).filter(v=>v!=null);
+  return v.length>=RUOLO_MIN ? {v:_mediana(v), n:v.length, ruolo:r} : null;
+}
+
+/* ═══════════════ CONFRONTO FRA RUOLI ═══════════════════════════════════════
+   Con sedici atlete e cinque ruoli, un ruolo ha due, tre, quattro persone. A
+   quei numeri una «mediana del ruolo» e' fragile, e una classifica fra ruoli
+   e' rumore. Quindi: la mediana solo da tre in su, sotto si mostrano i valori
+   uno per uno (sono quelli, non una statistica), e il numero di atlete sta
+   sempre accanto. Peso escluso, come dappertutto.                          */
+let RUOLI_SEX=null;
+function ruoliTabella(sesso){
+  const ath=(teamAthletes()||[]).filter(a=>(a.sex||"M")===sesso);
+  const tests=visibleTests().filter(t=>!t.sens);
+  const gruppi={}, ordine=[];
+  ath.forEach(a=>{ const r=ruoloDi(a)||"Senza ruolo"; if(!gruppi[r]){ gruppi[r]=[]; ordine.push(r); } gruppi[r].push(a); });
+  const sp=(S.teams.find(t=>t.id===S.activeTeam)||{}).sport||S.sport;
+  const l=(SPORTKB[sp]||{}).roleList||[];
+  ordine.sort((a,b)=>{ const ia=a==="Senza ruolo"?999:(l.indexOf(a)<0?500:l.indexOf(a)), ib=b==="Senza ruolo"?999:(l.indexOf(b)<0?500:l.indexOf(b)); return ia-ib || a.localeCompare(b,"it"); });
+  const celle={};
+  ordine.forEach(r=>{
+    celle[r]={};
+    tests.forEach(t=>{
+      const v=gruppi[r].map(a=>{ const s=series(a.id,t.id); return s.length?s[s.length-1].v:null; }).filter(x=>x!=null);
+      celle[r][t.id]={n:v.length, med: v.length>=RUOLO_MIN ? _mediana(v) : null, valori: v.length<RUOLO_MIN ? v : null};
+    });
+  });
+  // solo i test con almeno un dato
+  const usati=tests.filter(t=>ordine.some(r=>celle[r][t.id].n));
+  return {ruoli:ordine.map(r=>({r:r, n:gruppi[r].length})), tests:usati.map(t=>t.id), celle:celle};
+}
+function openRuoli(){
+  const ath=teamAthletes()||[];
+  if(!ath.length){ toast("Nessun atleta in questa squadra"); return; }
+  const F=ath.filter(a=>a.sex==="F").length, M=ath.length-F;
+  if(!RUOLI_SEX || (RUOLI_SEX==="F"&&!F) || (RUOLI_SEX==="M"&&!M)) RUOLI_SEX = F>=M ? "F" : "M";
+  const T=ruoliTabella(RUOLI_SEX);
+  let h='<div class="mh"><div><div class="eyebrow">Squadra</div><div class="mt">📊 Confronto fra ruoli</div>'+
+    '<div class="ms">Mediana del ruolo da tre atlete in su; sotto, i valori uno per uno</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  if(F&&M) h+='<div class="seg" style="display:flex;width:100%;margin-bottom:10px">'+
+    ['F','M'].map(s=>'<button style="flex:1" class="'+(RUOLI_SEX===s?"on":"")+'" onclick="RUOLI_SEX=\''+s+'\';openRuoli()">'+(s==="F"?"Femminile":"Maschile")+'</button>').join("")+'</div>';
+  const senza=T.ruoli.find(x=>x.r==="Senza ruolo");
+  if(senza) h+='<div class="alert warn"><span class="ai">✏️</span><span><b>'+senza.n+'</b> senza ruolo nella scheda: scrivilo in «Ruolo in campo» e compaiono qui.</span></div>';
+  if(!T.tests.length){ modal(h+'<div class="fhint">Ancora nessuna misura.</div>'); return; }
+  h+='<div class="rtwrap"><table class="rtab"><thead><tr><th>Test</th>'+T.ruoli.map(x=>'<th>'+esc(ruoloEtichetta(x.r,RUOLI_SEX))+'<small>'+x.n+'</small></th>').join("")+'</tr></thead><tbody>';
+  T.tests.forEach(tid=>{
+    const t=TMAP[tid];
+    h+='<tr><td class="rtn">'+esc(t.name)+'<small>'+esc(t.unit)+' '+versoFr(t)+'</small></td>';
+    T.ruoli.forEach(x=>{
+      const c=T.celle[x.r][tid];
+      h+='<td>'+(c.med!=null ? '<b>'+fmtNum(Math.round(c.med*100)/100)+'</b><small>n '+c.n+'</small>'
+             : c.n ? '<span class="rtv">'+c.valori.map(v=>fmtNum(v)).join(" · ")+'</span>' : '<span class="rtv">—</span>')+'</td>';
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>'+
+    '<div class="gnote">Con due o tre atlete per ruolo le differenze fra ruoli dicono poco: un numero più alto può essere una ragazza, non il ruolo. '+
+    'Serve a vedere a colpo d\'occhio, non a concludere.</div>';
+  modal(h);
+}
+
+/* ═══════════════ PROFILO PRESTAZIONI (la scheda da consegnare) ═══════════
+   La scheda PDF che c'era mette insieme anamnesi, screening cardiaco e test:
+   e' la cartella del preparatore, non un foglio da dare all'atleta, alla
+   famiglia o alla societa'. Qui c'e' SOLO la prestazione — niente anamnesi,
+   niente screening, niente readiness, e il peso solo se lo scegli tu.
+
+   Ogni riga dice tre cose, e da dove vengono:
+     · com'e' andata rispetto alla volta prima — col verdetto del report,
+       quindi «nel rumore» quando lo e'
+     · dove sta — il pallino (fascia, squadra o se stessa) con la sua fonte
+     · il ruolo — mediana delle compagne di ruolo, se sono almeno tre      */
+function profiloDati(aid, opz){
+  opz=opz||{};
+  const a=(S.athletes||[]).find(x=>x.id===aid); if(!a) return null;
+  const righe=[];
+  TESTS.forEach(t=>{
+    if(t.sens && !opz.peso) return;
+    const arr=series(aid,t.id); if(!arr.length) return;
+    const u=arr[arr.length-1];
+    const delta = arr.length>=2 ? cambioVerdetto(t, arr[arr.length-2], u) : null;
+    /* La posizione fra le compagne («ultimo quinto») su un foglio che va in
+       mano a una sedicenne e alla sua famiglia e' una classifica: la metti
+       solo se lo decidi tu. Senza, resta il confronto con se stessa. */
+    const v=valuta(t, a, arr, {noSquadra:!opz.squadra});
+    righe.push({t:t.id, nome:t.name, cat:t.cat, unit:t.unit, ultimo:u.v, d:u.d, stima:!!STIMA_FONTI[u.fonte],
+      n:arr.length, delta:delta, prima:arr.length>=2?arr[arr.length-2]:null,
+      val: v ? {lab:v.lab, fonte:v.fonte} : null,
+      ruolo: t.neutro ? null : ruoloMediana(a, t.id),
+      serie: arr.slice(-8).map(e=>e.v)});
+  });
+  const date=[]; TESTS.forEach(t=>series(aid,t.id).forEach(e=>date.push(e.d))); date.sort();
+  return {a:a, eta:ageFrom((a.profile||{}).birth), ruolo:ruoloDi(a), righe:righe,
+    dal:date[0]||null, al:date[date.length-1]||null,
+    freq:presStats(aid), crescita:crescita(aid)};
+}
+function _spark(vals){
+  if(!vals||vals.length<2) return "";
+  const W=64,H=16, mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals), rg=(mx-mn)||1, st=W/(vals.length-1);
+  const pt=vals.map((v,i)=>(i*st).toFixed(1)+","+(H-2-((v-mn)/rg)*(H-4)).toFixed(1));
+  const last=pt[pt.length-1].split(",");
+  return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><polyline points="'+pt.join(" ")+
+    '" fill="none" stroke="#777" stroke-width="1.3"/><circle cx="'+last[0]+'" cy="'+last[1]+'" r="2" fill="#111"/></svg>';
+}
+const PROF_VERD={su:"migliorata", giu:"calata", rumore:"stabile (dentro l'errore)", uguale:"uguale", indice:"—"};
+function profiloHtml(aid, opz){
+  const P=profiloDati(aid, opz); if(!P) return "";
+  const a=P.a, tm=(S.teams||[]).find(t=>t.id===a.team);
+  let b='<div class="br">IRON PERFORMANCE</div><h1>'+esc(a.name)+'</h1>'+
+    '<p class="sub">'+(P.eta!=null?P.eta+' anni · ':'')+(tm?esc(tm.name):'Senza squadra')+(P.ruolo?' · '+esc(ruoloEtichetta(P.ruolo,a.sex)):'')+
+    (P.dal?' · misure dal '+fmtDate(P.dal)+' al '+fmtDate(P.al):'')+'</p>';
+  const box=[];
+  if(P.freq && P.freq.tot) box.push('<div><span>Presenze</span><b>'+P.freq.pc+'%</b><small>'+(P.freq.p+P.freq.r)+' su '+P.freq.tot+' sedute</small></div>');
+  if(P.crescita) box.push('<div><span>Crescita</span><b>'+(P.crescita.v>0?"+":"")+fmtNum(P.crescita.v)+' cm/anno</b><small>su '+Math.round(P.crescita.gg/30)+' mesi</small></div>');
+  if(box.length) b+='<div class="box">'+box.join("")+'</div>';
+  if(!P.righe.length) b+='<p>Nessuna misura registrata.</p>';
+  const cats=[]; P.righe.forEach(r=>{ if(cats.indexOf(r.cat)<0) cats.push(r.cat); });
+  cats.forEach(c=>{
+    b+='<h2>'+esc(c)+'</h2><table><tr><th>Test</th><th>Ultimo</th><th>Dalla volta prima</th><th>Dove sta</th><th>Ruolo</th><th></th></tr>';
+    P.righe.filter(r=>r.cat===c).forEach(r=>{
+      const d=r.delta;
+      b+='<tr class="'+(d?d.verdetto:"")+'"><td class="n">'+esc(r.nome)+'</td>'+
+        '<td><b>'+fmtNum(r.ultimo)+'</b> '+esc(r.unit)+(r.stima?' <small>(stima)</small>':'')+'<br><small>'+fmtDate(r.d)+'</small></td>'+
+        '<td>'+(d ? (d.raw>0?"+":"")+fmtNum(Math.round(d.raw*100)/100)+' '+esc(r.unit)+'<br><small class="v">'+PROF_VERD[d.verdetto]+'</small>' : '<small>prima misura</small>')+'</td>'+
+        '<td><small>'+(r.val?esc(r.val.lab)+'<br>'+({rif:"fascia di riferimento",squadra:"rispetto alla squadra",lei:"rispetto a sé stessa"}[r.val.fonte]||""):'—')+'</small></td>'+
+        '<td><small>'+(r.ruolo?'mediana '+fmtNum(Math.round(r.ruolo.v*100)/100)+'<br>su '+r.ruolo.n+' del ruolo':'—')+'</small></td>'+
+        '<td>'+_spark(r.serie)+'</td></tr>';
+    });
+    b+='</table>';
+  });
+  if(opz && opz.commento) b+='<h2>Note del preparatore</h2><p class="com">'+esc(opz.commento).replace(/\n/g,"<br>")+'</p>';
+  b+='<p class="note">«Stabile» vuol dire che la variazione sta dentro l\'errore della misura: con questo strumento non si può dire che sia cambiato qualcosa. '+
+     'Sotto i 18 anni le fasce di riferimento per adulti non si applicano: il confronto è '+((opz&&opz.squadra)?'con la squadra o con sé stessa':'con le sue misure precedenti')+'. '+
+     'Questo documento contiene solo dati di prestazione: niente anamnesi, screening o dati sanitari.</p>';
+  return b;
+}
+const PROF_CSS='@page{size:A4;margin:13mm}'+
+  'body{font:11px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:0}'+
+  '.br{font-size:9px;letter-spacing:2px;color:#C81E2D;font-weight:700}'+
+  'h1{font-size:19px;margin:2px 0}.sub{color:#555;font-size:10.5px;margin:0 0 10px}'+
+  'h2{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#C81E2D;margin:14px 0 4px}'+
+  '.box{display:flex;gap:10px;margin:6px 0 4px}.box div{border:1px solid #ddd;border-radius:6px;padding:6px 10px}'+
+  '.box span{display:block;font-size:8.5px;text-transform:uppercase;color:#777}.box b{display:block;font-size:15px}.box small{color:#666}'+
+  'table{width:100%;border-collapse:collapse;break-inside:auto}tr{break-inside:avoid}'+
+  'th{text-align:left;font-size:8.5px;text-transform:uppercase;color:#777;border-bottom:1px solid #ccc;padding:3px 4px}'+
+  'td{padding:4px;border-bottom:1px solid #eee;vertical-align:top;font-size:10.5px}td.n{font-weight:600;width:20%}td small{color:#666}'+
+  'tr.su small.v{color:#1E8E3E;font-weight:700}tr.giu small.v{color:#C81E2D;font-weight:700}'+
+  '.com{border:1px solid #ddd;border-radius:6px;padding:8px 10px}'+
+  '.note{font-size:9px;color:#666;margin-top:12px;border-top:1px solid #eee;padding-top:6px}';
+let PROF={aid:null, peso:false, squadra:false, commento:""};
+function openProfilo(aid){
+  const a=(S.athletes||[]).find(x=>x.id===aid); if(!a) return;
+  PROF={aid:aid, peso:false, squadra:false, commento:""};
+  modal('<div class="mh"><div><div class="eyebrow">Da consegnare</div><div class="mt">📊 Profilo prestazioni</div>'+
+    '<div class="ms">'+esc(a.name)+' · solo prestazioni, niente dati sanitari</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<label class="tchk"><input type="checkbox" onchange="PROF.peso=this.checked;profDraw()"><span>Includi il peso</span></label>'+
+    '<label class="tchk"><input type="checkbox" onchange="PROF.squadra=this.checked;profDraw()"><span>Mostra la posizione fra le compagne</span></label>'+
+    '<label class="fl">Note per lei (vanno sul foglio)</label>'+
+    '<textarea id="profCom" rows="3" maxlength="800" placeholder="Es. obiettivi del prossimo blocco" oninput="PROF.commento=this.value"></textarea>'+
+    '<button class="btn primary" style="width:100%;margin-top:10px" onclick="profPrint()">🖨 Stampa / salva in PDF</button>'+
+    '<div class="profprev" id="profPrev"></div>');
+  profDraw();
+}
+function profDraw(){ const el=document.getElementById("profPrev"); if(el) el.innerHTML=profiloHtml(PROF.aid, {peso:PROF.peso, squadra:PROF.squadra}); }
+function profPrint(){
+  const a=(S.athletes||[]).find(x=>x.id===PROF.aid); if(!a) return;
+  const doc='<!doctype html><html lang="it"><head><meta charset="utf-8"><title>Profilo — '+esc(a.name)+'</title><style>'+PROF_CSS+
+    '</style></head><body>'+profiloHtml(PROF.aid, {peso:PROF.peso, squadra:PROF.squadra, commento:PROF.commento})+'</body></html>';
+  const w=window.open("", "_blank");
+  if(!w){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
+  w.document.write(doc); w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 400);
+}
+
+/* ═══════════════ CALENDARIO GARE ═══════════════════════════════════════════
+   Le gare servono a una cosa sola qui dentro: sapere a che distanza sei dalla
+   prossima (MD-3 = tre giorni alla gara) quando decidi la seduta. Niente
+   risultati, niente statistiche di partita: non e' quello il mestiere di
+   questa app.
+
+   L'avviso sui carichi alti a ridosso della gara NON e' una regola dimostrata
+   con un numero di ore: e' la prudenza piu' comune nella preparazione delle
+   squadre, e la decisione resta tua. Per questo e' un avviso, non un blocco.*/
+const GARA_AVVISO_GG=2, GARA_AVVISO_PCT=80, GARA_BANNER_GG=7;
+function gareDi(teamId){ const g=(S.gare||{})[teamId]; return Array.isArray(g)?g:[]; }
+function garaGiorni(d){ return Math.round((Date.parse(d)-Date.parse(todayISO()))/864e5); }
+function prossimaGara(teamId){
+  const oggi=todayISO();
+  const f=gareDi(teamId).filter(g=>g&&g.d>=oggi).sort((a,b)=>a.d<b.d?-1:1);
+  return f.length ? Object.assign({gg:garaGiorni(f[0].d)}, f[0]) : null;
+}
+function mdLabel(gg){ return gg===0 ? "giorno di gara" : "MD-"+gg; }
+/* L'avviso per la seduta di forza: gara entro due giorni e almeno un
+   esercizio all'80% o piu'. Una riga, con la scelta lasciata a te. */
+function garaAvviso(pctMax){
+  if(!S.activeTeam || S.activeTeam==="all" || S.activeTeam==="none") return "";
+  const g=prossimaGara(S.activeTeam);
+  if(!g || g.gg>GARA_AVVISO_GG || !(pctMax>=GARA_AVVISO_PCT)) return "";
+  return '<div class="alert warn"><span class="ai">🏐</span><span><b>'+(g.gg===0?'Oggi c\'è la gara':'Gara tra '+g.gg+(g.gg===1?' giorno':' giorni'))+
+    '</b>'+(g.avv?' (vs '+esc(g.avv)+')':'')+'. Carichi all\'80% e oltre a ridosso della partita tolgono freschezza: '+
+    'di solito si spostano o si riducono. Decidi tu.</span></div>';
+}
+function garaBanner(){
+  if(!S.activeTeam || S.activeTeam==="all" || S.activeTeam==="none") return "";
+  const g=prossimaGara(S.activeTeam);
+  if(!g || g.gg>GARA_BANNER_GG) return "";
+  const gs=["dom","lun","mar","mer","gio","ven","sab"][new Date(g.d+"T12:00:00").getDay()];
+  return '<div class="garaban" onclick="openGare()"><span class="gmd">'+mdLabel(g.gg)+'</span>'+
+    '<span>'+(g.gg===0?'Oggi':gs+' '+fmtDate(g.d))+(g.avv?' · vs '+esc(g.avv):'')+(g.casa===false?' · trasferta':g.casa?' · in casa':'')+'</span></div>';
+}
+function garaAggiungi(){
+  const t=S.activeTeam;
+  if(!t || t==="all" || t==="none"){ toast("Seleziona prima una squadra"); return; }
+  const d=(document.getElementById("gD")||{}).value, avv=String((document.getElementById("gA")||{}).value||"").trim().slice(0,60);
+  const casa=(document.getElementById("gC")||{}).value;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(d||""))){ toast("Scegli la data"); return; }
+  if(!S.gare) S.gare={};
+  const l=gareDi(t).filter(g=>!(g.d===d && (g.avv||"")===avv));
+  l.push({d:d, avv:avv, casa: casa==="casa" ? true : casa==="fuori" ? false : null});
+  l.sort((a,b)=>a.d<b.d?-1:1);
+  S.gare[t]=l; save(); openGare(); render();
+}
+function garaTogli(i){
+  const t=S.activeTeam, l=gareDi(t).slice().sort((a,b)=>a.d<b.d?-1:1);
+  if(!l[i]) return;
+  l.splice(i,1); S.gare[t]=l; save(); openGare(); render();
+}
+function openGare(){
+  const t=S.activeTeam, tm=S.teams.find(x=>x.id===t);
+  if(!tm){ toast("Seleziona prima una squadra dalla barra"); return; }
+  const oggi=todayISO();
+  const l=gareDi(t).slice().sort((a,b)=>a.d<b.d?-1:1);
+  const riga=(g,i)=>'<div class="garow'+(g.d<oggi?' pass':'')+'"><span class="gd">'+fmtDate(g.d)+'</span>'+
+    '<span class="gv">'+(g.avv?esc(g.avv):'<i>avversario?</i>')+(g.casa===true?' <small>casa</small>':g.casa===false?' <small>trasferta</small>':'')+'</span>'+
+    (g.d>=oggi?'<span class="gm">'+mdLabel(garaGiorni(g.d))+'</span>':'')+
+    '<button class="lgx" onclick="garaTogli('+i+')">✕</button></div>';
+  const fut=l.map((g,i)=>({g,i})).filter(x=>x.g.d>=oggi), pas=l.map((g,i)=>({g,i})).filter(x=>x.g.d<oggi).slice(-5);
+  let h='<div class="mh"><div><div class="eyebrow">'+esc(tm.name)+'</div><div class="mt">📅 Calendario gare</div>'+
+    '<div class="ms">Serve a sapere quanto manca alla prossima, quando decidi la seduta</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="row2"><div><label class="fl">Data</label><input id="gD" type="date" value="'+oggi+'"></div>'+
+    '<div><label class="fl">Dove</label><select id="gC"><option value="">—</option><option value="casa">In casa</option><option value="fuori">Trasferta</option></select></div></div>'+
+    '<label class="fl">Avversario</label><input id="gA" maxlength="60" placeholder="es. Volley Rossi">'+
+    '<button class="btn primary" style="width:100%;margin-top:10px" onclick="garaAggiungi()">+ Aggiungi gara</button>';
+  h+='<div class="psec">Prossime ('+fut.length+')</div>'+(fut.length?fut.map(x=>riga(x.g,x.i)).join(""):'<div class="fhint">Nessuna gara in calendario.</div>');
+  if(pas.length) h+='<details class="prommai"><summary>Ultime giocate</summary>'+pas.map(x=>riga(x.g,x.i)).join("")+'</details>';
+  modal(h);
+}
+
 function renderToday(){
   const grid=document.getElementById("grid");
   const ath=teamAthletes();
@@ -7327,7 +7694,7 @@ function renderToday(){
      tstat(_pc.segnato ? _pc.in+"/"+_pc.tot : "—", _pc.segnato ? "In palestra" : "Appello da fare", _pc.segnato?"":"amber")+
      tstat(checkinToday+"/"+ath.length,"Check-in oggi")+
      tstat(manage.length,"Da gestire", manage.length?"down":"up")+
-     tstat(ready.length,"Pronti","up")+'</div>';
+     tstat(ready.length,"Pronti","up")+'</div>'+garaBanner();
   /* ── Schede nuove ───────────────────────────────────────────────────────
      La scritta «nuova» si spegneva solo aprendo l'anamnesi. Qui la scheda si
      legge per intero senza entrare da nessuna parte, e la notifica si toglie
@@ -8079,6 +8446,7 @@ function openSettings(){
 
   h+='<div class="set-sec">Monitoraggio</div><div class="set-group">'+
     row("📊","Cosa è cambiato","Tutti i test: chi è migliorata oltre l'errore della misura","openCambio(null)")+
+    row("📅","Calendario gare","Quanto manca alla prossima, quando decidi la seduta","openGare()", (S.activeTeam&&gareDi(S.activeTeam).filter(g=>g.d>=todayISO()).length)||"")+
     row("⚙️","Soglie","Readiness, ACWR, calo CMJ, dolore","openThresholds()")+
     row("👥","Squadre","Rinomina, sport, batteria, elimina","manageTeams()", S.teams.length)+
     '</div>';
@@ -8140,7 +8508,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -8307,6 +8675,19 @@ function sanitizeImport(o){
         out.gruppi[tid]={d:isDate(v.d)?v.d:todayISO(), g:g};
         if(x.some(Boolean)) out.gruppi[tid].x=x;
       }
+    });
+  }
+  // calendario gare: date valide, avversario come testo, casa/trasferta/non detto
+  if(o.gare&&typeof o.gare==="object"&&!Array.isArray(o.gare)){
+    Object.keys(o.gare).slice(0,100).forEach(k=>{
+      if(!idOk(k)||!Array.isArray(o.gare[k])) return;
+      const visti={}, l=[];
+      o.gare[k].slice(0,300).forEach(g=>{
+        if(!g||!isDate(g.d)) return;
+        const avv=str(g.avv,60), key=g.d+"|"+avv; if(visti[key]) return; visti[key]=1;
+        l.push({d:g.d, avv:avv, casa:(g.casa===true||g.casa===false)?g.casa:null});
+      });
+      if(l.length){ l.sort((a,b)=>a.d<b.d?-1:1); out.gare[k]=l; }
     });
   }
   /* La scheda di seduta: esercizi, percentuali, serie. Solo id di test noti

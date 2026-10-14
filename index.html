@@ -1225,6 +1225,18 @@ const TESTS=[
   // ─ POTENZA SPECIFICA ─
   {id:"punchPow",  name:"Potenza colpo",full:"Potenza/forza del colpo (punch meter)", unit:"AU", dir:1, cat:"Potenza", sports:["combattimento"]},
   // ─ COMPOSIZIONE CORPOREA (categorie di peso) ─
+  /* Peso e statura: niente verso (dir 0), niente sport. Non compaiono in
+     tabella finche' non li scegli nella batteria della squadra — vedi
+     visibleTests. `sens` = il peso: niente classifiche, niente ordinamento. */
+  {id:"bw",   name:"Peso",    full:"Peso corporeo",                        unit:"kg", dir:0, neutro:true, antro:true, sens:true, cat:"Antropometria", sports:[]},
+  {id:"stat", name:"Statura", full:"Statura (in piedi, senza scarpe)",     unit:"cm", dir:0, neutro:true, antro:true, cat:"Antropometria", sports:[]},
+  /* Forza relativa: massimale ÷ peso misurato entro 90 giorni (pesoAl). Il
+     calcolo vive in relSeries; `derived` serve solo a dire «non si scrive a
+     mano» a tutte le schermate che gia' lo sanno leggere. */
+  {id:"rmSquatRel", name:"Squat rel.",  full:"1RM Squat ÷ peso corporeo",  unit:"×peso", dir:1, cat:"Forza", rel:"rmSquat", derived:{from:["rmSquat","bw"]}, sports:["combattimento","forza","pallavolo","calcio","basket","atletica","generale"]},
+  {id:"rmDeadRel",  name:"Stacco rel.", full:"1RM Stacco ÷ peso corporeo", unit:"×peso", dir:1, cat:"Forza", rel:"rmDead",  derived:{from:["rmDead","bw"]},  sports:["combattimento","forza"]},
+  {id:"rmBenchRel", name:"Panca rel.",  full:"1RM Panca ÷ peso corporeo",  unit:"×peso", dir:1, cat:"Forza", rel:"rmBench", derived:{from:["rmBench","bw"]}, sports:["combattimento","forza"]},
+  {id:"rmHipRel",   name:"Hip thrust rel.", full:"1RM Hip thrust ÷ peso corporeo", unit:"×peso", dir:1, cat:"Forza", rel:"rmHip", derived:{from:["rmHip","bw"]}, sports:["forza"]},
   {id:"bodyFat",   name:"Massa grassa", full:"Percentuale di massa grassa",  unit:"%",  dir:-1, cat:"Composizione corporea", sports:["combattimento","forza","generale"]},
 ];
 const TMAP={}; TESTS.forEach(t=>TMAP[t.id]=t);
@@ -1435,6 +1447,7 @@ function normalize(){
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
   if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
   applyCustom();
+  antroSync();                 // peso e statura della scheda ↔ serie datate
   if(!S.cvar) S.cvar="percussione";
   if(!S.cfg) S.cfg={};
   Object.keys(CFG_DEF).forEach(k=>{ if(typeof S.cfg[k]!=="number"||isNaN(S.cfg[k])) S.cfg[k]=CFG_DEF[k]; });
@@ -1468,6 +1481,9 @@ function pruneTombs(){
    prima dichiarava salvato anche ciò che è arrivato dopo. */
 let _stateSeq=0;
 function save(){
+  /* Un solo punto per tenere allineati scheda e tabella: da qui passano la
+     scheda salvata, la misura aggiunta, l'import delle anamnesi. */
+  try{ antroSync(); }catch(e){}
   S._dirty=true; _stateSeq++;
   try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("Memoria del dispositivo piena"); }
   if(AUTH&&AUTH.token) triggerCloud();
@@ -2311,8 +2327,98 @@ function fmtDate(d){ const p=d.split("-"); return p[2]+"/"+p[1]+"/"+p[0].slice(2
 /* ═══════════════ HELPER TREND ═══════════════ */
 function series(aid,tid){
   const t=TMAP[tid];
+  if(t && t.rel) return relSeries(aid,t);
   if(t && t.derived) return derivedSeries(aid,t);
   return (S.data[aid]&&S.data[aid][tid])||[];
+}
+/* ═══════════ PESO, STATURA, FORZA RELATIVA ═══════════ */
+const PESO_FINESTRA=90;     // giorni: oltre, il peso non descrive piu' quel massimale
+function pesoAl(aid,d){
+  const arr=(S.data[aid]&&S.data[aid].bw)||[];
+  const t0=Date.parse(d); let best=null, bd=Infinity;
+  arr.forEach(e=>{
+    if(!(e&&e.v>0)) return;
+    const g=Math.abs(Date.parse(e.d)-t0)/864e5;
+    if(g<=PESO_FINESTRA && g<bd){ best=e; bd=g; }
+  });
+  return best;
+}
+function relSeries(aid,t){
+  const base=(S.data[aid]&&S.data[aid][t.rel])||[];
+  const out=[];
+  base.forEach(e=>{
+    const bw=pesoAl(aid,e.d); if(!bw) return;
+    const r={d:e.d, v:Math.round(e.v/bw.v*100)/100, kg:e.v, bw:bw.v, bwd:bw.d};
+    if(e.fonte) r.fonte=e.fonte;          // una stima resta una stima anche divisa
+    out.push(r);
+  });
+  return out;
+}
+/* Scala allometrica per il confronto FRA atlete: kg / peso^0,67 (Jaric,
+   Mirkov, Markovic 2005, J Strength Cond Res 19:467). Il rapporto semplice
+   penalizza le piu' pesanti: a parita' di muscolo, la forza cresce con la
+   sezione (massa^2/3), non con la massa. Per lei nel tempo il rapporto va
+   bene; per metterla in fila con le compagne, no. */
+const ALLO_B=0.67;
+function relAllo(e){ return (e&&e.kg>0&&e.bw>0) ? e.kg/Math.pow(e.bw,ALLO_B) : null; }
+
+/* Velocita' di crescita. Due misure troppo vicine non dicono niente: l'errore
+   di qualche millimetro di ogni misura, su tre mesi, vale piu' di un
+   centimetro all'anno. Si usa il primo punto ad almeno 6 mesi dall'ultimo,
+   il piu' recente fra quelli possibili. */
+const CRESCITA_MIN_GG=180;
+function crescita(aid){
+  const arr=(S.data[aid]&&S.data[aid].stat)||[];
+  if(arr.length<2) return null;
+  const ult=arr[arr.length-1], tu=Date.parse(ult.d);
+  for(let i=arr.length-2;i>=0;i--){
+    const gg=(tu-Date.parse(arr[i].d))/864e5;
+    if(gg>=CRESCITA_MIN_GG){
+      return {v:Math.round((ult.v-arr[i].v)/(gg/365.25)*10)/10, gg:Math.round(gg), da:arr[i].d, a:ult.d, cm:ult.v};
+    }
+  }
+  return null;
+}
+
+/* La scheda ha un campo peso e un campo statura; la tabella ha una serie
+   datata. Sono la stessa cosa e devono restarlo, in tutti e due i versi:
+     · scheda cambiata (a mano o dal modulo) → nuova misura con la data
+       (quella del modulo se e' arrivato dopo l'ultima sincronia, oggi se no)
+     · misura nuova in tabella → la scheda mostra l'ultimo valore
+   Il segnaposto `weightSync`/`heightSync` ricorda l'ultimo valore allineato:
+   e' quello che distingue «l'ha cambiato qualcuno» da «e' rimasto com'era». */
+const ANTRO_CAMPI=[{k:"weight", s:"weightSync", t:"bw", min:15, max:250},
+                   {k:"height", s:"heightSync", t:"stat", min:80, max:250}];
+function antroSync(){
+  let cambi=0;
+  (S.athletes||[]).forEach(a=>{
+    if(!a.profile) a.profile={};
+    const p=a.profile;
+    // letto UNA volta: se lo si rilegge dopo aver sincronizzato il peso, la
+    // statura arrivata con lo stesso modulo prende la data di oggi
+    const fa=String(p.formAt||""), sa=String(p.antroSyncAt||"");
+    ANTRO_CAMPI.forEach(c=>{
+      const pv=parseFloat(String(p[c.k]==null?"":p[c.k]).replace(",","."));
+      const sv=parseFloat(p[c.s]);
+      const arr=((S.data||{})[a.id]||{})[c.t]||[];
+      const ult=arr.length?arr[arr.length-1]:null;
+      if(isFinite(pv) && pv>=c.min && pv<=c.max && pv!==sv){
+        // la scheda e' cambiata: diventa una misura
+        const d = (fa && fa>sa && /^\d{4}-\d{2}-\d{2}/.test(fa)) ? fa.slice(0,10) : todayISO();
+        const nuovo=arr.filter(e=>e.d!==d);
+        nuovo.push({d:d, v:pv}); nuovo.sort((x,y)=>x.d<y.d?-1:1);
+        if(!S.data[a.id]) S.data[a.id]={};
+        S.data[a.id][c.t]=nuovo;
+        const u=nuovo[nuovo.length-1];
+        p[c.k]=String(u.v); p[c.s]=String(u.v);
+        p.antroSyncAt=new Date().toISOString(); cambi++;
+      } else if(ult && ult.v!==sv){
+        // la tabella e' andata avanti: la scheda la segue
+        p[c.k]=String(ult.v); p[c.s]=String(ult.v); cambi++;
+      }
+    });
+  });
+  return cambi;
 }
 function derivedSeries(aid,t){
   const maps=t.derived.from.map(id=>{ const m={}; ((S.data[aid]&&S.data[aid][id])||[]).forEach(e=>m[e.d]=e.v); return m; });
@@ -2321,6 +2427,10 @@ function derivedSeries(aid,t){
   dates.forEach(d=>{ const v=t.derived.fn.apply(null, maps.map(m=>m[d])); if(v!=null && isFinite(v)) out.push({d, v:Math.round(v*1000)/1000}); });
   return out;
 }
+/* Il verso del meglio, a parole. Peso e statura non ne hanno: dirlo e' la
+   differenza fra una misura e un giudizio. */
+function verso(t){ return t.neutro ? "nessun verso: si legge, non si giudica" : t.dir<0 ? "più basso = meglio" : "più alto = meglio"; }
+function versoFr(t){ return t.neutro ? "" : t.dir<0 ? "↓" : "↑"; }
 function fmtNum(v){ return Number.isInteger(v)? String(v) : (Math.round(v*100)/100).toString(); }
 
 /* ═══════════════ QUANTO BALLA LA MISURA ═════════════════════════════════
@@ -2357,6 +2467,10 @@ function bandaRumore(t, rif){
   if(!isFinite(base)||base<=0) return null;
   const te=(S.te||{})[t.id];
   if(isFinite(te)&&te>0) return {b:base*te*MDC_K/100, pc:te*MDC_K, te:te, fonte:"misurata"};
+  /* Il 5% di riserva e' pensato per prestazioni. Su statura e peso e'
+     un'assurdita': 8 cm di «rumore» su un metro che misura al millimetro.
+     Li' la banda c'e' solo se l'hai misurata. */
+  if(t.neutro) return null;
   const pc=isFinite(S.cfg.deltaNoise)?S.cfg.deltaNoise:5;
   if(pc<=0) return null;
   return {b:base*pc/100, pc:pc, fonte:"default"};
@@ -2422,18 +2536,22 @@ function valSdev(a){
 /* L'ultimo valore di ogni compagna di squadra dello stesso sesso. Stesso
    sesso perche' confrontare un salto maschile con uno femminile non e' un
    riferimento, e' rumore con la faccia seria. */
-function valSquadra(tid, sex, escludi){
+function valSquadra(tid, sex, escludi, leggi){
   const out=[];
   (teamAthletes()||[]).forEach(a=>{
     if(a.id===escludi) return;
     if((a.sex||"M")!==sex) return;
     const arr=series(a.id,tid);
-    if(arr.length) out.push(arr[arr.length-1].v);
+    if(!arr.length) return;
+    const v=leggi ? leggi(arr[arr.length-1]) : arr[arr.length-1].v;
+    if(v!=null && isFinite(v)) out.push(v);
   });
   return out;
 }
 function valuta(t, a, arr){
   if(!t||!a||!arr||!arr.length) return null;
+  // peso e statura non sono prestazioni: nessun giudizio, da nessun riferimento
+  if(t.neutro) return null;
   const v=arr[arr.length-1].v;
   const sex=a.sex||"M";
 
@@ -2444,15 +2562,18 @@ function valuta(t, a, arr){
       nota:"Fascia da riferimenti di popolazione adulta ("+(sex==="F"?"femminile":"maschile")+")"};
   }
 
-  // 2 · la squadra, oggi
-  const altri=valSquadra(t.id, sex, a.id);
+  // 2 · la squadra, oggi — per la forza relativa, in scala allometrica
+  const leggi = t.rel ? relAllo : null;
+  const vq = t.rel ? relAllo(arr[arr.length-1]) : v;
+  const altri = vq==null ? [] : valSquadra(t.id, sex, a.id, leggi);
   if(altri.length>=VAL_MIN_SQUADRA-1){
-    const tutti=altri.concat([v]);
-    const peggiori=tutti.filter(x=> t.dir<0 ? x>v : x<v).length;
+    const tutti=altri.concat([vq]);
+    const peggiori=tutti.filter(x=> t.dir<0 ? x>vq : x<vq).length;
     const pc=peggiori/(tutti.length-1);                 // 0 = ultima, 1 = prima
     const i=pc<0.2?0:pc<0.4?1:pc<0.6?2:pc<0.8?3:4;
     return {liv:i, col:VAL_COL[i], lab:VAL_SQ[i], fonte:"squadra",
-      nota:"Posizione fra le "+tutti.length+" della squadra con questo test — non è un giudizio assoluto"};
+      nota:"Posizione fra le "+tutti.length+" della squadra con questo test — non è un giudizio assoluto"+
+        (t.rel?". Confronto in scala allometrica (kg/peso^0,67): il rapporto semplice favorisce le più leggere":"")};
   }
 
   // 3 · lei rispetto a sé stessa
@@ -2504,12 +2625,14 @@ function levelIdx(test,sex,v){
 }
 const LVCOL=["#6C757D","#FF9F0A","#FFD60A","#9BE65A","#34C759"];
 
-function sparkline(arr,dir){
+function sparkline(arr,dir,t){
   if(arr.length<2) return "";
   const vs=arr.map(x=>x.v), mn=Math.min(...vs), mx=Math.max(...vs), rng=(mx-mn)||1;
   const W=84,H=14, step=W/(vs.length-1);
   const pts=vs.map((v,i)=>{ const y=H-2-((v-mn)/rng)*(H-4); return (i*step).toFixed(1)+","+y.toFixed(1); }).join(" ");
-  const di=deltaInfo(arr,dir); const col= di? (di.cls==="up"?"var(--up)":di.cls==="down"?"var(--down)":"var(--flat)") : "var(--flat)";
+  // stesso verdetto della cella accanto: senza `t` la linea si colorava
+  // anche quando la cella diceva «nel rumore»
+  const di=deltaInfo(arr,dir,t); const col= di? (di.cls==="up"?"var(--up)":di.cls==="down"?"var(--down)":"var(--flat)") : "var(--flat)";
   const lx=((vs.length-1)*step).toFixed(1), ly=(H-2-((vs[vs.length-1]-mn)/rng)*(H-4)).toFixed(1);
   return '<svg class="spark" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+
     '<polyline points="'+pts+'" fill="none" stroke="'+col+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>'+
@@ -2523,7 +2646,7 @@ function visibleTests(){
     const t=S.teams.find(x=>x.id===S.activeTeam);
     if(t && t.tests && t.tests.length) base=TESTS.filter(x=>t.tests.indexOf(x.id)>=0);
   }
-  if(!base) base = S.sport==="all" ? TESTS : TESTS.filter(t=>t.sports.includes(S.sport));
+  if(!base) base = S.sport==="all" ? TESTS.filter(t=>!t.antro) : TESTS.filter(t=>t.sports.includes(S.sport));
 
   /* Un test su cui hai registrato qualcosa NON deve sparire perché il filtro
      per sport o la batteria della squadra non lo prevedono.
@@ -2541,7 +2664,11 @@ function visibleTests(){
     Object.keys(d).forEach(t=>{ if(d[t]&&d[t].length) conDati[t]=1; });
   });
   const gia={}; base.forEach(t=>gia[t.id]=1);
-  const extra=TESTS.filter(t=>conDati[t.id]&&!gia[t.id]);
+  /* Eccezione: peso e statura. La scheda li crea da sola (antroSync), quindi
+     «c'e' il dato» non vuol dire «l'hai scelto». Il peso di tutte in tabella
+     alla prima proiezione in palestra e' esattamente cio' che non deve
+     succedere: si vedono solo se li metti nella batteria. */
+  const extra=TESTS.filter(t=>conDati[t.id]&&!gia[t.id]&&!t.antro);
   let out = extra.length ? base.concat(extra) : base;
   /* I test che guardi ogni settimana devono stare davanti: con quarantasette
      colonne, «a sinistra» e' l'unica posizione che si trova senza cercare. */
@@ -2609,6 +2736,9 @@ function render(){
    e sedici righe. Con una squadra vera non si fa.                          */
 let SORT={by:null, desc:false};
 function sortBy(k){
+  /* Ordinare la squadra per peso non serve a nessuna decisione di
+     allenamento, e mette in fila delle ragazze per il loro corpo. */
+  if(TMAP[k] && TMAP[k].sens){ toast("Il peso non si usa per ordinare la squadra"); return; }
   if(SORT.by===k){ SORT.desc=!SORT.desc; } else { SORT.by=k; SORT.desc=false; }
   render();
 }
@@ -2660,7 +2790,7 @@ function atleteOrdinate(){
   const t=TMAP[k]; if(!t) return rows;
   const val=a=>{ const s=series(a.id,k); return s.length? s[s.length-1].v : null; };
   const conDato=rows.filter(a=>val(a)!=null), senza=rows.filter(a=>val(a)==null);
-  conDato.sort((a,b)=>(val(b)-val(a))*t.dir);     // migliore in cima
+  conDato.sort((a,b)=>(val(b)-val(a))*(t.dir||1));     // migliore in cima (statura: dal più alto)
   if(SORT.desc) conDato.reverse();
   return conDato.concat(senza);
 }
@@ -2693,13 +2823,14 @@ function openColMenu(tid){
     '<span class="si">'+ic+'</span><span class="sl">'+l+(sub?'<small>'+sub+'</small>':'')+'</span><span class="sc">›</span></button>';
   let h='<div class="mh"><div><div class="eyebrow">'+esc(t.cat)+'</div>'+
     '<div class="mt">'+(ICON[tid]||(t.base?ICON[t.base]:"")||"")+' '+esc(t.name)+'</div>'+
-    '<div class="ms">'+esc(t.full)+' · '+esc(t.unit)+' · '+(t.dir<0?"più basso = meglio":"più alto = meglio")+'</div></div>'+
+    '<div class="ms">'+esc(t.full)+' · '+esc(t.unit)+' · '+verso(t)+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
   h+='<div class="set-group">'+
-     riga("⇅", ord?(SORT.desc?"Ordina: migliori in cima":"Ordina: peggiori in cima")
+     (t.sens ? '' : riga("⇅", t.neutro ? (ord?(SORT.desc?"Ordina: dal più basso":"Ordina: dal più alto"):"Ordina la squadra per questo valore")
+                 : ord?(SORT.desc?"Ordina: migliori in cima":"Ordina: peggiori in cima")
                  :"Ordina la squadra per questo test",
-          ord?"Tocca di nuovo per invertire":"I migliori in cima, chi non l'ha fatto in fondo",
-          'closeM();sortBy(\''+tid+'\')')+
+          ord?"Tocca di nuovo per invertire":(t.neutro?"Chi non l'ha misurato va in fondo":"I migliori in cima, chi non l'ha fatto in fondo"),
+          'closeM();sortBy(\''+tid+'\')'))+
      riga(inEv?"📌":"📍", inEv?"Togli dall'evidenza":"Metti in evidenza",
           inEv?"Torna in ordine di catalogo":"Resta fra le prime colonne della tabella",
           'pinToggle(\''+tid+'\')')+
@@ -2738,7 +2869,7 @@ function renderMatrix(){
        'onclick="openColMenu(\''+t.id+'\')" title="Tocca: ordina, evidenzia, guida, carichi">'+
        '<div class="cat">'+t.cat+'</div>'+
        '<div class="tn">'+(isCore(t.id)?'<span class="star">★</span>':'')+t.name+'</div>'+
-       '<div class="tu">'+t.unit+' '+(t.dir<0?"↓":"↑")+'</div>'+
+       '<div class="tu">'+t.unit+' '+versoFr(t)+'</div>'+
        '<div class="thMore">'+(ord?(SORT.desc?"↑ ordinata":"↓ ordinata"):"⋯")+'</div></th>';
   });
   h+='</tr></thead><tbody>';
@@ -2775,7 +2906,7 @@ function renderMatrix(){
           h+='<div class="cold'+(gg>120?" vecchio":"")+'" title="Misurato il '+fmtDate(last.d)+'">'+
              (gg<60?Math.round(gg/7)+" sett.":gg<365?Math.round(gg/30)+" mesi":"oltre un anno")+'</div>';
         }
-        h+=sparkline(arr,t.dir);
+        h+=sparkline(arr,t.dir,t);
       }
       h+='</td>';
     });
@@ -2902,7 +3033,7 @@ function renderTrend(){
   if(!t){ grid.innerHTML=h+'<div class="empty-state"><p>Nessun test in questo sport.</p></div>'; return; }
 
   h+='<div class="trendhead"><div><span class="thn">'+(ICON[t.id]||"")+' '+t.full+'</span>'+
-     '<span class="thu">'+t.unit+' · '+(t.dir<0?"↓ più basso = meglio":"↑ più alto = meglio")+'</span></div>'+
+     '<span class="thu">'+t.unit+' · '+(versoFr(t)+" "+verso(t))+'</span></div>'+
      '<div style="display:flex;gap:6px;flex:0 0 auto">'+
      '<button class="gbtn" style="width:auto;margin:0" onclick="openCambio(\''+t.id+'\')">📊 Cosa è cambiato</button>'+
      '<button class="gbtn" style="width:auto;margin:0" onclick="openGuide(\''+t.id+'\')">📖 Guida</button></div></div>';
@@ -3756,7 +3887,7 @@ function openAthlete(id, isNew){
   const _flags=SCREEN_KEYS.filter(k=>p[k]).length;
   if(_flags) h+='<div class="alert danger" style="margin-top:10px"><span class="ai">⚠️</span><span>'+
     '<b>Screening: '+_flags+' voce/i positive.</b> Consigliata una verifica medica prima di proporre carichi intensi.</span></div>';
-  if(!isNew) h+=presRiga(id);
+  if(!isNew) h+=presRiga(id)+antroRiga(id);
   // sezioni profilo (wrapper per aggiornare la guida dal vivo)
   h+='<div oninput="updateBrief(\''+id+'\')" onchange="updateBrief(\''+id+'\')">';
   /* Le otto sezioni erano tutte aperte insieme: 48 campi in una finestra sola,
@@ -6218,6 +6349,49 @@ function presRiga(aid){
     '</div>';
 }
 
+/* Peso, statura e crescita nella scheda. La velocita' di crescita si legge
+   accanto a quella delle compagne, non contro una soglia: una soglia
+   «cresce troppo» per ragazze di questa eta' non la so dare con fondamento. */
+function antroRiga(aid){
+  const bw=series(aid,"bw"), st=series(aid,"stat");
+  if(!bw.length && !st.length) return '';
+  const cr=crescita(aid);
+  const at=(S.athletes||[]).find(x=>x.id===aid);
+  const comp=(S.athletes||[]).filter(x=>at && x.team===at.team && x.id!==aid)
+    .map(x=>crescita(x.id)).filter(Boolean).map(c=>c.v);
+  const sq=comp.length>=3 ? _mediana(comp) : null;
+  const eta=ageFrom(((at||{}).profile||{}).birth);
+  let h='<div class="presriga">';
+  if(st.length){ const u=st[st.length-1];
+    h+='<div><span class="prl">Statura</span><b>'+fmtNum(u.v)+'<small> cm</small></b><small>'+fmtDate(u.d)+'</small></div>'; }
+  if(bw.length){ const u=bw[bw.length-1];
+    h+='<div><span class="prl">Peso</span><b>'+fmtNum(u.v)+'<small> kg</small></b><small>'+fmtDate(u.d)+'</small></div>'; }
+  if(cr){
+    h+='<div><span class="prl">Crescita</span><b>'+(cr.v>0?"+":"")+fmtNum(cr.v)+'<small> cm/anno</small></b>'+
+       '<small>su '+Math.round(cr.gg/30)+' mesi'+(sq!=null?' · squadra '+fmtNum(Math.round(sq*10)/10):'')+'</small></div>';
+  } else if(st.length){
+    h+='<div><span class="prl">Crescita</span><b>—</b><small>servono due misure ad almeno 6 mesi</small></div>';
+  }
+  h+='</div>';
+  /* Il messaggio scatta solo se la differenza supera l'errore: la velocita'
+     viene da due misure, e l'errore di ciascuna, diviso per gli anni, va
+     moltiplicato per 1,96·√2 come per ogni altra variazione. Senza un errore
+     misurato sulla statura, si dice che non lo si puo' dire. */
+  if(cr && eta!=null && eta<18 && sq!=null && cr.v>sq){
+    const te=(S.te||{}).stat;
+    if(isFinite(te) && te>0){
+      const err=MDC_K*(te*cr.cm/100)/(cr.gg/365.25);
+      if(cr.v-sq>err)
+        h+='<div class="fhint" style="margin-top:6px">Cresce più in fretta della squadra, oltre l\'errore della misura (±'+fmtNum(Math.round(err*10)/10)+' cm/anno). '+
+           'È la fase in cui cambiano atterraggi e lassità del ginocchio: progressioni prudenti, cura della tecnica di atterraggio.</div>';
+    } else {
+      h+='<div class="fhint" style="margin-top:6px">Sopra la mediana della squadra. Per sapere se la differenza è vera serve l\'errore della tua misura di statura: '+
+         '<span style="text-decoration:underline;cursor:pointer" onclick="openTE(\'stat\')">misuralo</span>.</div>';
+    }
+  }
+  return h;
+}
+
 /* ─── L'appello ─────────────────────────────────────────────────────────── */
 let PRES_D=null, PRES_DATA="";
 function openPres(d){
@@ -6334,7 +6508,7 @@ function cambioCalc(tid, modo, rif){
     const migl=raw*(t.dir<0?-1:1);
     const pc = pv ? migl/Math.abs(pv)*100 : null;
     let verdetto, nb=null;
-    if(INDICI[tid]) verdetto="indice";
+    if(INDICI[tid] || t.neutro) verdetto="indice";
     else if(raw===0) verdetto="uguale";
     else {
       nb=bandaRumore(t, pv);
@@ -6419,13 +6593,17 @@ function cbPanoramica(){
 function cbDettaglio(tid){
   const t=TMAP[tid], r=cambioCalc(tid, CB.modo, CB.rif);
   let h='<button class="cbback" onclick="cbSet(\'t\',null)">‹ tutti i test</button>'+
-    '<div class="cbtitle">'+(ICON[tid]||"")+' '+esc(t.name)+' <small>'+esc(t.unit)+' · '+(t.dir<0?"più basso = meglio":"più alto = meglio")+'</small></div>';
+    '<div class="cbtitle">'+(ICON[tid]||"")+' '+esc(t.name)+' <small>'+esc(t.unit)+' · '+verso(t)+'</small></div>';
   if(!r.righe.length){
     return h+'<div class="alert info"><span class="ai">📊</span><span>Nessuna atleta ha due misure da confrontare'+
       (CB.modo==="data"?' rispetto a questa data':'')+'.</span></div>';
   }
   const s=r.riepilogo;
-  if(INDICI[tid]){
+  if(t.neutro){
+    h+='<div class="alert info"><span class="ai">ⓘ</span><span>'+(t.sens
+      ? '<b>Il peso si legge, non si giudica.</b> Nessun colore e nessun verdetto. Un calo rapido in una ragazza che si allena tanto è però un segnale da non ignorare: può voler dire che mangia meno di quanto spende. Se lo vedi, parlane con lei e con la famiglia, non con la squadra.'
+      : '<b>La statura non è una prestazione.</b> Qui leggi quanto è cresciuta; la velocità di crescita sta nella scheda di ciascuna.')+'</span></div>';
+  } else if(INDICI[tid]){
     h+='<div class="alert info"><span class="ai">ⓘ</span><span>Questo è un <b>indice</b>: da 4% a 6% sarebbe «+50%», '+
        'un numero che non dice niente. Qui leggi le variazioni in punti, senza verdetto — '+
        'per dare un verdetto servirebbe l\'errore della misura in punti, che va misurato.</span></div>';
@@ -6437,7 +6615,7 @@ function cbDettaglio(tid){
   h+='<div class="cblist">';
   r.righe.forEach(x=>{
     const cls={su:"su",giu:"giu",rumore:"rum",uguale:"rum",indice:"rum"}[x.verdetto];
-    const etich={su:"migliorata",giu:"calata",rumore:"nel rumore",uguale:"uguale",indice:"in punti"}[x.verdetto];
+    const etich={su:"migliorata",giu:"calata",rumore:"nel rumore",uguale:"uguale",indice:(t.neutro?"":"in punti")}[x.verdetto];
     // giallo solo cio' che cambia la lettura del verdetto; il resto e' contesto
     const note=[];
     if(x.stima) note.push({w:1, t:x.stima==="misto" ? "una delle due è una stima" : "entrambe stime"});
@@ -6457,7 +6635,7 @@ function cbDettaglio(tid){
   h+='</div>';
   if(r.senza.length)
     h+='<div class="gnote" style="margin-top:10px">Senza confronto: '+r.senza.map(x=>esc(x.nome)).join(", ")+'.</div>';
-  if(!INDICI[tid]){
+  if(!INDICI[tid] && !t.neutro){
     const nb=bandaRumore(t, 100);
     h+='<div class="cbsoglia">'+(r.fonte==="misurata"
       ? 'Soglia: <b>±'+fmtNum(Math.round(nb.pc*10)/10)+'%</b>, la differenza minima rilevabile calcolata dal tuo errore misurato su questo test.'
@@ -6486,7 +6664,7 @@ function cbPrint(){
        '<td class="e">'+et[x.verdetto]+'</td><td class="nt">'+esc(note.join(", "))+'</td></tr>';
   });
   b+='</table>';
-  const nb=INDICI[tid]?null:bandaRumore(t,100);
+  const nb=(INDICI[tid]||t.neutro)?null:bandaRumore(t,100);
   const doc='<!doctype html><html lang="it"><head><meta charset="utf-8">'+
     '<title>Cosa è cambiato — '+esc(t.name)+'</title><style>'+
     '@page{size:A4;margin:14mm}'+
@@ -6870,7 +7048,7 @@ function openCell(aid,tid){
 function drawCell(){
   const a=S.athletes.find(x=>x.id===CUR.a), t=TMAP[CUR.t], arr=series(CUR.a,CUR.t);
   let h='<div class="mh"><div><div class="mt">'+esc(a.name)+'</div>'+
-    '<div class="ms">'+t.full+' · '+t.unit+' · '+(t.dir<0?"più basso = meglio":"più alto = meglio")+'</div></div>'+
+    '<div class="ms">'+t.full+' · '+t.unit+' · '+verso(t)+'</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
   h+='<button class="gbtn" onclick="openGuide(\''+CUR.t+'\')">📖 Come si esegue questo test</button>';
 
@@ -6906,7 +7084,9 @@ function drawCell(){
   if(t.derived){
     const fromNames=t.derived.from.map(id=>TMAP[id].name).join(" e ");
     h+='<div class="alert info"><span class="ai">⚙️</span><span>Valore <b>calcolato in automatico</b> da '+fromNames+
-       '. Non si inserisce a mano: aggiorna '+fromNames+' e l\'EUR si ricalcola da solo.</span></div>';
+       '. Non si inserisce a mano: aggiorna '+fromNames+' e questo valore si ricalcola da solo.'+
+       (t.rel?' Il peso usato è quello misurato più vicino al massimale, entro '+PESO_FINESTRA+' giorni: senza un peso vicino, il rapporto non si calcola.':'')+
+       '</span></div>';
   } else {
     /* Un massimale si puo' MISURARE o STIMARE da una serie a ripetizioni, e i
        due numeri vanno nella stessa colonna — non in due colonne diverse.
@@ -6969,7 +7149,7 @@ function drawCell(){
       if(i>0){ const raw=e.v-arr[i-1].v, imp=raw*t.dir;
         const c=imp>0?"up":imp<0?"down":"flat";
         dl='<span class="delta '+c+'" style="margin:0 8px 0 0">'+(raw>0?"▲":raw<0?"▼":"=")+' '+(raw>0?"+":"")+fmtNum(raw)+'</span>'; }
-      const pr=(arr.length>1 && e.v===best)?'<span class="star" title="Record personale">★</span> ':'';
+      const pr=(arr.length>1 && e.v===best && !t.neutro)?'<span class="star" title="Record personale">★</span> ':'';
       // Un 1RM ricavato dalla curva non e' un massimale sollevato: senza questo
       // segno, fra sei mesi non c'e' modo di distinguerli.
       const stimato=(e.fonte==="lv"||e.fonte==="reps")
@@ -8206,6 +8386,7 @@ const ICON={rm1:"🏋️",rm35:"🔢",pred:"📊",vbt:"⚡",imtp:"📌",cmj:"⬆
   shIR:"🔄",shMob:"🤸",shStab:"🛡️",ankleDF:"🦶",
   fmsSquat:"🏋️",fmsHurdle:"🚧",fmsLunge:"🤺",fmsShoulder:"🙆",fmsASLR:"🦵",fmsPushup:"🛟",fmsRotary:"🔁",fmsTotal:"🧮",
   shuttle300:"🔁",shuttleFat:"📉",wingPeak:"⚡",wingMean:"🔋",gripStr:"🤝",pullMax:"🧗",punchPow:"🥊",bodyFat:"⚖️",
+  bw:"⚖️",stat:"📏",rmSquatRel:"🏋️",rmDeadRel:"🏋️",rmBenchRel:"🏋️",rmHipRel:"🏋️",
   rmSquat:"🦵",rmBench:"🛏️",rmDead:"🪝",pushMax:"🤸",trmInc:"🏃",airBike:"🚴"};
 
 const PROTO={
@@ -8873,6 +9054,42 @@ const PROTO={
     advice:["La potenza del colpo nasce dalla catena gambe-tronco-braccio: allena forza degli arti inferiori, rotazione del tronco e trasferimento balistico.","Migliora con lavoro di forza massimale + esercizi balistici (med ball rotazionali, spinte esplosive)."],
     note:"Misura di <b>monitoraggio</b>, non un valore assoluto confrontabile con altri atleti o palestre."},
 
+  bw:{eyebrow:"Antropometria",
+    what:"<b>Peso corporeo</b>, con la data. Non è una prestazione: serve a calcolare la <b>forza relativa</b> e, letto nel tempo, a cogliere un cambiamento che va capito.",
+    alert:{type:"warn", text:"Con delle ragazze minorenni il peso è un dato delicato. Pesale <b>una alla volta, lontano dalle compagne</b>; non commentare il numero; non farne un obiettivo. L'app di proposito non lo colora, non lo mette in classifica e non lo mostra in tabella finché non lo scegli tu nella batteria. Il consenso IOC sul REDs (2023) chiede proprio questa prudenza nella valutazione del corpo."},
+    steps:[{t:"Stesso momento",d:"Sempre alla stessa ora e nella stessa situazione — per esempio prima dell'allenamento, dopo essere andate in bagno."},
+      {t:"Abiti leggeri, senza scarpe",d:"Stessa bilancia, appoggiata su un pavimento rigido."},
+      {t:"In privato",d:"Una alla volta. Il numero lo leggi tu; se lei vuole saperlo, glielo dici a parte."},
+      {t:"Registra",d:"Al decimo di chilo. Basta una volta al mese, o quando rifai i massimali."}],
+    interpret:["Il peso può oscillare di un chilo o più da un giorno all'altro (acqua, cibo, ciclo): leggi la tendenza su settimane, mai il singolo numero.",
+      "In una ragazza che cresce, il peso sale per natura: un aumento non è un problema da correggere.",
+      "Un <b>calo non programmato</b> in un'atleta che si allena molto può essere un segnale di bassa disponibilità energetica (REDs). Non è una diagnosi: è un motivo per parlarne con lei, con la famiglia e con il medico."],
+    advice:["Mai obiettivi di peso per delle minorenni, nemmeno «ragionevoli».","Se il peso cala insieme alla forza o al CMJ, o compaiono stanchezza, infortuni ripetuti o ciclo irregolare, coinvolgi il medico."],
+    note:"Riferimento: Mountjoy et al. 2023, consenso IOC sul REDs, Br J Sports Med 57:1073."},
+
+  stat:{eyebrow:"Antropometria",
+    what:"<b>Statura</b> in piedi. In una ragazza che cresce non conta tanto quanto è alta, ma <b>quanto in fretta cresce</b> (cm all'anno): dice in che fase dello sviluppo è, ed è in quella fase che cambiano tecnica d'atterraggio, lassità del ginocchio e rapporti di forza.",
+    steps:[{t:"Senza scarpe",d:"Talloni uniti contro il muro o lo stadiometro; talloni, glutei e scapole che lo toccano."},
+      {t:"Testa dritta",d:"Sguardo orizzontale, inspirazione profonda; la squadretta o il cursore si appoggia sulla testa, comprimendo i capelli."},
+      {t:"Stessa ora del giorno",d:"La statura cala nel corso della giornata, di circa un centimetro: misurarla la mattina e poi il pomeriggio fa sembrare che non sia cresciuta. Scegli un momento e tienilo."},
+      {t:"Due misure",d:"Se differiscono di più di mezzo centimetro, rifalla e registra la media. Al millimetro."}],
+    interpret:["La <b>velocità di crescita</b> compare nella scheda dell'atleta dopo almeno <b>6 mesi</b> fra due misure: su intervalli più brevi l'errore di qualche millimetro pesa più della crescita.",
+      "Nelle ragazze il picco di crescita cade di solito intorno agli 11-13 anni. A 15-17 anni molte l'hanno già superato: una velocità ancora alta indica una maturazione più tardiva delle compagne.",
+      "Durante lo scatto di crescita, studi su ragazze seguite nel tempo hanno visto aumentare la lassità anteriore del ginocchio e cambiare la tecnica d'atterraggio (Wild et al. 2013, 2016)."],
+    advice:["Se una cresce in fretta: cura gli atterraggi, progressioni di carico più prudenti, attenzione ai dolori a ginocchio e tallone tipici della crescita.","Confronta la sua velocità con quella delle compagne, non con una soglia: la scheda mostra la mediana di squadra."],
+    note:"Riferimenti: Wild et al. 2013, Med Sci Sports Exerc 45:138; Wild et al. 2016, Am J Sports Med 44:1116."},
+
+  rmSquatRel:{eyebrow:"Forza relativa",
+    what:"<b>Forza relativa</b>: il massimale diviso il peso corporeo. Risponde a «quanto è forte per il corpo che deve muovere», che in salto e cambio di direzione conta più della forza assoluta.",
+    steps:[{t:"Non si inserisce",d:"Nasce da sola dal massimale e dal peso."},
+      {t:"Pesala vicino al massimale",d:"Si usa il peso misurato più vicino, entro 90 giorni. Meglio la stessa settimana."},
+      {t:"Stime",d:"Se il massimale è stimato da ripetizioni, lo è anche il rapporto, e la cella lo dice."}],
+    interpret:["Per lei nel tempo il rapporto funziona: se sale, è più forte per il suo corpo.",
+      "Per metterla in fila con le compagne il rapporto semplice favorisce le più leggere. Per questo il pallino di squadra usa la <b>scala allometrica</b> (kg ÷ peso<sup>0,67</sup>, Jaric et al. 2005): a parità di muscolo, la forza cresce con la sezione, non con la massa.",
+      "Se il rapporto scende perché è salito il peso — normale in crescita — non è un calo di forza: guarda anche il massimale assoluto."],
+    advice:["Leggila sempre accanto al massimale e al peso, mai da sola."],
+    note:"Riferimento: Jaric, Mirkov, Markovic 2005, J Strength Cond Res 19:467. Non ho valori di riferimento affidabili per ragazze under 18: il confronto è con la squadra e con lei stessa."},
+
   bodyFat:{eyebrow:"Categorie di peso",
     what:"<b>Percentuale di massa grassa</b>. Negli sport da combattimento gli atleti gareggiano per categoria di peso: l'obiettivo è massimizzare la massa magra e minimizzare il grasso, mantenendo la performance.",
     steps:[{t:"Metodo costante",d:"Plicometria, BIA o DEXA — usa <b>sempre lo stesso metodo</b> e operatore."},
@@ -8939,6 +9156,7 @@ const PROTO={
     note:"Le air bike non sono calibrate tra loro: usa <b>sempre la stessa macchina</b>."}
 };
 
+["rmDeadRel","rmBenchRel","rmHipRel"].forEach(id=>{ PROTO[id]=PROTO.rmSquatRel; });
 const PROTO_EXTRA={
   rm1:{interpret:["Confronta nel tempo e in <b>forza relativa</b> (1RM/peso): per lo sport conta questa, non il valore assoluto.","Salti grossi nei già allenati di solito = miglior tecnica/apprendimento, non solo più forza."],
     advice:["Programma le percentuali di lavoro sul 1RM; ricontrollalo ogni 6-10 settimane, non più spesso.","Se stalla: agisci su tecnica, gestione fatica o varia lo stimolo prima di forzare il carico."]},
@@ -8998,6 +9216,7 @@ function lvTable(t){
 const EQ={
   /* liv 1 · CAMPO — roba che hai già o che costa pochi euro */
   metro:{l:"metro / rullina",           liv:1},
+  bilancia:{l:"bilancia",               liv:1},
   gesso:{l:"gesso o nastro",            liv:1},
   crono:{l:"cronometro",                liv:1},
   coni: {l:"coni",                      liv:1},
@@ -9010,6 +9229,7 @@ const EQ={
   vbt:  {l:"encoder / VBT",             liv:3},
   pedana:{l:"pedana a contatto o di forza", liv:3},
   dina: {l:"dinamometro",               liv:3},
+  plico:{l:"plicometro o impedenziometro", liv:3},
   lab:  {l:"laboratorio",               liv:3},
 };
 const LIVELLI=[
@@ -9049,7 +9269,10 @@ const TEST_EQ={
   vbt:["sala","vbt"], imtp:["dina"], gripStr:["dina"],
   nordicAng:["video"], nordicTq:["dina"],
   vo2:["lab"], wingPeak:["lab"], wingMean:["lab"], airBike:["lab"], trmInc:["lab"],
-  mas:["crono","coni"], bodyFat:["dina"],
+  // era «dinamometro»: la massa grassa si misura con plicometro o impedenziometro
+  mas:["crono","coni"], bodyFat:["plico"],
+  bw:["bilancia"], stat:["metro"],
+  rmSquatRel:["sala","bilancia"], rmDeadRel:["sala","bilancia"], rmBenchRel:["sala","bilancia"], rmHipRel:["sala","bilancia"],
 };
 function testEq(id){ const t=TMAP[id]; return TEST_EQ[id]||(t&&t.base?TEST_EQ[t.base]:null)||[]; }
 /* Il livello di un test è quello dell'attrezzatura più esigente che richiede. */
@@ -9146,6 +9369,12 @@ const USO={
   hopLSI:{s:"Simmetria nel salto orizzontale monopodalico.", u:"Usalo come criterio di rientro: sotto il 90% non aumentare il carico, sopra il 90% riprendi gradualmente."},
   nordicAng:{s:"Fin dove trattiene la discesa nel Nordic.",
              u:"Legato al rischio di infortunio agli ischiocrurali. Se cala nel tempo, aumenta il lavoro eccentrico."},
+  bw:{s:"Peso corporeo, con la data.", u:"Serve a calcolare la forza relativa e a cogliere un calo non programmato. Si legge in privato, mai come obiettivo."},
+  stat:{s:"Statura in piedi, senza scarpe, sempre alla stessa ora.", u:"Due misure ad almeno sei mesi danno la velocità di crescita: se è alta, prudenza con atterraggi e carichi."},
+  rmSquatRel:{s:"1RM squat diviso il peso corporeo.", u:"Guardala accanto al massimale: se sale il peso per la crescita, il rapporto scende senza che la forza sia calata."},
+  rmDeadRel:{s:"1RM stacco diviso il peso corporeo.", u:"Come lo squat relativo: leggila accanto al massimale assoluto."},
+  rmBenchRel:{s:"1RM panca diviso il peso corporeo.", u:"Come lo squat relativo: leggila accanto al massimale assoluto."},
+  rmHipRel:{s:"1RM hip thrust diviso il peso corporeo.", u:"Come lo squat relativo: leggila accanto al massimale assoluto."},
   bodyFat:{s:"Percentuale di massa grassa.", u:"Da guardare come tendenza, mai come obiettivo dichiarato all'atleta. Con delle under 18, cautela doppia."},
 };
 function usoOf(id){ const t=TMAP[id]; return USO[id]||(t&&t.base?USO[t.base]:null)||null; }
@@ -9362,7 +9591,8 @@ const T_TEST={ cmj:20, rsiMod:0, cmjA:90, sj:60, eur:0, cmj1lL:60, cmj1lR:60, cm
   dj:90, rsi105:90, bjump:60, spr10:60, spr30:90, cod505:90, ttest:120, mat:120, vcut:120,
   ankleDF:60, shIR:60, hipIR:60, ybtLow:180, hopLSI:120, nordicAng:120,
   rmSquat:600, rmBench:600, rmDead:600, rmBox:600, rm1:600, rm35:420, pred:300, vbt:180, imtp:180,
-  bosco30:90, bosco60:120, gripStr:30, bodyFat:120 };
+  bosco30:90, bosco60:120, gripStr:30, bodyFat:120, bw:30, stat:45,
+  rmSquatRel:0, rmDeadRel:0, rmBenchRel:0, rmHipRel:0 };
 function tierMinuti(ids, n){
   let s=0, squadra=false;
   ids.forEach(id=>{
@@ -9529,7 +9759,7 @@ function chooseTests(tid){
   const sel={}; const custom=!!(team.tests&&team.tests.length);
   const base=custom?team.tests:TESTS.filter(t=>t.sports.includes(team.sport||"generale")).map(t=>t.id);
   base.forEach(id=>sel[id]=true);
-  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Anaerobico","Asimmetria & funzionale","Mobilità & stabilità","Composizione corporea","Functional Movement Screen"];
+  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Anaerobico","Asimmetria & funzionale","Mobilità & stabilità","Composizione corporea","Antropometria","Functional Movement Screen"];
   let h='<div class="mh"><div><div class="eyebrow">Batteria della squadra</div><div class="mt">'+esc(team.name)+'</div>'+
     '<div class="ms">'+sportMeta(team.sport||"generale").label+' · '+
       (custom
@@ -9593,7 +9823,7 @@ function saveBatterySession(){
 }
 
 function guideIndex(){
-  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Anaerobico","Asimmetria & funzionale","Mobilità & stabilità","Composizione corporea","Functional Movement Screen"];
+  const cats=["Forza","Potenza","Velocità","Cambio direzione","Aerobico","Anaerobico","Asimmetria & funzionale","Mobilità & stabilità","Composizione corporea","Antropometria","Functional Movement Screen"];
   let h='<div class="mh"><div><div class="mt">Guida ai test</div>'+
     '<div class="ms">Come si eseguono · cosa misurano · a cosa servono</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div><div class="glist">';
@@ -9618,7 +9848,7 @@ function openGuide(tid){
   let h='<button class="gback" onclick="guideIndex()">‹ Tutti i test</button>';
   h+='<div class="mh"><div><div class="eyebrow">'+(p.eyebrow||t.cat)+'</div>'+
      '<div class="mt">'+(ICON[tid]||(t.base?ICON[t.base]:"")||"")+' '+t.name+'</div>'+
-     '<div class="ms">'+t.full+' · '+t.unit+' · '+(t.dir<0?"più basso = meglio":"più alto = meglio")+'</div></div>'+
+     '<div class="ms">'+t.full+' · '+t.unit+' · '+verso(t)+'</div></div>'+
      '<button class="mcl" onclick="closeM()">✕</button></div>';
   if(p.what)  h+='<div class="gsec">Cosa misura e a cosa serve</div><div class="gwhat">'+p.what+'</div>';
   if(p.alert) h+='<div class="alert '+p.alert.type+'"><span class="ai">'+(p.alert.type==="info"?"ℹ️":"⚠️")+'</span><span>'+p.alert.text+'</span></div>';
@@ -9717,7 +9947,9 @@ function teCalc(coppie){
 function openTE(tid){
   TE_T = tid || TE_T || "cmj";
   const t=TMAP[TE_T]||TMAP.cmj;
-  const lista=visibleTests().filter(x=>!x.derived);
+  let lista=visibleTests().filter(x=>!x.derived);
+  // la statura serve alla crescita anche se non e' una colonna della tabella
+  [TE_T,"stat"].forEach(id=>{ if(TMAP[id] && !TMAP[id].derived && !lista.some(x=>x.id===id)) lista=lista.concat([TMAP[id]]); });
   let h='<div class="mh"><div><div class="eyebrow">Soglie</div><div class="mt">📏 Quanto balla la tua misura</div>'+
     '<div class="ms">Sotto questa soglia una variazione non è un progresso</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';

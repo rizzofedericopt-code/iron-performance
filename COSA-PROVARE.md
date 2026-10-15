@@ -69,6 +69,21 @@ Barra in basso → **My Jump**.
 - [ ] Se esporti il CSV da My Jump: *📲 Importa CSV* → le altezze vanno in tabella
       e le righe intere, con tutte le colonne, nell'archivio.
 
+## PDF dei test
+
+Matrice → **📄 PDF**.
+
+- [ ] *Tabella della squadra* → *Crea il PDF* → nella finestra di stampa scegli
+      **Salva come PDF** (sul telefono: Condividi/Stampa → Salva in File).
+      → A4 orizzontale; se i test sono più di 8 continua in una seconda pagina con i nomi
+      ripetuti. Sotto ogni numero la data e, se c'è una misura precedente, di quanto è
+      cambiato e se è «migliorata», «calata» o «stabile».
+- [ ] Controlla che **non ci sia il peso** e che l'ordine sia **alfabetico**.
+      Spunta «peso» o «ordine della tabella» solo se lo vuoi davvero.
+- [ ] *Una pagina per atleta* → un PDF con una pagina a testa.
+      → È questo che manderei alle ragazze: ognuna vede i suoi numeri, non quelli delle altre.
+- [ ] Le stime (xRM→1RM) hanno «≈» davanti, anche nel PDF.
+
 ## Una volta a settimana
 
 - [ ] **Da misurare** in Oggi — controlla che i test segnalati siano davvero quelli

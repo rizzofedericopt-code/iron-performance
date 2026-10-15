@@ -3290,6 +3290,7 @@ function renderBar(){
   } else if(S.view==="mj"){
     h+='<div class="barhint">archivio My Jump: ogni salto, ogni numero</div>';
   } else {
+    h+='<button class="btn sm" onclick="openTabPdf()" title="La tabella in PDF, da far vedere o da mandare">📄 PDF</button>';
     h+='<div class="leg"><span class="it"><span class="dot" style="background:var(--up)"></span>Migliora</span>'+
        '<span class="it"><span class="dot" style="background:var(--down)"></span>Peggiora</span>'+
        '<span class="it"><span class="dot" style="background:var(--flat)"></span>Uguale</span></div>'+
@@ -7990,6 +7991,108 @@ function openGare(){
   h+='<div class="psec">Prossime ('+fut.length+')</div>'+(fut.length?fut.map(x=>riga(x.g,x.i)).join(""):'<div class="fhint">Nessuna gara in calendario.</div>');
   if(pas.length) h+='<details class="prommai"><summary>Ultime giocate</summary>'+pas.map(x=>riga(x.g,x.i)).join("")+'</details>';
   modal(h);
+}
+
+/* ═══════════════ PDF DELLA TABELLA ═══════════════════════════════════════════
+   Il foglio da far vedere alle ragazze o da mandare. Esce dalla stampa del
+   browser («Salva come PDF»): niente librerie, niente file sul server.
+
+   Cosa NON ci va, mai: infortuni e flag clinici, «scheda nuova», sesso, note.
+   Cosa ci va solo se lo scegli: il peso (un foglio con il peso di tutte in un
+   gruppo di sedicenni e' l'ultima cosa che serve) e l'ordine per prestazione
+   (di default alfabetico: una tabella ordinata dal migliore e' una classifica).
+   La variazione usa il verdetto del report: «stabile» quando sta dentro
+   l'errore della misura, cosi' nessuna legge un +0,4 come un progresso.    */
+const PDF_COL_MAX=8;           // colonne per pezzo: oltre, su A4 orizzontale non si legge piu'
+function tabPdfDati(opz){
+  opz=opz||{};
+  const tests=visibleTests().filter(t=>!t.sens || opz.peso);
+  let ath=(opz.ordine==="tabella" ? atleteOrdinate() : (teamAthletes()||[]).slice()
+    .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"it")));
+  // solo i test con almeno un dato: una colonna vuota su carta e' spazio buttato
+  const usati=tests.filter(t=>ath.some(a=>series(a.id,t.id).length));
+  return {tests:usati, ath:ath};
+}
+function tabPdfCella(t, a, opz){
+  const arr=series(a.id,t.id); if(!arr.length) return '<td class="vuota">—</td>';
+  const u=arr[arr.length-1];
+  const stima=STIMA_FONTI[u.fonte] ? '<small class="st">≈</small>' : '';
+  let h='<td><b>'+stima+fmtNum(u.v)+'</b>';
+  if(opz.date!==false) h+='<small>'+fmtDate(u.d)+'</small>';
+  if(opz.variazione!==false && arr.length>=2){
+    const v=cambioVerdetto(t, arr[arr.length-2], u);
+    const lab={su:"migliorata", giu:"calata", rumore:"stabile", uguale:"uguale", indice:""}[v.verdetto];
+    h+='<small class="var '+v.verdetto+'">'+(v.raw>0?"+":"")+fmtNum(Math.round(v.raw*100)/100)+(lab?' · '+lab:'')+'</small>';
+  }
+  return h+'</td>';
+}
+function tabPdfHtml(opz){
+  opz=opz||{};
+  const D=tabPdfDati(opz);
+  const tm=(S.teams||[]).find(x=>x.id===S.activeTeam);
+  const sq=S.activeTeam==="all" ? "Tutte le squadre" : (tm?tm.name:"Senza squadra");
+  let b='<div class="br">IRON PERFORMANCE</div><h1>Test — '+esc(sq)+'</h1>'+
+    '<p class="sub">'+D.ath.length+' atlete · '+fmtDate(todayISO())+(opz.ordine==="tabella"?'':' · in ordine alfabetico')+'</p>';
+  if(!D.tests.length) return b+'<p>Nessuna misura da mostrare.</p>';
+  for(let i=0;i<D.tests.length;i+=PDF_COL_MAX){
+    const pezzo=D.tests.slice(i,i+PDF_COL_MAX);
+    b+='<table><thead><tr><th class="n">Atleta</th>'+pezzo.map(t=>'<th>'+esc(t.name)+'<small>'+esc(t.unit)+' '+versoFr(t)+'</small></th>').join("")+'</tr></thead><tbody>';
+    D.ath.forEach(a=>{ b+='<tr><td class="n">'+esc(a.name)+'</td>'+pezzo.map(t=>tabPdfCella(t,a,opz)).join("")+'</tr>'; });
+    b+='</tbody></table>';
+  }
+  b+='<p class="note">'+(opz.variazione!==false?'La variazione è rispetto al test precedente. «Stabile» vuol dire che sta dentro l\'errore della misura: con questo strumento non si può dire che sia cambiato qualcosa. ':'')+
+     '≈ = valore stimato (da ripetizioni o da curva carico-velocità), non sollevato. ↑ più alto è meglio, ↓ più basso è meglio.</p>';
+  return b;
+}
+const TAB_PDF_CSS='@page{size:A4 landscape;margin:10mm}'+
+  'body{font:10.5px/1.35 -apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:0}'+
+  '.br{font-size:9px;letter-spacing:2px;color:#C81E2D;font-weight:700}'+
+  'h1{font-size:17px;margin:2px 0}.sub{color:#555;font-size:10px;margin:0 0 8px}'+
+  'table{width:100%;border-collapse:collapse;margin-bottom:12px;break-inside:auto}tr{break-inside:avoid}thead{display:table-header-group}'+
+  'th{text-align:left;font-size:9.5px;color:#333;border-bottom:1.5px solid #111;padding:4px 5px;vertical-align:bottom}'+
+  'th small{display:block;font-weight:400;color:#777;font-size:8.5px}'+
+  'td{padding:4px 5px;border-bottom:1px solid #e3e3e3;vertical-align:top}'+
+  'td.n,th.n{font-weight:700;width:16%}td b{font-size:12px}td small{display:block;color:#777;font-size:8.5px}'+
+  'td.vuota{color:#bbb}small.st{display:inline;color:#8a5a00;font-size:11px;margin-right:1px}'+
+  'small.var.su{color:#1E8E3E;font-weight:700}small.var.giu{color:#C81E2D;font-weight:700}'+
+  '.note{font-size:8.5px;color:#666;border-top:1px solid #eee;padding-top:5px}'+
+  '.pagina{break-after:page}.pagina:last-child{break-after:auto}';
+function profiliPdfHtml(opz){
+  const ath=(teamAthletes()||[]).slice().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"it"));
+  return ath.map(a=>'<div class="pagina">'+profiloHtml(a.id, opz||{})+'</div>').join("");
+}
+let TPDF={cosa:"tabella", variazione:true, date:true, ordine:"alfa", peso:false};
+function openTabPdf(){
+  if(!(teamAthletes()||[]).length){ toast("Nessun atleta in questa squadra"); return; }
+  const pesoVisibile=visibleTests().some(t=>t.sens);
+  const chk=(k,l,sub)=>'<label class="tchk"><input type="checkbox"'+(TPDF[k]?" checked":"")+' onchange="TPDF.'+k+'=this.checked"><span>'+l+(sub?' <i>'+sub+'</i>':'')+'</span></label>';
+  modal('<div class="mh"><div><div class="eyebrow">Da far vedere o da mandare</div><div class="mt">📄 PDF dei test</div>'+
+    '<div class="ms">Si apre la stampa: scegli «Salva come PDF»</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="seg" style="display:flex;width:100%;margin-bottom:12px">'+
+      '<button style="flex:1" class="'+(TPDF.cosa==="tabella"?"on":"")+'" onclick="TPDF.cosa=\'tabella\';openTabPdf()">Tabella della squadra</button>'+
+      '<button style="flex:1" class="'+(TPDF.cosa==="profili"?"on":"")+'" onclick="TPDF.cosa=\'profili\';openTabPdf()">Una pagina per atleta</button></div>'+
+    (TPDF.cosa==="tabella"
+      ? chk("variazione","Variazione dalla volta prima","con «stabile» quando sta nell'errore")+
+        chk("date","Data di ogni misura")+
+        '<label class="tchk"><input type="checkbox"'+(TPDF.ordine==="tabella"?" checked":"")+' onchange="TPDF.ordine=this.checked?\'tabella\':\'alfa\'"><span>Nell\'ordine della tabella <i>(di default alfabetico: ordinata per risultato è una classifica)</i></span></label>'+
+        (pesoVisibile?chk("peso","Includi il peso","sconsigliato su un foglio di squadra"):'')+
+        '<div class="alert info"><span class="ai">🔒</span><span>Nel foglio non ci sono mai infortuni, note o dati della scheda. '+
+        'Se lo mandi nel gruppo, ogni ragazza vede i risultati di tutte: per le minorenni, meglio <b>una pagina per atleta</b> mandata a ciascuna.</span></div>'
+      : '<div class="fhint">Il profilo prestazioni di ciascuna, una per pagina, in ordine alfabetico: solo prestazioni, niente dati sanitari, niente posizione fra le compagne. '+
+        'Dal PDF puoi mandare a ogni ragazza la sua pagina.</div>')+
+    '<button class="btn primary" style="width:100%;margin-top:12px" onclick="tabPdfStampa()">Crea il PDF</button>'+
+    '<div class="gnote">Sul telefono: nella stampa allarga l\'anteprima con due dita, poi <b>Condividi</b> → salva o manda. Sul computer: destinazione «Salva come PDF».</div>');
+}
+function tabPdfStampa(){
+  const tm=(S.teams||[]).find(x=>x.id===S.activeTeam);
+  const titolo=(TPDF.cosa==="tabella"?"Test ":"Profili ")+((tm&&tm.name)||"squadra")+" "+fmtDate(todayISO()).replace(/\//g,"-");
+  const corpo = TPDF.cosa==="tabella" ? tabPdfHtml(TPDF) : profiliPdfHtml({});
+  const css = TPDF.cosa==="tabella" ? TAB_PDF_CSS : PROF_CSS+'.pagina{break-after:page}.pagina:last-child{break-after:auto}';
+  const doc='<!doctype html><html lang="it"><head><meta charset="utf-8"><title>'+esc(titolo)+'</title><style>'+css+'</style></head><body>'+corpo+'</body></html>';
+  const w=window.open("", "_blank");
+  if(!w){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
+  w.document.write(doc); w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 400);
 }
 
 function renderToday(){

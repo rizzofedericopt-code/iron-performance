@@ -13,7 +13,7 @@ e non manda niente online. Alla fine c'è il file `aggiorna-log.txt`: se qualcos
 non torna, dimmelo e lo leggo io.
 
 **Strada GitHub Desktop**, se preferisci:
-- Summary: `Ottobre 2026: presenze, report, peso e statura, seduta, gruppi a mano, promemoria, profilo, ruoli, gare`
+- Summary: `PDF dei test: tabella della squadra o una pagina per atleta`
 - **Commit to main**, poi **Push origin**.
 
 Aspetta due minuti: Vercel pubblica da solo.

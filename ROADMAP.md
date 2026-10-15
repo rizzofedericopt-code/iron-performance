@@ -281,6 +281,13 @@ Controlli: un salto a zero non entra; altezza, tempo di volo e velocità di deco
 devono tornare fra loro (h = g·t²/8). Nella colonna CMJ va il migliore del giorno.
 Nessun colore: sono calcoli sullo stesso salto, il verdetto resta nella colonna CMJ.
 
+**PDF dei test** (Matrice → 📄 PDF) — due fogli: la tabella della squadra (A4
+orizzontale, 8 test per pagina, nomi ripetuti) o una pagina per atleta (il profilo).
+Per ogni valore: data, «≈» se è una stima, variazione con lo stesso verdetto del
+report (migliorata / calata / stabile, cioè entro l'errore della misura). Di serie:
+ordine alfabetico, niente peso, niente dati sanitari; l'ordine della tabella e il peso
+solo se li scegli. Si salva con «Salva come PDF» della stampa.
+
 **Promemoria** (Oggi → Da misurare) — test scaduti rispetto alla frequenza della
 batteria dello sport, chi manca dall'ultima sessione, test in batteria mai usati.
 

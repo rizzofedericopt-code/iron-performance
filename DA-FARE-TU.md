@@ -13,7 +13,7 @@ e non manda niente online. Alla fine c'è il file `aggiorna-log.txt`: se qualcos
 non torna, dimmelo e lo leggo io.
 
 **Strada GitHub Desktop**, se preferisci:
-- Summary: `Backup automatico: copie sul server per 30 giorni e file sul PC`
+- Summary: `Piano: esercizi liberi senza massimale, a ripetizioni o a tempo`
 - **Commit to main**, poi **Push origin**.
 
 Aspetta due minuti: Vercel pubblica da solo.

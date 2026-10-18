@@ -309,6 +309,10 @@ oltre 10 ripetizioni equivalenti, regola pratica di 2,5 punti per punto di RPE; 
 di 5 punti, arrotondato a 2,5, applicato solo da te. Per settimana: intensità media,
 ripetizioni e tonnellaggio a testa, RPE contro previsto, presenze, gare. «🏋️ Scheda»
 porta la seduta della settimana nella scheda di seduta; si stampa il blocco intero.
+*Esercizi liberi*: qualunque esercizio senza massimale (serie×rip o serie×secondi,
+carico facoltativo uguale per tutte, RIR, RPE per atleta, suggerimento in kg col
+tetto del 10%); vivono solo nel piano. Un suggerimento applicato ricorda il valore di
+partenza: prima si ricalcolava su sé stesso e chiedeva di salire all'infinito.
 
 **Promemoria** (Oggi → Da misurare) — test scaduti rispetto alla frequenza della
 batteria dello sport, chi manca dall'ultima sessione, test in batteria mai usati.

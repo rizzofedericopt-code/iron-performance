@@ -326,5 +326,191 @@ prova("il banner in Oggi compare solo durante il blocco", () => {
   run(`todayISO=()=>isoLoc(new Date())`);
 });
 
+
+// ── esercizi liberi ──────────────────────────────────────────────────────
+const conLiberi = () => blocco({
+  sedute:[{id:"sA",nome:"A",acc:"",ex:[{t:"rmSquat",mode:"media"},{t:"xAff1",nome:"Affondi bulgari",libero:true},{t:"xPlk1",nome:"Plank",libero:true}]},
+          {id:"sB",nome:"B",acc:"",ex:[{t:"xNor1",nome:"Nordic",libero:true}]}],
+  sett:[{p:{"sA:rmSquat":{pct:70,sr:"4×6",rir:3},"sA:xAff1":{sr:"3×8",rir:2,kg:10},"sA:xPlk1":{sr:"3×1",rir:2,kg:null},"sB:xNor1":{sr:"3×5",rir:2,kg:null}}}]});
+
+prova("liberi: si legge la prescrizione, anche quella di default", () => {
+  squadra(); conLiberi();
+  const l = j(`pianoLiberi(S.piani.t1[0],0,S.piani.t1[0].sedute[0])`);
+  assert.deepEqual(l.map(e => e.nome), ["Affondi bulgari","Plank"]);
+  assert.equal(l[0].kg, 10);
+  assert.equal(l[1].kg, null);
+  assert.deepEqual(j(`pianoPx(S.piani.t1[0],0,"sA","xNuovo")`), {sr:"3×10", rir:2, kg:null});
+  // non finiscono nel calcolo dei gruppi (non hanno massimale)
+  assert.deepEqual(j(`pianoEx(S.piani.t1[0],0,S.piani.t1[0].sedute[0])`).map(e => e.t), ["rmSquat"]);
+});
+
+prova("liberi: carico a mano, vuoto = corpo libero, valori assurdi no", () => {
+  squadra(); conLiberi();
+  run(`pianoPxSet(0,"sA","xAff1","kg","12,5")`);
+  assert.equal(run(`pianoPx(S.piani.t1[0],0,"sA","xAff1").kg`), 12.5);
+  run(`pianoPxSet(0,"sA","xAff1","kg","")`);
+  assert.equal(run(`pianoPx(S.piani.t1[0],0,"sA","xAff1").kg`), null);
+  run(`pianoPxSet(0,"sA","xAff1","kg","900")`);
+  assert.equal(run(`pianoPx(S.piani.t1[0],0,"sA","xAff1").kg`), null);
+});
+
+prova("liberi: suggerimento in kg con lo stesso conto, mai oltre il 10%", () => {
+  // 3×8 con 10 kg, RIR previsto 2, RPE 7 → RIR 3: 8+3=11 > 10 → regola pratica +3,5%
+  const r = j(`pianoSuggKg(10,"3×8",2,7,null)`);
+  assert.equal(r.metodo, "regola");
+  assert.equal(r.kg, 10.5);
+  // 3×5 con 20 kg, RIR 2, RPE 7: formule
+  const f = j(`pianoSuggKg(20,"3×5",2,7,null)`);
+  const atteso = run(`Math.round(20*Math.min(1.1,rmFactor(8)/rmFactor(7))*2)/2`);
+  assert.equal(f.metodo, "formule"); assert.equal(f.kg, atteso);
+  // la settimana dopo come l'hai scritta: e' la base
+  assert.equal(j(`pianoSuggKg(20,"3×5",2,8,22.5)`).kg, 22.5);
+  // tetto
+  assert.ok(j(`pianoSuggKg(20,"5×3",0,4,null)`).kg <= 22);
+  assert.ok(j(`pianoSuggKg(20,"5×3",4,10,null)`).kg >= 18);
+});
+
+prova("liberi a corpo libero: si dice solo da che parte andare", () => {
+  const s = j(`pianoSuggKg(null,"3×5",2,6,null)`);
+  assert.equal(s.kg, null); assert.equal(s.diff, 2);
+  squadra(); conLiberi();
+  run(`pianoSetRpe(0,"sB","xNor1","a1",6); pianoSetRpe(0,"sB","xNor1","a2",6)`);
+  const h = run(`(function(){ const b=S.piani.t1[0], sed=b.sedute[1]; return pianoLibSugHtml(b,0,6,sed,pianoLiberi(b,0,sed)[0]); })()`);
+  assert.match(h, /più facile del previsto/);
+  assert.doesNotMatch(h, /Applica/);
+});
+
+prova("liberi: l'RPE congela il carico previsto; cambiarlo dopo non riscrive", () => {
+  squadra(); conLiberi();
+  run(`pianoSetRpe(0,"sA","xAff1","a3",8)`);
+  assert.equal(run(`S.piani.t1[0].kg["0:sA:xAff1"].a3`), 10);
+  run(`pianoPxSet(0,"sA","xAff1","kg","14")`);
+  assert.equal(run(`S.piani.t1[0].kg["0:sA:xAff1"].a3`), 10);
+  run(`pianoSetRpe(0,"sA","xPlk1","a3",7)`);
+  assert.equal(run(`S.piani.t1[0].kg["0:sA:xPlk1"].a3`), undefined, "a corpo libero niente kg");
+});
+
+prova("liberi: entrano nei numeri della settimana, per tutte", () => {
+  squadra(); conLiberi();
+  const s = j(`pianoSettStat(S.piani.t1[0],0)`);
+  // squat 4×6=24 + affondi 3×8=24 + plank 3×1=3 + nordic 3×5=15 = 66 a testa
+  assert.equal(s.rip, 66);
+  assert.ok(Math.abs(s.intens - 70) < 1e-9, "l'intensità resta quella dei massimali");
+  // tonnellaggio: squat (carico del gruppo) + affondi 24×10
+  const soloSquat = j(`(function(){ const b=JSON.parse(JSON.stringify(S.piani.t1[0])); b.sedute[0].ex=b.sedute[0].ex.slice(0,1); b.sedute=b.sedute.slice(0,1); return pianoSettStat(b,0).ton; })()`);
+  assert.equal(s.ton, soloSquat + 240);
+});
+
+prova("liberi: l'RPE si segna per tutte la squadra, anche senza massimali", () => {
+  squadra(); conLiberi();
+  run(`S.data.a6={}; S.athletes.push({id:"a6",name:"Nuova",team:"t1"}); openPianoRpe(0,"sB","xNor1");`);
+  const h = run(`document.getElementById("prBody").innerHTML`);
+  ["Sara","Giulia","Marta","Elena","Chiara","Anna","Nuova"].forEach(n => assert.ok(h.includes(n), n + " manca"));
+});
+
+prova("liberi nella scheda di seduta: vanno sotto «Poi»; seduta senza massimali non si apre", () => {
+  squadra(); conLiberi();
+  run(`openSeduta=function(){ APERTA=true }; var APERTA=false; pianoApriScheda(0,"sA")`);
+  const c = j(`S.sedute.t1`);
+  assert.deepEqual(c.ex.map(e => e.t), ["rmSquat"]);
+  assert.match(c.altro, /Affondi bulgari — 3×8 · 10 kg · RIR 2/);
+  assert.match(c.altro, /Plank — 3×1 · corpo libero/);
+  run(`APERTA=false; pianoApriScheda(0,"sB")`);
+  assert.equal(run(`APERTA`), false);
+  assert.match(run(`LASTT`), /non ha esercizi con massimale/);
+  // la scheda li conserva nel ripristino
+  assert.match(j(`sanitizeImport(JSON.parse(JSON.stringify(S))).sedute.t1.altro`), /Affondi/);
+});
+
+prova("liberi: il blocco si crea anche senza nessun massimale", () => {
+  squadra();
+  run(`S.data={}; S.piani={}; PF=null; openPianoForm()`);
+  const pf = j(`PF`);
+  assert.equal(pf.sedute[0].ex.length, 1);
+  assert.equal(pf.sedute[0].ex[0].libero, true);
+  run(`pfSalva()`);
+  assert.match(run(`LASTT`), /senza nome/, "un libero senza nome non si salva");
+  run(`PF.sedute[0].ex[0].nome="  Affondi  "; pfSalva()`);
+  assert.equal(run(`S.piani.t1[0].sedute[0].ex[0].nome`), "Affondi");
+  assert.deepEqual(j(`pianoNomiLiberi()`), ["Affondi"]);
+});
+
+prova("liberi: backup e ripristino; id e nomi controllati", () => {
+  squadra(); conLiberi();
+  run(`pianoSetRpe(0,"sA","xAff1","a1",8)`);
+  const prima = j(`S.piani.t1[0]`);
+  assert.deepEqual(j(`sanitizeImport(JSON.parse(JSON.stringify(S))).piani.t1[0]`), prima);
+  run(`S.piani.t1[0].sedute[0].ex.push({t:"x<img>",nome:"x",libero:true},{t:"xVuoto",nome:"   ",libero:true})`);
+  const dopo = j(`sanitizeImport(JSON.parse(JSON.stringify(S))).piani.t1[0].sedute[0].ex`);
+  assert.equal(dopo.length, 3);
+});
+
+prova("liberi: la vista e la stampa li mostrano", () => {
+  squadra(); conLiberi();
+  run(`renderPiano()`);
+  const h = run(`document.getElementById("grid").innerHTML`);
+  assert.match(h, /Affondi bulgari/); assert.match(h, /Nordic/); assert.match(h, /libero/);
+});
+
+prova("applicare un suggerimento non lo fa ricalcolare all'infinito", () => {
+  squadra(); blocco();
+  ["a1","a2","a3","a4","a5","a6"].forEach(a => run(`pianoSetRpe(0,"sA","rmDead","${a}",6)`));   // 3×5 RIR 3 → RPE 7 previsto, 6 = piu' facile
+  const html = () => run(`(function(){ const b=S.piani.t1[0], sed=b.sedute[0], r=pianoCalc(b,0,sed); return pianoSugHtml(b,0,6,sed,r,1); })()`);
+  const m = html().match(/<b>([\d.]+)%<\/b> invece di 70%/);
+  assert.ok(m, html());
+  const sugg = +m[1];
+  run(`pianoApplica(1,"sA","rmDead",${sugg},6)`);
+  assert.equal(run(`pianoPx(S.piani.t1[0],1,"sA","rmDead").pct`), sugg);
+  const dopo = html();
+  assert.match(dopo, /già adattata dall'RPE: da 70% a <b>/);
+  assert.doesNotMatch(dopo, /Applica/);
+  // se l'RPE cambia, il nuovo suggerimento parte ancora da 70, non da quello applicato
+  ["a1","a2","a3","a4","a5","a6"].forEach(a => run(`pianoSetRpe(0,"sA","rmDead","${a}",7)`));
+  assert.match(html(), /in linea con il previsto → settimana 2: <b>70%<\/b>/);
+  // un carico cambiato a mano toglie il segno
+  run(`pianoPxSet(1,"sA","rmDead","pct",80)`);
+  assert.equal(run(`pianoPx(S.piani.t1[0],1,"sA","rmDead").adj`), undefined);
+});
+
+prova("il segno «adattata» di una settimana non vale per quelle che la ereditano", () => {
+  squadra(); blocco();
+  run(`S.piani.t1[0].sett[1]={p:{"sA:rmDead":{pct:72.5,sr:"3×5",rir:3,adj:{w:1,da:70,rpe:6}}}}`);
+  assert.equal(run(`pianoBase(pianoPx(S.piani.t1[0],2,"sA","rmDead"),2,"pct")`), 72.5);
+  assert.equal(run(`pianoBase(pianoPx(S.piani.t1[0],1,"sA","rmDead"),1,"pct")`), 70);
+});
+
+prova("liberi: anche col carico in kg il suggerimento applicato non si somma", () => {
+  squadra(); conLiberi();
+  ["a1","a2","a3"].forEach(a => run(`pianoSetRpe(0,"sA","xAff1","${a}",6)`));
+  const html = () => run(`(function(){ const b=S.piani.t1[0], sed=b.sedute[0]; return pianoLibSugHtml(b,0,6,sed,pianoLiberi(b,0,sed)[0]); })()`);
+  const kg = +html().match(/<b>([\d.]+) kg<\/b> invece di 10/)[1];
+  run(`pianoApplicaKg(1,"sA","xAff1",${kg},6)`);
+  assert.match(html(), /già adattata dall'RPE: da 10 a <b>/);
+  assert.doesNotMatch(html(), /Applica/);
+});
+
+prova("liberi a tempo: 3×30s si scrive, non conta come ripetizioni, il consiglio e' in secondi", () => {
+  squadra(); conLiberi();
+  run(`pianoPxSet(0,"sA","xPlk1","sr","3×30s")`);
+  assert.equal(run(`pianoPx(S.piani.t1[0],0,"sA","xPlk1").sr`), "3×30s");
+  run(`pianoPxSet(0,"sA","rmSquat","sr","3×30s")`);
+  assert.equal(run(`pianoPx(S.piani.t1[0],0,"sA","rmSquat").sr`), "4×6", "un massimale non va a tempo");
+  const s = j(`pianoSettStat(S.piani.t1[0],0)`);
+  assert.equal(s.rip, 24 + 24 + 15, "il plank non conta come ripetizioni");
+  run(`pianoSetRpe(0,"sA","xPlk1","a1",5.5)`);
+  const h = run(`(function(){ const b=S.piani.t1[0], sed=b.sedute[0]; return pianoLibSugHtml(b,0,6,sed,pianoLiberi(b,0,sed)[1]); })()`);
+  assert.match(h, /secondi in più/);
+  const back = j(`sanitizeImport(JSON.parse(JSON.stringify(S))).piani.t1[0].sett[0].p["sA:xPlk1"].sr`);
+  assert.equal(back, "3×30s");
+});
+
+prova("ripristino: il segno «adattata» torna, se e' sensato", () => {
+  squadra(); blocco();
+  run(`S.piani.t1[0].sett[1]={p:{"sA:rmDead":{pct:72.5,sr:"3×5",rir:3,adj:{w:1,da:70,rpe:6}},"sA:rmSquat":{pct:72.5,sr:"4×6",rir:3,adj:{w:"<x>",da:-1}}}}`);
+  const p = j(`sanitizeImport(JSON.parse(JSON.stringify(S))).piani.t1[0].sett[1].p`);
+  assert.deepEqual(p["sA:rmDead"].adj, {w:1, da:70, rpe:6});
+  assert.equal(p["sA:rmSquat"].adj, undefined);
+});
+
 console.log(failed ? "\n" + failed + " falliti" : "\nTutti i test passati");
 process.exit(failed ? 1 : 0);

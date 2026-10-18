@@ -83,11 +83,11 @@ const PIENO = `{
   pres:{a1:[{d:"2026-10-01",s:"p"},{d:"2026-10-03",s:"r"}], a2:[{d:"2026-10-01",s:"a"}]},
   mjl:{a1:[{d:"2026-10-01",exercise:"CMJ#1",tipo:"CMJ",m:{h:32,Prel:26.8,x_altro:3}}]},
   gruppi:{"rmSquat@t1":{d:"2026-10-01",g:[["a1","a2"]],x:[{kg:50,pct:75,nota:"occhio",nome:"Rientri",pg:70,sr:"3×8",ind:{a1:{kg:40,pct:70,nota:"schiena"}}}]}},
-  sedute:{t1:{ex:[{t:"rmSquat",pct:75,sr:"4×5",mode:"min"}],rif:"rmSquat",size:3}},
+  sedute:{t1:{ex:[{t:"rmSquat",pct:75,sr:"4×5",mode:"min"}],rif:"rmSquat",size:3,altro:"Affondi — 3×8"}},
   gare:{t1:[{d:"2026-11-02",avv:"Rossi",casa:true}]},
   piani:{t1:[{id:"b1",nome:"Forza",da:"2026-10-05",a:"2026-11-15",rif:"rmSquat",size:3,
-    sedute:[{id:"sA",nome:"A",acc:"core",ex:[{t:"rmSquat",mode:"min"}]}],
-    sett:[{fase:"accumulo",p:{"sA:rmSquat":{pct:72.5,sr:"4×6",rir:3}}}],
+    sedute:[{id:"sA",nome:"A",acc:"core",ex:[{t:"rmSquat",mode:"min"},{t:"xAff1",nome:"Affondi",libero:true}]}],
+    sett:[{fase:"accumulo",p:{"sA:rmSquat":{pct:72.5,sr:"4×6",rir:3},"sA:xAff1":{sr:"3×8",rir:2,kg:12}}}],
     rpe:{"0:sA:rmSquat":{a1:8,a2:7}}, kg:{"0:sA:rmSquat":{a1:57.5,a2:50}}}]},
   custom:[{id:"cx1",name:"Leg press",unit:"kg",base:"pred"}],
   te:{cmj:3.1, stat:0.3},
@@ -113,11 +113,11 @@ const CHIAVI = {
   mjl:     o => o.mjl.a1[0].m.Prel === 26.8 && o.mjl.a1[0].m.x_altro === 3 && o.mjl.a1[0].tipo === "CMJ",
   gruppi:  o => { const x=o.gruppi["rmSquat@t1"].x[0]; return x.nota === "occhio" && x.kg === 50 && x.nome === "Rientri" &&
                   x.pg === 70 && x.sr === "3×8" && x.ind.a1.kg === 40 && x.ind.a1.nota === "schiena"; },
-  sedute:  o => o.sedute.t1.ex[0].mode === "min" && o.sedute.t1.rif === "rmSquat",
+  sedute:  o => o.sedute.t1.ex[0].mode === "min" && o.sedute.t1.rif === "rmSquat" && o.sedute.t1.altro === "Affondi — 3×8",
   gare:    o => o.gare.t1[0].avv === "Rossi" && o.gare.t1[0].casa === true,
   piani:   o => { const b=o.piani.t1[0]; return b.nome === "Forza" && b.sedute[0].acc === "core" && b.sedute[0].ex[0].mode === "min" &&
                   b.sett[0].fase === "accumulo" && b.sett[0].p["sA:rmSquat"].pct === 72.5 && b.rpe["0:sA:rmSquat"].a1 === 8 &&
-                  b.kg["0:sA:rmSquat"].a1 === 57.5; },
+                  b.kg["0:sA:rmSquat"].a1 === 57.5 && b.sedute[0].ex[1].nome === "Affondi" && b.sett[0].p["sA:xAff1"].kg === 12; },
   custom:  o => o.custom[0].name === "Leg press",
   te:      o => o.te.cmj === 3.1 && o.te.stat === 0.3,
   cfg:     o => o.cfg.deltaNoise === 5,

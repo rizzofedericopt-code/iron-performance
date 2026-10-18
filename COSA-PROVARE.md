@@ -91,6 +91,9 @@ Barra in basso → **Piano** (con la squadra selezionata).
 - [ ] *+ Crea il blocco*: nome, inizio, data del prossimo test. Le sedute della settimana
       (*+ seduta* per B, C…), gli esercizi di ognuna e una riga per il resto (accessori, core).
       → Dice quante settimane e quante gare ci sono nel mezzo.
+- [ ] *+ esercizio libero*: scrivi il nome (affondi, nordic, plank…). Non serve un massimale.
+      → Nel piano ha serie×rip, un carico in kg (vuoto = corpo libero) e il RIR. A tempo
+      si scrive `3×30s`. Il nome lo ritrovi suggerito nei blocchi dopo.
 - [ ] Settimana 1: scrivi %, serie×rip e RIR di ogni esercizio.
       → Sotto, i kg per gruppo; in alto intensità media, ripetizioni e tonnellaggio a testa.
 - [ ] Passa alla settimana 3: ha gli stessi numeri della 1 (eredita). Cambiala: le settimane
@@ -99,8 +102,12 @@ Barra in basso → **Piano** (con la squadra selezionata).
       → Torna al piano: RPE medio, e per la settimana dopo «più facile/più duro del previsto
       → X% invece di Y%». *Applica* se sei d'accordo. Se è «regola pratica», le ripetizioni
       sono troppe per le formule: prendila come indicazione grossolana.
+      Dopo *Applica* deve dire «già adattata dall'RPE» e **non** proporre di salire ancora.
+      Su un esercizio libero col carico, il suggerimento è in kg; a corpo libero o a tempo
+      dice solo da che parte andare.
 - [ ] **🏋️ Scheda** su una seduta → si apre la scheda di seduta con le % di quella settimana,
-      l'appello di oggi e la stampa.
+      l'appello di oggi e la stampa. Gli esercizi liberi sono sotto «Poi», anche in stampa.
+      Una seduta con soli esercizi liberi si stampa dal piano (🖨).
 - [ ] In fondo, **Andamento del blocco**: una riga per settimana. Tocca una riga per aprirla.
 - [ ] In **Oggi** compare «S2/6 · test il …»: tocca e sei nel piano.
 - [ ] *🖨 Stampa*: tutto il blocco su un foglio, da appendere in palestra.

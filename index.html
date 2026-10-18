@@ -30,6 +30,12 @@ body{display:flex;flex-direction:column;font-size:14px;line-height:1.4}
 .brand .logo{height:30px;width:auto;display:block;margin-bottom:3px}
 .sdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--up);margin-right:5px;vertical-align:middle;transition:.2s}
 .sdot.saving{background:#FFB340} .sdot.off{background:var(--down)}
+.syncclick{cursor:pointer}
+#syncTxt.sw{color:#FFB340;font-weight:600}
+#syncTxt.sx{color:#ff7a82;font-weight:700}
+.syncbar{height:8px;border-radius:5px;background:var(--surface2);border:1px solid var(--line);overflow:hidden;margin-top:6px}
+.syncbar i{display:block;height:100%;background:var(--up)}
+.syncbar i.sw{background:#FFB340}.syncbar i.sx{background:var(--down)}
 /* La card di registrazione e' piu' alta di uno schermo da 560px (misurata:
    638px). Era centrata e senza scorrimento, quindi veniva tagliata SOPRA e
    SOTTO insieme: il codice di invito in cima e il pulsante "Crea account" in
@@ -1155,7 +1161,7 @@ tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
         <text x="86" y="36" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif" font-size="30" font-weight="800" letter-spacing="0.5" fill="#F4F5F7">IRON</text>
         <text x="87" y="56" font-family="ui-monospace,'SF Mono','Roboto Mono',monospace" font-size="13" font-weight="600" letter-spacing="5" fill="#8A8A8E">PERFORMANCE</text>
       </svg>
-      <small><span class="sdot" id="syncDot"></span><span id="syncTxt">@federizzo_trainer</span></small>
+      <small class="syncclick" onclick="openSync()" role="button" title="Sincronizzazione"><span class="sdot" id="syncDot"></span><span id="syncTxt">@federizzo_trainer</span></small>
     </div>
     <div class="actions">
       <button class="btn primary sm" onclick="openSession()">+ Registra test</button>
@@ -1781,8 +1787,23 @@ function save(){
      scheda salvata, la misura aggiunta, l'import delle anamnesi. */
   try{ antroSync(); }catch(e){}
   S._dirty=true; _stateSeq++;
-  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("Memoria del dispositivo piena"); }
-  if(AUTH&&AUTH.token) triggerCloud();
+  const str=JSON.stringify(S);
+  /* Memoria piena: prima si sacrificano le copie di «Annulla un'operazione»
+     (sono copie, i dati veri sono questi), poi si avvisa per davvero. */
+  let ok=false;
+  for(let tent=0; tent<=SNAP_MAX && !ok; tent++){
+    try{ localStorage.setItem(KEY, str); ok=true; }
+    catch(e){
+      const l=snapshots(); if(!l.length) break;
+      l.pop();
+      try{ if(l.length) localStorage.setItem(SNAPKEY, JSON.stringify(l)); else localStorage.removeItem(SNAPKEY); }catch(e2){ try{ localStorage.removeItem(SNAPKEY); }catch(e3){} }
+    }
+  }
+  if(!ok){ SYNC.motivo="memoria"; toast("Memoria del dispositivo piena: non chiudere la pagina finché i dati non sono sul server"); }
+  else if(SYNC.motivo==="memoria") SYNC.motivo="";
+  SYNC.bytes=syncByte(str);
+  if(AUTH&&AUTH.token){ SYNC.pend++; triggerCloud(); }
+  syncSalva(); syncMostra();
   try{ bkTocca(); }catch(e){}
 }
 
@@ -2085,12 +2106,105 @@ let AUTH=null;
 let _cloudTimer=null, _retryTimer=null, _retryMs=0, _saving=false;
 let CLOUD_V=0;                   // versione dello stato vista dal server
 
+/* ── Stato della sincronizzazione, a parole ───────────────────────────────
+   Il 18 ottobre 2026 i test «non c'erano piu'»: c'erano, ma non erano ancora
+   arrivati al server, e l'unico segnale era un pallino colorato con la
+   spiegazione al passaggio del mouse — che sul telefono non esiste. Ora sotto
+   il logo c'e' scritto quante modifiche aspettano, e un tocco apre i dettagli:
+   ultimo invio riuscito, perche' non parte, quanto spazio resta.          */
+const SYNCKEY="ip_sync", SYNC_MAX=4*1024*1024, LS_MAX=5*1024*1024;
+const SYNC={stato:"ok", msg:"", pend:0, okAt:null, bytes:0, motivo:""};
+try{ const o=JSON.parse(localStorage.getItem(SYNCKEY)||"{}"); ["pend","okAt","bytes","motivo"].forEach(k=>{ if(o[k]!=null) SYNC[k]=o[k]; }); }catch(e){}
+function syncSalva(){ try{ localStorage.setItem(SYNCKEY, JSON.stringify({pend:SYNC.pend, okAt:SYNC.okAt, bytes:SYNC.bytes, motivo:SYNC.motivo})); }catch(e){} }
+function syncByte(str){ try{ return new TextEncoder().encode(str).length; }catch(e){ return String(str).length; } }
+function syncQuando(iso){
+  if(!iso) return "mai";
+  try{
+    const d=new Date(iso), oggi=new Date();
+    const hm=d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
+    if(d.toDateString()===oggi.toDateString()) return "oggi alle "+hm;
+    const ieri=new Date(oggi.getTime()-864e5); if(d.toDateString()===ieri.toDateString()) return "ieri alle "+hm;
+    return d.toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"})+" alle "+hm;
+  }catch(e){ return iso; }
+}
+/* La frase corta sotto il logo, e il suo colore. Vuota = tutto a posto. */
+function syncCorto(){
+  if(!(typeof AUTH!=="undefined" && AUTH && AUTH.token)) return {t:"", c:""};
+  const n=SYNC.pend;
+  if(SYNC.motivo==="grande") return {t:"⛔ dati troppo grandi", c:"sx"};
+  if(SYNC.motivo==="memoria") return {t:"⚠️ memoria piena", c:"sx"};
+  if(SYNC.motivo==="sessione") return {t:"⚠️ rientra"+(n?" · "+n+" da inviare":""), c:"sx"};
+  if(SYNC.stato==="off") return {t:"⚠️ "+(n?n+" non inviate":"non collegato"), c:"sx"};
+  if(SYNC.stato==="saving" && n) return {t:"⏳ invio di "+n+"…", c:"sw"};
+  if(n) return {t:"⏳ "+n+" da inviare", c:"sw"};
+  if(SYNC.bytes>=SYNC_MAX*0.9) return {t:"⚠️ spazio "+Math.round(SYNC.bytes/SYNC_MAX*100)+"%", c:"sw"};
+  return {t:"", c:""};
+}
+function syncMostra(){
+  const d=document.getElementById("syncDot"), t=document.getElementById("syncTxt");
+  const c=syncCorto();
+  if(d){
+    d.className="sdot"+(c.c==="sx"?" off":c.c==="sw"||SYNC.stato==="saving"?" saving":"");
+    d.title=SYNC.msg||"";
+  }
+  if(t){
+    if(t.dataset && t.dataset.base==null) t.dataset.base=t.textContent;
+    t.textContent=c.t || ((t.dataset&&t.dataset.base)||"");
+    t.className=c.c||"";
+  }
+}
 function setSync(state,msg){
-  const d=document.getElementById("syncDot"); if(!d) return;
-  d.className="sdot"+(state==="saving"?" saving":state==="off"?" off":"");
-  d.title = msg || (state==="saving"?"Salvataggio…":
-            state==="off"?"In attesa di rete — i dati sono salvati sul dispositivo e verranno inviati appena possibile":
-            "Sincronizzato");
+  SYNC.stato=state; SYNC.msg=msg||"";
+  // «ok» con lo stato pulito: niente in coda, qualunque cosa dicesse il contatore
+  if(state==="ok" && typeof S!=="undefined" && S && !S._dirty){ SYNC.pend=0; syncSalva(); }
+  if(state==="ok" && !SYNC.pend && SYNC.motivo!=="memoria") SYNC.motivo="";
+  syncMostra();
+}
+function syncRiprova(){ _retryMs=0; clearTimeout(_retryTimer); if(SYNC.motivo==="sessione"){ closeM(); showLogin("Rientra per inviare le modifiche"); return; } cloudSave(); setTimeout(openSync,1500); }
+/* Quanto pesa ogni parte dello stato: e' la prima cosa da sapere quando lo
+   spazio finisce. */
+function syncParti(){
+  const nomi={data:"Test e misure", mjl:"Archivio My Jump", piani:"Piano", athletes:"Schede atlete (anamnesi)", screen:"Valutazioni posturali",
+    lv:"Curve carico-velocità", readiness:"Check-in readiness", load:"Carichi (sRPE)", pres:"Presenze", gruppi:"Gruppi", tomb:"Cancellazioni (tracce)"};
+  const out=[]; let altro=0;
+  Object.keys(S||{}).forEach(k=>{ if(k==="_dirty") return; let b=0; try{ b=syncByte(JSON.stringify(S[k])); }catch(e){}
+    if(nomi[k]) out.push({k:k, n:nomi[k], b:b}); else altro+=b; });
+  out.push({k:"altro", n:"Il resto (impostazioni, squadre, gare…)", b:altro});
+  return out.sort((a,b)=>b.b-a.b);
+}
+function syncMB(b){ return b>=1024*1024 ? fmtNum(Math.round(b/1024/1024*100)/100)+" MB" : fmtNum(Math.max(1,Math.round(b/1024)))+" KB"; }
+function openSync(){
+  let tot=SYNC.bytes; try{ tot=syncByte(JSON.stringify(S)); SYNC.bytes=tot; }catch(e){}
+  const pc=Math.round(tot/SYNC_MAX*100), c=syncCorto();
+  let loc=0; try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); loc+=(k.length+String(localStorage.getItem(k)||"").length)*2; } }catch(e){}
+  let h='<div class="mh"><div><div class="eyebrow">Dati</div><div class="mt">☁️ Sincronizzazione</div>'+
+    '<div class="ms">Cosa è arrivato al server e cosa no</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
+  const logged=typeof AUTH!=="undefined" && AUTH && AUTH.token;
+  if(!logged) h+='<div class="alert warn"><span class="ai">⚠️</span><span>Non sei collegato: i dati sono <b>solo su questo dispositivo</b>.</span></div>';
+  else if(!SYNC.pend && !SYNC.motivo && SYNC.stato!=="off")
+    h+='<div class="alert info syncok"><span class="ai">✅</span><span><b>Tutto è sul server.</b> Ultimo contatto riuscito col server: '+esc(syncQuando(SYNC.okAt))+'. '+
+       'Su un altro dispositivo vedi gli stessi dati appena lo apri.</span></div>';
+  else {
+    const perche = SYNC.motivo==="grande" ? 'Il server rifiuta i dati: sono più grandi del suo limite. Guarda qui sotto cosa pesa di più.'
+      : SYNC.motivo==="sessione" ? 'La sessione è scaduta: rientra con email e password, poi partono da sole.'
+      : SYNC.motivo==="memoria" ? 'La memoria del browser su questo dispositivo è piena: le modifiche vivono solo finché la pagina resta aperta. Non chiuderla prima che arrivino al server.'
+      : SYNC.stato==="off" ? 'Niente rete, o il server non risponde. Riprovo da solo; appena torna la connessione partono.'
+      : 'Stanno partendo.';
+    h+='<div class="alert warn"><span class="ai">⏳</span><span><b>'+(SYNC.pend?(SYNC.pend===1?'1 modifica':SYNC.pend+' modifiche')+' non ancora sul server.':'Il server non ha la versione più recente.')+'</b> '+
+       perche+' Ultimo contatto riuscito col server: '+esc(syncQuando(SYNC.okAt))+'.</span></div>'+
+       '<div class="fhint"><b>Finché non partono, non fare logout e non cancellare i dati del browser</b>: le modifiche sono solo qui. '+
+       'Su un altro dispositivo non le vedi ancora.</div>'+
+       (logged?'<button class="btn primary" style="width:100%;margin-top:8px" onclick="syncRiprova()">Riprova adesso</button>':'');
+  }
+  h+='<div class="psec">Spazio sul server</div>'+
+     '<div class="syncbar"><i class="'+(pc>=90?'sx':pc>=70?'sw':'')+'" style="width:'+Math.min(100,Math.max(1,pc))+'%"></i></div>'+
+     '<div class="fhint" style="margin-top:4px">'+syncMB(tot)+' di '+syncMB(SYNC_MAX)+' ('+pc+'%)'+
+     (pc>=70?' — <b>esporta un backup</b> e guarda qui sotto cosa pesa di più.':'')+'</div>';
+  const parti=syncParti().filter(x=>x.b>2);
+  h+='<div class="hist cs">'+parti.slice(0,8).map(x=>'<div class="hrow"><span class="hd">'+esc(x.n)+'</span><span class="hv">'+syncMB(x.b)+'</span></div>').join("")+'</div>';
+  h+='<div class="gnote">Su questo dispositivo il browser usa circa '+syncMB(loc)+' (compresi i dati e le copie di «Annulla un\'operazione»). '+
+     'Se la memoria finisce, l\'app toglie prima quelle copie, poi avvisa.</div>';
+  modal(h);
 }
 
 function apiCall(action, extra){
@@ -2244,6 +2358,7 @@ function scheduleRetry(){
   _retryMs = _retryMs ? Math.min(_retryMs*2, 300000) : 5000;
   clearTimeout(_retryTimer);
   _retryTimer=setTimeout(cloudSave,_retryMs);
+  if(SYNC.motivo!=="memoria") SYNC.motivo="rete"; syncSalva();
   setSync("off","Non sincronizzato — nuovo tentativo tra "+Math.round(_retryMs/1000)+"s");
 }
 
@@ -2260,20 +2375,24 @@ function cloudSave(){
   const seq=_stateSeq;                     // stato fotografato
   apiCall("save",{data:snap, baseVersion:CLOUD_V}).then(j=>{
     _saving=false; _retryMs=0; CLOUD_V=j.version||CLOUD_V+1;
+    SYNC.okAt=new Date().toISOString();
+    if(SYNC.motivo!=="memoria") SYNC.motivo="";
     if(_stateSeq===seq){
       // Niente è cambiato durante l'invio: quello che c'è ora è al sicuro.
       S._dirty=false;
       try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
+      SYNC.pend=0; syncSalva();
       setSync("ok");
     }else{
       // È cambiato qualcosa mentre la richiesta era in volo. NON è salvato:
       // si riparte subito, e il pallino resta giallo finché non lo è davvero.
+      SYNC.pend=Math.max(1, _stateSeq-seq); syncSalva();
       S._dirty=true; setSync("saving");
       clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSave,150);
     }
   }).catch(e=>{
     _saving=false;
-    if(e.status===401){ showLogin("Sessione scaduta, rientra"); return; }
+    if(e.status===401){ SYNC.motivo="sessione"; syncSalva(); setSync("off","Sessione scaduta"); showLogin("Sessione scaduta, rientra"); return; }
     if(e.status===400){
       // Il server rifiuta un salvataggio senza baseVersion valida. Non ha senso
       // riprovare con lo stesso payload: ricarichiamo la versione dal server
@@ -2297,7 +2416,7 @@ function cloudSave(){
       clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSave,600);
       return;
     }
-    if(e.status===413){ setSync("off","Dati troppo grandi: esporta un backup e archivia le stagioni chiuse"); return; }
+    if(e.status===413){ SYNC.motivo="grande"; syncSalva(); setSync("off","Dati troppo grandi per il server"); toast("Il server rifiuta i dati: sono troppo grandi. Tocca la scritta sotto il logo"); return; }
     scheduleRetry();
   });
 }
@@ -2837,6 +2956,7 @@ function autoLogin(){
       // registrate offline sparivano senza avviso. Ora si uniscono.
       S = localDirty ? mergeState(j.data, S) : j.data;
       CLOUD_V = j.version||0;
+      SYNC.okAt=new Date().toISOString(); syncSalva();
       normalize(); S._dirty=!!localDirty;
       try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
       render();
@@ -10045,6 +10165,7 @@ function openSettings(){
     '</div>';
 
   h+='<div class="set-sec">Dati</div><div class="set-group">'+
+    row("☁️","Sincronizzazione", esc(syncCorto().t || ("Tutto sul server · "+syncQuando(SYNC.okAt)+" · "+syncMB(SYNC.bytes)+" di 4 MB")), "openSync()", syncCorto().c==="sx"?"!":"", syncCorto().c==="sx"?"danger":"")+
     row("🗄","Copie automatiche","Sul server, ultimi 30 giorni: ripristina com'era","openCopieServer()")+
     row("💾","Backup automatico sul PC", esc(bkRiga()), "openAutoBk()", (bkStato().attivo&&bkStato().ok===false)?"!":"", (bkStato().attivo&&bkStato().ok===false)?"danger":"")+
     row("⬇️","Esporta backup","File JSON completo","exportJSON()")+

@@ -288,6 +288,13 @@ report (migliorata / calata / stabile, cioè entro l'errore della misura). Di se
 ordine alfabetico, niente peso, niente dati sanitari; l'ordine della tabella e il peso
 solo se li scegli. Si salva con «Salva come PDF» della stampa.
 
+**Sincronizzazione a parole** — sotto il logo: «⏳ 3 da inviare», «⚠️ 2 non inviate»,
+«⚠️ rientra», «⛔ dati troppo grandi», «⚠️ spazio 92%»; niente se è tutto a posto. Un
+tocco apre il dettaglio: ultimo contatto riuscito, perché non parte, «Riprova
+adesso», quanto spazio c'è sul server (4 MB) e cosa pesa di più. Memoria del browser
+piena: si sacrificano prima le copie di «Annulla», poi si avvisa di non chiudere la
+pagina. Nato dallo spavento del 18 ottobre: i dati c'erano, l'app non lo diceva.
+
 **Backup automatico** — due livelli. *Sul server*, da solo: una copia all'ora per
 48 ore, poi una al giorno fino a 30 giorni, compresse; sempre la versione di prima
 quando un salvataggio riduce lo stato sotto il 70%. Un'atleta cancellata sparisce
@@ -339,11 +346,6 @@ progetto, ora ha una rete.
 ## ⬜ Da fare — codice
 
 ### Prossimo passo naturale
-- [ ] **Stato della sincronizzazione visibile** — oggi è un pallino con la spiegazione
-      al passaggio del mouse, che sul telefono non si vede. Al suo posto: «3 modifiche non
-      ancora inviate · ultimo invio riuscito alle 18:42», e un avviso chiaro se il server
-      rifiuta i dati perché troppo grandi. Nato dallo spavento del 18 ottobre: i dati
-      c'erano, l'app non lo diceva.
 - [ ] **Il piano nel report «cosa è cambiato»** — per chi migliora o cala, cosa diceva il
       blocco in mezzo (intensità, RPE medio, presenze).
 - [ ] **Motore di profilazione** sulla catena che regge con gli strumenti attuali:

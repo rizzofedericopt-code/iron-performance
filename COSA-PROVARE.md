@@ -69,6 +69,14 @@ Barra in basso → **My Jump**.
 - [ ] Se esporti il CSV da My Jump: *📲 Importa CSV* → le altezze vanno in tabella
       e le righe intere, con tutte le colonne, nell'archivio.
 
+## Sincronizzazione
+
+- [ ] Sotto il logo, quando è tutto a posto, c'è il tuo nome. Metti il telefono in modalità
+      aereo e registra una misura → compare «⏳ 1 da inviare», poi «⚠️ 1 non inviate».
+      Togli la modalità aereo → torna il nome da solo.
+- [ ] Tocca la scritta (o Impostazioni → ☁️ Sincronizzazione): ultimo contatto col server,
+      spazio usato su 4 MB, e cosa pesa di più.
+
 ## Backup automatico
 
 - [ ] **Sul PC, con Chrome o Edge**: Impostazioni → *💾 Backup automatico sul PC* →

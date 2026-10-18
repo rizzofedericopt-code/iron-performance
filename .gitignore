@@ -15,3 +15,8 @@ aggiorna.bat
 
 # diario dello script di aggiornamento: contiene percorsi e indirizzo del repository
 aggiorna-log.txt
+
+# backup con i dati delle atlete: non devono MAI finire su GitHub,
+# nemmeno se per sbaglio vengono salvati nella cartella del progetto
+iron-performance-backup*.json
+iron-performance-20*.json

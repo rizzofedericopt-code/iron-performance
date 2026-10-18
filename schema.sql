@@ -24,6 +24,24 @@ CREATE TABLE IF NOT EXISTS payloads (
   bytes       integer     NOT NULL DEFAULT 2
 );
 
+/* ─────────────── Copie automatiche ───────────────
+   Create anche da sole al primo salvataggio (api/store.js, ensureStoricoSchema).
+   Stato compresso (gzip → base64). Una all'ora per 48 ore, poi una al giorno,
+   fino a 30 giorni; sempre la versione di prima di un calo brusco.
+   ids = ",id1,id2," — serve a togliere un'atleta cancellata anche da qui. */
+CREATE TABLE IF NOT EXISTS payload_history (
+  id      bigserial PRIMARY KEY,
+  email   text        NOT NULL,
+  at      timestamptz NOT NULL,
+  version integer     NOT NULL DEFAULT 0,
+  bytes   integer     NOT NULL DEFAULT 0,
+  atleti  integer     NOT NULL DEFAULT 0,
+  ids     text        NOT NULL DEFAULT ',',
+  motivo  text        NOT NULL DEFAULT 'oraria',
+  z       text        NOT NULL
+);
+CREATE INDEX IF NOT EXISTS payload_history_email_at_idx ON payload_history (email, at DESC);
+
 /* ─────────────── Sessioni ───────────────
    Si conserva solo lo SHA-256 del token: chi legge il database
    non può usare le sessioni degli utenti. */

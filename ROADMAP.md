@@ -288,6 +288,16 @@ report (migliorata / calata / stabile, cioè entro l'errore della misura). Di se
 ordine alfabetico, niente peso, niente dati sanitari; l'ordine della tabella e il peso
 solo se li scegli. Si salva con «Salva come PDF» della stampa.
 
+**Backup automatico** — due livelli. *Sul server*, da solo: una copia all'ora per
+48 ore, poi una al giorno fino a 30 giorni, compresse; sempre la versione di prima
+quando un salvataggio riduce lo stato sotto il 70%. Un'atleta cancellata sparisce
+anche dalle copie; «elimina account» le cancella tutte. Impostazioni → Copie
+automatiche per vederle e ripristinare. *Sul PC* (Chrome/Edge, File System Access
+API): una cartella scelta una volta, `iron-performance-backup.json` sovrascritto al
+massimo ogni 10 minuti più un file al giorno (ultimi 7). Non sovrascrive se le atlete
+diminuiscono o le registrazioni calano di oltre il 20%, finché non lo confermi.
+Rifiuta la cartella del progetto; `.gitignore` blocca comunque i file di backup.
+
 **Piano: il blocco fra due test** (barra in basso → Piano) — le sedute della settimana
 (A, B, C, D, ciascuna con i suoi esercizi e una riga libera per il resto), e per ogni
 settimana %, serie×rip e RIR. Una settimana non toccata eredita l'ultima scritta. I

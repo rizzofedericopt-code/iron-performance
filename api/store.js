@@ -25,6 +25,7 @@
 import { sql, db } from "@vercel/postgres";
 import crypto from "node:crypto";
 import { promisify } from "node:util";
+import zlib from "node:zlib";
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -462,6 +463,117 @@ function pruneOccasionally() {
       await sql`DELETE FROM audit_log       WHERE at < now() - interval '1 month' * ${AUDIT_KEEP_MONTHS}`;
     } catch { /* la manutenzione non deve mai disturbare una richiesta */ }
   })();
+}
+
+
+/* ─────────────── Copie automatiche sul server ───────────────
+   Il 18 ottobre 2026 i dati «non c'erano piu'»: c'erano, ma l'unico backup
+   esportato era del 19 agosto. Qui il server tiene da parte, da solo, com'era
+   lo stato:
+     · una copia all'ora al massimo, per le ultime 48 ore
+     · poi una al giorno (l'ultima di quel giorno), fino a 30 giorni
+     · e SEMPRE la versione di prima quando un salvataggio la riduce di colpo
+       (meno del 70% dei byte): e' la firma di una cancellazione sbagliata o di
+       un dispositivo vecchio che sincronizza il vuoto
+   Le copie sono compresse (gzip, in base64: un testo passa uguale da qualunque
+   driver). Sono dati sanitari di minori: 30 giorni e non di piu', e
+   un'atleta cancellata sparisce anche dalle copie (vedi storicoScrub). */
+const STORICO_ORE = 48;
+const STORICO_GIORNI = 30;
+const STORICO_MAX = 120;                 // tetto di righe per account
+const STORICO_CALO = 0.7;                // sotto il 70% dei byte: copia di prima
+const STORICO_CALO_MIN = 20000;          // ...ma non per stati minuscoli
+let _storicoSchema = null;
+async function ensureStoricoSchema() {
+  if (_storicoSchema) return _storicoSchema;
+  _storicoSchema = (async () => {
+    await sql`CREATE TABLE IF NOT EXISTS payload_history (
+      id      bigserial PRIMARY KEY,
+      email   text        NOT NULL,
+      at      timestamptz NOT NULL,
+      version integer     NOT NULL DEFAULT 0,
+      bytes   integer     NOT NULL DEFAULT 0,
+      atleti  integer     NOT NULL DEFAULT 0,
+      ids     text        NOT NULL DEFAULT ',',
+      motivo  text        NOT NULL DEFAULT 'oraria',
+      z       text        NOT NULL)`;
+    await sql`CREATE INDEX IF NOT EXISTS payload_history_email_at_idx ON payload_history (email, at DESC)`;
+    return true;
+  })().catch((e) => { _storicoSchema = null; throw e; });
+  return _storicoSchema;
+}
+function storicoIds(data) {
+  const l = Array.isArray(data && data.athletes) ? data.athletes : [];
+  return "," + l.map((a) => String((a && a.id) || "")).filter(Boolean).join(",") + ",";
+}
+function storicoPack(data) {
+  return zlib.gzipSync(Buffer.from(JSON.stringify(data), "utf8")).toString("base64");
+}
+function storicoUnpack(z) {
+  return JSON.parse(zlib.gunzipSync(Buffer.from(String(z), "base64")).toString("utf8"));
+}
+/* Toglie un'atleta da una copia: la sua scheda, ogni chiave che porta il suo id
+   (misure, check-in, carichi, appello, salti, RPE…), ogni elenco che la
+   contiene (gruppi). Generico apposta: una chiave nuova dello stato non deve
+   ricordarsi di questa funzione. Le tombstone restano: sono solo un id e una
+   data, ed e' grazie a loro che il merge non la fa tornare. */
+function storicoScrub(x, aid) {
+  if (Array.isArray(x)) return x.filter((v) => v !== aid && !(v && typeof v === "object" && v.id === aid)).map((v) => storicoScrub(v, aid));
+  if (x && typeof x === "object") {
+    const o = {};
+    Object.keys(x).forEach((k) => { if (k !== aid) o[k] = (k === "tomb") ? x[k] : storicoScrub(x[k], aid); });
+    return o;
+  }
+  return x;
+}
+async function storicoInserisci(email, data, version, bytes, motivo, at) {
+  const z = storicoPack(data);
+  await sql`INSERT INTO payload_history (email, at, version, bytes, atleti, ids, motivo, z)
+            VALUES (${email}, ${at.toISOString()}, ${version}, ${bytes},
+                    ${(Array.isArray(data && data.athletes) ? data.athletes.length : 0)},
+                    ${storicoIds(data)}, ${motivo}, ${z})`;
+}
+async function storicoPota(email, t) {
+  const vecchio = new Date(t.getTime() - STORICO_GIORNI * 864e5).toISOString();
+  const recente = new Date(t.getTime() - STORICO_ORE * 36e5).toISOString();
+  await sql`DELETE FROM payload_history WHERE email = ${email} AND at < ${vecchio}`;
+  // oltre le 48 ore: una per giorno, l'ultima (le copie «prima di un calo» restano)
+  await sql`DELETE FROM payload_history h
+             WHERE h.email = ${email} AND h.at < ${recente} AND h.motivo <> 'calo'
+               AND EXISTS (SELECT 1 FROM payload_history k
+                            WHERE k.email = h.email AND k.at < ${recente} AND k.motivo <> 'calo'
+                              AND date_trunc('day', k.at) = date_trunc('day', h.at) AND k.at > h.at)`;
+  await sql`DELETE FROM payload_history WHERE email = ${email} AND id NOT IN (
+              SELECT id FROM payload_history WHERE email = ${email} ORDER BY at DESC LIMIT ${STORICO_MAX})`;
+}
+/* Dopo un salvataggio riuscito. Non deve MAI far fallire il salvataggio:
+   ogni errore si inghiotte (e si annota). */
+async function storicoDopoSave(email, data, version, bytes, prima, ip) {
+  try {
+    await ensureStoricoSchema();
+    const t = now();
+    const { rows } = await sql`SELECT id, at, ids FROM payload_history WHERE email = ${email} ORDER BY at DESC`;
+    if (prima) await storicoInserisci(email, prima.data, prima.version, prima.bytes, "calo", new Date(t.getTime() - 1));
+    const ultima = rows.length ? new Date(rows[0].at).getTime() : 0;
+    if (!rows.length || t.getTime() - ultima >= 36e5) await storicoInserisci(email, data, version, bytes, "oraria", t);
+    // un'atleta cancellata sparisce anche dalle copie
+    const morte = Object.keys((data && data.tomb) || {}).filter((k) => k.startsWith("ath:")).map((k) => k.slice(4)).filter(Boolean);
+    if (morte.length) {
+      for (const r of rows) {
+        const dentro = morte.filter((aid) => String(r.ids || "").includes("," + aid + ","));
+        if (!dentro.length) continue;
+        const q = await sql`SELECT z FROM payload_history WHERE id = ${r.id}`;
+        if (!q.rows.length) continue;
+        let d = storicoUnpack(q.rows[0].z);
+        dentro.forEach((aid) => { d = storicoScrub(d, aid); });
+        await sql`UPDATE payload_history SET z = ${storicoPack(d)}, ids = ${storicoIds(d)},
+                    atleti = ${Array.isArray(d.athletes) ? d.athletes.length : 0} WHERE id = ${r.id}`;
+      }
+    }
+    await storicoPota(email, t);
+  } catch (e) {
+    await audit(email, "storico", "error", ip, e.message);
+  }
 }
 
 /* ─────────────── Handler ─────────────── */
@@ -984,6 +1096,18 @@ export default async function handler(req, res) {
       // il primo — cioè esattamente il conflitto che questo codice esiste
       // per impedire. Il modello corretto era già in formSubmit, che usa
       // una transazione con SELECT ... FOR UPDATE.
+      /* Se questo salvataggio riduce di colpo lo stato, la versione di prima
+         va messa da parte PRIMA di sovrascriverla. */
+      let prima = null;
+      try {
+        const pb = await sql`SELECT bytes, version FROM payloads WHERE email = ${me.email}`;
+        const vb = pb.rows.length ? Number(pb.rows[0].bytes) : 0;
+        if (vb >= STORICO_CALO_MIN && bytes < vb * STORICO_CALO && Number(pb.rows[0].version) === base) {
+          const pp = await sql`SELECT payload, version, bytes FROM payloads WHERE email = ${me.email}`;
+          if (pp.rows.length) prima = { data: pp.rows[0].payload, version: Number(pp.rows[0].version), bytes: Number(pp.rows[0].bytes) };
+        }
+      } catch { prima = null; }
+
       const upd = await sql`
         UPDATE payloads
            SET payload = ${JSON.stringify(data)}::jsonb,
@@ -996,6 +1120,7 @@ export default async function handler(req, res) {
       if (upd.rowCount === 1) {
         const next = Number(upd.rows[0].version);
         await audit(me.email, "save", "ok", ip, `v${next} · ${bytes}B`);
+        await storicoDopoSave(me.email, data, next, bytes, prima, ip);
         return res.status(200).json({ ok: true, version: next });
       }
 
@@ -1017,6 +1142,7 @@ export default async function handler(req, res) {
           RETURNING version`;
         if (ins.rowCount === 1) {
           await audit(me.email, "save", "ok", ip, `v1 · ${bytes}B (prima scrittura)`);
+          await storicoDopoSave(me.email, data, 1, bytes, null, ip);
           return res.status(200).json({ ok: true, version: 1 });
         }
         // Qualcun altro ha inserito la riga nel frattempo: è un conflitto.
@@ -1169,6 +1295,25 @@ export default async function handler(req, res) {
     }
 
     /* ── export: art. 15 e 20 GDPR ── */
+    /* ── copie automatiche: elenco e lettura ── */
+    if (action === "history") {
+      await ensureStoricoSchema();
+      const { rows } = await sql`SELECT id, at, version, bytes, atleti, motivo FROM payload_history
+                                  WHERE email = ${me.email} ORDER BY at DESC LIMIT ${STORICO_MAX}`;
+      return res.status(200).json({ copie: rows.map((r) => ({ id: String(r.id), at: new Date(r.at).toISOString(),
+        version: Number(r.version), bytes: Number(r.bytes), atleti: Number(r.atleti), motivo: r.motivo })) });
+    }
+    if (action === "historyGet") {
+      await ensureStoricoSchema();
+      const id = String(body.id || "");
+      if (!/^\d{1,18}$/.test(id)) return res.status(400).json({ error: "Copia non valida" });
+      // l'email nella WHERE: le copie di un altro account non esistono, per te
+      const { rows } = await sql`SELECT at, z FROM payload_history WHERE id = ${id} AND email = ${me.email}`;
+      if (!rows.length) return res.status(404).json({ error: "Copia non trovata" });
+      await audit(me.email, "historyGet", "ok", ip, "copia " + id);
+      return res.status(200).json({ at: new Date(rows[0].at).toISOString(), data: storicoUnpack(rows[0].z) });
+    }
+
     if (action === "export") {
       const { rows } = await sql`SELECT payload, updated_at FROM payloads WHERE email = ${me.email}`;
       await audit(me.email, "export", "ok", ip);
@@ -1202,10 +1347,12 @@ export default async function handler(req, res) {
       // Sei DELETE separati: se la funzione cade a meta' (timeout, connessione)
       // resta uno stato indeterminato — dati cancellati e account vivo, o il
       // contrario. Per un'operazione che devi poter DIMOSTRARE non va bene.
+      await ensureStoricoSchema();   // la tabella deve esistere, o la DELETE qui sotto fa fallire tutto
       const cl = await db.connect();
       try {
         await cl.query("BEGIN");
         await cl.query(`DELETE FROM payloads        WHERE email = $1`, [me.email]);
+        await cl.query(`DELETE FROM payload_history WHERE email = $1`, [me.email]);
         await cl.query(`DELETE FROM sessions        WHERE email = $1`, [me.email]);
         await cl.query(`DELETE FROM password_resets WHERE email = $1`, [me.email]);
         await cl.query(`DELETE FROM form_links      WHERE coach_email = $1`, [me.email]);

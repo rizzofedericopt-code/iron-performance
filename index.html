@@ -350,6 +350,8 @@ input.mono{font-family:var(--mono)}
 .hrow .hv{font-family:var(--mono);font-weight:600;font-size:14px;flex:1}
 .hrow .hdl{color:var(--muted2);cursor:pointer;font-size:13px;padding:2px 6px}
 .hrow .hdl:hover{color:var(--down)}
+.hist.cs .hrow .hd{flex:1;font-size:12px}
+.hist.cs .hrow .hv{flex:0 0 auto}
 .lvbar{display:flex;gap:4px;margin-top:8px}
 .lvseg{flex:1;text-align:center;font-family:var(--mono);font-size:9px;padding:5px 2px;border-radius:6px;
   background:var(--surface2);color:var(--muted)}
@@ -1778,6 +1780,7 @@ function save(){
   S._dirty=true; _stateSeq++;
   try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("Memoria del dispositivo piena"); }
   if(AUTH&&AUTH.token) triggerCloud();
+  try{ bkTocca(); }catch(e){}
 }
 
 /* ═══════════════ RETE DI SICUREZZA ═══════════════
@@ -1848,6 +1851,228 @@ function restoreSnapshot(i){
   snapshotBeforeRisk("ripristino di «"+snap.label+"»");
   S=target; normalize(); save(); render(); closeM();
   toast("Ripristinato — "+(S.athletes||[]).length+" atleti");
+}
+
+/* ═══════════════ BACKUP AUTOMATICO ═══════════════
+   Due livelli (Federico, ottobre 2026):
+
+   1. Copie sul server — le fa api/store.js da solo a ogni salvataggio: una
+      all'ora per 48 ore, poi una al giorno fino a 30 giorni, e sempre quella
+      di prima di un calo brusco. Qui solo l'elenco e il ripristino.
+
+   2. File sul computer — con Chrome o Edge sul PC (File System Access API):
+      scegli una cartella una volta, l'app ci scrive da sola
+        iron-performance-backup.json          sovrascritto ogni volta
+        iron-performance-AAAA-MM-GG.json      uno al giorno, gli ultimi 7
+      Sul telefono non si puo': il browser non lascia scrivere file senza
+      chiedere ogni volta dove.
+
+   Perche' non «uno solo che si sovrascrive sempre»: il giorno in cui i dati
+   sembrano spariti, quel file salverebbe lo stato senza dati sopra l'ultima
+   copia buona. Per questo c'e' una guardia — se le atlete diminuiscono, o le
+   registrazioni calano di oltre il 20%, il file non si sovrascrive finche' non
+   lo dici tu — e ci sono le copie dei giorni prima.
+
+   Mai nella cartella del progetto: li' c'e' git, e un backup con i dati
+   sanitari delle ragazze finirebbe su GitHub.                              */
+const BK_FILE="iron-performance-backup.json";
+const BK_DAY_RE=/^iron-performance-(\d{4}-\d{2}-\d{2})\.json$/;
+const BK_KEEP=7, BK_MIN_MS=10*60e3, BK_ATTESA_MS=20e3;
+const BKKEY="ip_autobk";
+function bkSupportato(){ return typeof window!=="undefined" && typeof window.showDirectoryPicker==="function"; }
+function bkStato(){ try{ return JSON.parse(localStorage.getItem(BKKEY)||"null")||{}; }catch(e){ return {}; } }
+function bkStatoSet(o){ try{ localStorage.setItem(BKKEY, JSON.stringify(Object.assign(bkStato(), o))); }catch(e){} }
+/* La cartella scelta vive in IndexedDB: e' l'unico posto dove il browser
+   lascia conservare il «permesso» a una cartella fra una visita e l'altra. */
+function bkIdb(){
+  return new Promise((ok,ko)=>{
+    const r=indexedDB.open("ip_backup",1);
+    r.onupgradeneeded=()=>r.result.createObjectStore("h");
+    r.onsuccess=()=>ok(r.result); r.onerror=()=>ko(r.error);
+  });
+}
+async function bkHandle(set){
+  const db=await bkIdb();
+  return new Promise((ok,ko)=>{
+    const tx=db.transaction("h", set===undefined?"readonly":"readwrite"), st=tx.objectStore("h");
+    const rq = set===undefined ? st.get("dir") : set===null ? st.delete("dir") : st.put(set,"dir");
+    rq.onsuccess=()=>ok(rq.result); rq.onerror=()=>ko(rq.error);
+  });
+}
+/* Quante atlete e quante registrazioni (misure, check-in, carichi, appello,
+   salti…): sono i due numeri che crollano quando qualcosa va storto. */
+function bkConta(o){
+  const atlete=(o&&Array.isArray(o.athletes))?o.athletes.length:0;
+  let reg=0;
+  ["data","readiness","load","screen","lv","pres","mjl"].forEach(k=>{
+    const m=o&&o[k]; if(!m||typeof m!=="object") return;
+    Object.keys(m).forEach(a=>{ const v=m[a];
+      if(Array.isArray(v)) reg+=v.length;
+      else if(v&&typeof v==="object") Object.keys(v).forEach(t=>{ if(Array.isArray(v[t])) reg+=v[t].length; }); });
+  });
+  return {atlete:atlete, reg:reg};
+}
+function bkGuardia(prima, ora){
+  if(!prima) return null;
+  if(ora.atlete<prima.atlete){ const d=prima.atlete-ora.atlete; return d+(d===1?" atleta in meno":" atlete in meno"); }
+  if(prima.reg>=20 && ora.reg<prima.reg*0.8) return "registrazioni scese da "+prima.reg+" a "+ora.reg;
+  return null;
+}
+function bkDaTogliere(nomi, tieni){
+  const d=nomi.filter(n=>BK_DAY_RE.test(n)).sort();
+  return d.slice(0, Math.max(0, d.length-tieni));
+}
+function bkCartellaProgetto(nomi){
+  return nomi.indexOf(".git")>=0 || nomi.indexOf("aggiorna.bat")>=0 ||
+         (nomi.indexOf("index.html")>=0 && (nomi.indexOf("api")>=0 || nomi.indexOf("sw.js")>=0));
+}
+async function bkScrivi(dir, nome, txt){
+  const fh=await dir.getFileHandle(nome,{create:true});
+  const w=await fh.createWritable(); await w.write(txt); await w.close();
+}
+async function bkNomi(dir){ const l=[]; for await (const k of dir.keys()) l.push(k); return l; }
+let _bkTimer=null, _bkInCorso=false, _bkAvvisato=false;
+function bkAvvisa(msg){ if(_bkAvvisato) return; _bkAvvisato=true; toast(msg); }
+/* Dopo ogni modifica: si aspetta un po' (le modifiche arrivano a grappoli) e
+   non si scrive piu' di una volta ogni 10 minuti. */
+function bkTocca(){
+  if(!bkSupportato()) return;
+  const st=bkStato(); if(!st.attivo) return;
+  clearTimeout(_bkTimer);
+  const prossimo=st.at ? Date.parse(st.at)+BK_MIN_MS-Date.now() : 0;
+  _bkTimer=setTimeout(()=>{ _bkTimer=null; bkEsegui(false,false); }, Math.max(BK_ATTESA_MS, prossimo||0));
+}
+async function bkEsegui(forza, gesto){
+  if(_bkInCorso) return null;
+  _bkInCorso=true;
+  try{
+    const dir=await bkHandle();
+    if(!dir){ bkStatoSet({attivo:false}); return "spento"; }
+    let perm=await dir.queryPermission({mode:"readwrite"});
+    if(perm!=="granted" && gesto) perm=await dir.requestPermission({mode:"readwrite"});
+    if(perm!=="granted"){
+      bkStatoSet({ok:false, msg:"In pausa: il browser vuole di nuovo il permesso sulla cartella. Impostazioni → Backup automatico → Riprendi."});
+      bkAvvisa("Backup sul PC in pausa: serve un tocco in Impostazioni");
+      return "permesso";
+    }
+    const copia=JSON.parse(JSON.stringify(S)); delete copia._dirty;
+    const ora=bkConta(copia);
+    let prima=null;
+    try{ const f=await (await dir.getFileHandle(BK_FILE)).getFile(); prima=bkConta(JSON.parse(await f.text())); }catch(e){ prima=null; }
+    const g=forza ? null : bkGuardia(prima, ora);
+    if(g){
+      bkStatoSet({ok:false, bloccato:true, msg:"Non sovrascritto: "+g+" rispetto al backup. Se è voluto, «Aggiorna comunque»."});
+      bkAvvisa("Backup sul PC fermo: "+g+". Controlla in Impostazioni");
+      return "bloccato";
+    }
+    const txt=JSON.stringify(copia);
+    await bkScrivi(dir, BK_FILE, txt);
+    await bkScrivi(dir, "iron-performance-"+todayISO()+".json", txt);
+    for(const n of bkDaTogliere(await bkNomi(dir), BK_KEEP)){ try{ await dir.removeEntry(n); }catch(e){} }
+    bkStatoSet({ok:true, bloccato:false, at:new Date().toISOString(), msg:"", atlete:ora.atlete, reg:ora.reg});
+    return "ok";
+  }catch(e){
+    bkStatoSet({ok:false, msg:"Non riuscito: "+String((e&&e.message)||e).slice(0,120)});
+    return "errore";
+  }finally{ _bkInCorso=false; }
+}
+async function bkScegli(){
+  if(!bkSupportato()){ toast("Serve Chrome o Edge sul computer"); return; }
+  let dir;
+  try{ dir=await window.showDirectoryPicker({id:"ironbackup", mode:"readwrite", startIn:"documents"}); }
+  catch(e){ if(e&&e.name!=="AbortError") toast("Cartella non disponibile"); return; }
+  if(bkCartellaProgetto(await bkNomi(dir))){
+    toast("È la cartella del progetto: il backup finirebbe su GitHub. Scegline un'altra (es. Documenti)");
+    return;
+  }
+  await bkHandle(dir);
+  bkStatoSet({attivo:true, cartella:dir.name, at:null, ok:null, bloccato:false, msg:""});
+  await bkEsegui(false,true);
+  openAutoBk();
+}
+async function bkSpegni(){
+  try{ await bkHandle(null); }catch(e){}
+  bkStatoSet({attivo:false, msg:"", bloccato:false});
+  clearTimeout(_bkTimer); openAutoBk();
+}
+async function bkAdesso(forza){
+  if(forza && !confirm("Sovrascrivere il backup con lo stato di adesso, anche se ha meno dati?\n\nLe copie dei giorni prima restano.")) return;
+  const r=await bkEsegui(!!forza, true);
+  toast(r==="ok"?"Backup scritto":r==="bloccato"?"Non sovrascritto: guarda il motivo":"Backup non riuscito");
+  openAutoBk();
+}
+function bkRiga(){
+  if(!bkSupportato()) return "Solo da Chrome o Edge sul computer";
+  const st=bkStato();
+  if(!st.attivo) return "Spento — scegli una cartella";
+  if(st.msg) return st.msg;
+  let q=""; try{ q=new Date(st.at).toLocaleString("it-IT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}); }catch(e){}
+  return "«"+(st.cartella||"cartella")+"»"+(st.at?" · ultimo "+q:"");
+}
+function openAutoBk(){
+  const st=bkStato();
+  let h='<div class="mh"><div><div class="eyebrow">Dati</div><div class="mt">💾 Backup automatico sul PC</div>'+
+    '<div class="ms">Un file sempre aggiornato, più uno al giorno</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
+  if(!bkSupportato()){
+    h+='<div class="alert info"><span class="ai">ℹ️</span><span>Questo browser non lascia scrivere file da solo. Funziona con <b>Chrome</b> o <b>Edge</b> '+
+       'sul computer. Sul telefono ci pensano le <b>copie sul server</b> (Impostazioni → Copie automatiche).</span></div>';
+    modal(h); return;
+  }
+  h+='<div class="fhint" style="margin-top:0">Scegli una cartella <b>fuori</b> dal progetto (es. Documenti): l\'app ci scrive '+
+     '<code>'+BK_FILE+'</code>, sovrascritto al massimo ogni 10 minuti mentre lavori, e una copia per giorno (le ultime '+BK_KEEP+'). '+
+     'Se le atlete diminuiscono o le registrazioni calano di oltre il 20%, il file <b>non</b> si sovrascrive finché non lo dici tu. '+
+     'Il file si rimette con Impostazioni → Importa backup.</div>';
+  if(st.attivo){
+    h+='<div class="set-group" style="margin-top:10px"><div style="padding:10px 12px"><b>Cartella:</b> '+esc(st.cartella||"")+'<br>'+
+       '<small style="color:var(--muted)">'+esc(bkRiga())+'</small></div></div>';
+    if(st.bloccato) h+='<div class="alert warn"><span class="ai">⚠️</span><span>'+esc(st.msg||"")+'</span></div>'+
+       '<button class="btn" style="width:100%;margin-top:8px" onclick="bkAdesso(true)">Aggiorna comunque</button>';
+    h+='<button class="btn primary" style="width:100%;margin-top:8px" onclick="bkAdesso(false)">'+(st.ok===false&&!st.bloccato?'Riprendi':'Fai il backup adesso')+'</button>'+
+       '<button class="btn sm" style="width:100%;margin-top:8px" onclick="bkScegli()">Cambia cartella</button>'+
+       '<button class="btn sm" style="width:100%;margin-top:8px" onclick="bkSpegni()">Spegni</button>';
+  } else {
+    h+='<button class="btn primary" style="width:100%;margin-top:12px" onclick="bkScegli()">Scegli la cartella</button>';
+  }
+  h+='<div class="gnote">Dentro ci sono i dati sanitari delle ragazze: la cartella non va condivisa, e i file che togli tu dal computer non tornano. '+
+     'Ogni computer ha la sua cartella: su un altro PC va scelta di nuovo.</div>';
+  modal(h);
+}
+
+/* ─── Copie sul server ─── */
+function openCopieServer(){
+  if(!AUTH||!AUTH.token){ toast("Serve l'accesso"); return; }
+  modal('<div class="mh"><div><div class="eyebrow">Dati</div><div class="mt">🗄 Copie automatiche</div>'+
+    '<div class="ms">Sul server, senza fare niente: ultimi '+30+' giorni</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div id="csBody"><div class="fhint">Carico…</div></div>');
+  apiCall("history").then(j=>{
+    const el=document.getElementById("csBody"); if(!el) return;
+    const l=(j&&j.copie)||[];
+    if(!l.length){ el.innerHTML='<div class="alert info"><span class="ai">ℹ️</span><span>Ancora nessuna copia: la prima arriva al prossimo salvataggio.</span></div>'; return; }
+    let h='<div class="fhint" style="margin-top:0">Una all\'ora per due giorni, poi una al giorno. «Prima di un calo» è la versione '+
+      'messa da parte quando un salvataggio ha tolto di colpo molti dati: è quella da cercare dopo una cancellazione sbagliata.</div><div class="hist cs">';
+    l.forEach(c=>{
+      let q=c.at; try{ q=new Date(c.at).toLocaleString("it-IT",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}); }catch(e){}
+      h+='<div class="hrow"><span class="hd">'+esc(q)+(c.motivo==="calo"?' · <b style="color:#FFB340">prima di un calo</b>':'')+'<br>'+
+        '<small style="color:var(--muted2)">'+c.atleti+' atlete · '+fmtNum(Math.round(c.bytes/1024))+' KB</small></span>'+
+        '<span class="hv"><button class="btn sm" onclick="copiaServerRipristina(\''+escAttr(c.id)+'\',\''+escAttr(q)+'\')">Ripristina</button></span></div>';
+    });
+    el.innerHTML=h+'</div><div class="gnote">Ripristinare sostituisce tutto lo stato attuale. Prima si salva una copia su questo dispositivo '+
+      '(Impostazioni → Annulla un\'operazione). Le atlete cancellate non ci sono più neanche qui.</div>';
+  }).catch(e=>{
+    const el=document.getElementById("csBody");
+    if(el) el.innerHTML='<div class="alert warn"><span class="ai">⚠️</span><span>Non riesco a leggere le copie: '+esc(e.message||"errore di rete")+'</span></div>';
+  });
+}
+function copiaServerRipristina(id, quando){
+  apiCall("historyGet",{id:id}).then(j=>{
+    const d=j&&j.data;
+    if(!d||typeof d!=="object"||!Array.isArray(d.athletes)){ toast("Copia non leggibile"); return; }
+    if(!confirm("Ripristinare lo stato di "+quando+" ("+d.athletes.length+" atlete)?\n\n"+
+                "Tutto quello che hai fatto dopo viene sostituito. Prima si salva una copia su questo dispositivo.")) return;
+    snapshotBeforeRisk("ripristino della copia del server di "+quando);
+    S=JSON.parse(JSON.stringify(d)); normalize(); save(); render(); closeM();
+    toast("Ripristinato — "+(S.athletes||[]).length+" atlete");
+  }).catch(e=>toast("Non riuscito: "+(e.message||"errore")));
 }
 
 /* ═══════════════ LOGIN + CLOUD ═══════════════ */
@@ -2076,7 +2301,11 @@ function cloudSave(){
 
 // Appena torna la rete o l'app riprende il fuoco, svuota la coda.
 window.addEventListener("online", ()=>{ _retryMs=0; cloudSave(); });
-document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) cloudSave(); });
+document.addEventListener("visibilitychange", ()=>{
+  if(!document.hidden) cloudSave();
+  // chiudi la scheda o passi a un'altra app: il backup in attesa parte subito
+  else if(_bkTimer){ clearTimeout(_bkTimer); _bkTimer=null; bkEsegui(false,false); }
+});
 window.addEventListener("beforeunload", (ev)=>{
   if(AUTH&&S._dirty){ ev.preventDefault(); ev.returnValue="Ci sono dati non ancora sincronizzati."; }
 });
@@ -9615,6 +9844,8 @@ function openSettings(){
     '</div>';
 
   h+='<div class="set-sec">Dati</div><div class="set-group">'+
+    row("🗄","Copie automatiche","Sul server, ultimi 30 giorni: ripristina com'era","openCopieServer()")+
+    row("💾","Backup automatico sul PC", esc(bkRiga()), "openAutoBk()", (bkStato().attivo&&bkStato().ok===false)?"!":"", (bkStato().attivo&&bkStato().ok===false)?"danger":"")+
     row("⬇️","Esporta backup","File JSON completo","exportJSON()")+
     row("📄","Esporta tabella","File CSV","exportCSV()")+
     row("⬆️","Importa backup","Ripristina da un file JSON","importJSON()")+
@@ -12484,6 +12715,7 @@ if(_anamToken){
 } else {
   load();
   render();
+  try{ bkTocca(); }catch(e){}     // all'apertura, un backup se l'ultimo e' vecchio
   (function checkResetLink(){
     try{
       const u=new URL(location.href);

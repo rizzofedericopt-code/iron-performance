@@ -69,6 +69,21 @@ Barra in basso → **My Jump**.
 - [ ] Se esporti il CSV da My Jump: *📲 Importa CSV* → le altezze vanno in tabella
       e le righe intere, con tutte le colonne, nell'archivio.
 
+## Backup automatico
+
+- [ ] **Sul PC, con Chrome o Edge**: Impostazioni → *💾 Backup automatico sul PC* →
+      *Scegli la cartella*. Creane una apposta **fuori** dal progetto (es.
+      `Documenti\Iron Performance backup`).
+      → Nella cartella compaiono `iron-performance-backup.json` e il file di oggi.
+      Se scegli la cartella del progetto, l'app la rifiuta.
+- [ ] Lavora un quarto d'ora, poi guarda la cartella: il file grande è aggiornato
+      (data di modifica), e c'è sempre un solo file di oggi.
+- [ ] Domani riapri l'app: se Chrome chiede il permesso sulla cartella, scegli
+      **«Consenti a ogni visita»**. Se in Impostazioni la riga dice «In pausa», tocca *Riprendi*.
+- [ ] **Copie sul server**: Impostazioni → *🗄 Copie automatiche*. Dopo il primo
+      salvataggio c'è una copia; poi una all'ora.
+      → Non ripristinare per prova sui dati veri. Se vuoi provarlo, prima *Esporta backup*.
+
 ## Piano: il blocco fino al prossimo test
 
 Barra in basso → **Piano** (con la squadra selezionata).

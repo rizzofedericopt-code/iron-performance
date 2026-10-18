@@ -13,7 +13,7 @@ e non manda niente online. Alla fine c'è il file `aggiorna-log.txt`: se qualcos
 non torna, dimmelo e lo leggo io.
 
 **Strada GitHub Desktop**, se preferisci:
-- Summary: `Piano: il blocco di settimane fra due test, con RPE e suggerimento`
+- Summary: `Backup automatico: copie sul server per 30 giorni e file sul PC`
 - **Commit to main**, poi **Push origin**.
 
 Aspetta due minuti: Vercel pubblica da solo.
@@ -23,6 +23,16 @@ Aspetta due minuti: Vercel pubblica da solo.
 Apri `iron-performance.vercel.app` e premi **Ctrl + Shift + R**.
 Sul telefono: chiudi l'app dalle app recenti e riaprila.
 Senza questo vedi la versione di ieri e pensi che non abbia funzionato.
+
+## 2bis · Accendi il backup automatico sul PC (1 minuto, una volta)
+
+Dal **computer**, con Chrome o Edge: crea una cartella **fuori** dal progetto, per
+esempio `Documenti\Iron Performance backup`. Poi Impostazioni → *💾 Backup automatico
+sul PC* → *Scegli la cartella*. Quando Chrome chiede il permesso, scegli
+**«Consenti a ogni visita»**. Le copie sul server partono da sole, non devi fare niente.
+
+**Informativa**: aggiungi una riga — «copie di sicurezza automatiche conservate per
+30 giorni, cancellate con l'atleta o con l'account». È un trattamento in più, va detto.
 
 ## 3 · Esporta un backup (1 minuto)
 

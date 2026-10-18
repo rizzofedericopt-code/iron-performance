@@ -69,6 +69,27 @@ Barra in basso → **My Jump**.
 - [ ] Se esporti il CSV da My Jump: *📲 Importa CSV* → le altezze vanno in tabella
       e le righe intere, con tutte le colonne, nell'archivio.
 
+## Piano: il blocco fino al prossimo test
+
+Barra in basso → **Piano** (con la squadra selezionata).
+
+- [ ] *+ Crea il blocco*: nome, inizio, data del prossimo test. Le sedute della settimana
+      (*+ seduta* per B, C…), gli esercizi di ognuna e una riga per il resto (accessori, core).
+      → Dice quante settimane e quante gare ci sono nel mezzo.
+- [ ] Settimana 1: scrivi %, serie×rip e RIR di ogni esercizio.
+      → Sotto, i kg per gruppo; in alto intensità media, ripetizioni e tonnellaggio a testa.
+- [ ] Passa alla settimana 3: ha gli stessi numeri della 1 (eredita). Cambiala: le settimane
+      dopo la seguono, quelle prima no.
+- [ ] Dopo la seduta: **RPE** → per ogni gruppo «tutte 7», poi correggi chi era diversa.
+      → Torna al piano: RPE medio, e per la settimana dopo «più facile/più duro del previsto
+      → X% invece di Y%». *Applica* se sei d'accordo. Se è «regola pratica», le ripetizioni
+      sono troppe per le formule: prendila come indicazione grossolana.
+- [ ] **🏋️ Scheda** su una seduta → si apre la scheda di seduta con le % di quella settimana,
+      l'appello di oggi e la stampa.
+- [ ] In fondo, **Andamento del blocco**: una riga per settimana. Tocca una riga per aprirla.
+- [ ] In **Oggi** compare «S2/6 · test il …»: tocca e sei nel piano.
+- [ ] *🖨 Stampa*: tutto il blocco su un foglio, da appendere in palestra.
+
 ## PDF dei test
 
 Matrice → **📄 PDF**.

@@ -585,6 +585,43 @@ tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
 .sedc.warn{background:rgba(255,159,10,.14);color:#FFB340}.sedc.bad{background:rgba(230,57,70,.14);color:var(--accent)}
 .sednote{font-size:11px;color:#FFB340;margin-top:3px}
 .sedsing{font-size:12px;color:var(--muted);padding:4px 0}
+/* piano */
+.pianov{padding:0 8px 28px}
+.pianotop{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;margin:6px 0 2px}
+.pianon{font-size:18px;font-weight:800}
+.pianos{font-size:12px;color:var(--muted);margin-top:2px}
+.pianob{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pianob select{width:auto;margin:0;padding:6px 8px;font-size:12px}
+.pianow{padding-left:0;padding-right:0}
+.pianow .chip.ora:not(.on){border-color:var(--accent);color:var(--text)}
+.pianosett{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.pianosh small{color:var(--muted2);margin-left:4px}
+.pianosett .mjform input{margin:0;padding:7px 9px}
+.pianostat{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
+.pianostat div{display:flex;flex-direction:column}
+.pianostat span{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted2)}
+.pianostat b{font-size:18px}
+.pianostat small{font-size:10.5px;color:var(--muted2)}
+.pianoseduta{margin-top:10px}
+.pianoex{padding:8px 0;border-bottom:1px solid var(--line)}
+.pianoex:last-of-type{border-bottom:none}
+.pianoexn{font-weight:700;font-size:14px}
+.pianoex .sedex2 input{width:64px;padding:7px 8px;margin:0}
+.pianoex .sedex2 label:nth-child(2) input{width:78px}
+.pianoex .sedex2 select{width:auto;margin:0;padding:6px 8px}
+.pianokg{font-size:12px;color:var(--muted);margin-top:6px}
+.pianokg b{color:var(--text);font-size:13px}
+.pianorpe{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.pianosugw{display:contents}
+.pianosug{font-size:12px;color:var(--muted)}
+.pianosug b{color:var(--text)}
+.pianosug small{color:var(--muted2);border:1px solid var(--line);border-radius:5px;padding:0 4px;margin-left:3px}
+.prpe{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0}
+.prn{font-size:13px;font-weight:600}.prn small{font-weight:400;color:var(--muted2)}
+.prpe select,.prtutte{width:auto;margin:0;padding:5px 8px;font-size:12px}
+.pianotab tr.ora td{background:var(--surface2)}
+.pianotab .pr-su{color:var(--accent)}.pianotab .pr-giu{color:var(--up)}
+.pianomd{background:var(--accent);color:#fff}
 /* cosa è cambiato */
 .cblist{display:flex;flex-direction:column;gap:7px;margin-top:8px}
 .cbrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--sans);cursor:pointer}
@@ -1498,6 +1535,7 @@ function customUnisci(cid, std){
     if(c.rif===cid) c.rif=std;
   });
   if(S.te && S.te[cid]!=null){ if(S.te[std]==null) S.te[std]=S.te[cid]; delete S.te[cid]; }
+  pianiRinomina(cid, std);
   if(SORT && SORT.by===cid) SORT.by=std;
   S.custom=(S.custom||[]).filter(c=>c.id!==cid);
 }
@@ -1695,6 +1733,7 @@ function normalize(){
   if(!S.gruppi) S.gruppi={};   // gruppi di lavoro decisi a mano, per test
   if(!S.sedute || typeof S.sedute!=="object" || Array.isArray(S.sedute)) S.sedute={};   // scheda di seduta, per squadra
   if(!S.gare || typeof S.gare!=="object" || Array.isArray(S.gare)) S.gare={};             // calendario gare, per squadra
+  if(!S.piani || typeof S.piani!=="object" || Array.isArray(S.piani)) S.piani={};         // blocchi fra due test, per squadra
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
   if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
   applyCustom();
@@ -1954,6 +1993,7 @@ function mergeState(server, local){
   // ma il calendario di un'altra squadra non si perde
   out.gare=Object.assign({}, server.gare||{}, local.gare||{});
   ["gare","sedute"].forEach(k=>Object.keys(out[k]).forEach(id=>{ if(T["team:"+id]) delete out[k][id]; }));
+  out.piani=pianiMerge(server.piani, local.piani, T, live);
   out.te=Object.assign({}, server.te||{}, local.te||{});
   /* Gli esercizi personalizzati sono decisioni, come le soglie: vince
      l'ultima fatta su questo dispositivo. Ma se il server ne ha di piu'
@@ -2991,6 +3031,7 @@ function render(){
   if(S.view==="trend"){ renderTrend(); return; }
   if(S.view==="readiness"){ renderReadiness(); return; }
   if(S.view==="mj"){ renderMJ(); return; }
+  if(S.view==="piano"){ renderPiano(); return; }
   renderMatrix();
 }
 
@@ -3234,6 +3275,7 @@ const TABS=[
   {v:"matrix", l:"Matrice", d:"Tutti i test di tutti, in tabella",   ic:'<rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/>'},
   {v:"trend",  l:"Andamento", d:"Un test nel tempo, a confronto", ic:'<path d="M3 17.5l5.5-6 4 3.5L21 6"/><path d="M21 6h-5"/><path d="M21 6v5"/>'},
   {v:"readiness", l:"Fatica", d:"Carico, recupero e segnali di allarme", ic:'<path d="M3 12h4l2.5-6 4 12 2.5-6h5"/>'},
+  {v:"piano", l:"Piano", d:"Le settimane fino al prossimo test", ic:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M7.5 13.5h3M7.5 16.5h6"/>'},
   {v:"mj", l:"My Jump", d:"Ogni salto con tutti i suoi numeri", ic:'<path d="M12 20V7"/><path d="M7.5 11.5L12 7l4.5 4.5"/><path d="M5 21h14"/><circle cx="12" cy="3.8" r="1.6"/>'}
 ];
 function renderTabs(){
@@ -3289,6 +3331,8 @@ function renderBar(){
     h+='<div class="barhint">readiness + fatica neuromuscolare</div>';
   } else if(S.view==="mj"){
     h+='<div class="barhint">archivio My Jump: ogni salto, ogni numero</div>';
+  } else if(S.view==="piano"){
+    h+='<div class="barhint">il blocco fino al prossimo test: carichi e RPE settimana per settimana</div>';
   } else {
     h+='<button class="btn sm" onclick="openTabPdf()" title="La tabella in PDF, da far vedere o da mandare">📄 PDF</button>';
     h+='<div class="leg"><span class="it"><span class="dot" style="background:var(--up)"></span>Migliora</span>'+
@@ -3480,6 +3524,7 @@ function delTeam(id){
   // le decisioni di quella squadra se ne vanno con lei
   if(S.gare) delete S.gare[id];
   if(S.sedute) delete S.sedute[id];
+  if(S.piani) delete S.piani[id];
   Object.keys(S.gruppi||{}).forEach(k=>{ if(k.slice(-(id.length+1))==="@"+id) delete S.gruppi[k]; });
   if(S.activeTeam===id) S.activeTeam="all";
   save(); manageTeams(); render(); toast("Squadra eliminata");
@@ -4323,6 +4368,7 @@ function delAthlete(id){
   if(S.pres) delete S.pres[id];
   if(S.mjl) delete S.mjl[id];
   gruppiTogli(id);
+  pianiTogli(id);
   tombSet("ath:"+id);   // impedisce che il merge lo resusciti
   save(); closeM(); render(); toast("Atleta e dati eliminati");
 }
@@ -6315,7 +6361,8 @@ function sedReps(sr){
 function _sedMedia(g){ return g.reduce((s,x)=>s+x.kg,0)/g.length; }
 function sedutaCalc(c){
   const exs=((c&&c.ex)||[]).filter(e=>e&&TMAP[e.t]).slice(0,SED_MAX);
-  const presenti=presFiltra(teamAthletes()||[]);
+  // il piano chiede tutte: l'appello di oggi non dice chi ci sara' fra una settimana
+  const presenti=(c&&c.tutte) ? (teamAthletes()||[]) : presFiltra(teamAthletes()||[]);
   const med={};
   exs.forEach(e=>{
     const v=presenti.map(a=>rm1RM(a.id,e.t)).filter(Boolean).map(m=>m.kg);
@@ -6565,6 +6612,661 @@ function sedPrint(){
   if(!w){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
   w.document.write(doc); w.document.close();
   setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 400);
+}
+
+/* ═══════════════ PIANO: IL BLOCCO FRA DUE TEST ═══════════════
+   Test → gruppi → scheda di oggi c'erano gia'. Mancava il tempo in mezzo: le
+   settimane fino al test successivo, con il carico che cambia e l'RPE che
+   dice se il cambio era giusto.
+
+   Scelte (Federico, ottobre 2026):
+   - gli esercizi del blocco restano quelli; settimana per settimana cambiano
+     %, serie×rip e RIR previsto
+   - le sedute della settimana sono quante vuoi (A, B, C, D), ognuna con i suoi
+     esercizi e una riga libera per il resto (accessori, core…)
+   - i gruppi sono quelli della scheda di seduta: stessi massimali, stessi
+     gruppi a mano. Cambiano da soli se arriva un massimale nuovo
+   - l'RPE si segna per atleta, con «tutte» per fare in fretta. Insieme
+     all'RPE si congela il carico di quel giorno: un massimale nuovo a meta'
+     blocco non deve riscrivere la storia delle settimane gia' fatte
+   - il suggerimento per la settimana dopo resta un suggerimento: lo applichi tu.
+
+   Il suggerimento. Il RIR osservato e' 10 − RPE (scala RPE basata sul RIR,
+   Zourdos 2016; Helms 2016). Una serie da r ripetizioni con RIR q equivale a
+   r+q ripetizioni a cedimento: e' lo stesso impianto della stima da
+   ripetizioni (rmFactor). Lo scarto fra quello che e' successo e quello che
+   avevi previsto si riporta sulla settimana dopo, cosi' come l'avevi scritta:
+       % dopo = % prevista dopo · f(r + RIR osservato) / f(r + RIR previsto)
+   Se l'RPE e' quello previsto, la tua progressione resta com'e': il conto non
+   pretende di sapere quanto migliorano in una settimana, lo sai tu.
+   Oltre RM_RIP_MAX ripetizioni equivalenti le formule non reggono, e si usa
+   la regola pratica di 2,5 punti di % per ogni punto di RPE. In ogni caso non
+   piu' di 5 punti in una settimana, arrotondato a 2,5: chi si allena da poco
+   sbaglia il RIR di circa una ripetizione, e di piu' quando e' lontano dal
+   cedimento (Halperin 2022). Un numero piu' fine sarebbe precisione finta. */
+const PIANO_SED_MAX=4, PIANO_SETT_MAX=16, PIANO_CAP=5, PIANO_MAX=20;
+const PIANO_RPE=[5,5.5,6,6.5,7,7.5,8,8.5,9,9.5,10];
+let PV={id:null, w:null};      // blocco e settimana aperti nella vista
+function pianoKey(){ return S.activeTeam||"all"; }
+function pianiDi(k){ const l=(S.piani||{})[k==null?pianoKey():k]; return Array.isArray(l)?l:[]; }
+function pianoAttivo(){
+  const l=pianiDi(); if(!l.length) return null;
+  return l.find(b=>b.id===PV.id) || l[l.length-1];
+}
+function pianoGiorno(n){ return new Date(n*864e5).toISOString().slice(0,10); }
+function pianoNSett(b){
+  const n=Math.ceil((dayNum(b.a)-dayNum(b.da)+1)/7);
+  return isFinite(n) ? Math.max(1, Math.min(PIANO_SETT_MAX, n)) : 1;
+}
+function pianoSettInt(b,w){
+  const s=dayNum(b.da)+7*w;
+  return {da:pianoGiorno(s), a:pianoGiorno(Math.min(s+6, dayNum(b.a)))};
+}
+/* -1 = il blocco non e' ancora cominciato; n = e' finito */
+function pianoSettOggi(b){
+  const g=dayNum(todayISO())-dayNum(b.da), n=pianoNSett(b);
+  if(g<0) return -1;
+  return Math.min(n, Math.floor(g/7));
+}
+/* La prescrizione di una settimana. Una settimana che non hai toccato eredita
+   l'ultima che hai scritto: «il piano resta lo stesso, cambiano i carichi». */
+function pianoPx(b,w,sid,t){
+  for(let i=w;i>=0;i--){ const s=(b.sett||[])[i]; const p=s&&s.p&&s.p[sid+":"+t]; if(p) return p; }
+  return {pct:70, sr:"3×8", rir:2};
+}
+/* Scrive per esteso la prescrizione di una settimana: prima di cambiare una
+   settimana, quelle dopo gia' fatte (o con un RPE) non devono cambiare con lei. */
+function pianoFissa(b,w,sid,t){
+  if(!b.sett) b.sett=[];
+  while(b.sett.length<=w) b.sett.push({});
+  const s=b.sett[w]; if(!s.p) s.p={};
+  if(!s.p[sid+":"+t]) s.p[sid+":"+t]=Object.assign({}, pianoPx(b,w,sid,t));
+  return s.p[sid+":"+t];
+}
+function pianoEx(b,w,sed){
+  return ((sed&&sed.ex)||[]).filter(e=>e&&TMAP[e.t]).slice(0,SED_MAX).map(e=>{
+    const p=pianoPx(b,w,sed.id,e.t);
+    return {t:e.t, pct:p.pct, sr:p.sr, rir:p.rir, mode:e.mode==="min"?"min":"media"};
+  });
+}
+/* Nel piano contano tutte: l'appello di oggi non dice niente su chi ci sara'
+   la settimana prossima. */
+function pianoCalc(b,w,sed){ return sedutaCalc({ex:pianoEx(b,w,sed), rif:b.rif||"tutti", size:b.size||3, tutte:true}); }
+function pianoCaricoDi(r,t,aid){
+  for(const g of r.gruppi){
+    if(!g.membri.some(m=>m.id===aid)) continue;
+    const x=g.ex.find(e=>e.t===t); if(!x||!x.r) return null;
+    const riga=x.r.righe.find(y=>y.a.id===aid);
+    if(riga && isFinite(riga.carico)) return riga.carico;
+    return isFinite(x.r.load) ? x.r.load : null;
+  }
+  const k=r.ex.findIndex(e=>e.t===t), s=r.singole.find(z=>z.id===aid);
+  return (s && k>=0 && s.ex[k]!=null) ? s.ex[k] : null;
+}
+function pianoRK(w,sid,t){ return w+":"+sid+":"+t; }
+function pianoRpeDi(b,w,sid,t){ return ((b.rpe||{})[pianoRK(w,sid,t)])||{}; }
+function pianoMedia(o){
+  const v=Object.keys(o||{}).map(k=>o[k]).filter(x=>typeof x==="number"&&isFinite(x));
+  return v.length ? {m:v.reduce((a,c)=>a+c,0)/v.length, n:v.length} : null;
+}
+function pianoSugg(pct, sr, rirT, rpe, dopo){
+  const reps=sedReps(sr), q=parseFloat(rpe), rt=parseFloat(rirT);
+  let p=parseFloat(pct);
+  if(!reps || !(p>0) || !(q>=1&&q<=10) || !(rt>=0&&rt<=5)) return null;
+  // la base e' la settimana dopo come l'hai scritta; senza, questa
+  const d=parseFloat(dopo), base=(d>0&&d<=100) ? d : p;
+  const rirO=Math.min(5, Math.max(0, 10-q));
+  let nuovo, metodo="formule";
+  const fO=rmFactor(reps+rirO), fT=rmFactor(reps+rt);
+  if(reps+Math.max(rirO,rt)<=RM_RIP_MAX && fO && fT) nuovo=base*fO/fT;
+  else { nuovo=base+2.5*(rirO-rt); metodo="regola"; }
+  p=base;
+  nuovo=Math.max(p-PIANO_CAP, Math.min(p+PIANO_CAP, nuovo));
+  nuovo=Math.min(100, Math.max(30, Math.round(nuovo/2.5)*2.5));
+  return {pct:nuovo, delta:Math.round((nuovo-p)*10)/10, metodo:metodo, rirO:rirO, obiettivo:10-rt};
+}
+function sedSerie(sr){
+  const m=String(sr||"").replace(/\s/g,"").match(/^(\d+)[x×*]/i);
+  const n=m ? parseInt(m[1],10) : 1;
+  return (n>0&&n<=20) ? n : 1;
+}
+/* I numeri della settimana. Ripetizioni e tonnellaggio sono quelli previsti
+   dal piano, a testa; dove c'e' l'RPE vale il carico congelato quel giorno. */
+function pianoSettStat(b,w){
+  const per={}; let rr=0, pp=0, rirS=0;
+  const rpeV=[];
+  (b.sedute||[]).forEach(sed=>{
+    const r=pianoCalc(b,w,sed);
+    r.ex.forEach((e,k)=>{
+      const reps=sedReps(e.sr)||0, ser=sedSerie(e.sr), rk=pianoRK(w,sed.id,e.t);
+      const fz=((b.kg||{})[rk])||{};
+      rr+=reps*ser; pp+=e.pct*reps*ser; rirS+=(isFinite(e.rir)?e.rir:2)*reps*ser;
+      const add=(id,kg)=>{ const o=per[id]||(per[id]={rip:0,ton:0}); o.rip+=reps*ser; if(kg!=null) o.ton+=reps*ser*kg; };
+      r.gruppi.forEach(g=>g.membri.forEach(m=>add(m.id, fz[m.id]!=null?fz[m.id]:pianoCaricoDi(r,e.t,m.id))));
+      r.singole.forEach(s=>add(s.id, fz[s.id]!=null?fz[s.id]:s.ex[k]));
+      const o=pianoRpeDi(b,w,sed.id,e.t); Object.keys(o).forEach(id=>{ if(isFinite(o[id])) rpeV.push(o[id]); });
+    });
+  });
+  const ids=Object.keys(per);
+  const ton=ids.map(id=>per[id].ton).filter(x=>x>0), rip=ids.map(id=>per[id].rip);
+  const iv=pianoSettInt(b,w);
+  let pr=0, pt=0;
+  (teamAthletes()||[]).forEach(a=>{ const s=presStats(a.id, iv.da, iv.a); pr+=s.p+s.r; pt+=s.tot; });
+  const gare=(S.activeTeam&&S.activeTeam!=="all") ? gareDi(S.activeTeam).filter(g=>g&&g.d>=iv.da&&g.d<=iv.a) : [];
+  return {
+    intens: rr ? pp/rr : null,
+    rip: rip.length ? _mediana(rip) : null,
+    ton: ton.length ? _mediana(ton) : null,
+    rpe: rpeV.length ? rpeV.reduce((a,c)=>a+c,0)/rpeV.length : null, nRpe:rpeV.length,
+    obiettivo: rr ? 10-rirS/rr : null,
+    pres: pt ? Math.round(pr/pt*100) : null,
+    gare: gare
+  };
+}
+
+/* ─── Modifiche ─────────────────────────────────────────────────────────── */
+function pianoSalvaB(b){
+  const k=pianoKey(); if(!S.piani) S.piani={};
+  const l=pianiDi(k).filter(x=>x.id!==b.id);
+  l.push(b); l.sort((x,y)=>x.da<y.da?-1:x.da>y.da?1:0);
+  S.piani[k]=l.slice(-PIANO_MAX); save();
+}
+function pianoPxSet(w,sid,t,campo,v){
+  const b=pianoAttivo(); if(!b) return;
+  // un valore che non va rimette quello di prima nella casella, con un avviso
+  const no=m=>{ toast(m); setTimeout(render,0); };
+  if(campo==="pct"){ const n=parseFloat(String(v).replace(",",".")); if(!(n>0&&n<=100)) return no("Percentuale fra 1 e 100"); v=n; }
+  else if(campo==="rir"){ const n=parseFloat(v); if(!(n>=0&&n<=5)) return no("RIR fra 0 e 5"); v=n; }
+  else if(campo==="sr"){ v=String(v||"").replace(/[^0-9xX×*\-– ]/g,"").slice(0,12); if(!sedReps(v)) return no("Scrivi serie×ripetizioni, per esempio 4×5"); }
+  else return;
+  // le settimane dopo, gia' cominciate o con un RPE, restano come erano
+  const oggi=pianoSettOggi(b), n=pianoNSett(b);
+  for(let i=w+1;i<n;i++){
+    const ha=((b.sett||[])[i]||{}).p; if(ha&&ha[sid+":"+t]) break;
+    if(i<=oggi || Object.keys(pianoRpeDi(b,i,sid,t)).length) pianoFissa(b,i,sid,t);
+  }
+  pianoFissa(b,w,sid,t)[campo]=v;
+  pianoSalvaB(b);
+  pianoAggiorna(w);
+}
+function pianoApplica(w,sid,t,pct){ pianoPxSet(w,sid,t,"pct",pct); PV.w=w; render(); toast("Settimana "+(w+1)+": "+fmtNum(pct)+"%"); }
+function pianoSettSet(w,campo,v){
+  const b=pianoAttivo(); if(!b) return;
+  if(!b.sett) b.sett=[];
+  while(b.sett.length<=w) b.sett.push({});
+  b.sett[w][campo]=String(v||"").slice(0, campo==="fase"?40:200);
+  pianoSalvaB(b);
+}
+function pianoAccSet(sid,v){
+  const b=pianoAttivo(); if(!b) return;
+  const s=(b.sedute||[]).find(x=>x.id===sid); if(!s) return;
+  s.acc=String(v||"").slice(0,300); pianoSalvaB(b);
+}
+function pianoSetRpe(w,sid,t,aid,v){
+  const b=pianoAttivo(); if(!b) return;
+  const k=pianoRK(w,sid,t), n=parseFloat(v);
+  if(!b.rpe) b.rpe={}; if(!b.kg) b.kg={};
+  if(!b.rpe[k]) b.rpe[k]={}; if(!b.kg[k]) b.kg[k]={};
+  pianoFissa(b,w,sid,t);
+  if(!(n>=1&&n<=10)){ delete b.rpe[k][aid]; delete b.kg[k][aid]; }
+  else {
+    b.rpe[k][aid]=Math.round(n*2)/2;
+    if(b.kg[k][aid]==null){
+      const sed=(b.sedute||[]).find(s=>s.id===sid);
+      const kg=sed ? pianoCaricoDi(pianoCalc(b,w,sed),t,aid) : null;
+      if(kg!=null) b.kg[k][aid]=kg;
+    }
+  }
+  pianoSalvaB(b);
+}
+function pianoSetRpeTutte(w,sid,t,ids,v){ ids.forEach(id=>pianoSetRpe(w,sid,t,id,v)); }
+
+/* ─── Creare e modificare il blocco ─────────────────────────────────────── */
+let PF=null;
+function pianoNuovoId(){ return "b"+uid(); }
+function openPianoForm(nuovo){
+  const k=pianoKey();
+  if(k==="all"||k==="none"){ toast("Seleziona prima una squadra"); return; }
+  const es=lgEsercizi().filter(e=>e.conta>0);
+  if(!es.length){ toast("Nessun massimale registrato in questa squadra"); return; }
+  const b=pianoAttivo();
+  if(b && !nuovo) PF=JSON.parse(JSON.stringify(b));
+  else {
+    const da = b ? pianoGiorno(Math.max(dayNum(b.a)+1, dayNum(todayISO()))) : todayISO();
+    PF={id:pianoNuovoId(), nome:"", da:da, a:pianoGiorno(dayNum(da)+41), rif:b?b.rif:"tutti", size:b?b.size:3,
+        sedute: b ? JSON.parse(JSON.stringify(b.sedute||[])) : [{id:"sA", nome:"A", acc:"", ex:es.slice(0,2).map(e=>({t:e.test, mode:"media"}))}],
+        sett:[], rpe:{}, kg:{}};
+    // il blocco nuovo riparte dall'ultima settimana del precedente
+    if(b){ const w=pianoNSett(b)-1, p={}; (b.sedute||[]).forEach(s=>(s.ex||[]).forEach(e=>{ p[s.id+":"+e.t]=Object.assign({}, pianoPx(b,w,s.id,e.t)); })); PF.sett=[{p:p}]; }
+    PF._nuovo=true;
+  }
+  modal('<div class="mh"><div><div class="eyebrow">Piano</div><div class="mt">'+(PF._nuovo?'Nuovo blocco':'Modifica il blocco')+'</div>'+
+    '<div class="ms">Da oggi al prossimo test</div></div><button class="mcl" onclick="closeM()">✕</button></div><div id="pfBody"></div>');
+  pfDraw();
+}
+function pfDraw(){
+  const el=document.getElementById("pfBody"); if(!el||!PF) return;
+  const es=lgEsercizi().filter(e=>e.conta>0);
+  const nomeEs=t=>{ const x=es.find(y=>y.test===t); return x?x.n:((TMAP[t]||{}).name||t); };
+  let h='<label class="fl">Nome del blocco</label><input id="pfN" value="'+escAttr(PF.nome||"")+'" placeholder="es. Forza generale — ottobre" oninput="PF.nome=this.value">'+
+    '<div class="mjform"><label>Inizio<input type="date" value="'+escAttr(PF.da)+'" onchange="PF.da=this.value;pfDraw()"></label>'+
+    '<label>Prossimo test<input type="date" value="'+escAttr(PF.a)+'" onchange="PF.a=this.value;pfDraw()"></label></div>';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(PF.da)&&/^\d{4}-\d{2}-\d{2}$/.test(PF.a)&&PF.a>=PF.da){
+    const n=pianoNSett(PF);
+    const gare=gareDi(pianoKey()).filter(g=>g&&g.d>=PF.da&&g.d<=PF.a);
+    h+='<div class="fhint">'+n+(n===1?' settimana':' settimane')+(gare.length?' · '+gare.length+(gare.length===1?' gara':' gare')+' nel mezzo':'')+
+      (dayNum(PF.a)-dayNum(PF.da)+1>PIANO_SETT_MAX*7?' · oltre '+PIANO_SETT_MAX+' settimane il blocco si ferma lì':'')+'</div>';
+  } else h+='<div class="alert warn"><span class="ai">⚠️</span><span>La data del test deve venire dopo l\'inizio.</span></div>';
+  h+='<div class="psec">Sedute della settimana</div>';
+  PF.sedute.forEach((s,i)=>{
+    h+='<div class="sedex"><div class="sedex1"><b style="font-size:12px;color:var(--muted)">Seduta</b>'+
+      '<input style="flex:0 0 70px;margin:0" value="'+escAttr(s.nome||"")+'" maxlength="20" oninput="PF.sedute['+i+'].nome=this.value">'+
+      '<span style="flex:1"></span>'+(PF.sedute.length>1?'<button class="lgx" title="Togli la seduta" onclick="PF.sedute.splice('+i+',1);pfDraw()">✕</button>':'')+'</div>';
+    s.ex.forEach((e,j)=>{
+      h+='<div class="sedex2"><select style="flex:1;min-width:150px" onchange="PF.sedute['+i+'].ex['+j+'].t=this.value;pfDraw()">'+
+        es.map(x=>'<option value="'+escAttr(x.test)+'"'+(x.test===e.t?" selected":"")+'>'+esc(x.n)+'</option>').join("")+
+        (es.some(x=>x.test===e.t)?'':'<option value="'+escAttr(e.t)+'" selected>'+esc(nomeEs(e.t))+'</option>')+'</select>'+
+        '<div class="seg">'+[["media","media"],["min","più leggera"]].map(m=>
+          '<button class="'+(m[0]===(e.mode||"media")?"on":"")+'" onclick="PF.sedute['+i+'].ex['+j+'].mode=\''+m[0]+'\';pfDraw()">'+m[1]+'</button>').join("")+'</div>'+
+        '<button class="lgx" onclick="PF.sedute['+i+'].ex.splice('+j+',1);pfDraw()">✕</button></div>';
+    });
+    if(s.ex.length<SED_MAX) h+='<button class="btn sm" style="margin-top:6px" onclick="pfAddEx('+i+')">+ esercizio</button>';
+    h+='<label class="fl" style="margin-top:8px">Il resto della seduta <small>(accessori, core… — solo testo)</small></label>'+
+      '<textarea rows="2" maxlength="300" oninput="PF.sedute['+i+'].acc=this.value">'+esc(s.acc||"")+'</textarea></div>';
+  });
+  if(PF.sedute.length<PIANO_SED_MAX) h+='<button class="btn sm" style="width:100%;margin-top:6px" onclick="pfAddSed()">+ seduta</button>';
+  const tutti={}; PF.sedute.forEach(s=>s.ex.forEach(e=>tutti[e.t]=1));
+  h+='<div class="psec">I gruppi</div><div class="lgopt">'+
+    '<div><label class="fl">Formati su</label><select onchange="PF.rif=this.value">'+
+      '<option value="tutti"'+(PF.rif==="tutti"?" selected":"")+'>tutti gli esercizi</option>'+
+      Object.keys(tutti).map(t=>'<option value="'+escAttr(t)+'"'+(PF.rif===t?" selected":"")+'>solo '+esc(nomeEs(t))+' (anche i tuoi gruppi a mano)</option>').join("")+
+    '</select></div><div><label class="fl">Atlete per gruppo</label><div class="seg">'+
+      [2,3,4].map(v=>'<button class="'+(v===PF.size?"on":"")+'" onclick="PF.size='+v+';pfDraw()">'+v+'</button>').join("")+'</div></div></div>'+
+    '<button class="btn primary" style="width:100%;margin-top:14px" onclick="pfSalva()">Salva il blocco</button>';
+  if(!PF._nuovo) h+='<button class="btn sm" style="width:100%;margin-top:8px;color:var(--accent)" onclick="pianoElimina(\''+PF.id+'\')">Elimina il blocco</button>';
+  el.innerHTML=h;
+}
+function pfAddEx(i){
+  const es=lgEsercizi().filter(e=>e.conta>0), s=PF.sedute[i];
+  const u={}; s.ex.forEach(e=>u[e.t]=1);
+  const e=es.find(x=>!u[x.test]); if(!e){ toast("Non ci sono altri esercizi con dei massimali"); return; }
+  s.ex.push({t:e.test, mode:"media"}); pfDraw();
+}
+function pfAddSed(){
+  const usati={}; PF.sedute.forEach(s=>usati[s.id]=1);
+  const L="ABCDEFGH".split("").find(c=>!usati["s"+c]) || "X";
+  const es=lgEsercizi().filter(e=>e.conta>0);
+  PF.sedute.push({id:"s"+L, nome:L, acc:"", ex:es.slice(0,1).map(e=>({t:e.test, mode:"media"}))});
+  pfDraw();
+}
+function pianoValida(b){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(b.da)||!/^\d{4}-\d{2}-\d{2}$/.test(b.a)||b.a<b.da) return "La data del test deve venire dopo l'inizio";
+  if(!b.sedute.length) return "Serve almeno una seduta";
+  for(const s of b.sedute){
+    if(!s.ex.length) return "La seduta "+(s.nome||"")+" non ha esercizi";
+    const v={}; for(const e of s.ex){ if(v[e.t]) return "Nella seduta "+(s.nome||"")+" un esercizio è ripetuto"; v[e.t]=1; }
+  }
+  return null;
+}
+function pfSalva(){
+  if(!PF) return;
+  PF.nome=String(PF.nome||"").trim().slice(0,60);
+  PF.sedute.forEach(s=>{ s.nome=String(s.nome||"").trim().slice(0,20)||s.id.slice(1); });
+  if(PF.rif!=="tutti" && !PF.sedute.some(s=>s.ex.some(e=>e.t===PF.rif))) PF.rif="tutti";
+  const err=pianoValida(PF); if(err){ toast(err); return; }
+  const b=JSON.parse(JSON.stringify(PF)); delete b._nuovo;
+  pianoSalvaB(b); PV.id=b.id; PV.w=null; PF=null;
+  closeM(); if(S.view!=="piano") setView("piano"); else render();
+  toast("Blocco salvato");
+}
+function pianoElimina(id){
+  const b=pianiDi().find(x=>x.id===id); if(!b) return;
+  if(!confirm("Eliminare il blocco «"+(b.nome||fmtDate(b.da))+"» con tutti gli RPE segnati?")) return;
+  snapshotBeforeRisk("eliminazione del blocco "+(b.nome||fmtDate(b.da)));
+  S.piani[pianoKey()]=pianiDi().filter(x=>x.id!==id);
+  if(!S.piani[pianoKey()].length) delete S.piani[pianoKey()];
+  tombSet("piano:"+id);
+  PV.id=null; PV.w=null; PF=null;
+  save(); closeM(); render(); toast("Blocco eliminato");
+}
+/* La seduta della settimana va nella scheda di seduta: li' ci sono l'appello
+   di oggi, i dischi, gli avvisi e la stampa. Il piano non li rifa'. */
+function pianoApriScheda(w,sid){
+  const b=pianoAttivo(); if(!b) return;
+  const sed=(b.sedute||[]).find(s=>s.id===sid); if(!sed) return;
+  if(!S.sedute) S.sedute={};
+  S.sedute[sedKey()]={ex:pianoEx(b,w,sed).map(e=>({t:e.t, pct:e.pct, sr:e.sr, mode:e.mode})), rif:b.rif||"tutti", size:b.size||3};
+  save(); openSeduta();
+  toast("Scheda: settimana "+(w+1)+", seduta "+(sed.nome||""));
+}
+
+/* ─── RPE ───────────────────────────────────────────────────────────────── */
+let PR=null;
+function openPianoRpe(w,sid,t){
+  const b=pianoAttivo(); if(!b) return;
+  const sed=(b.sedute||[]).find(s=>s.id===sid); if(!sed) return;
+  const e=pianoEx(b,w,sed).find(x=>x.t===t); if(!e) return;
+  PR={w:w, sid:sid, t:t};
+  modal('<div class="mh"><div><div class="eyebrow">Settimana '+(w+1)+' · seduta '+esc(sed.nome||"")+'</div><div class="mt">RPE · '+esc(sedNomeEx(t))+'</div>'+
+    '<div class="ms">'+fmtNum(e.pct)+'% · '+esc(e.sr||"")+' · RIR previsto '+fmtNum(e.rir)+' (RPE '+fmtNum(10-e.rir)+')</div></div>'+
+    '<button class="mcl" onclick="closeM();render()">✕</button></div>'+
+    '<div class="fhint" style="margin-top:0">RPE dell\'ultima serie: 10 = non ne avrebbe fatta un\'altra, 9 = una in più, 8 = due in più. '+
+    'Sotto il 6 la stima del RIR non è affidabile. Il carico accanto al nome è quello del giorno: resta salvato con l\'RPE.</div>'+
+    '<div id="prBody"></div><button class="btn primary" style="width:100%;margin-top:12px" onclick="closeM();render()">Fatto</button>');
+  pianoRpeDraw();
+}
+function pianoRpeDraw(){
+  const el=document.getElementById("prBody"); if(!el) return;
+  const b=pianoAttivo(); if(!b||!PR) return;
+  const sed=(b.sedute||[]).find(s=>s.id===PR.sid); if(!sed) return;
+  const r=pianoCalc(b,PR.w,sed), k=r.ex.findIndex(e=>e.t===PR.t); if(k<0) return;
+  const e=r.ex[k], o=pianoRpeDi(b,PR.w,PR.sid,PR.t), fz=((b.kg||{})[pianoRK(PR.w,PR.sid,PR.t)])||{};
+  const arg=PR.w+',\''+PR.sid+'\',\''+escAttr(PR.t)+'\'';
+  const opt=(v)=>'<option value="">—</option>'+PIANO_RPE.map(x=>'<option value="'+x+'"'+(v===x?" selected":"")+'>'+fmtNum(x)+'</option>').join("");
+  const riga=(id,nome,kg)=>'<div class="prpe"><span class="prn">'+esc(nome)+(kg!=null?' <small>'+fmtNum(kg)+' kg</small>':'')+'</span>'+
+    '<select onchange="pianoSetRpe('+arg+',\''+id+'\',this.value);pianoRpeDraw()">'+opt(o[id])+'</select></div>';
+  let h='';
+  r.gruppi.forEach(g=>{
+    const ids=g.membri.map(m=>m.id);
+    const mg=pianoMedia(ids.reduce((a,id)=>{ if(o[id]!=null) a[id]=o[id]; return a; },{}));
+    h+='<div class="sedg" style="margin-top:8px"><div class="sedgh"><span class="lgt">'+esc(g.nome||("Gruppo "+g.n))+'</span>'+
+      (mg?'<span class="sedgn">media '+fmtNum(Math.round(mg.m*10)/10)+'</span>':'')+
+      '<span style="flex:1"></span><select class="prtutte" onchange="pianoSetRpeTutte('+arg+','+escAttr(JSON.stringify(ids))+',this.value);pianoRpeDraw()">'+
+      '<option value="">tutte…</option>'+PIANO_RPE.map(x=>'<option value="'+x+'">tutte '+fmtNum(x)+'</option>').join("")+'</select></div>'+
+      g.membri.map(m=>riga(m.id, m.nome, fz[m.id]!=null?fz[m.id]:pianoCaricoDi(r,e.t,m.id))).join("")+'</div>';
+  });
+  if(r.singole.length){
+    h+='<div class="sedg" style="margin-top:8px"><div class="sedgh"><span class="lgt">Senza gruppo</span></div>'+
+      r.singole.map(s=>riga(s.id, s.nome, fz[s.id]!=null?fz[s.id]:s.ex[k])).join("")+'</div>';
+  }
+  el.innerHTML=h;
+}
+
+/* ─── La vista ──────────────────────────────────────────────────────────── */
+function pianoBanner(){
+  const k=pianoKey(); if(k==="all"||k==="none") return "";
+  const l=pianiDi(k); if(!l.length) return "";
+  const oggi=todayISO();
+  const b=l.filter(x=>x.da<=oggi&&x.a>=oggi).pop(); if(!b) return "";
+  const n=pianoNSett(b), w=pianoSettOggi(b), gg=dayNum(b.a)-dayNum(oggi);
+  return '<div class="garaban" onclick="PV.id=\''+b.id+'\';PV.w=null;setView(\'piano\')"><span class="gmd pianomd">S'+(w+1)+'/'+n+'</span>'+
+    '<span>'+esc(b.nome||"Blocco")+' · test '+(gg===0?'oggi':'il '+fmtDate(b.a)+' ('+gg+(gg===1?' giorno':' giorni')+')')+'</span></div>';
+}
+function renderPiano(){
+  const grid=document.getElementById("grid");
+  const k=pianoKey();
+  if(k==="all"||k==="none"){
+    grid.innerHTML='<div class="empty-state"><h3>Scegli una squadra</h3><p>Il piano si fa per squadra: i gruppi vengono dai massimali delle sue atlete.</p></div>'; return;
+  }
+  if(!(teamAthletes()||[]).length){ grid.innerHTML=emptyTeam(); return; }
+  const b=pianoAttivo();
+  if(!b){
+    grid.innerHTML='<div class="empty-state"><h3>Nessun blocco</h3><p>Un blocco va da oggi al prossimo test. Scrivi le sedute della settimana una volta; '+
+      'poi, settimana per settimana, cambi %, serie×rip e RIR. I gruppi sono quelli della scheda di seduta. '+
+      'L\'RPE che segni ti dice come impostare la settimana dopo.</p>'+
+      '<button class="btn primary" onclick="openPianoForm()">+ Crea il blocco</button></div>'; return;
+  }
+  const n=pianoNSett(b), oggi=pianoSettOggi(b);
+  if(PV.w==null || PV.w>=n) PV.w=Math.max(0, Math.min(n-1, oggi<0?0:oggi));
+  const w=PV.w, iv=pianoSettInt(b,w);
+  const l=pianiDi();
+  const gg=dayNum(b.a)-dayNum(todayISO());
+  let h='<div class="pianotop"><div><div class="pianon">'+esc(b.nome||"Blocco")+'</div>'+
+    '<div class="pianos">'+fmtDate(b.da)+' → test '+fmtDate(b.a)+' · '+n+(n===1?' settimana':' settimane')+
+    (oggi<0?' · comincia fra '+(dayNum(b.da)-dayNum(todayISO()))+' giorni':oggi>=n?' · finito':' · settimana '+(oggi+1)+' · test fra '+gg+(gg===1?' giorno':' giorni'))+'</div></div>'+
+    '<div class="pianob"><button class="btn sm" onclick="openPianoForm()">✏️ Modifica</button>'+
+    '<button class="btn sm" onclick="pianoPrint()">🖨 Stampa</button>'+
+    '<button class="btn sm" onclick="openPianoForm(true)">+ Nuovo blocco</button>'+
+    (l.length>1?'<select onchange="PV.id=this.value;PV.w=null;render()">'+l.slice().reverse().map(x=>'<option value="'+escAttr(x.id)+'"'+(x.id===b.id?" selected":"")+'>'+esc(x.nome||"Blocco")+' · '+fmtDate(x.da)+'</option>').join("")+'</select>':'')+
+    '</div></div>';
+  h+='<div class="chips pianow">';
+  for(let i=0;i<n;i++){
+    const s=pianoSettStat(b,i);
+    h+='<button class="chip'+(i===w?" on":"")+(i===oggi?" ora":"")+'" onclick="PV.w='+i+';render()">S'+(i+1)+
+      (s.gare.length?' <span title="gare">⚑'+(s.gare.length>1?s.gare.length:'')+'</span>':'')+(i===n-1?' 🎯':'')+'</button>';
+  }
+  h+='</div>';
+  const st=pianoSettStat(b,w), sw=(b.sett||[])[w]||{};
+  h+='<div class="pianosett"><div class="pianosh"><b>Settimana '+(w+1)+'</b> <small>'+fmtDate(iv.da)+' – '+fmtDate(iv.a)+'</small></div>'+
+    '<div class="mjform" style="margin-top:6px"><label>Fase<input value="'+escAttr(sw.fase||"")+'" maxlength="40" placeholder="es. accumulo, scarico" onchange="pianoSettSet('+w+',\'fase\',this.value)"></label>'+
+    '<label>Nota<input value="'+escAttr(sw.nota||"")+'" maxlength="200" placeholder="facoltativa" onchange="pianoSettSet('+w+',\'nota\',this.value)"></label></div>'+
+    '<div id="pstat">'+pianoStatHtml(st)+'</div>'+
+    '</div>';
+  (b.sedute||[]).forEach(sed=>{
+    const r=pianoCalc(b,w,sed);
+    h+='<div class="sedg pianoseduta"><div class="sedgh"><span class="lgt">Seduta '+esc(sed.nome||"")+'</span><span style="flex:1"></span>'+
+      '<button class="btn sm" onclick="pianoApriScheda('+w+',\''+sed.id+'\')" title="Apri nella scheda di seduta: appello di oggi, dischi, stampa">🏋️ Scheda</button></div>';
+    r.ex.forEach((e,k)=>{
+      h+='<div class="pianoex"><div class="pianoexn">'+esc(sedNomeEx(e.t))+'</div>'+
+        '<div class="sedex2">'+
+          '<label><input class="mono" type="number" inputmode="decimal" value="'+fmtNum(e.pct)+'" onchange="pianoPxSet('+w+',\''+sed.id+'\',\''+escAttr(e.t)+'\',\'pct\',this.value)"><span>%</span></label>'+
+          '<label><input class="mono" value="'+escAttr(e.sr||"")+'" placeholder="4×5" onchange="pianoPxSet('+w+',\''+sed.id+'\',\''+escAttr(e.t)+'\',\'sr\',this.value)"><span>serie×rip</span></label>'+
+          '<label><select onchange="pianoPxSet('+w+',\''+sed.id+'\',\''+escAttr(e.t)+'\',\'rir\',this.value)">'+
+            [0,1,2,3,4,5].map(v=>'<option value="'+v+'"'+(v===e.rir?" selected":"")+'>'+v+'</option>').join("")+'</select><span>RIR</span></label>'+
+        '</div>'+
+        pianoExInfoHtml(b,w,n,sed,r,k)+'</div>';
+    });
+    h+='<label class="fl" style="margin-top:8px">Il resto della seduta</label><textarea rows="2" maxlength="300" placeholder="accessori, core…" onchange="pianoAccSet(\''+sed.id+'\',this.value)">'+esc(sed.acc||"")+'</textarea>';
+    h+='</div>';
+  });
+  h+='<div id="pand">'+pianoAndamentoHtml(b, n, oggi)+'</div>';
+  h+='<div class="gnote">I chili sono quelli dei massimali di oggi: se arriva un test nuovo, le settimane che vengono si aggiornano da sole; '+
+    'quelle con un RPE restano col carico del giorno. Il suggerimento viene dal RIR: 10 − RPE = ripetizioni rimaste. Le ragazze che si allenano da poco '+
+    'sbagliano di circa una ripetizione, di più lontano dal cedimento: per questo è arrotondato e lo applichi tu.</div>';
+  grid.innerHTML='<div class="pianov">'+h+'</div>';
+}
+function pianoStatHtml(st){
+  return ''+
+    '<div class="pianostat">'+
+      '<div><span>Intensità media</span><b>'+(st.intens!=null?fmtNum(Math.round(st.intens))+'%':'—')+'</b></div>'+
+      '<div><span>Ripetizioni a testa</span><b>'+(st.rip!=null?fmtNum(Math.round(st.rip)):'—')+'</b></div>'+
+      '<div><span>Tonnellaggio a testa</span><b>'+(st.ton!=null?fmtNum(Math.round(st.ton))+' kg':'—')+'</b><small>mediana</small></div>'+
+      '<div><span>RPE</span><b>'+(st.rpe!=null?fmtNum(Math.round(st.rpe*10)/10):'—')+'</b><small>'+(st.obiettivo!=null?'previsto '+fmtNum(Math.round(st.obiettivo*10)/10):'')+(st.nRpe?' · '+st.nRpe+' voti':'')+'</small></div>'+
+      (st.pres!=null?'<div><span>Presenze</span><b>'+st.pres+'%</b><small>dall\'appello</small></div>':'')+
+    '</div>'+
+    (st.gare.length?'<div class="garaban" style="cursor:default">🏐 '+st.gare.map(g=>fmtDate(g.d)+(g.avv?' vs '+esc(g.avv):'')).join(" · ")+'</div>':'');
+}
+function pianoInfoId(sid,t){ return "pxi-"+sid+"-"+t; }
+function pianoSugId(sid,t){ return "pxs-"+sid+"-"+t; }
+/* Due pezzi separati: i chili per gruppo e il suggerimento cambiano con la %,
+   il pulsante RPE no — e non deve sparire sotto il dito. */
+function pianoKgHtml(r,k){
+  const carichi=r.gruppi.map(g=>{ const x=g.ex[k]; return (x&&x.r&&isFinite(x.r.load))?fmtNum(x.r.load):"—"; });
+  return carichi.length ? '<span>kg per gruppo</span> '+carichi.map((c,i)=>'<b title="'+escAttr(r.gruppi[i].membri.map(m=>m.nome).join(", "))+'">'+c+'</b>').join(" · ")
+                        : '<span>nessun gruppo</span>';
+}
+function pianoSugHtml(b,w,n,sed,r,k){
+  const e=r.ex[k], o=pianoRpeDi(b,w,sed.id,e.t), mm=pianoMedia(o);
+  if(!mm) return "";
+  let h="";
+  const pn = w+1<n ? pianoPx(b,w+1,sed.id,e.t) : null;
+  const s = pn ? pianoSugg(e.pct, e.sr, e.rir, mm.m, pn.pct) : null;
+  if(s){
+    const testo = s.delta===0 ? 'in linea con il previsto: la settimana '+(w+2)+' va bene com\'è ('+fmtNum(pn.pct)+'%)'
+      : (s.delta>0?'più facile del previsto':'più duro del previsto')+' → settimana '+(w+2)+': <b>'+fmtNum(s.pct)+'%</b> invece di '+fmtNum(pn.pct)+'%';
+    h+='<span class="pianosug">'+testo+(s.metodo==="regola"?' <small>regola pratica</small>':'')+'</span>';
+    if(s.delta!==0) h+=' <button class="btn sm" onclick="pianoApplica('+(w+1)+',\''+sed.id+'\',\''+escAttr(e.t)+'\','+s.pct+')">Applica</button>';
+  }
+  // chi si allontana dal resto del gruppo: il numero medio la nasconderebbe
+  const fuori=[];
+  r.gruppi.forEach(g=>g.membri.forEach(m=>{ if(o[m.id]!=null && Math.abs(o[m.id]-mm.m)>=2) fuori.push(m.nome+' '+fmtNum(o[m.id])); }));
+  if(fuori.length) h+='<div class="sednote">Lontane dalla media: '+fuori.map(esc).join(", ")+'. Guardale una per una.</div>';
+  return h;
+}
+function pianoExInfoHtml(b,w,n,sed,r,k){
+  const e=r.ex[k], mm=pianoMedia(pianoRpeDi(b,w,sed.id,e.t));
+  return '<div class="pianokg" id="'+pianoInfoId(sed.id,e.t)+'">'+pianoKgHtml(r,k)+'</div>'+
+    '<div class="pianorpe"><button class="btn sm" onclick="openPianoRpe('+w+',\''+sed.id+'\',\''+escAttr(e.t)+'\')">RPE'+
+      (mm?' '+fmtNum(Math.round(mm.m*10)/10)+' <small>('+mm.n+')</small>':'')+'</button>'+
+    '<span class="pianosugw" id="'+pianoSugId(sed.id,e.t)+'">'+pianoSugHtml(b,w,n,sed,r,k)+'</span></div>';
+}
+/* Cambiare una % non ridisegna tutta la pagina: l'input che stai lasciando
+   verrebbe tolto mentre perde il fuoco, e il tocco sul pulsante che stavi
+   premendo andrebbe perso. Si aggiornano solo i numeri che ne dipendono. */
+function pianoAggiorna(w){
+  const b=pianoAttivo(); if(!b||S.view!=="piano"||PV.w!==w||!document.getElementById("pstat")){ render(); return; }
+  const n=pianoNSett(b);
+  document.getElementById("pstat").innerHTML=pianoStatHtml(pianoSettStat(b,w));
+  (b.sedute||[]).forEach(sed=>{
+    const r=pianoCalc(b,w,sed);
+    r.ex.forEach((e,k)=>{
+      const kg=document.getElementById(pianoInfoId(sed.id,e.t)); if(kg) kg.innerHTML=pianoKgHtml(r,k);
+      const sg=document.getElementById(pianoSugId(sed.id,e.t)); if(sg) sg.innerHTML=pianoSugHtml(b,w,n,sed,r,k);
+    });
+  });
+  const a=document.getElementById("pand"); if(a) a.innerHTML=pianoAndamentoHtml(b,n,pianoSettOggi(b));
+}
+function pianoAndamentoHtml(b,n,oggi){
+  let h='<div class="psec">Andamento del blocco</div><div class="mjwrap"><table class="mjtab pianotab"><thead><tr>'+
+    '<th>Sett.</th><th>Fase</th><th>Intensità</th><th>Rip.<small>a testa</small></th><th>Tonn.<small>a testa</small></th><th>RPE<small>previsto</small></th><th>Pres.</th></tr></thead><tbody>';
+  for(let i=0;i<n;i++){
+    const s=pianoSettStat(b,i), sw=(b.sett||[])[i]||{};
+    const scarto = (s.rpe!=null&&s.obiettivo!=null) ? s.rpe-s.obiettivo : null;
+    h+='<tr onclick="PV.w='+i+';render();window.scrollTo&&window.scrollTo(0,0)"'+(i===oggi?' class="ora"':'')+'><td class="n">S'+(i+1)+(s.gare.length?' ⚑':'')+(i===n-1?' 🎯':'')+'</td>'+
+      '<td>'+esc(sw.fase||"")+'</td>'+
+      '<td>'+(s.intens!=null?fmtNum(Math.round(s.intens))+'%':'—')+'</td>'+
+      '<td>'+(s.rip!=null?fmtNum(Math.round(s.rip)):'—')+'</td>'+
+      '<td>'+(s.ton!=null?fmtNum(Math.round(s.ton)):'—')+'</td>'+
+      '<td>'+(s.rpe!=null?'<b class="'+(scarto>=1?'pr-su':scarto<=-1?'pr-giu':'')+'">'+fmtNum(Math.round(s.rpe*10)/10)+'</b>':'—')+
+        (s.obiettivo!=null?'<small>'+fmtNum(Math.round(s.obiettivo*10)/10)+'</small>':'')+'</td>'+
+      '<td>'+(s.pres!=null?s.pres+'%':'—')+'</td></tr>';
+  }
+  h+='</tbody></table></div>';
+  return h;
+}
+function pianoPrint(){
+  const b=pianoAttivo(); if(!b) return;
+  const n=pianoNSett(b), tm=(S.teams||[]).find(x=>x.id===S.activeTeam);
+  let righe='';
+  (b.sedute||[]).forEach(sed=>{
+    (sed.ex||[]).filter(e=>TMAP[e.t]).forEach((e,j)=>{
+      righe+='<tr><td class="n">'+(j===0?'<b>'+esc(sed.nome||"")+'</b> ':'')+esc(sedNomeEx(e.t))+'</td>';
+      for(let i=0;i<n;i++){ const p=pianoPx(b,i,sed.id,e.t), mm=pianoMedia(pianoRpeDi(b,i,sed.id,e.t));
+        righe+='<td>'+fmtNum(p.pct)+'%<br>'+esc(p.sr||"")+'<br><small>RIR '+fmtNum(p.rir)+(mm?' · RPE '+fmtNum(Math.round(mm.m*10)/10):'')+'</small></td>'; }
+      righe+='</tr>';
+    });
+    if(sed.acc) righe+='<tr><td class="n"><small>'+esc(sed.nome||"")+' — resto</small></td><td colspan="'+n+'"><small>'+esc(sed.acc)+'</small></td></tr>';
+  });
+  let testa='<tr><th></th>';
+  for(let i=0;i<n;i++){ const iv=pianoSettInt(b,i), sw=(b.sett||[])[i]||{}, g=pianoSettStat(b,i).gare;
+    testa+='<th>S'+(i+1)+'<br><small>'+fmtDate(iv.da).slice(0,5)+(sw.fase?'<br>'+esc(sw.fase):'')+(g.length?'<br>⚑ '+g.map(x=>fmtDate(x.d).slice(0,5)).join(" "):'')+'</small></th>'; }
+  testa+='</tr>';
+  const css='@page{size:A4 landscape;margin:10mm}body{font-family:Helvetica,Arial,sans-serif;color:#111;font-size:10px}'+
+    '.br{font-size:9px;letter-spacing:.2em;color:#c1121f;font-weight:700}h1{font-size:17px;margin:2px 0}.sub{color:#555;margin:0 0 8px}'+
+    'table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:4px;text-align:center;vertical-align:top}th{background:#f4f4f4;font-size:9px}'+
+    'td.n{text-align:left;white-space:nowrap}small{color:#666;font-size:8.5px}.note{font-size:9px;color:#666;margin-top:8px}';
+  const doc='<!doctype html><html lang="it"><head><meta charset="utf-8"><title>'+esc("Piano "+((tm&&tm.name)||"")+" "+fmtDate(b.da).replace(/\//g,"-"))+'</title><style>'+css+'</style></head><body>'+
+    '<div class="br">IRON PERFORMANCE</div><h1>'+esc(b.nome||"Blocco")+'</h1>'+
+    '<p class="sub">'+esc((tm&&tm.name)||"")+' · '+fmtDate(b.da)+' → test '+fmtDate(b.a)+' · '+n+' settimane</p>'+
+    '<table><thead>'+testa+'</thead><tbody>'+righe+'</tbody></table>'+
+    '<p class="note">I carichi in kg per gruppo sono nella scheda di seduta di ogni settimana. RIR = ripetizioni lasciate nel serbatoio; RPE = media di quelle segnate.</p></body></html>';
+  const win=window.open("", "_blank");
+  if(!win){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
+  win.document.write(doc); win.document.close();
+  setTimeout(()=>{ try{ win.focus(); win.print(); }catch(e){} }, 400);
+}
+
+/* ─── Integrita': merge, ripristino, cancellazioni ───────────────────────── */
+/* Unione fra dispositivi: per ogni squadra, blocco per blocco. La struttura
+   (sedute, settimane) e' una decisione: vince questo dispositivo. Gli RPE sono
+   registrazioni: si uniscono, voce per voce (esercizio della settimana). */
+function pianiMerge(sv, lo, T, live){
+  sv=(sv&&typeof sv==="object"&&!Array.isArray(sv))?sv:{};
+  lo=(lo&&typeof lo==="object"&&!Array.isArray(lo))?lo:{};
+  const out={};
+  Object.keys(Object.assign({}, sv, lo)).forEach(team=>{
+    if(T&&T["team:"+team]) return;
+    const m={}, ord=[];
+    const add=l=>(Array.isArray(l)?l:[]).forEach(b=>{
+      if(!b||!b.id||(T&&T["piano:"+b.id])) return;
+      const nb=JSON.parse(JSON.stringify(b));
+      if(m[b.id]){ nb.rpe=Object.assign({}, m[b.id].rpe||{}, nb.rpe||{}); nb.kg=Object.assign({}, m[b.id].kg||{}, nb.kg||{}); }
+      else ord.push(b.id);
+      m[b.id]=nb;
+    });
+    add(sv[team]); add(lo[team]);
+    const l=ord.map(id=>m[id]);
+    if(live) l.forEach(b=>pianoSoloVive(b, live));
+    l.sort((x,y)=>x.da<y.da?-1:x.da>y.da?1:0);
+    if(l.length) out[team]=l.slice(-PIANO_MAX);
+  });
+  return out;
+}
+function pianoSoloVive(b, live){
+  ["rpe","kg"].forEach(c=>Object.keys(b[c]||{}).forEach(k=>{
+    const o=b[c][k]; if(!o||typeof o!=="object"){ delete b[c][k]; return; }
+    Object.keys(o).forEach(id=>{ if(!live[id]) delete o[id]; });
+  }));
+}
+/* Cancellare un'atleta toglie anche i suoi RPE e i suoi carichi: sono dati suoi. */
+function pianiTogli(aid){
+  Object.keys(S.piani||{}).forEach(k=>(S.piani[k]||[]).forEach(b=>{
+    ["rpe","kg"].forEach(c=>Object.keys(b[c]||{}).forEach(x=>{ if(b[c][x]) delete b[c][x][aid]; }));
+  }));
+}
+/* Una colonna tua che confluisce in un massimale porta con se' il piano. */
+function pianiRinomina(cid, std){
+  Object.keys(S.piani||{}).forEach(k=>(S.piani[k]||[]).forEach(b=>{
+    (b.sedute||[]).forEach(s=>{
+      const v={}; s.ex=(s.ex||[]).map(e=>Object.assign({}, e, {t:e.t===cid?std:e.t})).filter(e=>v[e.t]?false:(v[e.t]=1));
+      (b.sett||[]).forEach(w=>{ const p=w&&w.p; if(!p) return; const a=s.id+":"+cid, z=s.id+":"+std;
+        if(p[a]){ if(!p[z]) p[z]=p[a]; delete p[a]; } });
+    });
+    ["rpe","kg"].forEach(c=>Object.keys(b[c]||{}).forEach(x=>{
+      const q=x.split(":"); if(q.length!==3||q[2]!==cid) return;
+      const z=q[0]+":"+q[1]+":"+std; if(!b[c][z]) b[c][z]=b[c][x]; delete b[c][x];
+    }));
+    if(b.rif===cid) b.rif=std;
+  }));
+}
+/* Il ripristino da backup: solo forme note, numeri sensati, niente codice. */
+function pianoPulisci(b, testOk, live){
+  if(!b||typeof b!=="object"||!idOk(b.id)) return null;
+  const dOk=d=>typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d);
+  if(!dOk(b.da)||!dOk(b.a)||b.a<b.da) return null;
+  const sOk=x=>typeof x==="string"&&/^[A-Za-z0-9]{1,12}$/.test(x);
+  const out={id:b.id, nome:String(b.nome||"").slice(0,60), da:b.da, a:b.a,
+    size:[2,3,4].indexOf(b.size)>=0?b.size:3, sedute:[], sett:[], rpe:{}, kg:{}};
+  const visti={};
+  (Array.isArray(b.sedute)?b.sedute:[]).slice(0,PIANO_SED_MAX).forEach(s=>{
+    if(!s||!sOk(s.id)||visti[s.id]) return; visti[s.id]=1;
+    const v={}, ex=[];
+    (Array.isArray(s.ex)?s.ex:[]).slice(0,SED_MAX).forEach(e=>{
+      if(!e||typeof e.t!=="string"||!testOk(e.t)||v[e.t]) return; v[e.t]=1;
+      ex.push({t:e.t, mode:e.mode==="min"?"min":"media"});
+    });
+    if(ex.length) out.sedute.push({id:s.id, nome:String(s.nome||"").slice(0,20), acc:String(s.acc||"").slice(0,300), ex:ex});
+  });
+  if(!out.sedute.length) return null;
+  const chiave={}; out.sedute.forEach(s=>s.ex.forEach(e=>chiave[s.id+":"+e.t]=1));
+  (Array.isArray(b.sett)?b.sett:[]).slice(0,PIANO_SETT_MAX).forEach(w=>{
+    const o={};
+    if(w&&typeof w==="object"){
+      if(w.fase) o.fase=String(w.fase).slice(0,40);
+      if(w.nota) o.nota=String(w.nota).slice(0,200);
+      if(w.p&&typeof w.p==="object") Object.keys(w.p).forEach(k=>{
+        if(!chiave[k]) return; const p=w.p[k]; if(!p||typeof p!=="object") return;
+        const pc=parseFloat(p.pct), ri=parseFloat(p.rir), sr=String(p.sr||"").replace(/[^0-9xX×*\-– ]/g,"").slice(0,12);
+        if(!(pc>0&&pc<=100)||!sedReps(sr)) return;
+        if(!o.p) o.p={};
+        o.p[k]={pct:pc, sr:sr, rir:(ri>=0&&ri<=5)?ri:2};
+      });
+    }
+    out.sett.push(o);
+  });
+  ["rpe","kg"].forEach(c=>{
+    const src=b[c]; if(!src||typeof src!=="object") return;
+    Object.keys(src).slice(0,2000).forEach(k=>{
+      const q=k.split(":"); if(q.length!==3||!/^\d{1,2}$/.test(q[0])||!chiave[q[1]+":"+q[2]]) return;
+      const o=src[k]; if(!o||typeof o!=="object") return;
+      const r={};
+      Object.keys(o).forEach(id=>{ if(!live[id]) return; const n=parseFloat(o[id]);
+        if(c==="rpe" ? (n>=1&&n<=10) : (n>0&&n<=500)) r[id]=n; });
+      out[c][k]=r;
+    });
+  });
+  out.rif = (b.rif==="tutti"||out.sedute.some(s=>s.ex.some(e=>e.t===b.rif))) ? b.rif : "tutti";
+  return out;
 }
 
 /* ═══════════════ KNOWLEDGE BASE SPORT + RUOLO ═══════════════ */
@@ -8153,7 +8855,7 @@ function renderToday(){
      tstat(_pc.segnato ? _pc.in+"/"+_pc.tot : "—", _pc.segnato ? "In palestra" : "Appello da fare", _pc.segnato?"":"amber")+
      tstat(checkinToday+"/"+ath.length,"Check-in oggi")+
      tstat(manage.length,"Da gestire", manage.length?"down":"up")+
-     tstat(ready.length,"Pronti","up")+'</div>'+garaBanner();
+     tstat(ready.length,"Pronti","up")+'</div>'+garaBanner()+pianoBanner();
   /* ── Schede nuove ───────────────────────────────────────────────────────
      La scritta «nuova» si spegneva solo aprendo l'anamnesi. Qui la scheda si
      legge per intero senza entrare da nessuna parte, e la notifica si toglie
@@ -8969,7 +9671,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},piani:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -9190,6 +9892,18 @@ function sanitizeImport(o){
         size:(sz===2||sz===3||sz===4)?sz:3};
     });
   }
+  /* I blocchi del piano: per squadra, solo esercizi noti, RPE solo di atlete
+     che esistono. */
+  if(o.piani&&typeof o.piani==="object"&&!Array.isArray(o.piani)){
+    const custP={}; (Array.isArray(o.custom)?o.custom:[]).forEach(c=>{ if(c&&idOk(c.id)) custP[c.id]=1; });
+    Object.keys(o.piani).slice(0,100).forEach(k=>{
+      if(!(k==="all"||k==="none"||idOk(k))) return;
+      const ok=[];
+      (Array.isArray(o.piani[k])?o.piani[k]:[]).slice(-PIANO_MAX).forEach(b=>{
+        const v=pianoPulisci(b, t=>!!(TMAP[t]||custP[t]), live); if(v) ok.push(v); });
+      if(ok.length) out.piani[k]=ok;
+    });
+  }
   /* Gli esercizi tuoi: senza di loro il ripristino lascerebbe le misure in
      colonne che non esistono piu', cioe' dati invisibili. */
   if(Array.isArray(o.custom)){
@@ -9215,7 +9929,7 @@ function sanitizeImport(o){
   out.sport=str(o.sport,40)||"pallavolo";
   // "fatigue" era il vecchio nome della vista, rinominata "readiness" e mai
   // aggiornata qui: chi importava un backup stando in Fatica finiva in Matrice.
-  out.view=["matrix","today","trend","readiness","mj"].indexOf(o.view)>=0?o.view:"today";
+  out.view=["matrix","today","trend","readiness","mj","piano"].indexOf(o.view)>=0?o.view:"today";
   out.activeTeam=idOk(o.activeTeam)?o.activeTeam:"all";
   return out;
 }
@@ -10072,6 +10786,7 @@ function loadDemo(){
       S.tomb["ath:"+a.id]=ora;
       ["data","readiness","load","screen","lv","pres","mjl"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
       gruppiTogli(a.id);
+      pianiTogli(a.id);
     });
     (S.teams||[]).forEach(x=>{ S.tomb["team:"+x.id]=ora; });
   }

@@ -288,6 +288,18 @@ report (migliorata / calata / stabile, cioè entro l'errore della misura). Di se
 ordine alfabetico, niente peso, niente dati sanitari; l'ordine della tabella e il peso
 solo se li scegli. Si salva con «Salva come PDF» della stampa.
 
+**Piano: il blocco fra due test** (barra in basso → Piano) — le sedute della settimana
+(A, B, C, D, ciascuna con i suoi esercizi e una riga libera per il resto), e per ogni
+settimana %, serie×rip e RIR. Una settimana non toccata eredita l'ultima scritta. I
+gruppi sono quelli della scheda di seduta, con tutte le atlete. L'RPE si segna per
+atleta («tutte» per fare in fretta) e congela il carico del giorno. Il suggerimento per
+la settimana dopo riporta lo scarto fra RPE segnato e previsto sulla % già scritta:
+f(r+RIR osservato)/f(r+RIR previsto), le stesse formule della stima da ripetizioni;
+oltre 10 ripetizioni equivalenti, regola pratica di 2,5 punti per punto di RPE; mai più
+di 5 punti, arrotondato a 2,5, applicato solo da te. Per settimana: intensità media,
+ripetizioni e tonnellaggio a testa, RPE contro previsto, presenze, gare. «🏋️ Scheda»
+porta la seduta della settimana nella scheda di seduta; si stampa il blocco intero.
+
 **Promemoria** (Oggi → Da misurare) — test scaduti rispetto alla frequenza della
 batteria dello sport, chi manca dall'ultima sessione, test in batteria mai usati.
 
@@ -313,6 +325,13 @@ progetto, ora ha una rete.
 ## ⬜ Da fare — codice
 
 ### Prossimo passo naturale
+- [ ] **Stato della sincronizzazione visibile** — oggi è un pallino con la spiegazione
+      al passaggio del mouse, che sul telefono non si vede. Al suo posto: «3 modifiche non
+      ancora inviate · ultimo invio riuscito alle 18:42», e un avviso chiaro se il server
+      rifiuta i dati perché troppo grandi. Nato dallo spavento del 18 ottobre: i dati
+      c'erano, l'app non lo diceva.
+- [ ] **Il piano nel report «cosa è cambiato»** — per chi migliora o cala, cosa diceva il
+      blocco in mezzo (intensità, RPE medio, presenze).
 - [ ] **Motore di profilazione** sulla catena che regge con gli strumenti attuali:
       forza relativa (curva L-V) → cancelletto 1,5× → EUR → DJ-RSI → asimmetrie →
       indice di Bosco → profilo. Output: **profilo + evidenza + confidenza + letture

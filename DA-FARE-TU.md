@@ -13,7 +13,7 @@ e non manda niente online. Alla fine c'è il file `aggiorna-log.txt`: se qualcos
 non torna, dimmelo e lo leggo io.
 
 **Strada GitHub Desktop**, se preferisci:
-- Summary: `PDF dei test: tabella della squadra o una pagina per atleta`
+- Summary: `Piano: il blocco di settimane fra due test, con RPE e suggerimento`
 - **Commit to main**, poi **Push origin**.
 
 Aspetta due minuti: Vercel pubblica da solo.

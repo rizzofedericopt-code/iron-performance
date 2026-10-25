@@ -633,6 +633,28 @@ tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
 .pflib{font-size:10px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 5px;white-space:nowrap}
 .pfadd{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .sedaltro{white-space:pre-line;font-size:12.5px;color:var(--text);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px}
+/* salti dal video */
+.vidv{padding:0 8px 28px}
+.vidtop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+.vidtit{font-size:18px;font-weight:800;flex:1}
+.vidfile{position:relative;overflow:hidden;cursor:pointer}
+.vidfile input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.vidgrid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px}
+@media (min-width:980px){ .vidgrid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)} }
+.vidwrap{position:relative;background:#000;border-radius:10px;overflow:hidden}
+.vidwrap video{display:block;width:100%;max-height:62vh;background:#000}
+#vidOv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.vidctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.vidctl select{width:auto;margin:0;padding:6px 8px}
+.vidt{font-size:12px;color:var(--muted);margin-left:auto}
+.vidtipi{padding:8px 0 0}.vidtipi .chip small{opacity:.6;margin-left:3px}
+.vidroster{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.vidath small{opacity:.55;font-family:var(--mono)}
+.vidlist{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:6px}
+.videv,.vidtr{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);font-size:13px}
+.videv:last-child,.vidtr:last-child{border-bottom:none}
+.videv small{color:var(--muted)}
+.vidtr select{width:auto;margin:0 0 0 auto;padding:5px 8px;font-size:12px}
 /* cosa è cambiato */
 .cblist{display:flex;flex-direction:column;gap:7px;margin-top:8px}
 .cbrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font-family:var(--sans);cursor:pointer}
@@ -1745,6 +1767,7 @@ function normalize(){
   if(!S.sedute || typeof S.sedute!=="object" || Array.isArray(S.sedute)) S.sedute={};   // scheda di seduta, per squadra
   if(!S.gare || typeof S.gare!=="object" || Array.isArray(S.gare)) S.gare={};             // calendario gare, per squadra
   if(!S.piani || typeof S.piani!=="object" || Array.isArray(S.piani)) S.piani={};         // blocchi fra due test, per squadra
+  if(!S.salti || typeof S.salti!=="object" || Array.isArray(S.salti)) S.salti={};         // salti per atleta per seduta (dal video)
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
   if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
   applyCustom();
@@ -2242,7 +2265,7 @@ function tombSet(key){
   if(!S.tomb) S.tomb={};
   S.tomb[key]=new Date().toISOString();
 }
-const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v", pres:"p", mjl:"j"};
+const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v", pres:"p", mjl:"j", salti:"salto"};
 
 /* Le curve carico-velocità ammettono più esercizi nella stessa data: la chiave
    di merge non può essere la sola data, o il secondo esercizio sparisce. */
@@ -2301,7 +2324,7 @@ function mergeState(server, local){
   out.athletes=Object.keys(aid).filter(id=>!T["ath:"+id]).map(id=>mergeAthlete(sa[id], la[id]));
 
   const live={}; out.athletes.forEach(a=>live[a.id]=1);
-  ["data","readiness","load","screen","lv","pres","mjl"].forEach(k=>{ if(!out[k]) out[k]={}; });
+  ["data","readiness","load","screen","lv","pres","mjl","salti"].forEach(k=>{ if(!out[k]) out[k]={}; });
 
   Object.keys(Object.assign({},server.data||{},local.data||{})).forEach(aid=>{
     if(!live[aid]){ delete out.data[aid]; return; }
@@ -2313,7 +2336,7 @@ function mergeState(server, local){
       if(arr.length) out.data[aid][t]=arr; // un test svuotato non resta come chiave vuota
     });
   });
-  ["readiness","load","screen","lv","pres","mjl"].forEach(k=>{
+  ["readiness","load","screen","lv","pres","mjl","salti"].forEach(k=>{
     Object.keys(Object.assign({},server[k]||{},local[k]||{})).forEach(aid=>{
       if(!live[aid]){ delete out[k][aid]; return; }
       const arr=mergeByDate((server[k]||{})[aid],(local[k]||{})[aid],TOMB_PREFIX[k]+":"+aid+":",T);
@@ -3389,6 +3412,7 @@ function render(){
   if(S.view==="readiness"){ renderReadiness(); return; }
   if(S.view==="mj"){ renderMJ(); return; }
   if(S.view==="piano"){ renderPiano(); return; }
+  if(S.view==="video"){ renderVideo(); return; }
   renderMatrix();
 }
 
@@ -3690,6 +3714,8 @@ function renderBar(){
     h+='<div class="barhint">archivio My Jump: ogni salto, ogni numero</div>';
   } else if(S.view==="piano"){
     h+='<div class="barhint">il blocco fino al prossimo test: carichi e RPE settimana per settimana</div>';
+  } else if(S.view==="video"){
+    h+='<div class="barhint">quanti salti fa ciascuna: a mano o con l\'AI, il video resta su questo computer</div>';
   } else {
     h+='<button class="btn sm" onclick="openTabPdf()" title="La tabella in PDF, da far vedere o da mandare">📄 PDF</button>';
     h+='<div class="leg"><span class="it"><span class="dot" style="background:var(--up)"></span>Migliora</span>'+
@@ -4724,6 +4750,7 @@ function delAthlete(id){
   // un'assenza e' un dato personale: se resta qui, resta anche nel cloud
   if(S.pres) delete S.pres[id];
   if(S.mjl) delete S.mjl[id];
+  if(S.salti) delete S.salti[id];
   gruppiTogli(id);
   pianiTogli(id);
   tombSet("ath:"+id);   // impedisce che il merge lo resusciti
@@ -7819,6 +7846,515 @@ function pianoPulisci(b, testOk, live){
   return out;
 }
 
+/* ═══════════════ SALTI DAL VIDEO ═══════════════
+   Ottobre 2026, Federico: «la video analisi serve ai preparatori». La domanda
+   a cui risponde e' una sola: QUANTI SALTI fa ciascuna, in partita e in
+   allenamento. Nella pallavolo e' il carico meccanico che sovraccarica il
+   tendine rotuleo, e l'ACWR non lo vedeva.
+
+   Due modi, sullo stesso video:
+   - a mano: guardi a velocita' doppia e a ogni salto tocchi la ragazza e il
+     tipo. E' il riferimento, ed e' affidabile.
+   - con l'AI (sperimentale): un modello di posa (MoveNet MultiPose, Apache 2.0)
+     guarda il video NEL BROWSER, segue le persone e propone i salti; tu dici una
+     volta per traccia chi e'. Finche' la verifica contro il conteggio a mano non
+     dice che sbaglia poco su QUELLA telecamera, e' un prototipo.
+
+   Il video non lascia mai il computer: lo legge il browser, e nell'app si
+   salvano solo i numeri (salti per atleta per seduta). Sono immagini di
+   minorenni: niente server, niente cloud.
+
+   Riferimento per il metodo dei sensori, che restano la strada affidabile:
+   Skazalski et al. 2018, Scand J Med Sci Sports — il sensore contava il 99,3%
+   di 3.637 salti rispetto al video.                                         */
+const VID_TIPI=[
+  {k:"att",  l:"Attacco", key:"a"},
+  {k:"muro", l:"Muro",    key:"m"},
+  {k:"batt", l:"Battuta", key:"b"},
+  {k:"alz",  l:"Alzata",  key:"z"},
+  {k:"alt",  l:"Altro",   key:"x"},
+];
+const VID_TOL=0.7;          // secondi: due segni piu' vicini sono lo stesso salto
+const VID_FPS=[6,10,15];
+function vidMediana(a){ const s=a.filter(x=>isFinite(x)).slice().sort((x,y)=>x-y); if(!s.length) return null; const m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; }
+function vidTempo(t){ t=Math.max(0,Math.round(t||0)); const h=Math.floor(t/3600), m=Math.floor(t%3600/60), s=t%60;
+  return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(s).padStart(2,"0"); }
+function vidSecondi(txt){
+  const p=String(txt||"").trim().split(":").map(x=>parseFloat(x));
+  if(!p.length||p.some(x=>!isFinite(x)||x<0)) return null;
+  return p.reduce((a,x)=>a*60+x,0);
+}
+
+/* ─── Il motore: tracce e salti (funzioni pure, provate in test/video.mjs) ──
+   Una rilevazione = una persona in un fotogramma, in coordinate 0..1 del
+   fotogramma intero (y cresce verso il basso):
+     x  centro orizzontale · y0/y1 bordo alto/basso · h = y1 − y0
+     ank media delle caviglie · hip media delle anche                        */
+function vidTraccia(frames, opz){
+  const gap=(opz&&opz.gap)||1.0;
+  const tracce=[]; let attive=[]; let nid=0;
+  (frames||[]).forEach(f=>{
+    attive=attive.filter(tr=>f.t-tr.last.t<=gap);
+    const coppie=[];
+    attive.forEach((tr,i)=>(f.dets||[]).forEach((d,j)=>{
+      const L=tr.last, hh=Math.max(L.h,d.h,1e-6);
+      const dx=Math.abs(L.x-d.x)/hh, dy=Math.abs(L.y0-d.y0)/hh, dh=Math.abs(L.h-d.h)/hh;
+      // in salto la persona sale anche di un terzo della sua altezza: in verticale si e' larghi
+      if(dx<0.7 && dh<0.6 && dy<0.9) coppie.push([dx+0.3*dy+dh, i, j]);
+    }));
+    coppie.sort((a,b)=>a[0]-b[0]);
+    const presaT={}, presaD={};
+    coppie.forEach(([c,i,j])=>{ if(presaT[i]||presaD[j]) return; presaT[i]=presaD[j]=1;
+      const tr=attive[i], d=Object.assign({t:f.t}, f.dets[j]); tr.pts.push(d); tr.last=d; });
+    (f.dets||[]).forEach((d,j)=>{ if(presaD[j]) return;
+      const p=Object.assign({t:f.t}, d), tr={id:"t"+(++nid), pts:[p], last:p};
+      tracce.push(tr); attive.push(tr); });
+  });
+  return tracce.map(tr=>({id:tr.id, pts:tr.pts}));
+}
+/* Un salto = le caviglie salgono rispetto a PRIMA e a DOPO (una corsa verso
+   la rete le fa salire e basta, senza tornare), e salgono anche le anche (un
+   calcio o un piede alzato muove solo la caviglia). Soglie in frazione
+   dell'altezza della persona: un attacco o un muro di una ragazza alza i piedi
+   di circa un quarto della sua statura; un'alzata in salto di meno.        */
+const VID_SOGLIA={ank:0.10, hip:0.06, prima:[0.75,0.3], volo:0.8, distinti:0.6};
+function vidSaltiTraccia(tr, opz){
+  const o=Object.assign({}, VID_SOGLIA, opz||{});
+  const p=(tr&&tr.pts||[]).filter(x=>isFinite(x.ank)&&isFinite(x.h)&&x.h>0);
+  if(p.length<4) return [];
+  const H=vidMediana(p.map(x=>x.h));
+  const fin=(a,b)=>p.filter(x=>x.t>=a&&x.t<=b);
+  const out=[];
+  p.forEach((q,i)=>{
+    // un minimo locale di y = il punto piu' alto
+    const vic=fin(q.t-0.2, q.t+0.2);
+    if(vic.some(v=>v.ank<q.ank)) return;
+    const pre=fin(q.t-o.prima[0], q.t-o.prima[1]), post=fin(q.t+o.prima[1], q.t+o.prima[0]);
+    if(!pre.length||!post.length) return;
+    const aPre=vidMediana(pre.map(v=>v.ank)), aPost=vidMediana(post.map(v=>v.ank));
+    const hPre=vidMediana(pre.map(v=>v.hip)), hPost=vidMediana(post.map(v=>v.hip));
+    const sale=Math.min(aPre,aPost)-q.ank;
+    const saleH=(isFinite(hPre)&&isFinite(hPost)&&isFinite(q.hip)) ? Math.min(hPre,hPost)-q.hip : 0;
+    if(sale<o.ank*H || saleH<o.hip*H) return;
+    // in aria troppo a lungo non e' un salto: il terreno qui e' il punto piu'
+    // basso dei piedi nei dintorni, e il tempo «in alto» si misura da li'
+    const terra=Math.max(...fin(q.t-1.2, q.t+1.2).map(v=>v.ank));
+    const meta=terra-(terra-q.ank)/2;
+    let a=i, b=i; while(a>0 && p[a-1].ank<meta) a--; while(b<p.length-1 && p[b+1].ank<meta) b++;
+    if(p[b].t-p[a].t>o.volo) return;
+    out.push({t:q.t, tr:tr.id, alza:Math.round(sale/H*100)/100, x:q.x, y0:q.y0, y1:q.y1, h:q.h});
+  });
+  // due picchi vicini sono lo stesso salto: resta il piu' alto
+  out.sort((a,b)=>a.t-b.t);
+  const fin2=[];
+  out.forEach(e=>{ const u=fin2[fin2.length-1];
+    if(u && e.t-u.t<o.distinti){ if(e.alza>u.alza) fin2[fin2.length-1]=e; } else fin2.push(e); });
+  return fin2;
+}
+function vidSalti(frames, opz){
+  const tr=vidTraccia(frames, opz);
+  let out=[]; tr.forEach(t=>{ out=out.concat(vidSaltiTraccia(t, opz)); });
+  return {tracce:tr.map(t=>({id:t.id, n:t.pts.length, da:t.pts[0].t, a:t.pts[t.pts.length-1].t})), salti:out.sort((a,b)=>a.t-b.t)};
+}
+/* La verifica: i salti segnati a mano sono il riferimento. Ogni salto vero si
+   accoppia con la proposta dell'AI piu' vicina entro VID_TOL secondi. */
+function vidVerifica(veri, proposti, tol){
+  tol=tol||VID_TOL;
+  const V=(veri||[]).slice().sort((a,b)=>a.t-b.t), P=(proposti||[]).slice().sort((a,b)=>a.t-b.t);
+  const usata=new Array(P.length).fill(false);
+  const giusti=[], persi=[];
+  let stessa=0, conAtleta=0;
+  V.forEach(v=>{
+    let best=-1, bd=Infinity;
+    P.forEach((p,j)=>{ if(usata[j]) return; const d=Math.abs(p.t-v.t);
+      // a parita' di vicinanza vince la proposta della stessa atleta
+      const pen=(p.aid&&v.aid&&p.aid!==v.aid)?0.001:0;
+      if(d<=tol && d+pen<bd){ bd=d+pen; best=j; } });
+    if(best<0){ persi.push(v); return; }
+    usata[best]=true; giusti.push({v:v, p:P[best]});
+    if(v.aid && P[best].aid){ conAtleta++; if(v.aid===P[best].aid) stessa++; }
+  });
+  const inventati=P.filter((p,j)=>!usata[j]);
+  return {veri:V.length, proposti:P.length, giusti:giusti.length,
+    recall: V.length ? giusti.length/V.length : null,
+    precisione: P.length ? giusti.length/P.length : null,
+    atletaGiusta: conAtleta ? stessa/conAtleta : null, conAtleta:conAtleta,
+    persi:persi, inventati:inventati};
+}
+/* Lo stesso salto segnato a mano e trovato dall'AI conta una volta sola:
+   vince il segno a mano. */
+function vidUnisci(eventi, tol){
+  tol=tol||VID_TOL;
+  const mano=(eventi||[]).filter(e=>e.fonte!=="ai"), ai=(eventi||[]).filter(e=>e.fonte==="ai");
+  const tieni=ai.filter(a=>!mano.some(m=>Math.abs(m.t-a.t)<=tol && (!m.aid||!a.aid||m.aid===a.aid)));
+  return mano.concat(tieni).sort((a,b)=>a.t-b.t);
+}
+function vidConta(eventi){
+  const per={};
+  (eventi||[]).forEach(e=>{
+    if(!e||!e.aid||e.aid==="no") return;
+    const o=per[e.aid]||(per[e.aid]={n:0, att:0, muro:0, batt:0, alz:0, alt:0});
+    o.n++; const k=VID_TIPI.some(x=>x.k===e.tipo)?e.tipo:"alt"; o[k]++;
+  });
+  return per;
+}
+
+/* ─── I salti nello stato (sincronizzati) ─────────────────────────────────
+   S.salti[aid] = [{d, exercise:<id seduta>, nome, n, att, muro, batt, alz, alt, src}]
+   `exercise` e' la chiave di merge (recKey): due sedute nello stesso giorno —
+   partita e allenamento — restano due.                                    */
+function saltiArr(aid){ const a=(S.salti||{})[aid]; return Array.isArray(a)?a:[]; }
+function saltiSalva(sid, data, nome, src, per){
+  if(!S.salti) S.salti={};
+  const live={}; (S.athletes||[]).forEach(a=>live[a.id]=1);
+  let n=0;
+  // una seduta salvata di nuovo sostituisce la precedente, anche per chi ora ha zero salti
+  Object.keys(S.salti).forEach(aid=>{
+    const vecchie=saltiArr(aid).filter(e=>e.exercise===sid);
+    if(!vecchie.length) return;
+    // la tombstone porta la data VECCHIA: se hai cambiato giorno, sugli altri dispositivi deve sparire quella
+    vecchie.forEach(e=>{ if(!per[aid] || e.d!==data) tombSet("salto:"+aid+":"+e.d+"|"+sid); });
+    S.salti[aid]=saltiArr(aid).filter(e=>e.exercise!==sid);
+    if(!S.salti[aid].length) delete S.salti[aid];
+  });
+  Object.keys(per).forEach(aid=>{
+    if(!live[aid]) return;
+    const c=per[aid];
+    const l=saltiArr(aid).concat([{d:data, exercise:sid, nome:String(nome||"").slice(0,60), n:c.n, att:c.att, muro:c.muro, batt:c.batt, alz:c.alz, alt:c.alt, src:src}]);
+    l.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+    S.salti[aid]=l; n+=c.n;
+    if(S.tomb) delete S.tomb["salto:"+aid+":"+data+"|"+sid];
+  });
+  save();
+  return n;
+}
+/* Ultimi 7 giorni e media settimanale delle 4 settimane prima: due numeri,
+   nessun allarme. Un rapporto fra i due e' un dato da guardare, non una
+   soglia: sui salti non ce n'e' una validata per le ragazze. */
+function saltiRiassunto(aid, oggi){
+  const o=dayNum(oggi||todayISO()), l=saltiArr(aid);
+  if(!l.length) return null;
+  let s7=0, s28=0; l.forEach(e=>{ const g=o-dayNum(e.d); if(g>=0&&g<7) s7+=e.n; if(g>=7&&g<35) s28+=e.n; });
+  const ult=l[l.length-1];
+  return {ultima:ult, sett:s7, media4:Math.round(s28/4), rapporto: s28 ? Math.round(s7/(s28/4)*100)/100 : null};
+}
+
+/* ─── Archivio locale del video (IndexedDB, solo su questo computer) ───── */
+function vidIdb(){
+  return new Promise((ok,ko)=>{
+    const r=indexedDB.open("ip_video",1);
+    r.onupgradeneeded=()=>r.result.createObjectStore("v");
+    r.onsuccess=()=>ok(r.result); r.onerror=()=>ko(r.error);
+  });
+}
+async function vidLeggi(k){ const db=await vidIdb(); return new Promise((ok,ko)=>{ const q=db.transaction("v").objectStore("v").get(k); q.onsuccess=()=>ok(q.result||null); q.onerror=()=>ko(q.error); }); }
+async function vidScrivi(k,v){ const db=await vidIdb(); return new Promise((ok,ko)=>{ const q=db.transaction("v","readwrite").objectStore("v").put(v,k); q.onsuccess=()=>ok(true); q.onerror=()=>ko(q.error); }); }
+
+/* ─── La vista ──────────────────────────────────────────────────────────── */
+let VID={file:null, url:null, key:null, rec:null, tipo:"att", ai:null, stop:false, salvaT:null};
+function vidNuovoRec(f){
+  return {nome:f?f.name:"", data:todayISO(), seduta:"Partita", sid:"v"+uid(), eventi:[],
+          ai:{fps:10, area:"vicina", da:0, a:null, analizzato:[], candidati:[], tracce:{}, scartati:{}}};
+}
+function vidAtlete(){ return (teamAthletes()||[]).slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),"it")); }
+function vidSalvaRec(){
+  clearTimeout(VID.salvaT);
+  VID.salvaT=setTimeout(()=>{ if(VID.key&&VID.rec) vidScrivi(VID.key, VID.rec).catch(()=>toast("Non riesco a salvare il lavoro sul video in questo browser")); }, 400);
+}
+function openVideo(){ S.view="video"; render(); }
+function renderVideo(){
+  const grid=document.getElementById("grid");
+  const radice=document.getElementById("vidRoot");
+  if(radice && radice.isConnected){ vidPannelli(); return; }
+  const k=pianoKey();
+  if(k==="all"||k==="none"){ grid.innerHTML='<div class="empty-state"><h3>Scegli una squadra</h3><p>I salti si contano per le atlete di una squadra.</p></div>'; return; }
+  let h='<div id="vidRoot" class="vidv">'+
+    '<div class="vidtop"><button class="btn sm" onclick="setView(\'readiness\')">← Fatica</button>'+
+    '<div class="vidtit">🎥 Salti dal video</div>'+
+    '<label class="btn sm primary vidfile">Apri un video<input type="file" accept="video/*" onchange="vidApri(this.files&&this.files[0])"></label></div>'+
+    '<div class="gnote" style="margin-top:6px">Il video resta su questo computer: lo legge il browser, e nell\'app vanno solo i numeri. '+
+    'Per l\'AI serve Chrome o Edge su un computer; a mano funziona ovunque.</div>'+
+    '<div class="vidgrid"><div class="vidcol">'+
+      '<div class="vidwrap"><video id="vidEl" playsinline preload="auto"></video><canvas id="vidOv"></canvas></div>'+
+      '<div class="vidctl">'+
+        '<button class="btn sm" onclick="vidSalta(-5)" title="Maiusc+←">−5s</button>'+
+        '<button class="btn sm" onclick="vidSalta(-1/30)" title=",">‹ fot.</button>'+
+        '<button class="btn sm primary" id="vidPlay" onclick="vidPlay()">▶︎</button>'+
+        '<button class="btn sm" onclick="vidSalta(1/30)" title=".">fot. ›</button>'+
+        '<button class="btn sm" onclick="vidSalta(5)" title="Maiusc+→">+5s</button>'+
+        '<select id="vidVel" onchange="vidVel(this.value)">'+[0.5,1,1.5,2,3,4].map(v=>'<option value="'+v+'"'+(v===2?" selected":"")+'>'+v+'×</option>').join("")+'</select>'+
+        '<span id="vidT" class="vidt mono">0:00</span></div>'+
+      '<div id="vidTipi" class="vidtipi"></div>'+
+      '<div id="vidRoster" class="vidroster"></div>'+
+      '<div class="fhint">Tasti: <b>spazio</b> play/pausa · <b>1-9, 0</b> l\'atleta · <b>a m b z x</b> il tipo · <b>← →</b> 1 secondo · <b>, .</b> un fotogramma.</div>'+
+    '</div><div class="vidcol">'+
+      '<div id="vidInfo"></div><div id="vidEventi"></div><div id="vidAI"></div><div id="vidVer"></div><div id="vidSave"></div>'+
+    '</div></div></div>';
+  grid.innerHTML=h;
+  const v=document.getElementById("vidEl");
+  if(v){
+    v.addEventListener("timeupdate", vidTick);
+    v.addEventListener("seeked", vidTick);
+    v.addEventListener("play", ()=>{ const b=document.getElementById("vidPlay"); if(b) b.textContent="❚❚"; });
+    v.addEventListener("pause", ()=>{ const b=document.getElementById("vidPlay"); if(b) b.textContent="▶︎"; });
+    v.addEventListener("loadedmetadata", ()=>{ v.playbackRate=2; vidPannelli(); });
+    if(VID.url){ v.src=VID.url; }
+  }
+  vidPannelli();
+}
+async function vidApri(f){
+  if(!f) return;
+  if(VID.url) try{ URL.revokeObjectURL(VID.url); }catch(e){}
+  VID.file=f; VID.url=URL.createObjectURL(f); VID.key=f.name+"|"+f.size+"|"+(f.lastModified||0);
+  let rec=null; try{ rec=await vidLeggi(VID.key); }catch(e){}
+  VID.rec=rec||vidNuovoRec(f);
+  const v=document.getElementById("vidEl"); if(v){ v.src=VID.url; }
+  vidPannelli();
+  toast(rec ? "Ripreso il lavoro su questo video: "+rec.eventi.length+" salti segnati" : "Video aperto");
+}
+function vidEl(){ return document.getElementById("vidEl"); }
+function vidPlay(){ const v=vidEl(); if(!v||!VID.url) return; if(v.paused) v.play(); else v.pause(); }
+function vidSalta(s){ const v=vidEl(); if(!v||!VID.url) return; v.pause(); v.currentTime=Math.max(0, Math.min((v.duration||0), v.currentTime+s)); }
+function vidVai(t){ const v=vidEl(); if(!v||!VID.url) return; v.pause(); v.currentTime=Math.max(0,t); }
+function vidVel(x){ const v=vidEl(); if(v) v.playbackRate=parseFloat(x)||1; }
+function vidTick(){
+  const v=vidEl(), el=document.getElementById("vidT");
+  if(v&&el) el.textContent=vidTempo(v.currentTime)+(v.duration?" / "+vidTempo(v.duration):"");
+  vidDisegna();
+}
+/* I riquadri delle proposte dell'AI vicine al momento che stai guardando. */
+function vidDisegna(){
+  const v=vidEl(), c=document.getElementById("vidOv"); if(!v||!c) return;
+  const w=c.clientWidth||v.clientWidth, h=c.clientHeight||v.clientHeight; if(!w||!h) return;
+  if(c.width!==w) c.width=w; if(c.height!==h) c.height=h;
+  const g=c.getContext("2d"); g.clearRect(0,0,w,h);
+  const r=VID.rec; if(!r||!r.ai||!r.ai.candidati.length||!v.videoWidth) return;
+  // il video e' in «contain»: dove cade il fotogramma dentro il riquadro
+  const sc=Math.min(w/v.videoWidth, h/v.videoHeight), fw=v.videoWidth*sc, fh=v.videoHeight*sc, ox=(w-fw)/2, oy=(h-fh)/2;
+  r.ai.candidati.forEach(e=>{
+    if(Math.abs(e.t-v.currentTime)>0.35) return;
+    const aid=r.ai.tracce[e.tr], no=r.ai.scartati[e.t+"|"+e.tr];
+    g.strokeStyle= no ? "rgba(150,150,150,.8)" : aid&&aid!=="no" ? "#2ecc71" : "#FFB340"; g.lineWidth=2;
+    const bw=e.h*0.5*fh;
+    g.strokeRect(ox+(e.x*fw)-bw/2, oy+e.y0*fh, bw, e.h*fh);
+    const a=(S.athletes||[]).find(x=>x.id===aid);
+    g.fillStyle=g.strokeStyle; g.font="12px sans-serif"; g.fillText(a?a.name:(aid==="no"?"non nostra":"traccia "+e.tr), ox+(e.x*fw)-bw/2, oy+e.y0*fh-4);
+  });
+}
+function vidPannelli(){
+  const r=VID.rec, at=vidAtlete();
+  const set=(id,h)=>{ const el=document.getElementById(id); if(el) el.innerHTML=h; };
+  set("vidTipi", VID_TIPI.map(x=>'<button class="chip'+(VID.tipo===x.k?" on":"")+'" onclick="VID.tipo=\''+x.k+'\';vidPannelli()">'+x.l+' <small>'+x.key+'</small></button>').join(""));
+  set("vidRoster", at.map((a,i)=>'<button class="btn sm vidath" '+(r?'':'disabled ')+'onclick="vidSegna(\''+a.id+'\')">'+(i<10?'<small>'+((i+1)%10)+'</small> ':'')+esc(a.name)+'</button>').join(""));
+  if(!r){ set("vidInfo",'<div class="alert info"><span class="ai">ℹ️</span><span>Apri il video di una partita o di un allenamento. '+
+      'Consigli per la GoPro: <b>fissa</b>, in alto, dietro la linea di fondo, almeno 60 fotogrammi al secondo, obiettivo <b>lineare</b> (non grandangolare).</span></div>');
+    ["vidEventi","vidAI","vidVer","vidSave"].forEach(id=>set(id,"")); return; }
+  set("vidInfo",'<div class="mjform"><label>Data<input type="date" value="'+escAttr(r.data)+'" onchange="VID.rec.data=this.value;vidSalvaRec()"></label>'+
+    '<label>Seduta<input value="'+escAttr(r.seduta||"")+'" maxlength="60" placeholder="Partita vs …" onchange="VID.rec.seduta=this.value;vidSalvaRec()"></label></div>');
+  const ev=r.eventi.slice().sort((a,b)=>b.t-a.t);
+  const nome=id=>{ const a=(S.athletes||[]).find(x=>x.id===id); return a?a.name:"?"; };
+  set("vidEventi",'<div class="psec">Segnati a mano · '+r.eventi.length+'</div>'+
+    (ev.length ? '<div class="vidlist">'+ev.slice(0,40).map(e=>'<div class="videv"><button class="lgx" onclick="vidVai('+e.t+')" title="vai">'+vidTempo(e.t)+'</button><b>'+esc(nome(e.aid))+'</b> <small>'+esc((VID_TIPI.find(x=>x.k===e.tipo)||{}).l||"")+'</small>'+
+      '<span style="flex:1"></span><button class="lgx" onclick="vidTogli('+e.t+',\''+e.aid+'\')" title="togli">✕</button></div>').join("")+'</div>'+(ev.length>40?'<div class="fhint">…e altri '+(ev.length-40)+'</div>':'')
+      : '<div class="fhint">Nessuno. Metti il video a 2×, scegli il tipo, tocca la ragazza nel momento del salto.</div>'));
+  set("vidAI", vidAIHtml());
+  set("vidVer", vidVerHtml());
+  const tutti=vidUnisci(r.eventi.concat(vidEventiAI()));
+  const per=vidConta(tutti), ids=Object.keys(per);
+  set("vidSave",'<div class="psec">Nel carico delle atlete</div>'+
+    (ids.length ? '<div class="hist cs">'+ids.map(id=>'<div class="hrow"><span class="hd">'+esc(nome(id))+'</span><span class="hv">'+per[id].n+'</span></div>').join("")+'</div>'+
+      '<button class="btn primary" style="width:100%;margin-top:8px" onclick="vidSalvaCarico()">Salva '+tutti.filter(e=>e.aid&&e.aid!=="no").length+' salti nel carico</button>'+
+      '<div class="fhint">Un salto segnato a mano e lo stesso trovato dall\'AI contano una volta. Salvare di nuovo questa seduta sostituisce i numeri di prima.</div>'
+      : '<div class="fhint">Ancora niente da salvare.</div>'));
+  vidDisegna();
+}
+function vidSegna(aid){
+  const v=vidEl(); if(!VID.rec||!v) return;
+  const t=Math.round(v.currentTime*100)/100;
+  VID.rec.eventi.push({t:t, aid:aid, tipo:VID.tipo, fonte:"mano"});
+  vidSalvaRec(); vidPannelli();
+  const a=(S.athletes||[]).find(x=>x.id===aid);
+  toast((a?a.name:"")+" · "+((VID_TIPI.find(x=>x.k===VID.tipo)||{}).l||"")+" · "+vidTempo(t));
+}
+function vidTogli(t, aid){
+  if(!VID.rec) return;
+  const i=VID.rec.eventi.findIndex(e=>e.t===t&&e.aid===aid); if(i<0) return;
+  VID.rec.eventi.splice(i,1); vidSalvaRec(); vidPannelli();
+}
+document.addEventListener("keydown", ev=>{
+  if(typeof S==="undefined"||S.view!=="video"||!VID.rec) return;
+  const tg=ev.target&&ev.target.tagName; if(/^(INPUT|TEXTAREA|SELECT)$/.test(tg||"")) return;
+  const ov=document.getElementById("ov"); if(ov&&ov.classList.contains("on")) return;
+  const k=ev.key;
+  if(k===" "){ ev.preventDefault(); vidPlay(); return; }
+  if(k==="ArrowLeft"){ ev.preventDefault(); vidSalta(ev.shiftKey?-5:-1); return; }
+  if(k==="ArrowRight"){ ev.preventDefault(); vidSalta(ev.shiftKey?5:1); return; }
+  if(k===","){ vidSalta(-1/30); return; } if(k==="."){ vidSalta(1/30); return; }
+  const tp=VID_TIPI.find(x=>x.key===k.toLowerCase()); if(tp){ VID.tipo=tp.k; vidPannelli(); return; }
+  if(/^[0-9]$/.test(k)){ const i=k==="0"?9:(+k-1), a=vidAtlete()[i]; if(a) vidSegna(a.id); }
+});
+
+/* ─── L'AI ──────────────────────────────────────────────────────────────── */
+function vidEventiAI(){
+  const r=VID.rec; if(!r||!r.ai) return [];
+  return r.ai.candidati.filter(e=>!r.ai.scartati[e.t+"|"+e.tr]).map(e=>({t:e.t, aid:r.ai.tracce[e.tr]||null, tipo:"alt", fonte:"ai", tr:e.tr}))
+    .filter(e=>e.aid!=="no");
+}
+function vidAIHtml(){
+  const r=VID.rec, a=r.ai, sup=typeof document!=="undefined";
+  let h='<div class="psec">AI <small class="pflib">sperimentale</small></div>';
+  if(VID.ai&&VID.ai.corre){
+    return h+'<div class="alert info"><span class="ai">⏳</span><span>'+esc(VID.ai.stato||"…")+'</span></div>'+
+      '<div class="syncbar"><i style="width:'+Math.round((VID.ai.pc||0)*100)+'%"></i></div>'+
+      '<button class="btn sm" style="margin-top:8px" onclick="VID.stop=true">Ferma (tiene quello che ha già visto)</button>';
+  }
+  h+='<div class="mjform"><label>Dal<input value="'+vidTempo(a.da||0)+'" onchange="vidAISet(\'da\',this.value)"></label>'+
+     '<label>Al<input value="'+(a.a!=null?vidTempo(a.a):"fine")+'" onchange="vidAISet(\'a\',this.value)"></label></div>'+
+     '<div class="mjform"><label>Fotogrammi al secondo<select onchange="VID.rec.ai.fps=+this.value;vidSalvaRec()">'+VID_FPS.map(f=>'<option'+(f===a.fps?" selected":"")+'>'+f+'</option>').join("")+'</select></label>'+
+     '<label>Dove guardare<select onchange="VID.rec.ai.area=this.value;vidSalvaRec()">'+
+       [["vicina","metà campo vicina"],["tutto","tutto il fotogramma"]].map(o=>'<option value="'+o[0]+'"'+(o[0]===a.area?" selected":"")+'>'+o[1]+'</option>').join("")+'</select></label></div>'+
+     '<button class="btn primary" style="width:100%;margin-top:6px" onclick="vidAIParti()">'+(a.candidati.length?'Analizza di nuovo':'Analizza con l\'AI')+'</button>'+
+     '<div class="fhint">Il modello vede al massimo 6 persone per riquadro, e il fotogramma è diviso in 3 riquadri: con la telecamera dietro la vostra linea di fondo, «metà campo vicina» guarda soprattutto le vostre. Due ragazze che si coprono a vicenda restano un problema: la verifica te lo dirà. '+
+     'Più fotogrammi al secondo = più preciso e più lento.</div>';
+  if(!a.candidati.length) return h;
+  // le tracce: una per persona seguita, finche' non la perde di vista
+  const per={}; a.candidati.forEach(e=>{ (per[e.tr]||(per[e.tr]=[])).push(e); });
+  const tr=Object.keys(per).sort((x,y)=>per[y].length-per[x].length);
+  const at=vidAtlete();
+  h+='<div class="fhint"><b>'+a.candidati.length+' salti proposti</b> in '+tr.length+' tracce. Per ogni traccia: guarda il primo salto (▶︎), poi scegli chi è. '+
+     'Una traccia è una persona seguita senza perderla di vista: la stessa ragazza può averne più d\'una.</div><div class="vidlist">';
+  tr.forEach(id=>{
+    const l=per[id], sel=a.tracce[id]||"";
+    h+='<div class="vidtr"><button class="lgx" onclick="vidVai('+l[0].t+')" title="vai al primo salto">▶︎ '+vidTempo(l[0].t)+'</button>'+
+       '<span><b>'+l.length+'</b> salti</span>'+
+       '<select onchange="vidTraccaAtleta(\''+id+'\',this.value)"><option value="">chi è?</option>'+
+         at.map(x=>'<option value="'+x.id+'"'+(x.id===sel?" selected":"")+'>'+esc(x.name)+'</option>').join("")+
+         '<option value="no"'+(sel==="no"?" selected":"")+'>non è delle nostre / falso</option></select></div>';
+  });
+  return h+'</div>';
+}
+function vidAISet(k,v){
+  const r=VID.rec; if(!r) return;
+  if(k==="a" && /^\s*fine\s*$/i.test(v)){ r.ai.a=null; vidSalvaRec(); return; }
+  const s=vidSecondi(v); if(s==null){ toast("Scrivi il tempo come 12:30"); vidPannelli(); return; }
+  r.ai[k]=s; vidSalvaRec();
+}
+function vidTraccaAtleta(tr, aid){ if(!VID.rec) return; if(aid) VID.rec.ai.tracce[tr]=aid; else delete VID.rec.ai.tracce[tr]; vidSalvaRec(); vidPannelli(); }
+let _vidModel=null;
+async function vidModello(){
+  if(_vidModel) return _vidModel;
+  if(typeof tf==="undefined"){
+    await new Promise((ok,ko)=>{ const s=document.createElement("script"); s.src="vendor/tf.min.js"; s.onload=ok; s.onerror=()=>ko(new Error("non trovo vendor/tf.min.js")); document.head.appendChild(s); });
+  }
+  try{ await tf.setBackend("webgl"); }catch(e){}
+  await tf.ready();
+  _vidModel=await tf.loadGraphModel("models/movenet-multipose.json");
+  return _vidModel;
+}
+/* Una rilevazione MoveNet: 17 punti (y, x, punteggio) + riquadro (ymin, xmin,
+   ymax, xmax, punteggio). Indici: 11-12 anche, 15-16 caviglie. Le coordinate
+   arrivano relative al riquadro analizzato e si riportano al fotogramma. */
+function vidDaMoveNet(d, area){
+  const sc=d[55]; if(!(sc>=0.25)) return null;
+  const kp=i=>({y:d[i*3], x:d[i*3+1], s:d[i*3+2]});
+  const lh=kp(11), rh=kp(12), la=kp(15), ra=kp(16);
+  const box={y0:d[51], x0:d[52], y1:d[53], x1:d[54]};
+  const ank = (la.s>0.2&&ra.s>0.2) ? (la.y+ra.y)/2 : la.s>0.2 ? la.y : ra.s>0.2 ? ra.y : box.y1;
+  const hip = (lh.s>0.2&&rh.s>0.2) ? (lh.y+rh.y)/2 : (box.y0+box.y1)/2;
+  const Y=v=>area.y0+v*(area.y1-area.y0), X=v=>area.x0+v*(area.x1-area.x0);
+  return {x:X((box.x0+box.x1)/2), y0:Y(box.y0), y1:Y(box.y1), h:Y(box.y1)-Y(box.y0), ank:Y(ank), hip:Y(hip), s:sc};
+}
+/* Il modello vede al massimo 6 persone per riquadro, e sceglie le piu' nitide:
+   con due riquadri, in una prova con 7 persone a sinistra una ragazza spariva
+   per mezzo secondo alla volta, proprio mentre saltava. Tre riquadri
+   sovrapposti: costa la meta' in piu', ne perde meno. */
+function vidAree(area){
+  const y0 = area==="tutto" ? 0 : 0.35;
+  return [{x0:0,x1:0.4,y0:y0,y1:1},{x0:0.3,x1:0.7,y0:y0,y1:1},{x0:0.6,x1:1,y0:y0,y1:1}];
+}
+/* Due riquadri si sovrappongono: la stessa persona vista due volte resta una. */
+function vidSenzaDoppi(dets){
+  const out=[];
+  dets.sort((a,b)=>b.s-a.s).forEach(d=>{
+    if(out.some(o=>Math.abs(o.x-d.x)<0.35*Math.max(o.h,d.h) && Math.abs(o.y1-d.y1)<0.35*Math.max(o.h,d.h))) return;
+    out.push(d);
+  });
+  return out;
+}
+async function vidAIParti(){
+  const r=VID.rec, v=vidEl(); if(!r||!v||!v.duration) { toast("Apri prima un video"); return; }
+  VID.stop=false; VID.ai={corre:true, stato:"Carico il modello (una volta sola, circa 10 MB)…", pc:0};
+  vidPannelli();
+  let model;
+  try{ model=await vidModello(); }
+  catch(e){ VID.ai=null; vidPannelli(); toast("L'AI non parte in questo browser: "+(e.message||e)); return; }
+  v.pause();
+  const da=Math.max(0, r.ai.da||0), a=Math.min(v.duration, r.ai.a!=null?r.ai.a:v.duration), passo=1/(r.ai.fps||10);
+  const aree=vidAree(r.ai.area), c=document.createElement("canvas"), g=c.getContext("2d", {willReadFrequently:true});
+  const frames=[]; const t0=performance.now(); let n=0; const tot=Math.max(1, Math.ceil((a-da)/passo));
+  for(let t=da; t<=a && !VID.stop; t+=passo){
+    await new Promise(ok=>{ const f=()=>{ v.removeEventListener("seeked",f); ok(); }; v.addEventListener("seeked",f); v.currentTime=t; });
+    const dets=[];
+    for(const ar of aree){
+      const sw=v.videoWidth*(ar.x1-ar.x0), sh=v.videoHeight*(ar.y1-ar.y0);
+      const W=512, H=Math.max(32, Math.round(W*sh/sw/32)*32);
+      c.width=W; c.height=H; g.drawImage(v, v.videoWidth*ar.x0, v.videoHeight*ar.y0, sw, sh, 0, 0, W, H);
+      const out=tf.tidy(()=>model.execute(tf.browser.fromPixels(c).toInt().expandDims(0)));
+      const arr=await out.array(); out.dispose();
+      arr[0].forEach(d=>{ const x=vidDaMoveNet(d, ar); if(x) dets.push(x); });
+    }
+    frames.push({t:Math.round(t*100)/100, dets:vidSenzaDoppi(dets)});
+    n++;
+    if(n%5===0){
+      const fatto=n/tot, sec=(performance.now()-t0)/1000;
+      VID.ai.pc=fatto; VID.ai.stato="Guardo "+vidTempo(t)+" di "+vidTempo(a)+" · mancano circa "+Math.max(1,Math.round(sec/fatto*(1-fatto)/60))+" min";
+      vidPannelli();
+    }
+  }
+  VID.frames=frames;   // in memoria: per rivedere le soglie senza rianalizzare
+  const res=vidSalti(frames);
+  // le tracce di prima non valgono piu': gli id sono nuovi
+  r.ai.candidati=res.salti; r.ai.tracce={}; r.ai.scartati={}; r.ai.analizzato=[da, frames.length?frames[frames.length-1].t:da];
+  VID.ai=null; vidSalvaRec(); vidPannelli();
+  toast("L'AI propone "+res.salti.length+" salti"+(VID.stop?" (fermata prima della fine)":""));
+}
+
+/* ─── Verifica e salvataggio ────────────────────────────────────────────── */
+function vidVerHtml(){
+  const r=VID.rec; if(!r) return "";
+  const mano=r.eventi.filter(e=>e.fonte!=="ai");
+  if(!mano.length || !r.ai.candidati.length)
+    return '<div class="psec">Verifica</div><div class="fhint">Per sapere quanto sbaglia l\'AI su questa telecamera: segna a mano <b>tutti</b> i salti di un pezzo di video (un set va benissimo), poi analizza lo stesso pezzo con l\'AI. Qui comparirà il confronto.</div>';
+  const da=Math.min(...mano.map(e=>e.t))-1, a=Math.max(...mano.map(e=>e.t))+1;
+  // le tracce che hai gia' segnato «non e' delle nostre» non contano: sono gia' state scartate da te
+  const P=r.ai.candidati.filter(e=>e.t>=da&&e.t<=a&&!r.ai.scartati[e.t+"|"+e.tr]&&r.ai.tracce[e.tr]!=="no").map(e=>({t:e.t, aid:r.ai.tracce[e.tr]||null}));
+  const x=vidVerifica(mano, P);
+  const pc=v=>v==null?"—":Math.round(v*100)+"%";
+  const ok=x.recall!=null&&x.precisione!=null&&x.recall>=0.9&&x.precisione>=0.9;
+  return '<div class="psec">Verifica · da '+vidTempo(da+1)+' a '+vidTempo(a-1)+'</div>'+
+    '<div class="pianostat"><div><span>Trovati</span><b>'+pc(x.recall)+'</b><small>'+x.giusti+' di '+x.veri+' segnati a mano</small></div>'+
+    '<div><span>Giusti</span><b>'+pc(x.precisione)+'</b><small>'+x.giusti+' di '+x.proposti+' proposti</small></div>'+
+    (x.conAtleta?'<div><span>Atleta giusta</span><b>'+pc(x.atletaGiusta)+'</b><small>su '+x.conAtleta+' con il nome</small></div>':'')+'</div>'+
+    '<div class="alert '+(ok?'info':'warn')+'"><span class="ai">'+(ok?'✅':'⚠️')+'</span><span>'+
+    (ok ? 'Su questo pezzo l\'AI trova almeno 9 salti su 10 e ne inventa meno di 1 su 10. Su questa telecamera, in questa palestra, puoi usarla: ricontrolla ogni tanto un set.'
+        : 'Non ancora affidabile: servono almeno il 90% trovati e il 90% giusti. '+(x.recall!=null&&x.recall<0.9?'Ne perde troppi: prova più fotogrammi al secondo o «tutto il fotogramma». ':'')+
+          (x.precisione!=null&&x.precisione<0.9?'Ne inventa troppi: controlla le tracce «non è delle nostre». ':'')+'Per ora conta quello che segni a mano.')+
+    '</span></div>'+
+    (x.persi.length?'<div class="fhint">Persi: '+x.persi.slice(0,12).map(e=>'<button class="lgx" onclick="vidVai('+e.t+')">'+vidTempo(e.t)+'</button>').join(" ")+'</div>':'')+
+    (x.inventati.length?'<div class="fhint">Inventati: '+x.inventati.slice(0,12).map(e=>'<button class="lgx" onclick="vidVai('+e.t+')">'+vidTempo(e.t)+'</button>').join(" ")+'</div>':'');
+}
+function vidSalvaCarico(){
+  const r=VID.rec; if(!r) return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(r.data||"")){ toast("Scegli la data della seduta"); return; }
+  const tutti=vidUnisci(r.eventi.concat(vidEventiAI()));
+  const senza=tutti.filter(e=>e.fonte==="ai"&&!e.aid).length;
+  if(senza && !confirm(senza+" salti proposti dall'AI non hanno ancora un nome e non verranno contati.\n\nSalvare lo stesso?")) return;
+  const fonti=new Set(tutti.filter(e=>e.aid).map(e=>e.fonte==="ai"?"ai":"mano"));
+  const n=saltiSalva(r.sid, r.data, r.seduta||"", fonti.size>1?"misto":(fonti.values().next().value||"mano"), vidConta(tutti));
+  vidSalvaRec(); vidPannelli();
+  toast(n+" salti salvati nel carico del "+fmtDate(r.data));
+}
+
 /* ═══════════════ KNOWLEDGE BASE SPORT + RUOLO ═══════════════ */
 const SPORTKB={
   pallavolo:{label:"Pallavolo", roleList:["Palleggiatore","Schiacciatore","Centrale","Opposto","Libero"],
@@ -9489,7 +10025,8 @@ function renderReadiness(){
   if(rows.length===0){ grid.innerHTML=emptyTeam(); return; }
   let h='<div class="rd-top"><div style="display:flex;gap:8px">'+
     '<button class="btn primary sm" onclick="openCheckin()">+ Check-in</button>'+
-    '<button class="btn sm" onclick="openLoad()">+ Carico seduta</button></div>'+
+    '<button class="btn sm" onclick="openLoad()">+ Carico seduta</button>'+
+    '<button class="btn sm" onclick="openVideo()">🎥 Salti dal video</button></div>'+
     '<span class="rd-legend">i più scarichi in alto · ACWR carico · ⚠ fatica CMJ</span></div>';
   const scored=rows.map(a=>{ const arr=(S.readiness&&S.readiness[a.id])||[]; const last=arr[arr.length-1];
     return {a, pc: last?readinessScore(last):null}; });
@@ -9521,8 +10058,10 @@ function renderReadiness(){
     const ac=acwr(a.id); let acHtml="";
     if(ac && ac.acwr!=null){ const cls=acwrColor(ac.acwr); acHtml='<span class="rd-cmj '+cls+'">ACWR '+fmtNum(Math.round(ac.acwr*100)/100)+(ac.provisional?'*':'')+(cls==="down"?' ⚠':'')+'</span>'; }
     else if(ac && ac.insufficient) acHtml='<span class="rd-cmj flat" title="servono almeno '+ac.needDays+' giorni di carico registrato">ACWR '+ac.haveDays+'/'+ac.needDays+'gg</span>';
+    const sr=saltiRiassunto(a.id); let saltiHtml="";
+    if(sr) saltiHtml='<span class="rd-cmj flat" title="ultima seduta '+fmtDate(sr.ultima.d)+': '+sr.ultima.n+' salti · media settimanale delle 4 settimane prima: '+sr.media4+'">Salti 7gg '+sr.sett+(sr.media4?' · media '+sr.media4:'')+'</span>';
     h+='<div class="rd-row" onclick="openReadinessHistory(\''+a.id+'\')">'+scoreHtml+
-       '<div class="rd-main"><div class="rd-name">'+flag+esc(a.name)+' '+cmjHtml+' '+acHtml+'</div>'+sub+'</div></div>';
+       '<div class="rd-main"><div class="rd-name">'+flag+esc(a.name)+' '+cmjHtml+' '+acHtml+' '+saltiHtml+'</div>'+sub+'</div></div>';
   });
   grid.innerHTML=h;
 }
@@ -10224,7 +10763,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},piani:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},piani:{},salti:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -10446,6 +10985,24 @@ function sanitizeImport(o){
       if(v.altro) out.sedute[k].altro=str(v.altro,800);
     });
   }
+  /* I salti dal video: numeri interi e sensati, solo di atlete che esistono. */
+  if(o.salti&&typeof o.salti==="object"&&!Array.isArray(o.salti)){
+    const intero=(v,max)=>{ const n=Number(v); return (Number.isInteger(n)&&n>=0&&n<=max)?n:null; };
+    Object.keys(o.salti).forEach(aid=>{
+      if(!live[aid]||!Array.isArray(o.salti[aid])) return;
+      const l=[];
+      o.salti[aid].slice(0,2000).forEach(e=>{
+        if(!e||!isDate(e.d)||typeof e.exercise!=="string"||!/^v[A-Za-z0-9]{1,12}$/.test(e.exercise)) return;
+        const n=intero(e.n,2000); if(n==null) return;
+        const r={d:e.d, exercise:e.exercise};
+        if(e.nome) r.nome=str(e.nome,60);
+        r.n=n; ["att","muro","batt","alz","alt"].forEach(k=>{ const v=intero(e[k],2000); r[k]=v==null?0:v; });
+        r.src=["mano","ai","misto"].indexOf(e.src)>=0?e.src:"mano";
+        l.push(r);
+      });
+      if(l.length){ l.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0); out.salti[aid]=l; }
+    });
+  }
   /* I blocchi del piano: per squadra, solo esercizi noti, RPE solo di atlete
      che esistono. */
   if(o.piani&&typeof o.piani==="object"&&!Array.isArray(o.piani)){
@@ -10483,7 +11040,7 @@ function sanitizeImport(o){
   out.sport=str(o.sport,40)||"pallavolo";
   // "fatigue" era il vecchio nome della vista, rinominata "readiness" e mai
   // aggiornata qui: chi importava un backup stando in Fatica finiva in Matrice.
-  out.view=["matrix","today","trend","readiness","mj","piano"].indexOf(o.view)>=0?o.view:"today";
+  out.view=["matrix","today","trend","readiness","mj","piano","video"].indexOf(o.view)>=0?o.view:"today";
   out.activeTeam=idOk(o.activeTeam)?o.activeTeam:"all";
   return out;
 }
@@ -11338,7 +11895,7 @@ function loadDemo(){
     if(!S.tomb) S.tomb={};
     S.athletes.forEach(a=>{
       S.tomb["ath:"+a.id]=ora;
-      ["data","readiness","load","screen","lv","pres","mjl"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
+      ["data","readiness","load","screen","lv","pres","mjl","salti"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
       gruppiTogli(a.id);
       pianiTogli(a.id);
     });

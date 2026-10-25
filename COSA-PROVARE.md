@@ -69,6 +69,24 @@ Barra in basso → **My Jump**.
 - [ ] Se esporti il CSV da My Jump: *📲 Importa CSV* → le altezze vanno in tabella
       e le righe intere, con tutte le colonne, nell'archivio.
 
+## Salti dal video (prototipo)
+
+Dal **computer**, con Chrome o Edge. Fatica → **🎥 Salti dal video** → *Apri un video*.
+Il video resta sul computer: nell'app vanno solo i numeri.
+
+- [ ] **A mano, su un set intero.** Video a 2×, scegli il tipo (tasti `a m b z x`), poi a
+      ogni salto il numero della ragazza (`1`…`0`, nell'ordine dei pulsanti). Tutti i salti,
+      anche le alzate in salto: è il riferimento per la verifica.
+      → Quanto tempo ci hai messo per un set? Annotalo: è il dato che decide se l'AI serve.
+- [ ] **Con l'AI, sullo stesso set.** «Dal / Al» = l'inizio e la fine del set, 10 fotogrammi
+      al secondo, «metà campo vicina». *Analizza con l'AI*. Quanto ci mette dipende dal computer
+      (stima: da una a due volte la durata del pezzo); lascia la pagina aperta e annota il tempo.
+- [ ] Per ogni traccia: ▶︎ per vedere il primo salto, poi *chi è?*. Chi non è delle nostre
+      (avversarie, arbitro) → «non è delle nostre».
+- [ ] **Verifica**: guarda «Trovati» e «Giusti». Sotto il 90% su uno dei due, per ora conta il
+      tuo conteggio a mano. Annota i due numeri e la posizione della GoPro: mi servono.
+- [ ] *Salva nel carico*. In Fatica, accanto a ogni ragazza: «Salti 7gg».
+
 ## Sincronizzazione
 
 - [ ] Sotto il logo, quando è tutto a posto, c'è il tuo nome. Metti il telefono in modalità

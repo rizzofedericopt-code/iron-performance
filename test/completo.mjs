@@ -89,6 +89,7 @@ const PIENO = `{
     sedute:[{id:"sA",nome:"A",acc:"core",ex:[{t:"rmSquat",mode:"min"},{t:"xAff1",nome:"Affondi",libero:true}]}],
     sett:[{fase:"accumulo",p:{"sA:rmSquat":{pct:72.5,sr:"4×6",rir:3},"sA:xAff1":{sr:"3×8",rir:2,kg:12}}}],
     rpe:{"0:sA:rmSquat":{a1:8,a2:7}}, kg:{"0:sA:rmSquat":{a1:57.5,a2:50}}}]},
+  salti:{a1:[{d:"2026-10-20",exercise:"vabc",nome:"Partita",n:40,att:20,muro:10,batt:5,alz:0,alt:5,src:"misto"}], a2:[{d:"2026-10-20",exercise:"vabc",n:12,att:2,muro:8,batt:2,alz:0,alt:0,src:"mano"}]},
   custom:[{id:"cx1",name:"Leg press",unit:"kg",base:"pred"}],
   te:{cmj:3.1, stat:0.3},
   cfg:{deltaNoise:5, rmBar:20},
@@ -118,6 +119,7 @@ const CHIAVI = {
   piani:   o => { const b=o.piani.t1[0]; return b.nome === "Forza" && b.sedute[0].acc === "core" && b.sedute[0].ex[0].mode === "min" &&
                   b.sett[0].fase === "accumulo" && b.sett[0].p["sA:rmSquat"].pct === 72.5 && b.rpe["0:sA:rmSquat"].a1 === 8 &&
                   b.kg["0:sA:rmSquat"].a1 === 57.5 && b.sedute[0].ex[1].nome === "Affondi" && b.sett[0].p["sA:xAff1"].kg === 12; },
+  salti:   o => o.salti.a1[0].n === 40 && o.salti.a1[0].src === "misto" && o.salti.a1[0].muro === 10 && o.salti.a1[0].nome === "Partita",
   custom:  o => o.custom[0].name === "Leg press",
   te:      o => o.te.cmj === 3.1 && o.te.stat === 0.3,
   cfg:     o => o.cfg.deltaNoise === 5,
@@ -142,7 +144,7 @@ prova("sincronizzazione: un dispositivo vuoto non cancella niente", () => {
 
 prova("sincronizzazione al contrario: il server pieno, il telefono vuoto", () => {
   const o = j(`mergeState(${PIENO}, {athletes:[],data:{}})`);
-  const persi = ["data","pres","gruppi","sedute","gare","piani","custom","te","mjl"].filter(k => { try { return !CHIAVI[k](o); } catch (e) { return true; } });
+  const persi = ["data","pres","gruppi","sedute","gare","piani","salti","custom","te","mjl"].filter(k => { try { return !CHIAVI[k](o); } catch (e) { return true; } });
   assert.deepEqual(persi, [], "PERSI: " + persi.join(", "));
 });
 
@@ -163,7 +165,7 @@ prova("nessuna chiave sconosciuta: ogni chiave dello stato è in questo elenco",
 
 prova("cancellare un'atleta la toglie da ogni posto in cui compare", () => {
   run(`S=${PIENO}; normalize(); delAthlete("a2");`);
-  const s = JSON.stringify(j(`{data:S.data, readiness:S.readiness, load:S.load, screen:S.screen, lv:S.lv, pres:S.pres, gruppi:S.gruppi, piani:S.piani, athletes:S.athletes}`));
+  const s = JSON.stringify(j(`{data:S.data, readiness:S.readiness, load:S.load, screen:S.screen, lv:S.lv, pres:S.pres, gruppi:S.gruppi, piani:S.piani, salti:S.salti, athletes:S.athletes}`));
   assert.ok(s.indexOf('"a2"') < 0, "un'atleta cancellata e' rimasta da qualche parte: " + s.slice(0, 200));
 });
 

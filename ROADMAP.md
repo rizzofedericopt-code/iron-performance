@@ -288,6 +288,19 @@ report (migliorata / calata / stabile, cioè entro l'errore della misura). Di se
 ordine alfabetico, niente peso, niente dati sanitari; l'ordine della tabella e il peso
 solo se li scegli. Si salva con «Salva come PDF» della stampa.
 
+**Salti dal video** (prototipo) — Fatica → 🎥. Un video aperto dal computer (mai
+caricato su un server) si conta a mano a velocità doppia, con tasti per atleta e tipo
+di salto; oppure lo guarda un modello di posa (MoveNet MultiPose, Apache 2.0, in
+TensorFlow.js) nel browser, che segue le persone e propone i salti: caviglie e anche
+che salgono rispetto a prima e a dopo, meno di 0,8 s sopra metà altezza. Il nome si dà
+una volta per traccia. Una verifica confronta l'AI con il conteggio a mano sullo
+stesso pezzo (trovati, giusti, atleta giusta) e dice se fidarsi: soglia 90% e 90%.
+I salti per atleta per seduta vanno nello stato (`salti`, sincronizzato) e in Fatica
+(ultimi 7 giorni, media settimanale delle 4 prima). Provato su un video sintetico
+di 16 secondi con 9 salti noti: 7 trovati, nessuno inventato, atleta giusta 7 su 7; i
+2 persi erano due ragazze coperte da un'altra. **Mai provato su una partita vera**:
+è il prossimo passo, tuo. Se la verifica resta sotto il 90%, si passa ai sensori.
+
 **Sincronizzazione a parole** — sotto il logo: «⏳ 3 da inviare», «⚠️ 2 non inviate»,
 «⚠️ rientra», «⛔ dati troppo grandi», «⚠️ spazio 92%»; niente se è tutto a posto. Un
 tocco apre il dettaglio: ultimo contatto riuscito, perché non parte, «Riprova

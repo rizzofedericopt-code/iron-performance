@@ -13,7 +13,7 @@ e non manda niente online. Alla fine c'è il file `aggiorna-log.txt`: se qualcos
 non torna, dimmelo e lo leggo io.
 
 **Strada GitHub Desktop**, se preferisci:
-- Summary: `Piano con esercizi liberi e sincronizzazione visibile`
+- Summary: `Salti dal video: conteggio a mano e AI nel browser (prototipo)`
 - **Commit to main**, poi **Push origin**.
 
 Aspetta due minuti: Vercel pubblica da solo.
@@ -33,6 +33,13 @@ sul PC* → *Scegli la cartella*. Quando Chrome chiede il permesso, scegli
 
 **Informativa**: aggiungi una riga — «copie di sicurezza automatiche conservate per
 30 giorni, cancellate con l'atleta o con l'account». È un trattamento in più, va detto.
+
+## 2ter · Primo video (una partita)
+
+GoPro **fissa**, in alto, dietro la vostra linea di fondo, **60 fotogrammi al secondo**,
+obiettivo **lineare** (non SuperView, non grandangolare). Poi `COSA-PROVARE.md` →
+«Salti dal video». Prima di filmare: l'informativa deve dire che filmate allenamenti e
+partite, chi tiene i video, dove (sul tuo computer, non in cloud) e per quanto.
 
 ## 3 · Esporta un backup (1 minuto)
 

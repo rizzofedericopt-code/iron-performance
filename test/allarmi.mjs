@@ -231,7 +231,7 @@ prova("il contatore dei test dice su quanti, non solo quanti", () => {
   // test nuovo del catalogo non compare e non hai motivo di sospettarlo
   run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo",tests:["cmj","sj","dj"]}];
        S.activeTeam="t1"; S.sport="pallavolo"; S.athletes=[]; S.data={};
-       renderBar();`);
+       S.view="matrix"; renderBar();`);
   const h = run(`document.getElementById("bar").innerHTML`);
   assert.ok(/Test · 3/.test(h), "manca il numero scelto: " + h.slice(0, 160));
   assert.ok(/di \d+/.test(h), "manca il totale dello sport: " + h.slice(0, 160));
@@ -240,7 +240,7 @@ prova("il contatore dei test dice su quanti, non solo quanti", () => {
 });
 
 prova("senza batteria personalizzata il contatore non inventa numeri", () => {
-  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; renderBar();`);
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}]; S.activeTeam="t1"; S.view="matrix"; renderBar();`);
   const h = run(`document.getElementById("bar").innerHTML`);
   assert.ok(!/di \d+/.test(h), "niente totale se non c'è una selezione: " + h.slice(0, 160));
 });
@@ -254,9 +254,30 @@ prova("il MAT c'è nel catalogo della pallavolo, anche se una squadra non lo mon
   assert.ok(!run(`visibleTests().some(t=>t.id==="mat")`),
     "ma con una batteria personalizzata non si vede: è voluto, non è un difetto");
   const h = run(`document.getElementById("bar").innerHTML`);
-  run(`renderBar()`);
+  run(`S.view="matrix"; renderBar()`);
   assert.ok(/di \d+/.test(run(`document.getElementById("bar").innerHTML`)),
     "e la barra deve dire che ce ne sono altri");
+});
+
+prova("la barra «Test» c'è solo dove ci sono colonne di test", () => {
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo",tests:["cmj"]}]; S.activeTeam="t1";`);
+  for (const v of ["today", "readiness", "piano", "mj", "video"]) {
+    run(`S.view=${JSON.stringify(v)}; document.getElementById("bar").innerHTML="x"; renderBar();`);
+    assert.equal(run(`document.getElementById("bar").innerHTML`), "", "in " + v + " la riga occupa spazio per niente");
+  }
+  for (const v of ["matrix", "trend"]) {
+    run(`S.view=${JSON.stringify(v)}; renderBar();`);
+    assert.ok(/Test/.test(run(`document.getElementById("bar").innerHTML`)), "in " + v + " serve");
+  }
+});
+
+prova("i chip degli sport compaiono solo dove cambiano qualcosa", () => {
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo",tests:["cmj"]},{id:"t2",name:"B",sport:"calcio"}];`);
+  assert.equal(run(`S.activeTeam="t1"; S.view="matrix"; sportsServono()`), false,
+    "con la batteria della squadra lo sport non sceglie le colonne");
+  assert.equal(run(`S.activeTeam="t2"; S.view="matrix"; sportsServono()`), true);
+  assert.equal(run(`S.activeTeam="t2"; S.view="today"; sportsServono()`), false);
+  assert.equal(run(`S.activeTeam="all"; S.view="trend"; sportsServono()`), true);
 });
 
 console.log("\nEsercizi tuoi: una colonna ciascuno");

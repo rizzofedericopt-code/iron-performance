@@ -126,8 +126,19 @@ prova("l'idoneità entra fra i segnali di «Da gestire»", () => {
   assert.ok(f, "renderToday non trovata");
   assert.match(f[0], /const med=medicalState\(p\);/,
     "senza questo un'atleta con l'idoneità scaduta e nulla d'altro finiva fra i «Pronti»");
-  assert.match(f[0], /sev\+=\(med\.c==="down"\?5:1\)/,
+  assert.match(f[0], /if\(med && med\.c==="down"\)\{ flags\.push\(\{t:"🩺 "\+med\.t, c:"down"\}\); sev\+=5; \}/,
     "un certificato scaduto deve pesare come uno screening positivo");
+  // le carte da sistemare non affollano «Da gestire», ma non spariscono
+  assert.match(f[0], /if\(med && med\.c!=="down"\) doc\.push\(med\.t\);/,
+    "«idoneità non registrata» deve restare visibile, in «Documenti»");
+  assert.match(f[0], /Documenti da sistemare/);
+});
+
+prova("il contatore sulla linguetta Oggi conta anche il certificato scaduto", () => {
+  const f = html.match(/function todayManageCount\(\)[\s\S]*?\n}/);
+  assert.ok(f, "todayManageCount non trovata");
+  assert.match(f[0], /med && med\.c==="down"/,
+    "la casella «Da gestire» e il numerino sulla linguetta devono dire lo stesso numero");
 });
 
 /* ── 3. Quando la notifica si spegne ── */

@@ -290,6 +290,34 @@ prova("in Matrice le colonne senza nessuna misura vanno in fondo, strette", () =
   assert.match(h, /th-test[^"]* vuota/);
 });
 
+prova("Andamento: con tante atlete c'è la mediana, e un nome si evidenzia invece di sparire", () => {
+  const N = 8;
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo",tests:["cmj"]}]; S.activeTeam="t1"; S.view="trend"; S.activeTest="cmj"; S.te={};
+       S.athletes=[]; S.data={}; HIDDEN={};
+       for(let i=0;i<${N};i++){ S.athletes.push({id:"p"+i,name:"A"+i,team:"t1",sex:"F",profile:{}});
+         S.data["p"+i]={cmj:[{d:"2026-09-01",v:28+i},{d:"2026-10-01",v:29+i}]}; }
+       renderTrend();`);
+  let h = run(`document.getElementById("grid").innerHTML`);
+  assert.match(h, /stroke="#F4F5F7"/, "manca la linea della mediana");
+  const med = JSON.parse(run(`JSON.stringify(trendMediana([0,1,2].map(i=>({pts:series("p"+i,"cmj")}))))`));
+  assert.equal(med.length, 2); assert.equal(med[0].v, 29, "mediana di 28, 29, 30");
+  run(`toggleAth("p3")`);
+  h = run(`renderTrend(); document.getElementById("grid").innerHTML`);
+  assert.match(h, /Mostra tutte/);
+  assert.ok(!/stroke="#F4F5F7"/.test(h), "con una scelta la mediana lascia spazio alla sua linea");
+  assert.match(h, /atag on/);
+  run(`HIDDEN={}`);
+});
+
+prova("Andamento: una differenza dentro l'errore della misura non si colora", () => {
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo",tests:["cmj"]}]; S.activeTeam="t1"; S.view="trend"; S.activeTest="cmj";
+       S.te={cmj:1.5}; HIDDEN={};
+       S.athletes=[{id:"p1",name:"A",team:"t1",sex:"F",profile:{}}];
+       S.data={p1:{cmj:[{d:"2026-09-01",v:30},{d:"2026-10-01",v:31}]}}; renderTrend();`);
+  const h = run(`document.getElementById("grid").innerHTML`);
+  assert.match(h, /delta flat"[^>]*>≈ \+1</, "+1 cm con un errore di 1,5 è rumore: " + h.slice(h.indexOf("ttbl"), h.indexOf("ttbl") + 600));
+});
+
 console.log("\nEsercizi tuoi: una colonna ciascuno");
 
 const pulisci = () => run(`S.custom=[]; S.data={}; S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}];

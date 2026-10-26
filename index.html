@@ -512,7 +512,7 @@ ul.kb li b{color:#fff;font-weight:600}
 .tready{font-size:13px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:6px 11px;cursor:pointer}
 .tready b{color:var(--up)}
 /* archivio My Jump */
-.mjtop{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
+.mjtop{display:flex;gap:8px;flex-wrap:wrap;margin:12px 14px 4px}
 .mjmet{margin-top:-4px}
 .mjwrap{overflow-x:auto}
 .mjtab{width:100%;border-collapse:collapse;font-size:13px}
@@ -521,6 +521,7 @@ ul.kb li b{color:#fff;font-weight:600}
 .mjtab td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 .mjtab td small{display:block;font-size:11.5px;color:var(--muted2)}
 .mjtab td.n{font-weight:600}
+.mjtab th,.mjtab td{border-right:none;text-align:left}
 .mjtab tbody tr{cursor:pointer}
 .mjtab td b{font-size:15px}
 .mjstor td{font-family:var(--mono);font-size:13px}
@@ -807,7 +808,11 @@ tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
 .chip{flex:0 0 auto;border:1px solid var(--line);background:transparent;color:var(--muted);font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:18px;cursor:pointer;transition:.1s}
 .chip:hover{color:var(--text);border-color:var(--line2)}
 .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.trendhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px 16px 2px}
+.trendhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px 16px 2px;flex-wrap:wrap}
+.tr-nota{font-size:12.5px;color:var(--muted);padding:8px 16px 0}
+.tr-via{color:var(--accent);text-decoration:underline;cursor:pointer;margin-left:4px}
+.atag.on{border-color:var(--text);background:var(--surface3)}
+.ttr.tfoc{background:var(--surface2)}
 .trendhead .thn{font-weight:700;font-size:15.5px;display:block;letter-spacing:-0.2px}
 .trendhead .thu{font-family:var(--mono);font-size:11px;color:var(--muted2);margin-top:2px;display:block}
 .chartbox{padding:10px 12px 2px}
@@ -3811,7 +3816,7 @@ function renderBar(){
        '🎚 Test'+(n?' · '+n+(tot>n?' <span class="bt-tot">di '+tot+'</span>':''):'')+'</button>';
   }
   if(S.view==="trend"){
-    h+='<div class="barhint">una linea per atleta nel tempo</div>';
+    // niente: la pagina si spiega sotto il grafico
   } else {
     h+='<button class="btn sm" onclick="openTabPdf()" title="La tabella in PDF, da far vedere o da mandare">📄 PDF</button>';
     h+='<button class="btn sm legbtn" onclick="openLegenda()">? Legenda</button><div class="legfull">';
@@ -3857,7 +3862,12 @@ function updateMatrixNav(){ const w=document.querySelector(".wrap"); const nav=d
 window.addEventListener("resize", function(){ if(S&&S.view==="matrix") updateMatrixNav(); });
 function setView(v){ S.view=v; save(); render(); }
 function setTest(id){ S.activeTest=id; save(); render(); }
-function toggleAth(id){ HIDDEN[id]=!HIDDEN[id]; render(); }
+/* In Andamento un nome non si nasconde più: si EVIDENZIA. Con sedici linee
+   colorate il grafico era un gomitolo, e toglierne quindici a mano per
+   vederne una era il lavoro sbagliato. HIDDEN resta il nome (è solo in
+   memoria), ma vuol dire «in evidenza». */
+function toggleAth(id){ HIDDEN[id]=!HIDDEN[id]; if(!HIDDEN[id]) delete HIDDEN[id]; render(); }
+function trendFocusVia(){ HIDDEN={}; render(); }
 
 function activeTestObj(){
   const vt=visibleTests();
@@ -3881,8 +3891,9 @@ function renderTrend(){
 
   const ath=teamAthletes();
   const lines=[];
+  const foc=ath.some(a=>HIDDEN[a.id] && series(a.id,t.id).length);
   ath.forEach((a,i)=>{ const arr=series(a.id,t.id);
-    if(arr.length) lines.push({a, color:acolor(i), pts:arr.slice(), hidden:!!HIDDEN[a.id]}); });
+    if(arr.length) lines.push({a, color:acolor(i), pts:arr.slice(), focus:!!HIDDEN[a.id]}); });
 
   if(lines.length===0){
     h+='<div class="empty-state"><p>Ancora nessuna misurazione per «'+t.name+'».<br>'+
@@ -3890,18 +3901,35 @@ function renderTrend(){
        '<button class="btn primary" onclick="openSession()">+ Sessione</button></div>';
     grid.innerHTML=h; return;
   }
-
-  h+=chartSVG(lines,t);
+  const tante=lines.length>6;
+  h+=chartSVG(lines,t,{foc:foc, tante:tante, mediana: tante ? trendMediana(lines) : null});
+  h+='<div class="tr-nota">'+(foc
+      ? 'In colore quelle che hai scelto, in grigio le altre. <span class="tr-via" onclick="trendFocusVia()">Mostra tutte</span>'
+      : tante ? 'La linea bianca è la mediana della squadra. Tocca un nome per evidenziarlo.'
+              : 'Tocca un nome per evidenziarlo.')+'</div>';
   h+='<div class="alegend">';
   ath.forEach((a,i)=>{ if(!series(a.id,t.id).length) return;
-    h+='<button class="atag'+(HIDDEN[a.id]?" off":"")+'" onclick="toggleAth(\''+a.id+'\')">'+
+    h+='<button class="atag'+(HIDDEN[a.id]?" on":"")+'" onclick="toggleAth(\''+a.id+'\')">'+
        '<span class="adot" style="background:'+acolor(i)+'"></span>'+esc(a.name)+'</button>'; });
   h+='</div>';
   h+=trendTable(lines,t);
   grid.innerHTML=h;
 }
 
-function chartSVG(lines,t){
+/* Mediana della squadra per settimana: una misura per atleta (l'ultima della
+   settimana), solo dove ne hanno almeno tre. */
+function trendMediana(lines){
+  const sett={};
+  lines.forEach(l=>{ const per={}; l.pts.forEach(p=>{ const k=Math.floor(dayNum(p.d)/7); if(!per[k]||p.d>=per[k].d) per[k]=p; });
+    Object.keys(per).forEach(k=>{ (sett[k]=sett[k]||[]).push(per[k]); }); });
+  return Object.keys(sett).map(Number).sort((a,b)=>a-b).filter(k=>sett[k].length>=3).map(k=>{
+    const v=sett[k].map(p=>p.v).sort((a,b)=>a-b), n=v.length;
+    const ds=sett[k].map(p=>p.d).sort();
+    return {d:ds[Math.floor(ds.length/2)], v:n%2?v[(n-1)/2]:(v[n/2-1]+v[n/2])/2, n:n};
+  });
+}
+function chartSVG(lines,t,o){
+  o=o||{};
   const W=720,H=320,padL=46,padR=16,padT=16,padB=34;
   let ts=[],vs=[];
   lines.forEach(l=>l.pts.forEach(p=>{ ts.push(new Date(p.d).getTime()); vs.push(p.v); }));
@@ -3919,14 +3947,19 @@ function chartSVG(lines,t){
   s+='<text x="'+padL+'" y="'+(H-12)+'" fill="#6C757D" font-size="12" font-family="ui-monospace,monospace" text-anchor="start">'+dlabel(tmin)+'</text>';
   if(tmax!==tmin) s+='<text x="'+(W-padR)+'" y="'+(H-12)+'" fill="#6C757D" font-size="12" font-family="ui-monospace,monospace" text-anchor="end">'+dlabel(tmax)+'</text>';
 
-  lines.forEach(l=>{ if(l.hidden) return;
-    const pts=l.pts.slice().sort((a,b)=> new Date(a.d)-new Date(b.d));
+  const linea=(pts,col,w,punti,op)=>{
+    pts=pts.slice().sort((a,b)=> new Date(a.d)-new Date(b.d));
     if(pts.length>1){
       const pstr=pts.map(p=>X(new Date(p.d).getTime()).toFixed(1)+','+Y(p.v).toFixed(1)).join(" ");
-      s+='<polyline points="'+pstr+'" fill="none" stroke="'+l.color+'" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>';
+      s+='<polyline points="'+pstr+'" fill="none" stroke="'+col+'" stroke-width="'+w+'" stroke-opacity="'+(op||1)+'" stroke-linejoin="round" stroke-linecap="round"/>';
     }
-    pts.forEach(p=>{ s+='<circle cx="'+X(new Date(p.d).getTime()).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="3.4" fill="'+l.color+'" stroke="#0A0A0A" stroke-width="1"/>'; });
-  });
+    if(punti) pts.forEach(p=>{ s+='<circle cx="'+X(new Date(p.d).getTime()).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="3.4" fill="'+col+'" stroke="#0A0A0A" stroke-width="1"/>'; });
+  };
+  // sotto, in grigio: tutte quando sono troppe o quando ne hai scelta qualcuna
+  const sfondo = o.foc || o.tante;
+  lines.forEach(l=>{ if(sfondo && !l.focus) linea(l.pts,"#8A8A8E",1.3,false,0.35); });
+  if(o.mediana && o.mediana.length && !o.foc) linea(o.mediana,"#F4F5F7",3.2,true);
+  lines.forEach(l=>{ if(!sfondo || l.focus) linea(l.pts,l.color,2.6,true); });
   s+='</svg>';
   return '<div class="chartbox">'+s+'</div>';
 }
@@ -3934,14 +3967,18 @@ function chartSVG(lines,t){
 function trendTable(lines,t){
   let h='<div class="ttbl"><div class="ttr tth"><span class="tc nm">Atleta</span>'+
     '<span class="tc">Primo</span><span class="tc">Ultimo</span><span class="tc">Δ totale</span></div>';
+  const foc=lines.some(l=>l.focus);
   lines.forEach(l=>{
     const f=l.pts[0].v, last=l.pts[l.pts.length-1].v, raw=last-f, imp=raw*t.dir;
-    const c=imp>0?"up":imp<0?"down":"flat";
-    h+='<div class="ttr"'+(l.hidden?' style="opacity:.4"':'')+'><span class="tc nm">'+
+    /* stesso criterio della Matrice: dentro l'errore della misura non è
+       successo niente, anche se la differenza ha un segno */
+    const nb=bandaRumore(t,f), rum = !!((nb && raw!==0 && Math.abs(raw)<=nb.b) || (INDICI[t.id] && raw!==0));
+    const c=rum?"flat":imp>0?"up":imp<0?"down":"flat";
+    h+='<div class="ttr'+(l.focus?' tfoc':'')+'"'+(foc&&!l.focus?' style="opacity:.45"':'')+'><span class="tc nm">'+
        '<span class="adot" style="background:'+l.color+'"></span>'+esc(l.a.name)+'</span>'+
        '<span class="tc mono">'+fmtNum(f)+'</span>'+
        '<span class="tc mono">'+fmtNum(last)+'</span>'+
-       '<span class="tc"><span class="delta '+c+'">'+(raw>0?"+":"")+fmtNum(raw)+'</span></span></div>';
+       '<span class="tc"><span class="delta '+c+'"'+(rum?' title="dentro l\'errore della misura"':'')+'>'+(rum?"≈ ":"")+(raw>0?"+":"")+fmtNum(raw)+'</span></span></div>';
   });
   return h+'</div>';
 }

@@ -150,5 +150,57 @@ prova("un passo solo su una voce non è rosso per chi risponde sempre uguale", (
   assert.equal(tanti.color, "down");
 });
 
+console.log("\nCarico della settimana (al posto dell'ACWR)");
+
+const giorniFa = (g) => run(`(function(){ const d=new Date(); d.setDate(d.getDate()-${g}); return d.toISOString().slice(0,10); })()`);
+const carichi = (lista) => run(`S.load={a1:${JSON.stringify(lista.map(([g, rpe, min]) => ({ d: giorniFa(g), rpe, min })))}}`);
+// quattro settimane normali: 3 sedute da RPE 5 × 60' = 900 AU a settimana
+const normali = () => { const l = []; for (let w = 1; w <= 4; w++) for (const g of [1, 3, 5]) l.push([w * 7 + g, 5, 60]); return l; };
+
+prova("una settimana normale non fa rumore", () => {
+  squadra(); carichi(normali().concat([[1, 5, 60], [3, 5, 60], [5, 5, 60]]));
+  const c = j(`caricoSett("a1")`);
+  assert.equal(c.sett, 900); assert.equal(c.media, 900); assert.equal(c.stato, "ok");
+});
+
+prova("una settimana molto più carica si vede, in ambra e mai in rosso", () => {
+  squadra(); carichi(normali().concat([[1, 8, 90], [2, 7, 90], [3, 7, 90], [5, 6, 60]]));
+  const c = j(`caricoSett("a1")`);
+  assert.equal(c.stato, "picco", JSON.stringify(c));
+  run(`S.readiness={}; S.cfg.painCut=4; renderToday()`);
+  const h = run(`document.getElementById("grid").innerHTML`);
+  assert.match(h, /tflag amber">📈 Settimana carica/);
+  assert.ok(!/tflag down">📈/.test(h), "non è un rischio misurato: niente rosso");
+});
+
+prova("un rapporto alto su numeri piccoli non è un picco", () => {
+  // 4 settimane da 100 AU, poi 160: ×1,6 ma meno di una seduta tipica in più
+  squadra(); const l = []; for (let w = 1; w <= 4; w++) l.push([w * 7 + 2, 2, 50]); l.push([2, 2, 50], [4, 2, 30]);
+  carichi(l);
+  const c = j(`caricoSett("a1")`);
+  assert.ok(c.rapporto >= 1.3, "il rapporto è alto: " + c.rapporto);
+  assert.equal(c.stato, "ok", "60 AU in più non sono una settimana carica");
+});
+
+prova("le settimane senza niente registrato non abbassano la media", () => {
+  // solo 3 settimane su 4 hanno dati: la media è su 3, non su 4
+  squadra(); const l = normali().filter(([g]) => g < 28 || g >= 35); carichi(l.concat([[1, 5, 60], [3, 5, 60], [5, 5, 60]]));
+  const c = j(`caricoSett("a1")`);
+  assert.equal(c.settimane, 3); assert.equal(c.media, 900);
+});
+
+prova("con meno di 3 settimane di storico non c'è un confronto, e lo dice", () => {
+  squadra(); carichi([[1, 5, 60], [9, 5, 60]]);
+  const c = j(`caricoSett("a1")`);
+  assert.equal(c.insufficient, true);
+  assert.match(run(`caricoChip(caricoSett("a1"))`), /media: 1 sett\. di 3/);
+});
+
+prova("«ACWR» non compare più da nessuna parte nell'interfaccia", () => {
+  const codice = html.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+  const resti = codice.match(/["'][^"'\n]*ACWR[^"'\n]*["']/g) || [];
+  assert.deepEqual(resti, [], "testi rimasti: " + resti.join(" | "));
+});
+
 console.log(failed ? "\n" + failed + " falliti" : "\nTutti i test passati");
 process.exit(failed ? 1 : 0);

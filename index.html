@@ -783,6 +783,23 @@ tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
 .seg button{background:transparent;border:none;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:600;padding:6px 15px;cursor:pointer;transition:.1s}
 .seg button.on{background:var(--text);color:#0A0A0A}
 .leg{display:flex;gap:13px;margin-left:auto}
+.legfull{display:contents}
+.legbtn{display:none}
+.lg-r{display:flex;align-items:center;gap:12px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13.5px}
+.lg-a{flex:0 0 92px;display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12.5px}
+.th-test.vuota,td.cell.vuota{min-width:64px;max-width:64px}
+.th-test.vuota .cat,.th-test.vuota .tu,.th-test.vuota .thMore{display:none}
+.th-test.vuota .tn{font-size:12px;color:var(--muted);font-weight:600}
+@media(max-width:759px){
+  .legfull{display:none}
+  .legbtn{display:inline-flex}
+  /* sul telefono la tabella si scorre col dito: le frecce rubavano una riga */
+  #mnav{display:none !important}
+  .cAth{min-width:118px;max-width:118px;padding:9px 9px}
+  .cAth .sx{display:none}
+  .th-test,td.cell{min-width:90px;max-width:90px}
+  .th-test.vuota,td.cell.vuota{min-width:58px;max-width:58px}
+}
 .leg .it{display:flex;align-items:center;gap:5px}
 .barhint{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted2)}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:12px 14px 2px;scrollbar-width:none}
@@ -828,6 +845,11 @@ tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
 .rd-mode{font-size:11.5px;color:var(--muted2);margin-top:4px}
 .rd-pochi{font-size:12px;color:var(--muted2);padding:2px 0}
 .rd-x{gap:8px}
+.hvoci{display:inline-flex;gap:4px;flex-wrap:wrap;vertical-align:middle}
+.hvoci .rd-wi{font-size:11.5px;padding:1px 5px}
+.cs-t{font-size:15px;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cs-s{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+.cs-s b{color:var(--text)}
 .rd-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer}
 .rd-row:hover{background:var(--surface2)}
 .rd-score{font-family:var(--mono);font-weight:700;font-size:20px;min-width:56px;text-align:center;border-radius:9px;padding:8px 4px;flex:0 0 auto}
@@ -1724,7 +1746,19 @@ function load(){
    tessuti. Le soglie qui sotto restano perche' servono a far scattare uno
    SGUARDO, non una diagnosi: leggi l'ACWR come «quanto mi sono allontanato
    dalla mia norma», non come un semaforo. E restano modificabili. */
+/* ── Carico della settimana, al posto dell'ACWR (ottobre 2026) ──
+   Il conto era già quello giusto (forma scollegata, vedi sopra). Lo sbaglio
+   era il modo di usarlo: zone «ok», «critico» in rosso, «rischio detraining»,
+   un posto fisso in «Da gestire». Tutte promesse di rischio che la
+   letteratura non regge (Impellizzeri 2020).
+   Ora è un confronto dichiarato per quello che è: gli ultimi 7 giorni contro
+   la media delle 4 settimane prima, solo quelle in cui hai registrato
+   qualcosa. Scatta «settimana carica» se è almeno caricoPicco volte la media
+   E la differenza vale almeno una sua seduta tipica — così 300 contro 200 AU
+   non suona come un allarme. È ambra, mai rosso: una proposta da guardare,
+   non un rischio misurato. La soglia 1,3 è una scelta tua, modificabile. */
 const CFG_DEF={rdGreen:80, rdAmber:65, rdCrit:50, acwrLow:0.8, acwrHigh:1.3, acwrCritLow:0.5, acwrCritHigh:1.5, cmjDrop:5, painCut:4,
+  caricoPicco:1.3, caricoCalo:0.5, caricoSettMin:3,
   rdBaseMin:7, rdZAmber:-1.0, rdZRed:-1.5, cmjMinBase:5, cmjNoise:1.5, acwrMinDays:14,
   cmjBaseDays:42,           // finestra della baseline CMJ: oltre non e' fatica, e' altro
   // Curva carico-velocità: soglie MODIFICABILI dal coach, non valori assoluti di letteratura.
@@ -2689,11 +2723,10 @@ function openThresholds(){
      f("rdGreen","Verde (pronto) se ≥",1)+
      f("rdAmber","Ambra se ≥ · sotto = rosso",1)+
      f("rdCrit","Critica nel cruscotto se <",1);
-  h+='<div class="psec">ACWR (carico acuto:cronico)</div>'+
-     f("acwrLow","Zona ok — minimo",0.05)+
-     f("acwrHigh","Zona ok — massimo",0.05)+
-     f("acwrCritLow","Critico (basso) se <",0.05)+
-     f("acwrCritHigh","Critico (alto) se >",0.05);
+  h+='<div class="psec">Carico della settimana (sRPE)</div>'+
+     f("caricoPicco","«Settimana carica» se ≥ volte la sua media",0.05,"Ultimi 7 giorni contro la media delle 4 settimane prima. Non è una soglia di rischio validata: è il punto in cui vuoi che l'app te lo faccia notare.")+
+     f("caricoCalo","«Settimana scarica» se ≤ volte la sua media",0.05,"Solo informazione: di solito è un'assenza o un infortunio, non un problema di programma.")+
+     f("caricoSettMin","Settimane con carichi registrati per avere una media",1,"Su 4. Con meno, il confronto non c'è e l'app lo dice.");
   h+='<div class="psec">CMJ &amp; dolore</div>'+
      f("cmjDrop","Calo CMJ % = fatica (soglia minima)",0.5,"La soglia effettiva non scende mai sotto CV × moltiplicatore: sotto quel valore staresti leggendo rumore.")+
      f("cmjMinBase","Misurazioni minime per la baseline",1,"Con meno di 5-7 rilevazioni la media non è stabile.")+
@@ -2702,8 +2735,7 @@ function openThresholds(){
   h+='<div class="psec">Baseline readiness</div>'+
      f("rdBaseMin","Check-in minimi per la baseline personale",1,"Sotto questa soglia si usano i valori assoluti sopra, ed è dichiarato nell'interfaccia.")+
      f("rdZAmber","Ambra se z ≤",0.1,"Scostamento in deviazioni standard dalla media dell'atleta.")+
-     f("rdZRed","Rosso se z ≤",0.1)+
-     f("acwrMinDays","Giorni minimi di carico per l'ACWR",1,"Sotto i 14 giorni il carico cronico è sottostimato e l'indice esce falsamente alto.");
+     f("rdZRed","Rosso se z ≤",0.1);
   h+='<div class="thr-act"><button class="btn sm" onclick="resetThresholds()">Ripristina default</button>'+
      '<button class="btn primary" onclick="saveThresholds()">Salva soglie</button></div>';
   modal(h);
@@ -2713,9 +2745,9 @@ function saveThresholds(){
   // coerenza minima
   if(S.cfg.rdAmber>S.cfg.rdGreen) S.cfg.rdAmber=S.cfg.rdGreen;
   if(S.cfg.rdCrit>S.cfg.rdAmber) S.cfg.rdCrit=S.cfg.rdAmber;
-  if(S.cfg.acwrLow>S.cfg.acwrHigh){ const t=S.cfg.acwrLow; S.cfg.acwrLow=S.cfg.acwrHigh; S.cfg.acwrHigh=t; }
-  if(S.cfg.acwrCritLow>S.cfg.acwrLow) S.cfg.acwrCritLow=S.cfg.acwrLow;
-  if(S.cfg.acwrCritHigh<S.cfg.acwrHigh) S.cfg.acwrCritHigh=S.cfg.acwrHigh;
+  if(!(S.cfg.caricoPicco>1)) S.cfg.caricoPicco=CFG_DEF.caricoPicco;
+  if(!(S.cfg.caricoCalo>0 && S.cfg.caricoCalo<1)) S.cfg.caricoCalo=CFG_DEF.caricoCalo;
+  S.cfg.caricoSettMin=Math.min(4,Math.max(2,Math.round(S.cfg.caricoSettMin||3)));
   if(S.cfg.cmjDrop<0) S.cfg.cmjDrop=Math.abs(S.cfg.cmjDrop);
   save(); closeM(); render(); toast("Soglie aggiornate");
 }
@@ -3614,10 +3646,16 @@ function openSessionOn(tid){
 }
 
 function renderMatrix(){
-  const tests=visibleTests();
   const grid=document.getElementById("grid");
   const rows=atleteOrdinate();
   if(rows.length===0){ grid.innerHTML=emptyTeam(); return; }
+  /* Una colonna senza nemmeno una misura occupava 96 pixel di «+». Sul
+     telefono ne entrano tre: se due sono vuote, vedi un test alla volta.
+     Le vuote vanno in fondo e strette; si riempiono da «Registra test» o
+     toccando il «+». */
+  const _tutti=visibleTests();
+  const _haDati={}; _tutti.forEach(t=>{ _haDati[t.id]=rows.some(a=>series(a.id,t.id).length>0); });
+  const tests=_tutti.filter(t=>_haDati[t.id]).concat(_tutti.filter(t=>!_haDati[t.id]));
   const pin=pinSet();
   /* Sei righe di testo in una colonna larga 96 pixel — categoria, nome, unita',
      verso, «carichi», «guida» — erano piu' parole che dati. Adesso
@@ -3632,7 +3670,7 @@ function renderMatrix(){
         ' <button onclick="event.stopPropagation();sortClear()">✕</button></div>':'')+'</th>';
   tests.forEach(t=>{
     const ord=SORT.by===t.id;
-    h+='<th class="th-test'+(pin.indexOf(t.id)>=0?" pinned":"")+(ord?" sorted":"")+'" '+
+    h+='<th class="th-test'+(pin.indexOf(t.id)>=0?" pinned":"")+(ord?" sorted":"")+(_haDati[t.id]?"":" vuota")+'" '+
        'onclick="openColMenu(\''+t.id+'\')" title="Tocca: ordina, evidenzia, guida, carichi">'+
        '<div class="cat">'+t.cat+'</div>'+
        '<div class="tn">'+(isCore(t.id)?'<span class="star">★</span>':'')+t.name+'</div>'+
@@ -3664,7 +3702,7 @@ function renderMatrix(){
     h+='<div class="sub">'+tl+tot+' ril.</div></td>';
     tests.forEach(t=>{
       const arr=series(a.id,t.id);
-      h+='<td class="cell" onclick="openCell(\''+a.id+'\',\''+t.id+'\')">';
+      h+='<td class="cell'+(_haDati[t.id]?'':' vuota')+'" onclick="openCell(\''+a.id+'\',\''+t.id+'\')">';
       if(arr.length===0){ h+='<span class="empty">+</span>'; }
       else{
         const last=arr[arr.length-1], di=deltaInfo(arr,t.dir,t);
@@ -3744,8 +3782,7 @@ function todayManageCount(){
       const med=medicalState(p); if(med && med.c==="down") flag=true;
       const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1];
       if(rl){ const ev=readinessEval(a.id,rl); if(ev.color==="down"||ev.color==="amber") flag=true; }
-      const ac=acwr(a.id);
-      if(ac && ac.acwr!=null && (ac.acwr>S.cfg.acwrHigh || ac.acwr<S.cfg.acwrLow)) flag=true;
+      const cs=caricoSett(a.id); if(cs && cs.stato==="picco") flag=true;
       const cf=cmjFatigue(a.id); if(cf&&cf.fatigued) flag=true;
       if(flag) n++;
     });
@@ -3777,6 +3814,7 @@ function renderBar(){
     h+='<div class="barhint">una linea per atleta nel tempo</div>';
   } else {
     h+='<button class="btn sm" onclick="openTabPdf()" title="La tabella in PDF, da far vedere o da mandare">📄 PDF</button>';
+    h+='<button class="btn sm legbtn" onclick="openLegenda()">? Legenda</button><div class="legfull">';
     h+='<div class="leg"><span class="it"><span class="dot" style="background:var(--up)"></span>Migliora</span>'+
        '<span class="it"><span class="dot" style="background:var(--down)"></span>Peggiora</span>'+
        '<span class="it"><span class="dot" style="background:var(--flat)"></span>Uguale</span></div>'+
@@ -3787,13 +3825,31 @@ function renderBar(){
          '<span class="vi"><span class="lvdot" style="background:#34C759"></span>fascia di riferimento</span>'+
          '<span class="vi"><span class="lvdot sq" style="border-color:#34C759"></span>rispetto alla squadra</span>'+
          '<span class="vi"><span class="lvdot me" style="background:#34C759"></span>rispetto a lei stessa</span>'+
-       '</div>'+
+       '</div></div>'+
        '<div class="mnav" id="mnav" style="display:none">'+
        '<button onclick="matrixScroll(-1)" aria-label="Test precedenti">‹</button>'+
        '<span>scorri i test</span>'+
        '<button onclick="matrixScroll(1)" aria-label="Test successivi">›</button></div>';
   }
   bar.innerHTML=h;
+}
+function openLegenda(){
+  const r=(a,b)=>'<div class="lg-r"><span class="lg-a">'+a+'</span><span>'+b+'</span></div>';
+  modal('<div class="mh"><div><div class="mt">Come si legge la tabella</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="set-sec">Il numerino sotto il valore</div>'+
+    r('<span class="dot" style="background:var(--up)"></span>','migliorata rispetto alla misura prima')+
+    r('<span class="dot" style="background:var(--down)"></span>','peggiorata')+
+    r('<span class="dot" style="background:var(--flat)"></span>','uguale')+
+    r('≈ <small>nel rumore</small>','cambiata meno dell\'errore della misura: non è successo niente')+
+    '<div class="set-sec">Il pallino in alto a destra</div>'+
+    r('<span class="lvdot" style="position:static;display:inline-block;background:#34C759"></span>','rispetto a una fascia di riferimento')+
+    r('<span class="lvdot sq" style="position:static;display:inline-block;border-color:#34C759"></span>','rispetto alla squadra')+
+    r('<span class="lvdot me" style="position:static;display:inline-block;background:#34C759"></span>','rispetto a lei stessa, alle sue misure precedenti')+
+    '<div class="set-sec">Il resto</div>'+
+    r('≈ 80','stimato (da una serie a ripetizioni o dalla curva carico-velocità), non misurato')+
+    r('<span style="color:#FFB340">4 sett.</span>','quanto è vecchia l\'ultima misura')+
+    r('<b>+</b>','nessuna misura: tocca per aggiungerla')+
+    '<div style="height:10px"></div>');
 }
 function matrixScroll(dir){ const w=document.querySelector(".wrap"); if(w) w.scrollBy({left:dir*Math.max(200,w.clientWidth*0.62), behavior:"smooth"}); }
 function updateMatrixNav(){ const w=document.querySelector(".wrap"); const nav=document.getElementById("mnav");
@@ -8464,7 +8520,7 @@ const SPORTKB={
       "<b>Conta i salti (jump count)</b>: è il carico meccanico principale. A mano o con sensori inerziali (es. VERT).",
       "Indicativo per seduta nei picchi: <b>centrali e schiacciatori i più sollecitati (100-200+ salti)</b>, opposto simile, palleggiatore alto numero ma intensità media, libero il più basso.",
       "In stagione un attaccante può superare <b>1000-1500 salti/settimana</b> nei picchi: monitora il totale settimanale.",
-      "Applica la logica <b>acuto/cronico (ACWR)</b> anche al jump count; tieni gli incrementi settimanali contenuti (~10-15%).",
+      "Conta i salti e confronta la settimana con la media delle 4 precedenti: un aumento improvviso che non hai programmato è quello da guardare.",
       "Usa il <b>CMJ come spia</b>: un calo vs baseline = fatica neuromuscolare → riduci salti/intensità (vedi vista Fatica)."],
     roles:{
       "Palleggiatore":["Tanti contatti e spostamenti; salti frequenti ma per lo più di alzata (intensità media).","Priorità: rapidità di piedi, agilità, ripetibilità dei salti, stabilità di spalla e polso."],
@@ -8494,7 +8550,7 @@ const SPORTKB={
       "Caviglia: propriocezione."],
     monitoring:[
       "Carico esterno (con GPS): distanza totale, distanza ad alta velocità, n. sprint, accel/decel.",
-      "Carico interno: <b>sRPE × durata</b>; usa l'ACWR per i picchi.",
+      "Carico interno: <b>sRPE × durata</b>; confronta la settimana con la media delle 4 precedenti.",
       "Test utili nell'app: <b>Yo-Yo IR1, MAS, sprint 10/30 m, RSA</b>."],
     roles:{
       "Portiere":["Azioni esplosive brevi, tuffi, poca corsa continua.","Priorità: potenza, reattività, mobilità anca/spalla, forza eccentrica per gli atterraggi."],
@@ -8520,7 +8576,7 @@ const SPORTKB={
       "Ginocchio (LCA + tendine rotuleo): meccanica di atterraggio e gestione del volume di salti.",
       "Gestione degli atterraggi simile alla pallavolo."],
     monitoring:[
-      "<b>Jump count</b> e carichi di accel/decel; sRPE × durata; ACWR.",
+      "<b>Jump count</b> e carichi di accel/decel; sRPE × durata, settimana contro media delle 4 precedenti.",
       "Test utili: <b>CMJ, Drop Jump (RSI), RSA, sprint, Yo-Yo</b>."],
     roles:{
       "Playmaker":["Tanti spostamenti, sprint e cambi di direzione.","Priorità: agilità, RSA, accel/decel."],
@@ -8546,7 +8602,7 @@ const SPORTKB={
       "Fondisti: sovraccarico da volume (tibia, Achille, ginocchio) → progressione graduale del chilometraggio."],
     monitoring:[
       "Velocisti/saltatori: <b>sprint, CMJ, Drop Jump (RSI)</b>.",
-      "Fondisti: <b>MAS, VO₂max</b>; carico interno sRPE e ACWR sul volume."],
+      "Fondisti: <b>MAS, VO₂max</b>; carico interno sRPE e volume settimanale."],
     roles:{
       "Velocità":["Massima espressione di forza-potenza e RFD.","Priorità: sprint tecnico, pliometria, forza, cura di hamstring/Achille."],
       "Mezzofondo/Fondo":["Capacità aerobica ed economia di corsa.","Priorità: %MAS, soglia, gestione del volume."],
@@ -8569,7 +8625,7 @@ const SPORTKB={
       "Evita salti di carico bruschi: monitora il tonnellaggio settimanale."],
     monitoring:[
       "Test utili: <b>1RM/3-5RM, xRM→1RM, VBT, forza relativa</b>.",
-      "ACWR applicato al tonnellaggio per i picchi di carico."]},
+      "Tonnellaggio settimanale confrontato con la media delle 4 settimane precedenti."]},
 
   combattimento:{label:"Sport da combattimento", roleList:["Percussione (boxe/kickboxing/taekwondo/karate)","Lotta (wrestling/judo)","Grappling (BJJ/sambo)","Ibrido (MMA)"],
     demands:[
@@ -8599,7 +8655,7 @@ const SPORTKB={
       "Sparring pesante: gestisci il volume di impatti alla testa come un carico da programmare, non come una variabile libera."],
     monitoring:[
       "<b>sRPE × durata</b> (Foster) è lo strumento d'elezione: aggrega sedute molto diverse (sparring, grappling, S&C, condizionamento) in un unico carico. Usa la vista <b>Fatica</b>.",
-      "Applica l'<b>ACWR</b> (acuto:cronico) per evitare picchi accentuati; ricorda però che un picco <i>pianificato</i> non è di per sé pericoloso.",
+      "Confronta la settimana con la media delle 4 precedenti per vedere i picchi non programmati; un picco <i>pianificato</i> non è di per sé pericoloso.",
       "<b>CMJ e RSI (drop jump)</b> come proxy oggettivo di readiness: un calo indica soppressione neuromuscolare da carico pesante.",
       "<b>Questionari wellness</b> + readiness soggettiva: nel combattimento sono spesso l'opzione più praticabile e costo-efficace.",
       "<b>Punch meter</b> dove disponibile: forza/velocità del colpo come indicatore grossolano ma utile dello stato di forma.",
@@ -8711,11 +8767,11 @@ function printAthlete(id){
   }
   // stato attuale
   const rarr=(S.readiness&&S.readiness[a.id])||[]; const rlast=rarr[rarr.length-1];
-  const ac=(typeof acwr==="function")?acwr(a.id):null;
-  if(rlast||ac){ h+='<div class="psc">Stato attuale</div>';
+  const cs=caricoSett(a.id);
+  if(rlast||(cs&&!cs.insufficient)){ h+='<div class="psc">Stato attuale</div>';
     if(rlast){ const ev=readinessEval(a.id,rlast);
-      if(ev.pc!=null) h+='<div class="pf"><b>Readiness:</b> '+rdLabel(ev)+'/100 · check-in '+fmtDate(rlast.d)+(ev.mode==="abs"?' · baseline non ancora disponibile':'')+'</div>'; }
-    if(ac && ac.acwr!=null) h+='<div class="pf"><b>ACWR (carico acuto:cronico):</b> '+fmtNum(Math.round(ac.acwr*100)/100)+(ac.provisional?' (provvisorio)':'')+'</div>';
+      if(ev.pc!=null) h+='<div class="pf"><b>Readiness:</b> '+ev.pc+'/100'+(ev.mode==="z"&&ev.color!=="up"?rdLabel(ev).slice(String(ev.pc).length):'')+' · check-in '+fmtDate(rlast.d)+(ev.mode==="abs"?' · baseline non ancora disponibile':'')+'</div>'; }
+    if(cs && !cs.insufficient) h+='<div class="pf"><b>Carico ultimi 7 giorni:</b> '+cs.sett+' AU · media delle 4 settimane prima '+cs.media+' AU</div>';
   }
   // guida
   h+='<div class="psc">Guida preparazione &amp; percorso — '+kb.label+'</div><div class="pbrief">'+briefBody(kb, p.role||"", p)+'</div>';
@@ -8824,9 +8880,12 @@ function readinessEval(aid, entry){
 }
 function readinessColorAbs(pc){ const c=S.cfg; return pc==null?"flat":pc>=c.rdGreen?"up":pc>=c.rdAmber?"amber":"down"; }
 function readinessColor(pc){ return readinessColorAbs(pc); }   // compatibilità
+/* «38 (z -5.9)» era un numero per statistici. Il punteggio resta, lo
+   scostamento si dice a parole; lo z resta nel tooltip della pagina Fatica. */
 function rdLabel(ev){
   if(!ev||ev.pc==null) return "—";
-  return ev.mode==="z" ? (ev.pc+" (z "+(ev.z>0?"+":"")+ev.z.toFixed(1)+")") : (ev.pc+"");
+  if(ev.mode!=="z") return ev.pc+"";
+  return ev.pc+(ev.color==="down"?" · molto sotto la sua media":ev.color==="amber"?" · sotto la sua media":"");
 }
 
 /* Il CV tipico del CMJ è 2-5%: una soglia fissa al 5% segnalava "fatica"
@@ -10004,10 +10063,8 @@ function renderToday(){
     if(rl){ rEv=readinessEval(a.id,rl); rToday=(rl.d===today);
       if(rEv.color==="down"){ flags.push({t:"🔋 Readiness "+rdLabel(rEv),c:"down"}); sev+=4; }
       else if(rEv.color==="amber"){ flags.push({t:"🔋 Readiness "+rdLabel(rEv),c:"amber"}); sev+=2; } }
-    const ac=acwr(a.id);
-    if(ac && ac.acwr!=null){ const r=ac.acwr;
-      if(r>S.cfg.acwrCritHigh||r<S.cfg.acwrCritLow){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"down"}); sev+=3; }
-      else if(r>S.cfg.acwrHigh||r<S.cfg.acwrLow){ flags.push({t:"📈 ACWR "+fmtNum(Math.round(r*100)/100),c:"amber"}); sev+=1; } }
+    const cs=caricoSett(a.id);
+    if(cs && cs.stato==="picco"){ flags.push({t:"📈 Settimana carica ×"+fmtNum(Math.round(cs.rapporto*10)/10),c:"amber"}); sev+=1; }
     const cf=cmjFatigue(a.id);
     if(cf&&cf.fatigued){ flags.push({t:"⬇️ CMJ "+fmtNum(Math.round(cf.pct*10)/10)+"%",c:"down"}); sev+=2; }
     let sug=""; const rpc=(rEv&&rEv.pc!=null)?rEv.pc:null; const rCol=rEv?rEv.color:null;
@@ -10016,9 +10073,8 @@ function renderToday(){
     else if(med && med.c==="down") sug="Non far allenare finché l'idoneità non è a posto: è una responsabilità tua, non discutibile.";
     else if(sc) sug="Verifica medica prima di proporre carichi intensi.";
     else if(rCol==="down") sug="Priorità recupero: riduci volume e intensità oggi.";
-    else if(ac && ac.acwr!=null && (ac.acwr>S.cfg.acwrCritHigh||ac.acwr<S.cfg.acwrCritLow)) sug=(ac.acwr>S.cfg.acwrCritHigh?"Carico acuto alto: attenua — o conferma che è un picco pianificato.":"Carico molto basso: reintroduci gradualmente (rischio detraining).");
     else if(rCol==="amber") sug="Modula il volume, evita massimali; cura il recupero.";
-    else if(ac && ac.acwr!=null && (ac.acwr>S.cfg.acwrHigh||ac.acwr<S.cfg.acwrLow)) sug="ACWR in zona di attenzione: monitora il carico.";
+    else if(cs && cs.stato==="picco") sug="Ultimi 7 giorni "+cs.sett+" AU contro una media di "+cs.media+": se il picco non era nel programma, alleggerisci la prossima seduta.";
     else if(cf&&cf.fatigued) sug="Riduci pliometria/alta intensità; monitora il CMJ.";
     return {a, flags, sev, rl, rToday, sug, doc};
   });
@@ -10195,9 +10251,7 @@ function renderReadiness(){
     if(cf && !cf.insufficient){ const cls=cf.fatigued?"down":cf.pct>=cf.thr?"up":"flat";
       cmjHtml='<span class="rd-cmj '+cls+'" title="soglia '+fmtNum(Math.round(cf.thr*10)/10)+'% · CV '+fmtNum(Math.round(cf.cv*10)/10)+'%">CMJ '+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%'+(cf.fatigued?' ⚠':'')+'</span>'; }
     else if(cf && cf.insufficient) cmjHtml='<span class="rd-pochi" title="servono almeno '+cf.need+' misurazioni di CMJ per una baseline attendibile">CMJ: '+cf.have+' misure di '+cf.need+'</span>';
-    const ac=acwr(a.id); let acHtml="";
-    if(ac && ac.acwr!=null){ const cls=acwrColor(ac.acwr); acHtml='<span class="rd-cmj '+cls+'">ACWR '+fmtNum(Math.round(ac.acwr*100)/100)+(ac.provisional?'*':'')+(cls==="down"?' ⚠':'')+'</span>'; }
-    else if(ac && ac.insufficient) acHtml='<span class="rd-pochi" title="servono almeno '+ac.needDays+' giorni di carico registrato">carico: '+ac.haveDays+' gg di '+ac.needDays+'</span>';
+    const acHtml=caricoChip(caricoSett(a.id));
     const sr=saltiRiassunto(a.id); let saltiHtml="";
     if(sr) saltiHtml='<span class="rd-cmj flat" title="ultima seduta '+fmtDate(sr.ultima.d)+': '+sr.ultima.n+' salti · media settimanale delle 4 settimane prima: '+sr.media4+'">Salti 7gg '+sr.sett+(sr.media4?' · media '+sr.media4:'')+'</span>';
     const extra=[cmjHtml,acHtml,saltiHtml].filter(Boolean).join("");
@@ -10264,7 +10318,7 @@ function openReadinessHistory(aid){
   let h='<div class="mh"><div><div class="mt">'+esc(a.name)+'</div><div class="ms">Storico readiness</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>';
   const cf=cmjFatigue(aid);
-  if(cf && cf.insufficient) h+='<div class="alert info"><span class="ai">ℹ️</span><span>CMJ: <b>'+cf.have+'/'+cf.need+'</b> misurazioni. Sotto questa soglia la baseline non distingue la fatica dall\'errore di misura.</span></div>';
+  if(cf && cf.insufficient) h+='<div class="alert info"><span class="ai">ℹ️</span><span>CMJ: <b>'+cf.have+' misure di '+cf.need+'</b>. Sotto questa soglia la baseline non distingue la fatica dall\'errore di misura.</span></div>';
   else if(cf) h+='<div class="alert '+(cf.fatigued?'danger':'info')+'"><span class="ai">'+(cf.fatigued?'⚠️':'ℹ️')+'</span>'+
     '<span>CMJ vs baseline (<b>'+cf.nBase+'</b> misure): <b>'+(cf.pct>0?"+":"")+fmtNum(Math.round(cf.pct*10)/10)+'%</b>'+
     (cf.fatigued?' — possibile fatica neuromuscolare':'')+
@@ -10274,33 +10328,31 @@ function openReadinessHistory(aid){
     for(let i=arr.length-1;i>=0;i--){ const e=arr[i], ev=readinessEval(aid,e), pc=ev.pc;
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
          '<span class="hv"><span class="rd-cmj '+ev.color+'">'+(pc==null?"—":pc)+'</span> '+
-         '<span style="color:var(--muted2);font-size:10px;font-family:var(--mono)">😴'+e.sl+' 💪'+e.so+' 🔋'+e.fa+' 🧠'+e.st+'</span></span>'+
+         '<span class="hvoci">'+rdVoci(e)+'</span></span>'+
          '<span class="hdl" onclick="delCheckin(\''+aid+'\','+i+')">🗑</span></div>';
     }
     h+='</div>';
   } else h+='<p class="hint">Nessun check-in ancora. Usa "+ Check-in di oggi".</p>';
-  // ── carico interno + ACWR ──
-  const ac=acwr(aid), ws=weekStats(aid), larr=(S.load&&S.load[aid])||[];
-  h+='<div class="psec" style="color:var(--accent)">Carico interno & ACWR</div>';
-  if(ac && ac.insufficient) h+='<div class="alert info"><span class="ai">ℹ️</span><span>ACWR non calcolabile: <b>'+ac.haveDays+'</b> giorni di storico su <b>'+ac.needDays+'</b> minimi. Con meno dati il carico cronico risulta sottostimato e l\'indice esce falsamente alto.</span></div>';
-  if(ac && ac.acwr!=null){
-    const cls=acwrColor(ac.acwr);
-    h+='<div class="bgrp"><div style="display:flex;justify-content:space-between;align-items:center">'+
-       '<div><div class="bt">ACWR <span class="rd-cmj '+cls+'" style="font-size:15px">'+fmtNum(Math.round(ac.acwr*100)/100)+'</span></div>'+
-       '<div class="bw">acuto '+ac.acute+' · cronico '+ac.chronic+' AU/sett</div></div></div>'+
-       '<div class="rd-sub" style="margin-top:8px"><span class="rd-chip">Carico 7gg: '+ws.weekly+' AU</span>'+
-       '<span class="rd-chip">Monotonia: '+fmtNum(Math.round(ws.monotony*100)/100)+'</span>'+
-       '<span class="rd-chip">Strain: '+ws.strain+'</span></div></div>';
-    h+='<div class="gnote">Zona di comfort ~0.8-1.3; sopra ~1.5 carico acuto elevato; sotto ~0.8 possibile detraining. La <b>monotonia</b> alta (poco variata) aumenta il rischio.</div>';
-    if(ac.provisional) h+='<div class="gnote">⏳ Valore <b>provvisorio</b>: la finestra cronica copre '+ac.haveDays+' giorni invece di 28. Si stabilizza col passare delle settimane.</div>';
-    h+='<div class="gnote">⚠️ Un ACWR alto <b>non è automaticamente pericoloso</b>: in un sovraccarico pianificato (block periodization) è atteso. Leggi il dato nel contesto del tuo programma, non come allarme assoluto.</div>';
-    h+='<div class="gnote">📚 L\'ACWR è un <b>descrittore del carico</b>, non un predittore di infortunio: la sua validità è contestata in letteratura (Impellizzeri et al., 2020). Usalo per vedere come varia il carico, non per decidere da solo chi si allena.</div>';
+  // ── carico interno ──
+  const cs=caricoSett(aid), larr=(S.load&&S.load[aid])||[];
+  h+='<div class="psec" style="color:var(--accent)">Carico della settimana</div>';
+  if(cs && cs.insufficient){
+    h+='<div class="alert info"><span class="ai">ℹ️</span><span>Ultimi 7 giorni: <b>'+cs.sett+' AU</b>. Per confrontarli con la sua media servono carichi registrati in almeno <b>'+cs.need+'</b> delle 4 settimane prima: ora ce ne sono '+cs.have+'.</span></div>';
+  } else if(cs){
+    const x=cs.rapporto!=null?fmtNum(Math.round(cs.rapporto*100)/100):"—";
+    h+='<div class="bgrp"><div class="cs-t">Ultimi 7 giorni: <b>'+cs.sett+' AU</b>'+
+       (cs.stato==="picco"?' <span class="rd-cmj amber">settimana carica</span>':cs.stato==="calo"?' <span class="rd-cmj flat">settimana scarica</span>':'')+'</div>'+
+       '<div class="cs-s">Media delle 4 settimane prima: <b>'+cs.media+' AU</b> ('+cs.settimane+' con dati) · rapporto <b>'+x+'</b> · seduta tipica '+cs.tipica+' AU</div>'+
+       '<div class="rd-sub" style="margin-top:8px">'+cs.perSett.map((v,i)=>'<span class="rd-wi">'+(i+1)+'-'+(i+2)+' sett. fa <b>'+(v==null?"—":v)+'</b></span>').join("")+'</div></div>';
+    h+='<div class="gnote">È un confronto con la sua storia, non un indice di rischio: nessuna soglia di carico ha dimostrato di prevedere gli infortuni (Impellizzeri 2020). Un picco che hai programmato tu è un picco voluto.</div>';
   } else {
-    h+='<p class="hint">Servono almeno ~1-4 settimane di carichi per un ACWR sensato. Usa "+ Carico seduta".</p>';
+    h+='<p class="hint">Nessun carico registrato. Usa «+ Carico seduta».</p>';
   }
   if(larr.length){
     h+='<label class="fl">Sedute ('+larr.length+')</label><div class="hist">';
-    for(let i=larr.length-1;i>=0 && i>=larr.length-8;i--){ const e=larr[i];
+    // in ordine di data, non di inserimento: un carico aggiunto dopo per una data passata finiva in cima
+    const ord=larr.map((e,i)=>i).sort((x,y)=>larr[x].d<larr[y].d?1:larr[x].d>larr[y].d?-1:y-x).slice(0,8);
+    for(const i of ord){ const e=larr[i];
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
          '<span class="hv">'+dayLoad(e)+' AU <span style="color:var(--muted2);font-size:10px;font-family:var(--mono)">RPE '+e.rpe+' × '+e.min+'′</span></span>'+
          '<span class="hdl" onclick="delLoad(\''+aid+'\','+i+')">🗑</span></div>';
@@ -10316,45 +10368,43 @@ function delCheckin(aid,i){
   save(); openReadinessHistory(aid); render();
 }
 
-/* ── Carico interno (sRPE) + ACWR ── */
+/* ── Carico interno (sRPE) ── */
 function dayLoad(e){ return (e.rpe||0)*(e.min||0); }
-/* Prima il carico cronico era diviso per 4 anche con pochi giorni di storico:
-   nelle prime settimane il denominatore era artificialmente basso e l'ACWR
-   schizzava sopra 1.5, producendo allarmi rossi sistematici. Inoltre la
-   finestra acuta era contenuta nella cronica (versione "coupled"), che
-   introduce la correlazione spuria descritta da Windt & Gabbett.
-   Qui: finestra cronica disaccoppiata (giorni 7-27), divisa per le settimane
-   effettivamente coperte, e nessun valore prima di acwrMinDays di storico. */
-function acwr(aid){
-  const arr=(S.load&&S.load[aid])||[];
+/* Ultimi 7 giorni contro la media delle 4 settimane prima (giorni 7-34),
+   contando solo le settimane in cui c'è almeno una seduta registrata: una
+   settimana vuota può essere riposo o app non usata, e non so quale delle
+   due. Vedi il commento su CFG_DEF per perché non si chiama più ACWR. */
+function caricoSett(aid, oggi){
+  const o=dayNum(oggi||todayISO()), arr=(S.load&&S.load[aid])||[];
   if(!arr.length) return null;
-  let acute=0, chronicSum=0, oldest=-1;
+  const cfg=S.cfg||CFG_DEF;
+  let s7=0; const sett=[0,0,0,0], conDati=[0,0,0,0], sedute=[];
   arr.forEach(e=>{
-    const d=daysAgo(e.d); if(!isFinite(d)||d<0) return;
-    if(d>oldest) oldest=d;
+    const g=o-dayNum(e.d); if(!isFinite(g)||g<0||g>=35) return;
     const L=dayLoad(e);
-    if(d<7) acute+=L; else if(d<28) chronicSum+=L;
+    if(g<7) s7+=L; else { const w=Math.floor((g-7)/7); sett[w]+=L; conDati[w]=1; }
+    if(L>0) sedute.push(L);
   });
-  if(oldest<0) return null;
-  const minD=(S.cfg.acwrMinDays||14);
-  const chronicDays=Math.min(21, oldest-6);          // giorni coperti in 7..27
-  if(oldest+1<minD || chronicDays<7){
-    return {acwr:null, insufficient:true, haveDays:oldest+1, needDays:minD, acute:Math.round(acute)};
-  }
-  const chronic=chronicSum/(chronicDays/7);          // AU per settimana, reali
-  if(chronic<=0) return {acwr:null, insufficient:true, haveDays:oldest+1, needDays:minD, acute:Math.round(acute)};
-  return {acwr:acute/chronic, acute:Math.round(acute), chronic:Math.round(chronic),
-          provisional: oldest<27, haveDays:oldest+1};
+  const nW=conDati.reduce((a,b)=>a+b,0);
+  const need=Math.min(4,Math.max(2,Math.round(cfg.caricoSettMin||3)));
+  if(nW<need) return {sett:Math.round(s7), insufficient:true, have:nW, need:need};
+  const media=sett.reduce((a,b,i)=>a+(conDati[i]?b:0),0)/nW;
+  sedute.sort((a,b)=>a-b);
+  const tipica=sedute.length ? sedute[Math.floor(sedute.length/2)] : 0;
+  const r=media>0 ? s7/media : null;
+  let stato="ok";
+  if(r!=null && r>=(cfg.caricoPicco||1.3) && s7-media>=tipica) stato="picco";
+  else if(r!=null && r<=(cfg.caricoCalo||0.5) && media-s7>=tipica) stato="calo";
+  return {sett:Math.round(s7), media:Math.round(media), rapporto:r, tipica:Math.round(tipica), stato:stato, settimane:nW,
+          perSett:sett.map((v,i)=>conDati[i]?Math.round(v):null)};
 }
-function acwrColor(r){ if(r==null) return "flat"; const c=S.cfg; if(r>=c.acwrLow&&r<=c.acwrHigh) return "up"; if(r>c.acwrCritHigh||r<c.acwrCritLow) return "down"; return "amber"; }
-function weekStats(aid){
-  const arr=(S.load&&S.load[aid])||[]; const now=new Date(todayISO()); const daily={};
-  for(let i=0;i<7;i++){ const d=new Date(now); d.setDate(d.getDate()-i); daily[d.toISOString().slice(0,10)]=0; }
-  arr.forEach(e=>{ if(daily.hasOwnProperty(e.d)) daily[e.d]+=dayLoad(e); });
-  const vals=Object.keys(daily).map(k=>daily[k]); const sum=vals.reduce((a,b)=>a+b,0); const mean=sum/7;
-  const sd=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)*(b-mean),0)/7);
-  const monotony=sd>0?mean/sd:0;
-  return {weekly:Math.round(sum), monotony:monotony, strain:Math.round(sum*monotony)};
+function caricoChip(c){
+  if(!c) return "";
+  if(c.insufficient) return '<span class="rd-pochi" title="servono carichi registrati in almeno '+c.need+' delle 4 settimane prima">carico 7gg '+c.sett+' AU · media: '+c.have+' sett. di '+c.need+'</span>';
+  const x=c.rapporto!=null ? " ×"+fmtNum(Math.round(c.rapporto*10)/10) : "";
+  const cls=c.stato==="picco"?"amber":"flat";
+  return '<span class="rd-cmj '+cls+'" title="ultimi 7 giorni '+c.sett+' AU · media delle 4 settimane prima '+c.media+' AU · seduta tipica '+c.tipica+' AU">'+
+    (c.stato==="picco"?"settimana carica":c.stato==="calo"?"settimana scarica":"carico 7gg")+' '+c.sett+' AU'+x+'</span>';
 }
 function openLoad(){
   const ath=teamAthletes(); if(!ath.length){ addAthlete(); return; }
@@ -10870,7 +10920,7 @@ function openSettings(){
   h+='<div class="set-sec">Monitoraggio</div><div class="set-group">'+
     row("📊","Cosa è cambiato","Tutti i test: chi è migliorata oltre l'errore della misura","openCambio(null)")+
     row("📅","Calendario gare","Quanto manca alla prossima, quando decidi la seduta","openGare()", (S.activeTeam&&gareDi(S.activeTeam).filter(g=>g.d>=todayISO()).length)||"")+
-    row("⚙️","Soglie","Readiness, ACWR, calo CMJ, dolore","openThresholds()")+
+    row("⚙️","Soglie","Readiness, carico settimanale, calo CMJ, dolore","openThresholds()")+
     row("👥","Squadre","Rinomina, sport, batteria, elimina","manageTeams()", S.teams.length)+
     '</div>';
 
@@ -13170,7 +13220,7 @@ const BATTERY={
       {k:"percussione", label:"🥊 Percussione", core:["cmj","dj","rmSquat","airBike"],
        note:"Boxe · kickboxing · karate · taekwondo. Dominio dei <b>fosfati</b>: azioni esplosive in frazioni di secondo. L'aerobico serve a recuperare tra le azioni, non a fare volume.",
        groups:[
-         {t:"Monitoraggio neuromuscolare", w:"Ogni microciclo", y:"CMJ e Drop Jump (RSI): readiness ed esplosività. Un calo = fatica neuromuscolare. Affiancali al carico interno (sRPE/ACWR) nella vista Fatica.", tests:["cmj","dj"]},
+         {t:"Monitoraggio neuromuscolare", w:"Ogni microciclo", y:"CMJ e Drop Jump (RSI): readiness ed esplosività. Un calo = fatica neuromuscolare. Affiancali al carico interno (sRPE) nella vista Fatica.", tests:["cmj","dj"]},
          {t:"Forza massimale", w:"Ogni 6-10 settimane", y:"Base della potenza. Leggila sempre in <b>relativo al peso</b>: più forte a parità di categoria, non più pesante.", tests:["rmSquat","rmBench","rmDead"]},
          {t:"Resistenza di forza", w:"Periodico", y:"Mantenere efficacia quando la fatica sale: spinta e tirata.", tests:["pushMax","pullMax"]},
          {t:"Aerobico", w:"Baseline · metà camp", y:"Due test: tapis (capacità generale) e air bike (coinvolge la parte alta, più specifico per il fight). Se il tapis va e l'air bike no, il limite è la parte alta.", tests:["trmInc","airBike"]},

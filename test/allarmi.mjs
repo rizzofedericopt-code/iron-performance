@@ -280,6 +280,16 @@ prova("i chip degli sport compaiono solo dove cambiano qualcosa", () => {
   assert.equal(run(`S.activeTeam="all"; S.view="trend"; sportsServono()`), true);
 });
 
+prova("in Matrice le colonne senza nessuna misura vanno in fondo, strette", () => {
+  run(`S.teams=[{id:"t1",name:"YV",sport:"pallavolo",tests:["sj","cmj"]}]; S.activeTeam="t1"; S.view="matrix";
+       S.athletes=[{id:"p1",name:"A",team:"t1",sex:"F",profile:{}}]; S.data={p1:{cmj:[{d:"2026-10-01",v:30}]}}; renderMatrix();`);
+  const h = run(`document.getElementById("grid").innerHTML`);
+  const iCmj = h.indexOf(">CMJ<"), iSj = h.indexOf(">SJ<");
+  assert.ok(iCmj > 0 && iSj > 0, "mancano le colonne");
+  assert.ok(iCmj < iSj, "la colonna con i dati viene prima di quella vuota");
+  assert.match(h, /th-test[^"]* vuota/);
+});
+
 console.log("\nEsercizi tuoi: una colonna ciascuno");
 
 const pulisci = () => run(`S.custom=[]; S.data={}; S.teams=[{id:"t1",name:"YV",sport:"pallavolo"}];

@@ -538,6 +538,25 @@ ul.kb li b{color:#fff;font-weight:600}
 .garow .gd{font-family:var(--mono);font-size:13px;color:var(--muted);white-space:nowrap}
 .garow .gv{flex:1}.garow .gv small{color:var(--muted2);margin-left:4px}
 .garow .gm{font-size:12px;font-weight:700;color:#FFB340}
+.gvp{padding:4px 14px 30px}
+.gv-act{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 2px}
+.gv-next{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;cursor:pointer;font-size:14px}
+.gv-poi{font-size:12.5px;color:var(--muted);margin-top:6px}
+.gv-row{background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:8px;cursor:pointer}
+.gv-row:active{background:var(--surface3)}
+.gv-t{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.gv-t b{font-size:14.5px}.gv-t span{font-size:12.5px;color:var(--muted);font-family:var(--mono)}
+.gv-cs{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.gv-c{font-size:12px;color:var(--muted2);border:1px solid var(--line2);border-radius:6px;padding:2px 7px}
+.gv-c.ok{color:var(--up);border-color:rgba(52,199,89,.35)}
+.gv-c.manca{color:#FFB340;border-color:rgba(255,159,10,.45)}
+.gv-back{background:none;border:none;color:var(--accent);font-family:var(--sans);font-size:14px;font-weight:600;padding:8px 0;cursor:pointer}
+.gv-h{margin:2px 0 10px}.gv-h .mt{font-size:20px;font-weight:800}.gv-h .ms{font-size:13px;color:var(--muted);margin-top:2px}
+.gv-box{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 13px}
+.gv-box .mjtab td,.gv-box .mjtab th{padding:7px 6px}
+.gv-au{flex:0 0 46px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.gv-scout{font-size:13px;line-height:1.5;color:var(--muted)}.gv-scout b{color:var(--text)}
+@media(min-width:760px){.gvp{max-width:760px}}
 /* ruoli */
 tr.rsep td{background:var(--surface3);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:6px 12px;position:sticky;left:0}
 tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
@@ -3511,6 +3530,7 @@ function render(){
   if(S.view==="trend"){ renderTrend(); return; }
   if(S.view==="readiness"){ renderReadiness(); return; }
   if(S.view==="mj"){ renderMJ(); return; }
+  if(S.view==="gare"){ renderGare(); return; }
   if(S.view==="piano"){ renderPiano(); return; }
   if(S.view==="video"){ renderVideo(); return; }
   renderMatrix();
@@ -3642,6 +3662,7 @@ function openColMenu(tid){
      riga("✏️","Registra per tutta la squadra","Una colonna, un numero per atleta",'closeM();openSessionOn(\''+tid+'\')')+
      ((tid==="pred" || (t.custom && t.base==="pred")) ? riga("↪","Sposta in un massimale","Erano stime di squat, stacco…? Portale nella loro colonna",'openSposta(\''+tid+'\')') : "")+
      riga("ⓘ","Come si esegue","Protocollo, interpretazione, consigli",'openGuide(\''+tid+'\')')+
+     (MJ_TIPI.some(x=>x.t===tid)?riga("📲","Archivio My Jump","Ogni salto, con forza, potenza e velocità",'closeM();MJV.tipo=\''+MJ_TIPI.find(x=>x.t===tid).k+'\';setView(\'mj\')'):"")+
      '</div>';
   modal(h);
 }
@@ -3763,7 +3784,7 @@ const TABS=[
   {v:"trend",  l:"Andamento", d:"Un test nel tempo, a confronto", ic:'<path d="M3 17.5l5.5-6 4 3.5L21 6"/><path d="M21 6h-5"/><path d="M21 6v5"/>'},
   {v:"readiness", l:"Fatica", d:"Carico, recupero e segnali di allarme", ic:'<path d="M3 12h4l2.5-6 4 12 2.5-6h5"/>'},
   {v:"piano", l:"Piano", d:"Le settimane fino al prossimo test", ic:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M7.5 13.5h3M7.5 16.5h6"/>'},
-  {v:"mj", l:"My Jump", d:"Ogni salto con tutti i suoi numeri", ic:'<path d="M12 20V7"/><path d="M7.5 11.5L12 7l4.5 4.5"/><path d="M5 21h14"/><circle cx="12" cy="3.8" r="1.6"/>'}
+  {v:"gare", l:"Gare", d:"Quanto è costata ogni partita, atleta per atleta", ic:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5c-2.6 3-2.6 14 0 17"/><path d="M4.2 9c4.5 1.8 11.3 1.8 15.6 0"/><path d="M5.5 17.5c3.2-3.5 9.8-5 13.8-3"/>'}
 ];
 function renderTabs(){
   const el=document.getElementById("tabbar"); if(!el) return;
@@ -3860,7 +3881,7 @@ function matrixScroll(dir){ const w=document.querySelector(".wrap"); if(w) w.scr
 function updateMatrixNav(){ const w=document.querySelector(".wrap"); const nav=document.getElementById("mnav");
   if(!w||!nav) return; nav.style.display=(w.scrollWidth>w.clientWidth+4)?"inline-flex":"none"; }
 window.addEventListener("resize", function(){ if(S&&S.view==="matrix") updateMatrixNav(); });
-function setView(v){ S.view=v; save(); render(); }
+function setView(v){ if(v==="gare" && S.view==="gare" && typeof GV!=="undefined") GV.d=null; S.view=v; save(); render(); }
 function setTest(id){ S.activeTest=id; save(); render(); }
 /* In Andamento un nome non si nasconde più: si EVIDENZIA. Con sedici linee
    colorate il grafico era un gomitolo, e toglierne quindici a mano per
@@ -8226,7 +8247,13 @@ async function vidScrivi(k,v){ const db=await vidIdb(); return new Promise((ok,k
 
 /* ─── La vista ──────────────────────────────────────────────────────────── */
 let VID={file:null, url:null, key:null, rec:null, tipo:"att", ai:null, stop:false, salvaT:null};
+let VID_PRESET=null;   // aperto da una gara: data e nome della seduta già giusti
 function vidNuovoRec(f){
+  if(VID_PRESET){ const p=VID_PRESET; VID_PRESET=null;
+    return Object.assign(vidNuovoRecBase(f), {data:p.data, seduta:p.seduta}); }
+  return vidNuovoRecBase(f);
+}
+function vidNuovoRecBase(f){
   return {nome:f?f.name:"", data:todayISO(), seduta:"Partita", sid:"v"+uid(), eventi:[],
           ai:{fps:10, area:"vicina", da:0, a:null, analizzato:[], candidati:[], tracce:{}, scartati:{}}};
 }
@@ -9895,10 +9922,10 @@ function profPrint(){
 }
 
 /* ═══════════════ CALENDARIO GARE ═══════════════════════════════════════════
-   Le gare servono a una cosa sola qui dentro: sapere a che distanza sei dalla
-   prossima (MD-3 = tre giorni alla gara) quando decidi la seduta. Niente
-   risultati, niente statistiche di partita: non e' quello il mestiere di
-   questa app.
+   Le gare servono a due cose: sapere a che distanza sei dalla prossima
+   (MD-3 = tre giorni alla gara) quando decidi la seduta, e — dalla pagina
+   Gare — quanto è costata fisicamente ciascuna partita a ciascuna atleta.
+   Niente risultati e niente statistiche di gioco: quelle sono dello scout.
 
    L'avviso sui carichi alti a ridosso della gara NON e' una regola dimostrata
    con un numero di ore: e' la prudenza piu' comune nella preparazione delle
@@ -9927,7 +9954,7 @@ function garaBanner(){
   const g=prossimaGara(S.activeTeam);
   if(!g || g.gg>GARA_BANNER_GG) return "";
   const gs=["dom","lun","mar","mer","gio","ven","sab"][new Date(g.d+"T12:00:00").getDay()];
-  return '<div class="garaban" onclick="openGare()"><span class="gmd">'+mdLabel(g.gg)+'</span>'+
+  return '<div class="garaban" onclick="garaApri(null)"><span class="gmd">'+mdLabel(g.gg)+'</span>'+
     '<span>'+(g.gg===0?'Oggi':gs+' '+fmtDate(g.d))+(g.avv?' · vs '+esc(g.avv):'')+(g.casa===false?' · trasferta':g.casa?' · in casa':'')+'</span></div>';
 }
 function garaAggiungi(){
@@ -9937,8 +9964,9 @@ function garaAggiungi(){
   const casa=(document.getElementById("gC")||{}).value;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(d||""))){ toast("Scegli la data"); return; }
   if(!S.gare) S.gare={};
+  const prima=gareDi(t).find(g=>g.d===d && (g.avv||"")===avv);   // durata e set già segnati non si perdono
   const l=gareDi(t).filter(g=>!(g.d===d && (g.avv||"")===avv));
-  l.push({d:d, avv:avv, casa: casa==="casa" ? true : casa==="fuori" ? false : null});
+  l.push(Object.assign({}, prima||{}, {d:d, avv:avv, casa: casa==="casa" ? true : casa==="fuori" ? false : null}));
   l.sort((a,b)=>a.d<b.d?-1:1);
   S.gare[t]=l; save(); openGare(); render();
 }
@@ -9967,6 +9995,172 @@ function openGare(){
   h+='<div class="psec">Prossime ('+fut.length+')</div>'+(fut.length?fut.map(x=>riga(x.g,x.i)).join(""):'<div class="fhint">Nessuna gara in calendario.</div>');
   if(pas.length) h+='<details class="prommai"><summary>Ultime giocate</summary>'+pas.map(x=>riga(x.g,x.i)).join("")+'</details>';
   modal(h);
+}
+
+/* ═══════════════ PAGINA GARE ═══════════════════════════════════════════════
+   La partita è l'unità del lavoro del preparatore il lunedì: chi ha giocato,
+   quanto, quanto le è costata, quanti salti. Prima questi pezzi stavano in tre
+   posti (calendario nelle Impostazioni, salti in Fatica, scout da nessuna
+   parte). Qui stanno insieme, una scheda per partita.
+
+   Il carico di gara è una voce di S.load con exercise:"gara": sta accanto
+   all'allenamento dello stesso giorno invece di sovrascriverlo, e entra nella
+   settimana come ogni altro carico. Minuti = durata × set giocati / set della
+   partita: è una stima, dichiarata come tale. Lo scout, quando arriva, dà i
+   punti giocati veri al posto dei set.                                       */
+let GV={d:null};
+function garaApri(d){ GV.d=d; S.view="gare"; save(); render(); }
+function garaDi(d){ return gareDi(S.activeTeam).find(g=>g&&g.d===d)||null; }
+function garaCarico(aid,d){ return ((S.load&&S.load[aid])||[]).find(x=>x.d===d && x.exercise==="gara")||null; }
+function garaSaltiDi(aid,d){ return saltiArr(aid).filter(e=>e.d===d); }
+function garaMinuti(g,set){
+  const du=g&&g.durata; if(!du) return null;
+  if(set==null || !(g.setTot>0)) return du;
+  return Math.round(du*Math.min(set,g.setTot)/g.setTot);
+}
+function garaStato(g){
+  const ath=teamAthletes();
+  const car=ath.filter(a=>garaCarico(a.id,g.d)).length;
+  const sal=ath.reduce((t,a)=>t+garaSaltiDi(a.id,g.d).reduce((x,e)=>x+(e.n||0),0),0);
+  return {car:car, tot:ath.length, salti:sal};
+}
+function renderGare(){
+  const grid=document.getElementById("grid");
+  const t=S.activeTeam, tm=(S.teams||[]).find(x=>x.id===t);
+  if(!tm){ grid.innerHTML='<div class="empty-state"><h3>Scegli una squadra</h3><p>Le gare sono per squadra: sceglila dal nome in alto.</p></div>'; return; }
+  if(GV.d && garaDi(GV.d)){ renderGara(GV.d); return; }
+  GV.d=null;
+  const oggi=todayISO();
+  const l=gareDi(t).slice().sort((a,b)=>a.d<b.d?-1:1);
+  const fut=l.filter(g=>g.d>=oggi), pas=l.filter(g=>g.d<oggi).reverse();
+  let h='<div class="gvp"><div class="gv-act"><button class="btn primary sm" onclick="openGare()">📅 Calendario</button>'+
+        '<button class="btn sm" onclick="openVideo()">🎥 Salti dal video</button></div>';
+  if(!l.length){
+    h+='<div class="empty-state"><h3>Nessuna gara</h3><p>Aggiungi le partite dal calendario: per ognuna segni chi ha giocato, quanto, e l\'RPE di fine gara.</p></div></div>';
+    grid.innerHTML=h; return;
+  }
+  if(fut.length){
+    const g=fut[0], gg=garaGiorni(g.d);
+    h+='<div class="tsec">Prossima</div><div class="gv-next" onclick="garaApri(\''+g.d+'\')"><span class="gmd">'+mdLabel(gg)+'</span>'+
+       '<span><b>'+(g.avv?'vs '+esc(g.avv):'Gara')+'</b> · '+fmtDate(g.d)+(g.casa===false?' · trasferta':g.casa?' · in casa':'')+'</span></div>';
+    if(fut.length>1) h+='<div class="gv-poi">poi: '+fut.slice(1,4).map(g=>fmtDate(g.d)+(g.avv?' '+esc(g.avv):'')).join(' · ')+'</div>';
+  }
+  h+='<div class="tsec">Giocate'+(pas.length?' ('+pas.length+')':'')+'</div>';
+  if(!pas.length) h+='<div class="fhint">Ancora nessuna partita giocata in calendario.</div>';
+  pas.slice(0,20).forEach(g=>{
+    const st=garaStato(g);
+    const cc = st.car===0 ? '<span class="gv-c manca">carico da segnare</span>'
+             : '<span class="gv-c ok">carico '+st.car+'/'+st.tot+'</span>';
+    const sc = st.salti ? '<span class="gv-c ok">'+st.salti+' salti</span>' : '<span class="gv-c">salti —</span>';
+    h+='<div class="gv-row" onclick="garaApri(\''+g.d+'\')"><div class="gv-t"><b>'+(g.avv?'vs '+esc(g.avv):'Gara')+'</b>'+
+       '<span>'+fmtDate(g.d)+(g.casa===false?' · trasferta':g.casa?' · in casa':'')+'</span></div>'+
+       '<div class="gv-cs">'+cc+sc+'<span class="gv-c">scout —</span></div></div>';
+  });
+  h+='</div>';
+  grid.innerHTML=h;
+}
+function renderGara(d){
+  const grid=document.getElementById("grid");
+  const g=garaDi(d), ath=teamAthletes();
+  const giocata = d<=todayISO();
+  const setMax=g.setTot||5;
+  const sel=(k,max,v,zero)=>{ let o='<option value="">—</option>'; for(let i=(zero?0:1);i<=max;i++) o+='<option value="'+i+'"'+(v===i?" selected":"")+'>'+i+'</option>'; return '<select data-k="'+k+'">'+o+'</select>'; };
+  let h='<div class="gvp"><button class="gv-back" onclick="garaApri(null)">‹ Gare</button>'+
+    '<div class="gv-h"><div class="mt">'+(g.avv?'vs '+esc(g.avv):'Gara')+'</div>'+
+    '<div class="ms">'+fmtDate(d)+(g.casa===false?' · trasferta':g.casa?' · in casa':'')+(giocata?'':' · '+mdLabel(garaGiorni(d)))+'</div></div>';
+  if(!giocata){
+    h+='<div class="alert info"><span class="ai">ℹ️</span><span>La partita non è ancora stata giocata. Dopo, qui segni chi ha giocato, quanti set e l\'RPE di fine gara.</span></div></div>';
+    grid.innerHTML=h; return;
+  }
+  const st=garaStato(g);
+  const au=ath.map(a=>garaCarico(a.id,d)).filter(Boolean).map(dayLoad);
+  const med=au.length ? au.slice().sort((x,y)=>x-y)[Math.floor(au.length/2)] : null;
+  h+='<div class="tstats">'+tstat(st.car+"/"+st.tot,"Carico segnato",st.car?"up":"amber")+tstat(med!=null?med:"—","AU mediana")+
+     tstat(st.salti||"—","Salti contati")+tstat("—","Scout")+'</div>';
+
+  // ── chi ha giocato e quanto ──
+  h+='<div class="tsec">Chi ha giocato e quanto</div><div class="gv-box">'+
+    '<div class="row2"><div><label class="fl">Durata partita (min)</label><input id="gvDur" class="mono" type="number" inputmode="numeric" placeholder="es. 90" value="'+(g.durata||"")+'"></div>'+
+    '<div><label class="fl">Set giocati nella partita</label><select id="gvSet"><option value="">—</option>'+[2,3,4,5].map(n=>'<option value="'+n+'"'+(g.setTot===n?" selected":"")+'>'+n+'</option>').join("")+'</select></div></div>'+
+    '<div class="fhint" style="margin-top:6px">RPE chiesto circa 30 minuti dopo la fine (Foster). I minuti di ciascuna sono stimati dai set: durata × set giocati ÷ set della partita. Chi non ha giocato e non ha risposto resta vuota.</div>'+
+    '<div class="ci-head"><span class="ci-n"></span><span>Set</span><span>RPE</span><span class="gv-au">AU</span></div>';
+  ath.forEach(a=>{
+    const c=garaCarico(a.id,d)||{};
+    const ass=(typeof presGet==="function" && presGet(a.id,d)==="a");
+    h+='<div class="ci-row gv-ci'+(ass?' ci-ass':'')+'" data-a="'+a.id+'"><span class="ci-n">'+esc(a.name)+(ass?' <i>assente</i>':'')+'</span>'+
+       sel("set",setMax,c.set,true)+sel("rpe",10,c.rpe,true)+
+       '<span class="gv-au">'+(c.rpe!=null?dayLoad(c):"")+'</span></div>';
+  });
+  h+='<div id="gvErr" class="login-err"></div>'+
+     '<button class="btn primary" style="width:100%;margin-top:10px" onclick="garaSalva(\''+d+'\')">Salva il carico della gara</button></div>';
+
+  // ── salti ──
+  h+='<div class="tsec">Salti</div><div class="gv-box">';
+  const conSalti=ath.map(a=>({a, l:garaSaltiDi(a.id,d)})).filter(x=>x.l.length);
+  if(conSalti.length){
+    h+='<table class="mjtab"><thead><tr><th>Atleta</th><th>Salti</th><th>Attacchi</th><th>Muri</th><th>Battute</th></tr></thead><tbody>';
+    conSalti.sort((x,y)=>y.l.reduce((t,e)=>t+(e.n||0),0)-x.l.reduce((t,e)=>t+(e.n||0),0)).forEach(x=>{
+      const s=(k)=>x.l.reduce((t,e)=>t+(e[k]||0),0);
+      h+='<tr><td class="n">'+esc(x.a.name)+'</td><td><b>'+s("n")+'</b></td><td>'+(s("att")||"—")+'</td><td>'+(s("muro")||"—")+'</td><td>'+(s("batt")||"—")+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  } else {
+    h+='<div class="fhint">Nessun salto contato per questa partita.</div>';
+  }
+  h+='<button class="btn sm" style="width:100%;margin-top:10px" onclick="garaVideo(\''+d+'\')">🎥 Conta i salti dal video di questa partita</button></div>';
+
+  // ── scout ──
+  h+='<div class="tsec">Scout</div><div class="gv-box gv-scout">'+
+     '<b>Import dello scout: non ancora.</b> Dal file dello scout (Data Volley o simili) arriveranno i punti giocati veri al posto dei set, '+
+     'e attacchi, muri e battute in salto di ciascuna. Lo costruisco su un file vero di una vostra partita, non su un formato immaginato.'+
+     '</div></div>';
+  grid.innerHTML=h;
+}
+function garaVideo(d){
+  const g=garaDi(d);
+  VID_PRESET={data:d, seduta:"Partita"+(g&&g.avv?" vs "+g.avv:"")};
+  openVideo();
+}
+/* Stesse regole del check-in: una riga si salva solo se ha l'RPE; i set senza
+   RPE non bastano (si direbbe che ha giocato senza sapere quanto le è
+   costato); una riga svuotata del tutto toglie il carico di gara che c'era. */
+function garaSalva(d){
+  const t=S.activeTeam, g=garaDi(d); if(!g) return;
+  const du=parseInt((document.getElementById("gvDur")||{}).value,10);
+  const st=parseInt((document.getElementById("gvSet")||{}).value,10);
+  const righe=[], mezze=[];
+  document.querySelectorAll(".gv-ci").forEach(row=>{
+    const aid=row.getAttribute("data-a"); const v={};
+    row.querySelectorAll("select").forEach(x=>{ const n=parseInt(x.value,10); if(isFinite(n)) v[x.getAttribute("data-k")]=n; });
+    if(v.set!=null && v.rpe==null){ const a=(S.athletes||[]).find(x=>x.id===aid); mezze.push(a?a.name:aid); return; }
+    righe.push({aid, set:v.set, rpe:v.rpe});
+  });
+  const err=document.getElementById("gvErr");
+  if(mezze.length){ if(err) err.textContent="Manca l'RPE per: "+mezze.join(", ")+". Senza RPE il carico non c'è."; return; }
+  if(righe.some(r=>r.rpe!=null) && !(du>0 && du<=300)){ if(err) err.textContent="Scrivi la durata della partita in minuti."; return; }
+  if(isFinite(st) && righe.some(r=>r.set!=null && r.set>st)){ if(err) err.textContent="Qualcuna ha più set di quelli giocati nella partita."; return; }
+  // la gara ricorda durata e set
+  const l=gareDi(t).map(x=>x===g ? Object.assign({}, x, {durata: du>0?du:undefined, setTot: st>0?st:undefined}) : x);
+  l.forEach(x=>{ if(x.durata===undefined) delete x.durata; if(x.setTot===undefined) delete x.setTot; });
+  S.gare[t]=l;
+  const gg=l.find(x=>x.d===d);
+  let n=0;
+  if(!S.load) S.load={};
+  righe.forEach(r=>{
+    const arr=S.load[r.aid]||[];
+    const i=arr.findIndex(x=>x.d===d && x.exercise==="gara");
+    if(r.rpe==null){
+      if(i>=0){ arr.splice(i,1); tombSet("l:"+r.aid+":"+d+"|gara"); if(!arr.length) delete S.load[r.aid]; }
+      return;
+    }
+    S.load[r.aid]=arr;
+    const e={d:d, exercise:"gara", rpe:r.rpe, min:garaMinuti(gg, r.set)};
+    if(r.set!=null) e.set=r.set;
+    if(i>=0) arr[i]=e; else arr.push(e);
+    if(S.tomb) delete S.tomb["l:"+r.aid+":"+d+"|gara"];
+    arr.sort((x,y)=>x.d<y.d?-1:x.d>y.d?1:0); n++;
+  });
+  save(); render(); toast(n ? "Carico della gara salvato ("+n+")" : "Salvato");
 }
 
 /* ═══════════════ PDF DELLA TABELLA ═══════════════════════════════════════════
@@ -10391,7 +10585,7 @@ function openReadinessHistory(aid){
     const ord=larr.map((e,i)=>i).sort((x,y)=>larr[x].d<larr[y].d?1:larr[x].d>larr[y].d?-1:y-x).slice(0,8);
     for(const i of ord){ const e=larr[i];
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
-         '<span class="hv">'+dayLoad(e)+' AU <span style="color:var(--muted2);font-size:10px;font-family:var(--mono)">RPE '+e.rpe+' × '+e.min+'′</span></span>'+
+         '<span class="hv">'+dayLoad(e)+' AU <span style="color:var(--muted2);font-size:11px;font-family:var(--mono)">'+(e.exercise==="gara"?'🏐 gara · ':'')+'RPE '+e.rpe+' × '+e.min+'′</span></span>'+
          '<span class="hdl" onclick="delLoad(\''+aid+'\','+i+')">🗑</span></div>';
     }
     h+='</div>';
@@ -10443,19 +10637,29 @@ function caricoChip(c){
   return '<span class="rd-cmj '+cls+'" title="ultimi 7 giorni '+c.sett+' AU · media delle 4 settimane prima '+c.media+' AU · seduta tipica '+c.tipica+' AU">'+
     (c.stato==="picco"?"settimana carica":c.stato==="calo"?"settimana scarica":"carico 7gg")+' '+c.sett+' AU'+x+'</span>';
 }
+/* Stesso difetto del check-in: ogni riga partiva con l'RPE dell'ultima volta
+   (o 5) e «Salva» le registrava tutte. Chi era assente prendeva un carico
+   inventato, che finiva nella sua settimana. Ora la riga parte vuota (o con
+   l'allenamento già segnato in quella data, se lo correggi) e si salva solo
+   se scegli un RPE. La partita ha il suo carico, nella pagina Gare: qui si
+   tocca solo l'allenamento. */
+function loadAllenamento(aid,d){ return ((S.load&&S.load[aid])||[]).find(x=>x.d===d && !x.exercise); }
 function openLoad(){
   const ath=teamAthletes(); if(!ath.length){ addAthlete(); return; }
-  const rpeSel=(def)=>{ let o=""; for(let i=0;i<=10;i++) o+='<option value="'+i+'"'+(i===def?" selected":"")+'>'+i+'</option>'; return '<select data-k="rpe">'+o+'</select>'; };
-  let rows="";
-  ath.forEach(a=>{ const arr=(S.load&&S.load[a.id])||[]; const l=arr[arr.length-1]||{};
-    rows+='<div class="ci-row" data-a="'+a.id+'"><span class="ci-n">'+esc(a.name)+'</span>'+rpeSel(l.rpe!=null?l.rpe:5)+'</div>'; });
+  const oggi=todayISO();
+  const rpeSel=(def)=>{ let o='<option value="">—</option>'; for(let i=0;i<=10;i++) o+='<option value="'+i+'"'+(i===def?" selected":"")+'>'+i+'</option>'; return '<select data-k="rpe">'+o+'</select>'; };
+  let rows="", durata=null;
+  ath.forEach(a=>{ const l=loadAllenamento(a.id,oggi)||{}; if(l.min) durata=l.min;
+    const ass=(typeof presGet==="function" && presGet(a.id,oggi)==="a");
+    rows+='<div class="ci-row'+(ass?' ci-ass':'')+'" data-a="'+a.id+'"><span class="ci-n">'+esc(a.name)+(ass?' <i>assente</i>':'')+'</span>'+rpeSel(l.rpe)+'</div>'; });
   modal('<div class="mh"><div><div class="mt">Carico seduta</div>'+
-    '<div class="ms">sRPE = RPE × durata (metodo Foster)</div></div>'+
+    '<div class="ms">sRPE = RPE × durata (metodo Foster) · chi non risponde resta vuota</div></div>'+
     '<button class="mcl" onclick="closeM()">✕</button></div>'+
-    '<div class="row2"><div><label class="fl">Data</label><input id="ldD" type="date" value="'+todayISO()+'"></div>'+
-    '<div><label class="fl">Durata (min)</label><input id="ldMin" class="mono" type="number" inputmode="numeric" placeholder="es. 60" value="60"></div></div>'+
+    '<div class="row2"><div><label class="fl">Data</label><input id="ldD" type="date" value="'+oggi+'"></div>'+
+    '<div><label class="fl">Durata (min)</label><input id="ldMin" class="mono" type="number" inputmode="numeric" placeholder="es. 60" value="'+(durata||60)+'"></div></div>'+
     '<div class="alert info" style="margin-top:10px"><span class="ai">ℹ️</span><span>'+
-    '<b>RPE 0-10</b> (Borg CR10): 0 riposo · 3-4 leggero · 5-6 moderato · 7-8 intenso · 9-10 massimale. La durata è uguale per tutta la squadra.</span></div>'+
+    '<b>RPE 0-10</b> (Borg CR10): 0 riposo · 3-4 leggero · 5-6 moderato · 7-8 intenso · 9-10 massimale. La durata è uguale per tutta la squadra. '+
+    'Il carico della partita si segna nella pagina <b>Gare</b>.</span></div>'+
     '<div class="ci-head"><span class="ci-n">Atleta</span><span style="flex:0 0 64px;text-align:center">RPE</span></div>'+
     '<div class="sess-list">'+rows+'</div>'+
     '<div style="height:14px"></div>'+
@@ -10467,18 +10671,19 @@ function saveLoad(){
   if(isNaN(min)||min<=0){ toast("Inserisci la durata in minuti"); return; }
   let n=0;
   document.querySelectorAll(".ci-row").forEach(row=>{
-    const aid=row.getAttribute("data-a"); const sel=row.querySelector("select"); const rpe=parseInt(sel.value,10);
-    if(isNaN(rpe)) return;
+    const aid=row.getAttribute("data-a"); const sel=row.querySelector("select"); const rpe=parseInt(sel&&sel.value,10);
+    if(isNaN(rpe)||rpe<0||rpe>10) return;
     if(!S.load) S.load={}; if(!S.load[aid]) S.load[aid]=[];
-    const arr=S.load[aid]; const ex=arr.find(x=>x.d===d);
+    const arr=S.load[aid]; const ex=arr.find(x=>x.d===d && !x.exercise);
     if(ex){ ex.rpe=rpe; ex.min=min; } else arr.push({d, rpe, min});
-    arr.sort((x,y)=>x.d<y.d?-1:1); n++;
+    arr.sort((x,y)=>x.d<y.d?-1:x.d>y.d?1:0); n++;
   });
+  if(!n){ toast("Nessun RPE scelto"); return; }
   save(); closeM(); render(); toast("Carico salvato ("+n+")");
 }
 function delLoad(aid,i){
   const arr=S.load[aid]; const gone=arr[i]; arr.splice(i,1);
-  if(gone&&gone.d) tombSet("l:"+aid+":"+gone.d);
+  if(gone&&gone.d) tombSet("l:"+aid+":"+recKey(gone));   // «2026-10-25|gara» non è «2026-10-25»
   if(!arr.length) delete S.load[aid];
   save(); openReadinessHistory(aid); render();
 }
@@ -10951,6 +11156,7 @@ function openSettings(){
     row("🎯","Batteria consigliata","Quali test usare e quando","openBattery()")+
     row("🎚","Batteria della squadra", team?("Test monitorati da "+esc(team.name)):"Seleziona prima una squadra","chooseTests()", nTests?nTests:"auto")+
     row("🧰","Esercizi tuoi","Colonne che hai aggiunto tu (leg press, affondi…)","openCustom()", (S.custom||[]).length||"")+
+    row("📲","Archivio My Jump","Ogni salto con tutti i suoi numeri","closeM();setView(\'mj\')")+
     row("📏","Quanto balla la tua misura","Sotto quale variazione non è successo niente","openTE()", Object.keys(S.te||{}).length||"")+
     '</div>';
 
@@ -11089,6 +11295,8 @@ function sanitizeImport(o){
         const r={d:e.d};
         (k==="readiness"?["sl","so","fa","st"]:["rpe","min"]).forEach(f=>{
           const n=num(e[f]); if(n!=null) r[f]=n; });
+        // il carico di gara sta accanto a quello dell'allenamento dello stesso giorno
+        if(k==="load" && e.exercise==="gara"){ r.exercise="gara"; const st=num(e.set); if(st!=null && st>=0 && st<=5) r.set=Math.round(st); }
         return r;
       });
     });
@@ -11217,7 +11425,10 @@ function sanitizeImport(o){
       o.gare[k].slice(0,300).forEach(g=>{
         if(!g||!isDate(g.d)) return;
         const avv=str(g.avv,60), key=g.d+"|"+avv; if(visti[key]) return; visti[key]=1;
-        l.push({d:g.d, avv:avv, casa:(g.casa===true||g.casa===false)?g.casa:null});
+        const r={d:g.d, avv:avv, casa:(g.casa===true||g.casa===false)?g.casa:null};
+        const du=num(g.durata); if(du!=null && du>0 && du<=300) r.durata=Math.round(du);
+        const st=num(g.setTot); if(st!=null && st>=1 && st<=5) r.setTot=Math.round(st);
+        l.push(r);
       });
       if(l.length){ l.sort((a,b)=>a.d<b.d?-1:1); out.gare[k]=l; }
     });
@@ -11298,7 +11509,7 @@ function sanitizeImport(o){
   out.sport=str(o.sport,40)||"pallavolo";
   // "fatigue" era il vecchio nome della vista, rinominata "readiness" e mai
   // aggiornata qui: chi importava un backup stando in Fatica finiva in Matrice.
-  out.view=["matrix","today","trend","readiness","mj","piano","video"].indexOf(o.view)>=0?o.view:"today";
+  out.view=["matrix","today","trend","readiness","mj","piano","video","gare"].indexOf(o.view)>=0?o.view:"today";
   out.activeTeam=idOk(o.activeTeam)?o.activeTeam:"all";
   return out;
 }

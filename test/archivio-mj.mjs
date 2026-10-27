@@ -172,7 +172,13 @@ prova("backup, sincronizzazione e cancellazione dell'atleta", () => {
 prova("la vista My Jump c'è", () => {
   squadra();
   run(`mjSalva("a1","2026-10-01","CMJ",{h:32})`);
-  assert.ok(run(`TABS.some(t=>t.v==="mj")`));
+  // non è più nella barra in basso (ci sono le Gare): si apre da Impostazioni e dal menu delle colonne dei salti
+  assert.ok(!run(`TABS.some(t=>t.v==="mj")`));
+  assert.ok(run(`TABS.some(t=>t.v==="gare")`));
+  run(`S.teams=S.teams||[]; openSettings()`);
+  assert.match(run(`document.getElementById("modal").innerHTML`), /Archivio My Jump/);
+  run(`openColMenu("cmj")`);
+  assert.match(run(`document.getElementById("modal").innerHTML`), /setView\('mj'\)/);
   run(`globalThis.requestAnimationFrame=function(){}; S.view="mj"; renderMJ();`);
   assert.ok(/Sara/.test(run(`document.getElementById("grid").innerHTML`)));
 });

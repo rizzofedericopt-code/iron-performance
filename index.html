@@ -563,6 +563,13 @@ ul.kb li b{color:#fff;font-weight:600}
 .gv-tab td,.gv-tab th{white-space:nowrap}.gv-tab td small{display:block;font-size:10.5px;color:var(--muted2)}
 .gv-tab td small.up{color:var(--up);background:none}.gv-tab td small.down{color:var(--down);background:none}
 .gv-hi{color:#FFB340;font-weight:700}
+.reg-box{background:var(--surface2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.reg-r{display:flex;gap:10px;padding:10px 13px;border-bottom:1px solid var(--line);font-size:13.5px;line-height:1.45}
+.reg-r:last-child{border-bottom:none}
+.reg-r small{display:block;font-size:11.5px;color:var(--muted2);margin-top:3px}
+.reg-i{flex:0 0 18px;text-align:center;font-weight:800;color:#FFB340}
+.reg-stop{background:rgba(255,69,58,.08)}.reg-stop .reg-i{color:var(--down)}
+.reg-promemoria .reg-i{color:var(--muted)}
 .gv-prop{margin-top:8px;font-size:12.5px;color:var(--muted);line-height:1.5}.gv-prop b{color:var(--text)}
 .sc-set{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}.sc-set span{font-size:12px;border:1px solid var(--line2);border-radius:6px;padding:2px 7px;font-family:var(--mono)}
 .sc-ok{font-size:12.5px;color:var(--up);line-height:1.5}
@@ -6674,7 +6681,7 @@ function lgMancanti(senza, nome, ex){
 }
 function lgRes(){
   const voce=lgEsercizi().find(e=>e.test===LG.ex)||{}, nome=voce.n||"", ex=voce.ex||nome;
-  return garaAvviso(LG.pct)+(LG.man==="man" ? lgResMan(nome,ex) : lgResAuto(nome,ex));
+  return regola6Html([], "")+(LG.man==="man" ? lgResMan(nome,ex) : lgResAuto(nome,ex));
 }
 function lgResAuto(nome, ex){
   const {con, senza}=lgCandidate(LG.ex);
@@ -7123,7 +7130,7 @@ function sedNomeEx(t){ const x=lgEsercizi().find(y=>y.test===t); return x ? x.n 
 function sedResHtml(){
   if(!SED.ex.length) return '<div class="fhint" style="margin-top:12px">Aggiungi almeno un esercizio.</div>';
   const r=sedutaCalc(SED);
-  let h=presChip()+garaAvviso(Math.max.apply(null, SED.ex.map(e=>e.pct)));
+  let h=presChip()+regola6Html(SED.ex, SED.altro);
   if(r.salvati) h+='<div class="fhint" style="margin-top:8px">Uso i tuoi gruppi di <b>'+esc(sedNomeEx(r.fonte))+'</b>; chi non c\'era dentro è raggruppato a parte.</div>';
   // avvisi per esercizio
   r.avvisi.forEach(a=>{
@@ -9019,6 +9026,14 @@ function tstat(v,l,cls,fn){
   const dentro='<div class="tsv '+(cls||"")+'">'+v+'</div><div class="tsl">'+l+(fn?' <i>›</i>':'')+'</div>';
   return fn ? '<button class="tstat tap" onclick="'+fn+'">'+dentro+'</button>' : '<div class="tstat">'+dentro+'</div>';
 }
+function oggiProposte(){
+  try{
+    const l=regoleValuta(todayISO());
+    const sd=(S.sedute||{})[sedKey()];
+    if(sd){ const x=regola6(sd.ex, sd.altro); if(x && x.tipo==="proposta") l.push(x); }
+    return regoleHtml(l, "Proposte");
+  }catch(e){ return ""; }
+}
 function oggiVai(id){ const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); }
 /* ═══════════ Cosa c'è dentro una scheda, senza aprirla ═══════════
    «🚩 Screening 2» non dice QUALI due, e per saperlo bisognava entrare
@@ -9958,7 +9973,7 @@ function profPrint(){
    L'avviso sui carichi alti a ridosso della gara NON e' una regola dimostrata
    con un numero di ore: e' la prudenza piu' comune nella preparazione delle
    squadre, e la decisione resta tua. Per questo e' un avviso, non un blocco.*/
-const GARA_AVVISO_GG=2, GARA_AVVISO_PCT=80, GARA_BANNER_GG=7;
+const GARA_BANNER_GG=7;
 function gareDi(teamId){ const g=(S.gare||{})[teamId]; return Array.isArray(g)?g:[]; }
 function garaGiorni(d){ return Math.round((Date.parse(d)-Date.parse(todayISO()))/864e5); }
 function prossimaGara(teamId){
@@ -9967,16 +9982,9 @@ function prossimaGara(teamId){
   return f.length ? Object.assign({gg:garaGiorni(f[0].d)}, f[0]) : null;
 }
 function mdLabel(gg){ return gg===0 ? "giorno di gara" : "MD-"+gg; }
-/* L'avviso per la seduta di forza: gara entro due giorni e almeno un
-   esercizio all'80% o piu'. Una riga, con la scelta lasciata a te. */
-function garaAvviso(pctMax){
-  if(!S.activeTeam || S.activeTeam==="all" || S.activeTeam==="none") return "";
-  const g=prossimaGara(S.activeTeam);
-  if(!g || g.gg>GARA_AVVISO_GG || !(pctMax>=GARA_AVVISO_PCT)) return "";
-  return '<div class="alert warn"><span class="ai">🏐</span><span><b>'+(g.gg===0?'Oggi c\'è la gara':'Gara tra '+g.gg+(g.gg===1?' giorno':' giorni'))+
-    '</b>'+(g.avv?' (vs '+esc(g.avv)+')':'')+'. Carichi all\'80% e oltre a ridosso della partita tolgono freschezza: '+
-    'di solito si spostano o si riducono. Decidi tu.</span></div>';
-}
+/* L'avviso «carichi all'80% entro due giorni dalla gara» guardava la cosa
+   sbagliata: l'intensità, mentre a togliere freschezza è il volume (Harrison
+   2019, priming). Sostituito dalla regola 6 (regola6Html). */
 function garaBanner(){
   if(!S.activeTeam || S.activeTeam==="all" || S.activeTeam==="none") return "";
   const g=prossimaGara(S.activeTeam);
@@ -10734,8 +10742,10 @@ function garaRapportoHtml(d){
   h+='</tbody></table></div>'+
     '<div class="gv-buchi">«7 gg»: carico degli ultimi 7 giorni fino alla partita compresa, e quante volte la sua media delle 4 settimane prima. '+
     '«Check-in dopo» e «CMJ dopo»: il primo nei 2 e 3 giorni seguenti.</div></div>';
-  h+='<div class="gv-box gv-prop"><b>Proposte per i giorni dopo:</b> arrivano con le regole che stai rileggendo nel doc «Regole pallavolo». '+
-    'Finché non le approvi, qui ci sono solo i numeri: nessuna proposta inventata.</div>';
+  const prop=regoleValuta(d).filter(x=>x.r!==8);
+  h+= prop.length ? regoleHtml(prop, "Proposte per i giorni dopo")
+     : '<div class="gv-box gv-prop"><b>Proposte per i giorni dopo:</b> nessuna regola è scattata per questa partita.</div>';
+  h+='<div class="gv-prop" style="margin-top:6px">Regole attive: 1, 2, 3, 4, 6, 7, 8. La 5 (CMJ calato dopo la gara) è spenta: è da riscrivere.</div>';
   return h;
 }
 /* La stampa per l'allenatore: niente check-in, niente CMJ, niente note
@@ -10761,6 +10771,168 @@ function garaStampa(d){
   if(!win){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
   win.document.write(doc); win.document.close();
   setTimeout(()=>{ try{ win.focus(); win.print(); }catch(e){} }, 400);
+}
+
+/* ═══════════════ REGOLE APPROVATE ══════════════════════════════════════════
+   Le regole del doc «Regole pallavolo», approvate da Federico il 27/10/2026:
+   la 1, 2, 3, 4, 6, 7 e 8. La 5 (CMJ calato dopo la gara) è da riscrivere e
+   resta spenta. Ogni proposta porta il dato da cui nasce e la sua fonte; le
+   soglie sono punti di partenza da tarare sulla squadra dopo 4-6 settimane.
+
+   Come le ho lette dove il testo lasciava spazio:
+   · regola 1: i salti contano solo se ognuna delle 4 settimane prima ne ha
+     di registrati — una settimana senza conteggio non è una settimana a zero;
+   · regola 4: «set» sono quelli dello scout se c'è, se no quelli segnati a mano;
+   · regola 7: qualunque dolore al ginocchio scritto nella scheda (il testo
+     libero non dice se è anteriore) spegne ogni proposta di carico per lei;
+   · regola 8: tacciono solo le regole che hanno bisogno del dato mancante. */
+const REGOLE_ON={1:true, 2:true, 3:true, 4:true, 5:false, 6:true, 7:true, 8:true};
+const REGOLE_INFO={
+  1:{t:"Settimana con molti più salti", f:"Bahr e Bahr 2014: il volume di salti è un possibile fattore del ginocchio del saltatore (ipotesi); soglia 1,3 da tarare"},
+  2:{t:"Due partite in 7 giorni", f:"Visnes e Bahr: rischio di ginocchio del saltatore più alto per ogni set in più a settimana, in giovani d'élite"},
+  3:{t:"Salta molto più delle compagne", f:"Bahr e Bahr 2014: le differenze fra singole giocatrici superano quelle fra ruoli"},
+  4:{t:"Ha giocato poco", f:"pratica diffusa negli sport di squadra, poche prove nella pallavolo"},
+  6:{t:"Gambe, tanto volume, vicino alla gara", f:"Harrison 2019: poco volume pesante o balistico entro 48 ore può migliorare la prestazione; a togliere freschezza è il volume"},
+  7:{t:"Dolore al ginocchio", f:"valutare un dolore non è compito del software"},
+  8:{t:"Dati mancanti", f:"un consiglio su dati incompleti è peggio di nessun consiglio"}
+};
+const R1_RAPP=1.3, R1_PIU=50, R3_RAPP=1.5, R4_SET=1, R6_SERIE=3, R6_RIR=1, R6_ORE=48;
+function regolaNome(a){ return String((a&&a.name)||"").split(" ")[0]; }
+function regGareGiocate(oggi){ return gareDi(S.activeTeam).filter(g=>g&&g.d<=oggi).sort((a,b)=>a.d<b.d?1:-1); }
+function regSaltiGara(aid,d){ const l=garaSaltiDi(aid,d); return l.length ? l.reduce((t,e)=>t+(e.n||0),0) : null; }
+function regGaraHaSalti(d){ return teamAthletes().some(a=>garaSaltiDi(a.id,d).length); }
+/* set giocati in una partita: lo scout se è stato importato, se no quelli
+   segnati a mano; null se per quella partita non c'è nessun dato sui set */
+function regSetGara(aid,d){
+  const g=garaDi(d); if(!g) return null;
+  if(g.scoutAt){ const sc=scoutDi(aid,d); return sc ? sc.set.length : 0; }
+  const ath=teamAthletes(); if(!ath.some(a=>{ const c=garaCarico(a.id,d); return c && c.set!=null; })) return null;
+  const c=garaCarico(aid,d); return (c && c.set!=null) ? c.set : 0;
+}
+function regGinocchio(a){
+  const p=(a&&a.profile)||{};
+  return haInfortunio(p) && /ginocch|rotul|patell/i.test(String(p.injuriesCurrent||""));
+}
+function regLibero(a){ return /libero/i.test(String(ruoloDi(a)||((a&&a.profile)||{}).role||"")); }
+/* Regola 1: salti degli ultimi 7 giorni contro la media delle 4 settimane
+   prima, solo se ognuna ha dei salti registrati. */
+function regSaltiSett(aid, oggi){
+  const o=dayNum(oggi), l=saltiArr(aid);
+  let s7=0; const w=[0,0,0,0], ha=[0,0,0,0];
+  l.forEach(e=>{ const g=o-dayNum(e.d); if(!isFinite(g)||g<0||g>=35) return;
+    if(g<7) s7+=e.n||0; else { const k=Math.floor((g-7)/7); w[k]+=e.n||0; ha[k]=1; } });
+  if(ha.some(x=>!x)) return {completo:false, s7:s7, settimane:ha.reduce((a,b)=>a+b,0)};
+  return {completo:true, s7:s7, media:Math.round(w.reduce((a,b)=>a+b,0)/4)};
+}
+function regoleValuta(oggi, opz){
+  opz=opz||{};
+  const out=[], ath=teamAthletes(), t=S.activeTeam;
+  if(!t||t==="all"||t==="none") return out;
+  const fermo={};                                   // regola 7: niente proposte di carico per lei
+  if(REGOLE_ON[7]) ath.forEach(a=>{ if(!regGinocchio(a)) return; fermo[a.id]=1;
+    const ss=regSaltiSett(a.id, oggi);
+    out.push({r:7, aid:a.id, tipo:"stop", testo:"<b>"+esc(regolaNome(a))+"</b>: dolore al ginocchio nella scheda"+
+      (ss.completo && ss.s7>ss.media ? ", con i salti in aumento ("+ss.s7+" contro una media di "+ss.media+")" : "")+
+      ". Nessuna proposta di carico: parlane con il fisioterapista."}); });
+  const gioc=regGareGiocate(oggi), ultima=gioc[0]||null;
+  // regola 8: dati che mancano all'ultima partita
+  const manca={salti:false, rpe:false};
+  if(ultima && dayNum(oggi)-dayNum(ultima.d)<=7){
+    manca.salti=!regGaraHaSalti(ultima.d);
+    manca.rpe=ath.some(a=>{ const s=regSetGara(a.id,ultima.d); const c=garaCarico(a.id,ultima.d); return s>0 && !(c&&c.rpe!=null); });
+    if(REGOLE_ON[8] && (manca.salti||manca.rpe))
+      out.push({r:8, tipo:"promemoria", testo:"Partita del "+fmtDate(ultima.d)+(ultima.avv?" vs "+esc(ultima.avv):"")+": mancano "+
+        [manca.salti?"i salti":"", manca.rpe?"gli RPE di chi ha giocato":""].filter(Boolean).join(" e ")+
+        ". Finché mancano, "+(manca.salti?"le regole 1 e 3 tacciono":"")+(manca.salti&&manca.rpe?" e ":"")+(manca.rpe?"il carico della settimana è incompleto":"")+"."});
+  }
+  // regola 1
+  if(REGOLE_ON[1]) ath.forEach(a=>{ if(fermo[a.id]) return;
+    const ss=regSaltiSett(a.id, oggi); if(!ss.completo || !(ss.media>0)) return;
+    if(ss.s7>=R1_RAPP*ss.media && ss.s7-ss.media>=R1_PIU)
+      out.push({r:1, aid:a.id, tipo:"proposta", testo:"<b>"+esc(regolaNome(a))+"</b>: "+ss.s7+" salti negli ultimi 7 giorni contro una media di "+ss.media+
+        " (×"+fmtNum(Math.round(ss.s7/ss.media*10)/10)+"). Nella prossima seduta meno salti di allenamento (pliometria, attacchi in serie); la forza resta."});
+  });
+  // regola 2: due partite a meno di 7 giorni, guardando avanti da oggi
+  if(REGOLE_ON[2]){
+    const l=gareDi(t).slice().sort((a,b)=>a.d<b.d?-1:1), o=dayNum(oggi);
+    for(let i=0;i+1<l.length;i++){ const d1=dayNum(l[i].d), d2=dayNum(l[i+1].d);
+      if(d2-d1>0 && d2-d1<7 && o>=d1-3 && o<d2){
+        out.push({r:2, tipo:"proposta", testo:"Due partite in "+(d2-d1)+" giorni: "+fmtDate(l[i].d)+(l[i].avv?" vs "+esc(l[i].avv):"")+" e "+fmtDate(l[i+1].d)+(l[i+1].avv?" vs "+esc(l[i+1].avv):"")+
+          ". Fra le due niente pliometria ad alto volume; forza a basso volume e tecnica."});
+        break; } }
+  }
+  // regola 3: due partite di fila oltre 1,5 volte la mediana (libero esclusa)
+  if(REGOLE_ON[3] && gioc.length>=2 && dayNum(oggi)-dayNum(gioc[0].d)<=7){
+    const due=gioc.slice(0,2);
+    if(due.every(g=>regGaraHaSalti(g.d))){
+      const sopra=due.map(g=>{ const v=ath.filter(a=>!regLibero(a)).map(a=>({a, n:regSaltiGara(a.id,g.d)})).filter(x=>x.n>0);
+        const s=v.map(x=>x.n).sort((x,y)=>x-y), m=s.length?(s.length%2?s[(s.length-1)/2]:(s[s.length/2-1]+s[s.length/2])/2):null;
+        const o={}; if(m>0 && s.length>=3) v.forEach(x=>{ if(x.n>R3_RAPP*m) o[x.a.id]={n:x.n, m:m}; }); return o; });
+      Object.keys(sopra[0]).forEach(aid=>{ if(!sopra[1][aid] || fermo[aid]) return;
+        const a=ath.find(x=>x.id===aid);
+        out.push({r:3, aid:aid, tipo:"proposta", testo:"<b>"+esc(regolaNome(a))+"</b>: nelle ultime due partite "+sopra[0][aid].n+" e "+sopra[1][aid].n+
+          " salti, oltre 1,5 volte la mediana della squadra ("+fmtNum(sopra[0][aid].m)+" e "+fmtNum(sopra[1][aid].m)+"). Questa settimana pliometria personalizzata: meno per lei."}); });
+    }
+  }
+  // regola 4: al massimo 1 set nelle ultime 2 partite, entro 2 giorni dall'ultima
+  if(REGOLE_ON[4] && gioc.length>=2 && dayNum(oggi)-dayNum(gioc[0].d)<=2){
+    const due=gioc.slice(0,2);
+    ath.forEach(a=>{ if(fermo[a.id] || haInfortunio(a.profile)) return;
+      const s=due.map(g=>regSetGara(a.id,g.d)); if(s.some(x=>x==null)) return;
+      const tot=s[0]+s[1];
+      if(tot<=R4_SET) out.push({r:4, aid:a.id, tipo:"proposta", testo:"<b>"+esc(regolaNome(a))+"</b>: "+(tot?"1 set":"nessun set")+" nelle ultime due partite. "+
+        "Il giorno dopo la gara o quello successivo, una seduta di compensazione con salti e cambi di direzione."});
+    });
+  }
+  return out;
+}
+/* Regola 6: entro 48 ore dalla gara conta il volume delle gambe, non la
+   percentuale. Sostituisce l'avviso dell'80%, che guardava la cosa sbagliata.
+   Serie «vicine al cedimento» = RIR ≤ 1: quello scritto nel piano o, se manca,
+   stimato dalla percentuale e dalle ripetizioni (ed è detto). Pliometria ed
+   eccentrico si riconoscono solo dal nome degli esercizi liberi: per loro non
+   c'è un numero, c'è un promemoria. */
+const R6_GAMBE=/squat|stacc|dead|hip|thrust|affond|lunge|leg|pressa|step|bulgar|clean|girat|strapp|snatch|sumo/i;
+const R6_PLIO=/pliom|salt|balz|drop|box\s*jump|hurdle|ostacol|skip/i, R6_ECC=/eccentr|nordic|negativ/i;
+function regola6(exs, altro){
+  if(!REGOLE_ON[6] || !S.activeTeam || S.activeTeam==="all" || S.activeTeam==="none") return null;
+  const g=prossimaGara(S.activeTeam);
+  if(!g || g.gg<0 || g.gg*24>R6_ORE) return null;
+  let serie=0, stimate=0; const nomi=[];
+  (exs||[]).forEach(e=>{
+    const tm=TMAP[e.t]||{}, nome=(tm.name||"")+" "+(tm.full||"")+" "+(e.nome||"");
+    if(!R6_GAMBE.test(nome)) return;
+    const sr=String(e.sr||"").replace(/\s/g,"").toLowerCase(), m=sr.match(/^(\d+)[x×*]/);
+    const ser=m?parseInt(m[1],10):null, rep=sedReps(e.sr);
+    let rir=(e.rir!=null&&isFinite(e.rir))?Number(e.rir):null, st=false;
+    if(rir==null && e.pct>0 && rep){ const mx=rmRepsAtPct(e.pct); if(mx!=null){ rir=mx-rep; st=true; } }
+    if(ser && rir!=null && rir<=R6_RIR){ serie+=ser; if(st) stimate+=ser; nomi.push(esc((tm.name||e.nome||"").replace(/^1RM\s+/,""))+" "+esc(e.sr)); }
+  });
+  const testo=String(altro||"")+" "+(exs||[]).map(e=>e.nome||"").join(" ");
+  const plio=R6_PLIO.test(testo), ecc=R6_ECC.test(testo);
+  const quando=(g.gg===0?"Oggi c'è la gara":"Gara tra "+g.gg+(g.gg===1?" giorno":" giorni"))+(g.avv?" (vs "+esc(g.avv)+")":"");
+  if(serie>R6_SERIE || plio || ecc){
+    const cosa=[];
+    if(serie>R6_SERIE) cosa.push(serie+" serie di gambe a RIR ≤ 1"+(stimate?" (RIR stimato dalla percentuale per "+stimate+")":"")+": "+nomi.join(", "));
+    if(plio) cosa.push("pliometria in programma: controlla che il volume sia basso");
+    if(ecc) cosa.push("eccentrico in programma: se è pesante, spostalo");
+    return {r:6, tipo:"proposta", gg:g.gg, testo:"<b>"+quando+".</b> "+cosa.join("; ")+". Spostala o riduci il volume; poche serie pesanti o esplosive vanno bene."};
+  }
+  return {r:6, tipo:"ok", gg:g.gg, testo:quando+": poche serie pesanti o esplosive vanno bene, a togliere freschezza è il volume (regola 6)."};
+}
+function regola6Html(exs, altro){
+  const x=regola6(exs, altro); if(!x) return "";
+  return x.tipo==="proposta"
+    ? '<div class="alert warn"><span class="ai">🏐</span><span>'+x.testo+'<br><small>Regola 6 · '+esc(REGOLE_INFO[6].f)+'</small></span></div>'
+    : '<div class="alert info"><span class="ai">🏐</span><span>'+x.testo+'</span></div>';
+}
+function regoleHtml(lista, titolo){
+  if(!lista.length) return "";
+  const ic={stop:"⛔", promemoria:"📝", proposta:"→"};
+  return '<div class="tsec">'+titolo+' ('+lista.length+')</div><div class="reg-box">'+
+    lista.sort((a,b)=>(a.tipo==="stop"?0:a.tipo==="promemoria"?2:1)-(b.tipo==="stop"?0:b.tipo==="promemoria"?2:1)).map(x=>
+      '<div class="reg-r reg-'+x.tipo+'"><span class="reg-i">'+ic[x.tipo]+'</span><div><div>'+x.testo+'</div>'+
+      '<small>Regola '+x.r+' · '+esc(REGOLE_INFO[x.r].t)+' · '+esc(REGOLE_INFO[x.r].f)+'</small></div></div>').join("")+'</div>';
 }
 
 /* ═══════════════ PDF DELLA TABELLA ═══════════════════════════════════════════
@@ -10934,7 +11106,7 @@ function renderToday(){
      tstat(ready.length,"Pronti","up")+'</div>'+
      '<div class="tactions tsu"><button class="btn sm" onclick="openSeduta()">🏋️ Scheda di seduta</button>'+
      '<button class="btn sm" onclick="openLoad()">+ Carico seduta</button></div>'+
-     garaBanner()+pianoBanner();
+     garaBanner()+pianoBanner()+oggiProposte();
   /* ── Schede nuove ───────────────────────────────────────────────────────
      La scritta «nuova» si spegneva solo aprendo l'anamnesi. Qui la scheda si
      legge per intero senza entrare da nessuna parte, e la notifica si toglie

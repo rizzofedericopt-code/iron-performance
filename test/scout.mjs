@@ -247,7 +247,7 @@ prova("la tabella per il preparatore incrocia scout, carico, check-in e CMJ dei 
   assert.match(h, /Dora Castellani<\/td><td>5<\/td><td>39<\/td><td>2<\/td><td>18<\/td><td><b>41<\/b>/);
   assert.match(h, />952<small>RPE 8/);
   assert.match(h, /\+1 gg/); assert.match(h, />31<small class="down">-3</);
-  assert.match(h, /Proposte per i giorni dopo:<\/b> arrivano con le regole/);
+  assert.match(h, /Regole attive: 1, 2, 3, 4, 6, 7, 8\. La 5/);
 });
 
 prova("la stampa per l'allenatore non porta check-in né CMJ", () => {

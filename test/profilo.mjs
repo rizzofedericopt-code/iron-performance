@@ -177,13 +177,23 @@ prova("la prossima gara è la più vicina nel futuro", () => {
   assert.equal(run(`mdLabel(0)`), "giorno di gara");
 });
 
-prova("l'avviso sui carichi esce solo con gara vicina E carico alto", () => {
+prova("vicino alla gara l'avviso guarda il volume, non la percentuale (regola 6)", () => {
   squadra();
   run(`S.gare={t1:[{d:"${fra(1)}",avv:"X"}]};`);
-  assert.ok(/Gara tra 1 giorno/.test(run(`garaAvviso(85)`)));
-  assert.equal(run(`garaAvviso(70)`), "", "al 70% nessun avviso");
+  // poche serie pesanti: va bene (priming), nessun avviso giallo
+  assert.equal(j(`regola6([{t:"rmSquat",pct:88,sr:"3×2"}],"")`).tipo, "ok");
+  // tante serie vicine al cedimento: avviso
+  const x = j(`regola6([{t:"rmSquat",pct:80,sr:"5×8"}],"")`);
+  assert.equal(x.tipo, "proposta"); assert.match(x.testo, /5 serie di gambe a RIR ≤ 1 \(RIR stimato/);
+  // RIR scritto nel piano: vale quello
+  assert.equal(j(`regola6([{t:"rmSquat",pct:70,sr:"4×6",rir:1}],"")`).tipo, "proposta");
+  assert.equal(j(`regola6([{t:"rmSquat",pct:70,sr:"4×6",rir:3}],"")`).tipo, "ok");
+  // la panca non è gambe
+  assert.equal(j(`regola6([{t:"rmBench",pct:80,sr:"5×8"}],"")`).tipo, "ok");
+  // pliometria scritta fra gli esercizi liberi: promemoria
+  assert.match(j(`regola6([],"Pliometria: balzi 5×10")`).testo, /pliometria in programma/);
   run(`S.gare={t1:[{d:"${fra(5)}",avv:"X"}]};`);
-  assert.equal(run(`garaAvviso(90)`), "", "a cinque giorni nessun avviso");
+  assert.equal(j(`regola6([{t:"rmSquat",pct:80,sr:"5×8"}],"")`), null, "a cinque giorni nessun avviso");
 });
 
 prova("in Oggi la gara compare entro la settimana", () => {

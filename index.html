@@ -10745,7 +10745,7 @@ function garaRapportoHtml(d){
   const prop=regoleValuta(d).filter(x=>x.r!==8);
   h+= prop.length ? regoleHtml(prop, "Proposte per i giorni dopo")
      : '<div class="gv-box gv-prop"><b>Proposte per i giorni dopo:</b> nessuna regola è scattata per questa partita.</div>';
-  h+='<div class="gv-prop" style="margin-top:6px">Regole attive: 1, 2, 3, 4, 6, 7, 8. La 5 (CMJ calato dopo la gara) è spenta: è da riscrivere.</div>';
+  h+='<div class="gv-prop" style="margin-top:6px">Regole attive: 1, 2, 3, 4, 6, 7, 8. La 5 (CMJ calato dopo la gara) è stata tolta: il CMJ non si testa dopo ogni partita.</div>';
   return h;
 }
 /* La stampa per l'allenatore: niente check-in, niente CMJ, niente note
@@ -10775,8 +10775,10 @@ function garaStampa(d){
 
 /* ═══════════════ REGOLE APPROVATE ══════════════════════════════════════════
    Le regole del doc «Regole pallavolo», approvate da Federico il 27/10/2026:
-   la 1, 2, 3, 4, 6, 7 e 8. La 5 (CMJ calato dopo la gara) è da riscrivere e
-   resta spenta. Ogni proposta porta il dato da cui nasce e la sua fonte; le
+   la 1, 2, 3, 4, 6, 7 e 8. La 5 (CMJ calato dopo la gara) è stata tolta il
+   giorno stesso: il CMJ non si testa dopo ogni partita, e una regola che
+   aspetta un dato che non arriva non scatta mai. La fatica del giorno dopo
+   resta visibile dal check-in (Fatica, Oggi) e, quando c'è, dal CMJ nel rapporto. Ogni proposta porta il dato da cui nasce e la sua fonte; le
    soglie sono punti di partenza da tarare sulla squadra dopo 4-6 settimane.
 
    Come le ho lette dove il testo lasciava spazio:

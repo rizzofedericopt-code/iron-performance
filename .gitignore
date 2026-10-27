@@ -20,3 +20,6 @@ aggiorna-log.txt
 # nemmeno se per sbaglio vengono salvati nella cartella del progetto
 iron-performance-backup*.json
 iron-performance-20*.json
+
+# PDF dello scout e altri PDF: hanno i nomi delle atlete, non vanno su GitHub
+*.pdf

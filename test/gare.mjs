@@ -222,7 +222,7 @@ prova("la scheda della gara mostra righe, salti e lo scout che non c'è ancora",
   assert.match(h, /Chi ha giocato e quanto/);
   assert.equal((h.match(/class="ci-row gv-ci/g) || []).length, 3);
   assert.match(h, /Giulia<\/td><td><b>35/);
-  assert.match(h, /Import dello scout: non ancora/);
+  assert.match(h, /Non ancora importato/); assert.match(h, /scoutScegli\(/);
 });
 
 prova("«conta i salti» apre il video con la data e il nome della partita", () => {

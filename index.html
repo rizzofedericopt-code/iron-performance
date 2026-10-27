@@ -556,7 +556,18 @@ ul.kb li b{color:#fff;font-weight:600}
 .gv-box .mjtab td,.gv-box .mjtab th{padding:7px 6px}
 .gv-au{flex:0 0 46px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--muted)}
 .gv-scout{font-size:13px;line-height:1.5;color:var(--muted)}.gv-scout b{color:var(--text)}
-@media(min-width:760px){.gvp{max-width:760px}}
+@media(min-width:760px){.gvp{max-width:860px}}
+.gv-rt{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:700;font-size:14px;margin-bottom:6px}
+.gv-ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.5}.gv-ul li{margin:3px 0}
+.gv-buchi{font-size:12px;color:#FFB340;margin-top:8px;line-height:1.45}
+.gv-tab td,.gv-tab th{white-space:nowrap}.gv-tab td small{display:block;font-size:10.5px;color:var(--muted2)}
+.gv-tab td small.up{color:var(--up);background:none}.gv-tab td small.down{color:var(--down);background:none}
+.gv-hi{color:#FFB340;font-weight:700}
+.gv-prop{margin-top:8px;font-size:12.5px;color:var(--muted);line-height:1.5}.gv-prop b{color:var(--text)}
+.sc-set{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}.sc-set span{font-size:12px;border:1px solid var(--line2);border-radius:6px;padding:2px 7px;font-family:var(--mono)}
+.sc-ok{font-size:12.5px;color:var(--up);line-height:1.5}
+.sc-tab select{min-width:130px;padding:6px 8px;font-size:13px}
+.sc-tab tr.sc-solo td{color:#FFB340}.sc-tab td small{display:block;font-size:11px}
 /* ruoli */
 tr.rsep td{background:var(--surface3);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:6px 12px;position:sticky;left:0}
 tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
@@ -1873,7 +1884,8 @@ function normalize(){
   if(!S.sedute || typeof S.sedute!=="object" || Array.isArray(S.sedute)) S.sedute={};   // scheda di seduta, per squadra
   if(!S.gare || typeof S.gare!=="object" || Array.isArray(S.gare)) S.gare={};             // calendario gare, per squadra
   if(!S.piani || typeof S.piani!=="object" || Array.isArray(S.piani)) S.piani={};         // blocchi fra due test, per squadra
-  if(!S.salti || typeof S.salti!=="object" || Array.isArray(S.salti)) S.salti={};         // salti per atleta per seduta (dal video)
+  if(!S.salti || typeof S.salti!=="object" || Array.isArray(S.salti)) S.salti={};
+  if(!S.scout || typeof S.scout!=="object" || Array.isArray(S.scout)) S.scout={};         // scout delle partite, per atleta         // salti per atleta per seduta (dal video)
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
   if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
   applyCustom();
@@ -2057,7 +2069,7 @@ async function bkHandle(set){
 function bkConta(o){
   const atlete=(o&&Array.isArray(o.athletes))?o.athletes.length:0;
   let reg=0;
-  ["data","readiness","load","screen","lv","pres","mjl"].forEach(k=>{
+  ["data","readiness","load","screen","lv","pres","mjl","salti","scout"].forEach(k=>{
     const m=o&&o[k]; if(!m||typeof m!=="object") return;
     Object.keys(m).forEach(a=>{ const v=m[a];
       if(Array.isArray(v)) reg+=v.length;
@@ -2294,7 +2306,8 @@ function syncRiprova(){ _retryMs=0; clearTimeout(_retryTimer); if(SYNC.motivo===
    spazio finisce. */
 function syncParti(){
   const nomi={data:"Test e misure", mjl:"Archivio My Jump", piani:"Piano", athletes:"Schede atlete (anamnesi)", screen:"Valutazioni posturali",
-    lv:"Curve carico-velocità", readiness:"Check-in readiness", load:"Carichi (sRPE)", pres:"Presenze", gruppi:"Gruppi", tomb:"Cancellazioni (tracce)"};
+    lv:"Curve carico-velocità", readiness:"Check-in readiness", load:"Carichi (sRPE)", pres:"Presenze", gruppi:"Gruppi", tomb:"Cancellazioni (tracce)",
+    salti:"Salti dal video", scout:"Scout delle gare"};
   const out=[]; let altro=0;
   Object.keys(S||{}).forEach(k=>{ if(k==="_dirty") return; let b=0; try{ b=syncByte(JSON.stringify(S[k])); }catch(e){}
     if(nomi[k]) out.push({k:k, n:nomi[k], b:b}); else altro+=b; });
@@ -2371,7 +2384,7 @@ function tombSet(key){
   if(!S.tomb) S.tomb={};
   S.tomb[key]=new Date().toISOString();
 }
-const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v", pres:"p", mjl:"j", salti:"salto"};
+const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v", pres:"p", mjl:"j", salti:"salto", scout:"sc"};
 
 /* Le curve carico-velocità ammettono più esercizi nella stessa data: la chiave
    di merge non può essere la sola data, o il secondo esercizio sparisce. */
@@ -2389,7 +2402,7 @@ function mergeByDate(a,b,tp,T){
 /* Campi del profilo che il modulo anamnesi NON può scrivere: sono decisioni del
    preparatore e restano sue anche quando arriva una scheda nuova.
    Rispecchia le esclusioni di FORM_ALLOWED_KEYS in api/store.js. */
-const COACH_ONLY=["medical","medicalExpiry","notes"];
+const COACH_ONLY=["medical","medicalExpiry","notes","maglia"];
 
 /* La copia locale vinceva sull'INTERO oggetto atleta. Finché le schede si
    compilavano una alla volta, con il preparatore lontano dall'app, non si
@@ -2430,7 +2443,7 @@ function mergeState(server, local){
   out.athletes=Object.keys(aid).filter(id=>!T["ath:"+id]).map(id=>mergeAthlete(sa[id], la[id]));
 
   const live={}; out.athletes.forEach(a=>live[a.id]=1);
-  ["data","readiness","load","screen","lv","pres","mjl","salti"].forEach(k=>{ if(!out[k]) out[k]={}; });
+  ["data","readiness","load","screen","lv","pres","mjl","salti","scout"].forEach(k=>{ if(!out[k]) out[k]={}; });
 
   Object.keys(Object.assign({},server.data||{},local.data||{})).forEach(aid=>{
     if(!live[aid]){ delete out.data[aid]; return; }
@@ -2442,7 +2455,7 @@ function mergeState(server, local){
       if(arr.length) out.data[aid][t]=arr; // un test svuotato non resta come chiave vuota
     });
   });
-  ["readiness","load","screen","lv","pres","mjl","salti"].forEach(k=>{
+  ["readiness","load","screen","lv","pres","mjl","salti","scout"].forEach(k=>{
     Object.keys(Object.assign({},server[k]||{},local[k]||{})).forEach(aid=>{
       if(!live[aid]){ delete out[k][aid]; return; }
       const arr=mergeByDate((server[k]||{})[aid],(local[k]||{})[aid],TOMB_PREFIX[k]+":"+aid+":",T);
@@ -4946,6 +4959,7 @@ function delAthlete(id){
   if(S.pres) delete S.pres[id];
   if(S.mjl) delete S.mjl[id];
   if(S.salti) delete S.salti[id];
+  if(S.scout) delete S.scout[id];
   gruppiTogli(id);
   pianiTogli(id);
   tombSet("ath:"+id);   // impedisce che il merge lo resusciti
@@ -10013,7 +10027,10 @@ function garaApri(d){ GV.d=d; S.view="gare"; save(); render(); }
 function garaDi(d){ return gareDi(S.activeTeam).find(g=>g&&g.d===d)||null; }
 function garaCarico(aid,d){ return ((S.load&&S.load[aid])||[]).find(x=>x.d===d && x.exercise==="gara")||null; }
 function garaSaltiDi(aid,d){ return saltiArr(aid).filter(e=>e.d===d); }
-function garaMinuti(g,set){
+function garaMinuti(g,set,aid){
+  // con lo scout: i minuti veri dei set in cui era in campo, se il numero di set è lo stesso
+  if(aid && g && Array.isArray(g.setDur)){ const sc=scoutDi(aid,g.d);
+    if(sc && set!=null && sc.set.length===set){ const m=garaMinutiSet(g,sc.set); if(m!=null) return m; } }
   const du=g&&g.durata; if(!du) return null;
   if(set==null || !(g.setTot>0)) return du;
   return Math.round(du*Math.min(set,g.setTot)/g.setTot);
@@ -10034,6 +10051,7 @@ function renderGare(){
   const l=gareDi(t).slice().sort((a,b)=>a.d<b.d?-1:1);
   const fut=l.filter(g=>g.d>=oggi), pas=l.filter(g=>g.d<oggi).reverse();
   let h='<div class="gvp"><div class="gv-act"><button class="btn primary sm" onclick="openGare()">📅 Calendario</button>'+
+        '<button class="btn sm" onclick="scoutScegli(null)">📄 Importa scout</button>'+
         '<button class="btn sm" onclick="openVideo()">🎥 Salti dal video</button></div>';
   if(!l.length){
     h+='<div class="empty-state"><h3>Nessuna gara</h3><p>Aggiungi le partite dal calendario: per ognuna segni chi ha giocato, quanto, e l\'RPE di fine gara.</p></div></div>';
@@ -10054,7 +10072,7 @@ function renderGare(){
     const sc = st.salti ? '<span class="gv-c ok">'+st.salti+' salti</span>' : '<span class="gv-c">salti —</span>';
     h+='<div class="gv-row" onclick="garaApri(\''+g.d+'\')"><div class="gv-t"><b>'+(g.avv?'vs '+esc(g.avv):'Gara')+'</b>'+
        '<span>'+fmtDate(g.d)+(g.casa===false?' · trasferta':g.casa?' · in casa':'')+'</span></div>'+
-       '<div class="gv-cs">'+cc+sc+'<span class="gv-c">scout —</span></div></div>';
+       '<div class="gv-cs">'+cc+sc+(g.scoutAt?'<span class="gv-c ok">scout'+(g.ris?' '+esc(g.ris):'')+'</span>':'<span class="gv-c">scout —</span>')+'</div></div>';
   });
   h+='</div>';
   grid.innerHTML=h;
@@ -10075,20 +10093,24 @@ function renderGara(d){
   const st=garaStato(g);
   const au=ath.map(a=>garaCarico(a.id,d)).filter(Boolean).map(dayLoad);
   const med=au.length ? au.slice().sort((x,y)=>x-y)[Math.floor(au.length/2)] : null;
-  h+='<div class="tstats">'+tstat(st.car+"/"+st.tot,"Carico segnato",st.car?"up":"amber")+tstat(med!=null?med:"—","AU mediana")+
-     tstat(st.salti||"—","Salti contati")+tstat("—","Scout")+'</div>';
+  h+='<div class="tstats">'+tstat(g.ris||"—","Risultato")+tstat(st.car+"/"+st.tot,"Carico segnato",st.car?"up":"amber")+tstat(med!=null?med:"—","AU mediana")+
+     tstat(st.salti||"—","Salti video")+'</div>';
+  h+=garaRapportoHtml(d);
 
   // ── chi ha giocato e quanto ──
   h+='<div class="tsec">Chi ha giocato e quanto</div><div class="gv-box">'+
     '<div class="row2"><div><label class="fl">Durata partita (min)</label><input id="gvDur" class="mono" type="number" inputmode="numeric" placeholder="es. 90" value="'+(g.durata||"")+'"></div>'+
     '<div><label class="fl">Set giocati nella partita</label><select id="gvSet"><option value="">—</option>'+[2,3,4,5].map(n=>'<option value="'+n+'"'+(g.setTot===n?" selected":"")+'>'+n+'</option>').join("")+'</select></div></div>'+
-    '<div class="fhint" style="margin-top:6px">RPE chiesto circa 30 minuti dopo la fine (Foster). I minuti di ciascuna sono stimati dai set: durata × set giocati ÷ set della partita. Chi non ha giocato e non ha risposto resta vuota.</div>'+
+    '<div class="fhint" style="margin-top:6px">RPE chiesto circa 30 minuti dopo la fine (Foster). '+
+    (g.setDur?'Con lo scout i minuti sono quelli veri dei set in cui era in campo ('+g.setDur.map(m=>m+'′').join(" · ")+'); i set sono già compilati, correggili se lo scout non vede qualcuna. '
+             :'I minuti di ciascuna sono stimati dai set: durata × set giocati ÷ set della partita. ')+
+    'Chi non ha giocato e non ha risposto resta vuota.</div>'+
     '<div class="ci-head"><span class="ci-n"></span><span>Set</span><span>RPE</span><span class="gv-au">AU</span></div>';
   ath.forEach(a=>{
-    const c=garaCarico(a.id,d)||{};
+    const c=garaCarico(a.id,d)||{}, sc=scoutDi(a.id,d);
     const ass=(typeof presGet==="function" && presGet(a.id,d)==="a");
     h+='<div class="ci-row gv-ci'+(ass?' ci-ass':'')+'" data-a="'+a.id+'"><span class="ci-n">'+esc(a.name)+(ass?' <i>assente</i>':'')+'</span>'+
-       sel("set",setMax,c.set,true)+sel("rpe",10,c.rpe,true)+
+       sel("set",setMax,c.set!=null?c.set:(sc?sc.set.length:undefined),true)+sel("rpe",10,c.rpe,true)+
        '<span class="gv-au">'+(c.rpe!=null?dayLoad(c):"")+'</span></div>';
   });
   h+='<div id="gvErr" class="login-err"></div>'+
@@ -10111,8 +10133,9 @@ function renderGara(d){
 
   // ── scout ──
   h+='<div class="tsec">Scout</div><div class="gv-box gv-scout">'+
-     '<b>Import dello scout: non ancora.</b> Dal file dello scout (Data Volley o simili) arriveranno i punti giocati veri al posto dei set, '+
-     'e attacchi, muri e battute in salto di ciascuna. Lo costruisco su un file vero di una vostra partita, non su un formato immaginato.'+
+     (g.scoutAt ? '<b>Importato</b> il '+fmtDate(g.scoutAt.slice(0,10))+'. Si può reimportare: sostituisce quello di prima.'
+                : '<b>Non ancora importato.</b> Carica il PDF dello scout di questa partita: lo leggo sul dispositivo, non va da nessuna parte.')+
+     '<button class="btn sm" style="width:100%;margin-top:10px" onclick="scoutScegli(\''+d+'\')">📄 '+(g.scoutAt?'Reimporta':'Importa')+' il PDF dello scout</button>'+
      '</div></div>';
   grid.innerHTML=h;
 }
@@ -10154,13 +10177,469 @@ function garaSalva(d){
       return;
     }
     S.load[r.aid]=arr;
-    const e={d:d, exercise:"gara", rpe:r.rpe, min:garaMinuti(gg, r.set)};
+    const e={d:d, exercise:"gara", rpe:r.rpe, min:garaMinuti(gg, r.set, r.aid)};
     if(r.set!=null) e.set=r.set;
     if(i>=0) arr[i]=e; else arr.push(e);
     if(S.tomb) delete S.tomb["l:"+r.aid+":"+d+"|gara"];
     arr.sort((x,y)=>x.d<y.d?-1:x.d>y.d?1:0); n++;
   });
   save(); render(); toast(n ? "Carico della gara salvato ("+n+")" : "Salvato");
+}
+
+/* ═══════════════ LETTURA DEL PDF DELLO SCOUT ═══════════════════════════════
+   Un PDF è una stampa, non un file di dati: qui si ricostruiscono le tabelle
+   dalla posizione delle scritte sulla pagina. Funziona finché il programma
+   dello scout stampa sempre nello stesso modo; per questo ogni passaggio
+   CONTROLLA invece di indovinare:
+   · l'intestazione delle colonne deve essere esattamente quella attesa;
+   · la somma delle atlete deve dare la riga «Tot» del PDF;
+   · gli attacchi di ciascuna, set per set, devono dare quelli della partita.
+   Se un controllo non torna, l'import si ferma e dice quale: un numero letto
+   nella colonna sbagliata è peggio di nessun numero.                        */
+const SCOUT_COL=["pt","err","pe","bat_tot","bat_err","bat_pt","ric_tot","ric_err","ric_prf","ric_pos",
+  "att_tot","att_err","att_mur","att_pt","att_ptp","att_eff","dif_tot","dif_err","dif_pos","muro_err","muro_pt"];
+const SCOUT_HEAD=["pt","err","p-e","tot","err","pt","tot","err","prf%","pos%","tot","err","mur","pt","pt%","eff%","tot","err","pos%","err","pt"];
+const SCOUT_PCT={ric_prf:1,ric_pos:1,att_ptp:1,att_eff:1,dif_pos:1};
+const SCOUT_MESI={gen:1,feb:2,mar:3,apr:4,mag:5,giu:6,lug:7,ago:8,set:9,ott:10,nov:11,dic:12};
+function scoutRighe(items){
+  const l=items.slice().sort((a,b)=>b.y-a.y||a.x-b.x), out=[];
+  l.forEach(it=>{ const r=out.length?out[out.length-1]:null;
+    if(r && Math.abs(r.y-it.y)<=1.5) r.t.push(it); else out.push({y:it.y, t:[it]}); });
+  out.forEach(r=>r.t.sort((a,b)=>a.x-b.x));
+  return out;
+}
+function scoutNum(s){
+  s=String(s==null?"":s).trim();
+  if(s==="."||s==="") return 0;
+  const m=s.match(/^(-?\d+)%?$/); return m?parseInt(m[1],10):null;
+}
+function scoutData(s){
+  const m=String(s||"").trim().toLowerCase().match(/^(\d{1,2})\s+([a-z]{3})[a-z]*\.?\s+(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if(!m||!SCOUT_MESI[m[2]]) return null;
+  const p=n=>String(n).padStart(2,"0");
+  return {d:m[3]+"-"+p(SCOUT_MESI[m[2]])+"-"+p(m[1]), ora:m[4]?p(m[4])+":"+m[5]:""};
+}
+/* Una tabella «Punti · Battuta · Ricezione · Attacco · Difesa · Muro»: dalla
+   riga delle intestazioni prende la posizione di ogni colonna, poi mette ogni
+   numero nella colonna più vicina. */
+function scoutTabella(righe, i){
+  const h=righe[i]; if(!h||h.t.length!==SCOUT_HEAD.length+1) return null;
+  const testa=h.t.slice(1).map(t=>t.s.trim());
+  if(testa.join("|")!==SCOUT_HEAD.join("|")) return {errore:"intestazione delle colonne diversa da quella attesa: "+testa.join(" ")};
+  const squadra=h.t[0].s.trim();
+  const cx=h.t.slice(1).map(t=>t.x+(t.w||0)/2);
+  const leggi=(toks)=>{ const v={}; let err=null;
+    toks.forEach(t=>{ const c=t.x+(t.w||0)/2; let k=0, dm=1e9;
+      cx.forEach((x,j)=>{ const d=Math.abs(x-c); if(d<dm){ dm=d; k=j; } });
+      // «100%100%» attaccati: due colonne vicine
+      const parti=String(t.s).trim().match(/^(-?\d+%)(-?\d+%)$/);
+      if(parti){ if(v[SCOUT_COL[k]]!=null||v[SCOUT_COL[k+1]]!=null){ err="due valori nella stessa colonna"; return; }
+        v[SCOUT_COL[k]]=scoutNum(parti[1]); v[SCOUT_COL[k+1]]=scoutNum(parti[2]); return; }
+      if(dm>14){ err="un numero fuori dalle colonne ("+t.s+")"; return; }
+      const n=scoutNum(t.s); if(n==null){ err="valore non numerico: "+t.s; return; }
+      if(v[SCOUT_COL[k]]!=null){ err="due valori nella stessa colonna ("+SCOUT_HEAD[k]+")"; return; }
+      v[SCOUT_COL[k]]=n; });
+    SCOUT_COL.forEach(k=>{ if(v[k]==null) v[k]=0; });
+    return {v, err};
+  };
+  const gioc=[]; let tot=null, generici=null, j=i+1;
+  for(; j<righe.length; j++){
+    const r=righe[j], a=r.t[0]; if(!a) continue;
+    // i puntini di una riga vuota stanno un filo più in basso dei numeri: riga a sé, vuota
+    if(r.t.every(t=>t.s.trim()===".")) continue;
+    const s0=a.s.trim();
+    if(/^tot$/i.test(s0)){ const x=leggi(r.t.slice(1)); if(x.err) return {errore:"riga Tot: "+x.err}; tot=x.v; break; }
+    if(/^generici$/i.test(s0)){ const x=leggi(r.t.slice(1)); if(x.err) return {errore:"riga Generici: "+x.err}; generici=x.v; continue; }
+    if(/^\d{1,3}$/.test(s0) && r.t[1] && !/^\d/.test(r.t[1].s)){
+      const x=leggi(r.t.slice(2)); if(x.err) return {errore:"maglia "+s0+": "+x.err};
+      gioc.push({num:s0, nome:r.t[1].s.trim(), v:x.v}); continue;
+    }
+    if(gioc.length) return {errore:"riga inattesa dentro la tabella: "+r.t.map(t=>t.s).join(" ")};
+  }
+  if(!tot) return {errore:"tabella senza riga Tot"};
+  return {squadra, gioc, tot, generici, fine:j};
+}
+/* La somma delle atlete (più i punti «generici») deve dare il Tot del PDF. */
+function scoutSomme(tb){
+  const no=[];
+  SCOUT_COL.forEach(k=>{ if(SCOUT_PCT[k]) return;
+    let s=tb.gioc.reduce((a,g)=>a+g.v[k],0);
+    if(tb.generici && (k==="pt"||k==="err"||k==="pe")) s+=tb.generici[k];
+    if(s!==tb.tot[k]) no.push(k+" "+s+"≠"+tb.tot[k]); });
+  return no;
+}
+function scoutLeggi(pages){
+  const R={set:[], squadre:{}, controlli:[], errori:[]};
+  const sq=(n)=>R.squadre[n]||(R.squadre[n]={nome:n, gioc:{}, tot:null, perSet:{}});
+  pages.forEach((pg,pi)=>{
+    const righe=scoutRighe(pg.items||[]);
+    const testo=righe.map(r=>r.t.map(t=>t.s).join(" "));
+    // il titolo è la scritta più in alto a sinistra: a destra, più in alto, c'è il riquadro dei set
+    const tt=(pg.items||[]).filter(t=>t.x<200).sort((a,b)=>b.y-a.y)[0];
+    const titolo=tt?String(tt.s).trim():"";
+    const mSet=titolo.match(/^Set\s+(\d)$/i);
+    // ── prima pagina: intestazione e durate dei set ──
+    if(pi===0){
+      R.titolo=titolo;
+      righe.forEach(r=>{
+        const k=r.t[0]&&r.t[0].s.trim(), resto=r.t.filter(t=>t.x<380).slice(1).map(t=>t.s.trim()).join(" ");
+        if(k==="Data"){ R.dataTesto=resto; const d=scoutData(resto); if(d){ R.data=d.d; R.ora=d.ora; } }
+        if(k==="Locali") R.locali=resto;
+        if(k==="Ospiti") R.ospiti=resto;
+        if(k==="Risultato") R.risultato=resto.replace(/\s+/g,"");
+        r.t.forEach((t,q)=>{ const m=t.s.trim().match(/^SET\s+(\d)$/i);
+          if(m){ const dur=r.t[q+1]&&r.t[q+1].s.match(/^(\d+)\s*min$/i), pun=r.t[q+2]&&r.t[q+2].s.replace(/\s+/g,"");
+            if(dur) R.set.push({n:parseInt(m[1],10), min:parseInt(dur[1],10), punteggio:pun||""}); } });
+      });
+    }
+    // ── tabelle atlete (partita intera o un set) ──
+    for(let i=0;i<righe.length;i++){
+      const r=righe[i], a=r.t[0]; if(!a) continue;
+      const lab=a.s.trim();
+      const scope = /^Partita intera$/i.test(lab) ? "partita" : (/^Set\s+\d$/i.test(lab) && r.t.length>3) ? "set"+lab.replace(/\D/g,"") : null;
+      if(!scope) continue;
+      const tb=scoutTabella(righe, i+1);
+      if(!tb){ continue; }
+      if(tb.errore){ R.errori.push("Pagina "+(pi+1)+": "+tb.errore); continue; }
+      const s=sq(tb.squadra);
+      if(scope==="partita"){
+        const no=scoutSomme(tb);
+        if(no.length) R.errori.push("Pagina "+(pi+1)+", "+tb.squadra+": le atlete non danno il totale ("+no.slice(0,3).join(", ")+")");
+        else R.controlli.push(tb.squadra+": la somma delle atlete dà il totale della partita");
+        s.tot=tb.tot;
+        tb.gioc.forEach(g=>{ const x=s.gioc[g.num]||(s.gioc[g.num]={num:g.num, nome:g.nome, set:[], sestetto:[]}); x.nomeBreve=g.nome; x.v=g.v; });
+      } else {
+        const n=parseInt(scope.slice(3),10);
+        s.perSet[n]=tb;
+        tb.gioc.forEach(g=>{ const x=s.gioc[g.num]||(s.gioc[g.num]={num:g.num, nome:g.nome, set:[], sestetto:[]}); if(x.set.indexOf(n)<0) x.set.push(n); });
+      }
+      i=tb.fine;
+    }
+    // ── sestetto di partenza nelle pagine dei set ──
+    if(mSet){
+      const n=parseInt(mSet[1],10), box=(pg.items||[]).filter(t=>t.x>380 && t.y>(pg.h||842)*0.82);
+      box.filter(t=>/^\d{1,3}$/.test(t.s.trim())).forEach(t=>{
+        const nome=box.find(u=>u!==t && !/^\d/.test(u.s) && t.y-u.y>3 && t.y-u.y<12 && Math.abs((u.x+(u.w||0)/2)-(t.x+(t.w||0)/2))<25);
+        if(!nome || /^o$/i.test(nome.s.trim())) return;
+        Object.keys(R.squadre).forEach(k=>{ const g=R.squadre[k].gioc[t.s.trim()];
+          if(g && scoutStessoNome(g.nomeBreve||g.nome, nome.s)){ if(g.sestetto.indexOf(n)<0) g.sestetto.push(n); g.nome=nome.s.trim(); } });
+        // in sestetto ma senza nemmeno un tocco in tutta la partita: per le tabelle non esiste
+        const conosciuta=Object.keys(R.squadre).some(k=>R.squadre[k].gioc[t.s.trim()]);
+        if(!conosciuta){ (R.soloSestetto=R.soloSestetto||{})[t.s.trim()+"|"+nome.s.trim()]=(R.soloSestetto[t.s.trim()+"|"+nome.s.trim()]||[]).concat([n]); }
+      });
+    }
+    // ── valutazioni: i muri toccati, che la tabella principale non totalizza ──
+    if(righe[0] && righe[0].t[1] && /^Valutazioni$/i.test(righe[0].t[1].s.trim())){
+      const team=righe[0].t[0].s.trim();
+      const teste=(pg.items||[]).filter(t=>t.s.trim()==="++");
+      teste.forEach(h=>{
+        const x0=h.x-62, x1=h.x+120;
+        const sulla=(pg.items||[]).filter(t=>Math.abs(t.y-h.y)<2 && t.x>=x0 && t.x<h.x).sort((a,b)=>a.x-b.x);
+        const num=sulla.find(t=>/^\d{1,3}$/.test(t.s.trim()));
+        if(!num) return;   // la tessera della squadra intera
+        const sotto=(pg.items||[]).filter(t=>t.x>=x0 && t.x<x1 && t.y<h.y-5 && t.y>h.y-110);
+        const lab=sotto.find(t=>t.s.trim()==="Mur"); if(!lab) return;
+        const riga=sotto.filter(t=>Math.abs(t.y-lab.y)<2 && t.x>lab.x+8).sort((a,b)=>a.x-b.x);
+        if(riga.length!==6) return;
+        const v=riga.map(t=>scoutNum(t.s));
+        if(v.some(z=>z==null) || v[0]+v[1]+v[2]+v[3]+v[4]!==v[5]){ R.errori.push("Pagina "+(pi+1)+": muri di "+num.s+" non tornano"); return; }
+        const g=(R.squadre[team]||{gioc:{}}).gioc[num.s.trim()];
+        if(g) g.muriToccati=v[5];
+      });
+    }
+  });
+  // ── controlli incrociati ──
+  Object.keys(R.squadre).forEach(k=>{
+    const s=R.squadre[k];
+    Object.keys(s.gioc).forEach(n=>{ const g=s.gioc[n]; g.set.sort(); g.sestetto.sort();
+      if(!g.v) return;
+      const perSet=Object.keys(s.perSet).reduce((a,sn)=>{ const x=s.perSet[sn].gioc.find(y=>y.num===n); return a+(x?x.v.att_tot:0); },0);
+      if(Object.keys(s.perSet).length && perSet!==g.v.att_tot) R.errori.push(k+", maglia "+n+": gli attacchi dei set ("+perSet+") non danno quelli della partita ("+g.v.att_tot+")");
+    });
+  });
+  if(!R.data) R.errori.push("data della partita non trovata");
+  if(!R.set.length) R.errori.push("durate dei set non trovate");
+  if(!Object.keys(R.squadre).length) R.errori.push("nessuna tabella di atlete riconosciuta");
+  R.ok=!R.errori.length;
+  return R;
+}
+function scoutNorm(s){ return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z]/g,""); }
+// «Cecconell» nella tabella è «Cecconello» nel sestetto: stampa troncata
+function scoutStessoNome(a,b){ const x=scoutNorm(a), y=scoutNorm(b); return !!x && !!y && (x===y || (x.length>=6 && y.indexOf(x)===0) || (y.length>=6 && x.indexOf(y)===0)); }
+
+/* ═══════════════ SCOUT: dati per atleta, per partita ══════════════════════
+   Quello che arriva dal PDF dello scout, per ogni atleta e ogni partita, in
+   S.scout[atleta] = [{d, exercise:"gara", set:[1,2…], sest:[…], att, muri…}].
+   Cosa NON dice, e il rapporto lo ripete ogni volta:
+   · chi è in campo senza toccare palla non compare: i set sono un minimo;
+   · le battute non distinguono salto e flottante;
+   · le alzate per atleta non ci sono: i salti della palleggiatrice mancano;
+   · i muri ci sono solo se toccati.
+   Le «azioni in salto registrate» (attacchi + muri toccati) sono quindi un
+   minimo, non il carico di salti. Il conteggio dal video resta il riferimento. */
+const SCOUT_F=["pt","err","bat","bat_err","bat_pt","ric","ric_err","att","att_err","att_mur","att_pt","dif","dif_err","muri","muro_err","muro_pt"];
+function scoutArr(aid){ const a=(S.scout||{})[aid]; return Array.isArray(a)?a:[]; }
+function scoutDi(aid,d){ return scoutArr(aid).find(e=>e.d===d)||null; }
+function scoutAzioni(e){ return e ? (e.att||0)+(e.muri||0) : 0; }
+
+let _pdfjs=null;
+async function scoutPdfLib(){
+  if(_pdfjs) return _pdfjs;
+  const m=await import("./vendor/pdf.min.mjs");
+  m.GlobalWorkerOptions.workerSrc="vendor/pdf.worker.min.mjs";
+  _pdfjs=m; return m;
+}
+/* Il PDF si legge qui, sul dispositivo: non va al server e non resta salvato.
+   Restano solo i numeri delle atlete abbinate. */
+async function scoutPdfTesto(file){
+  const lib=await scoutPdfLib();
+  const data=new Uint8Array(await file.arrayBuffer());
+  const doc=await lib.getDocument({data:data, isEvalSupported:false, disableFontFace:true, useSystemFonts:false}).promise;
+  const pages=[];
+  for(let i=1;i<=Math.min(doc.numPages,40);i++){
+    const p=await doc.getPage(i), vp=p.getViewport({scale:1}), tc=await p.getTextContent();
+    pages.push({w:vp.width, h:vp.height, items:tc.items.filter(it=>it.str&&it.str.trim())
+      .map(it=>({s:it.str, x:it.transform[4], y:it.transform[5], w:it.width||0}))});
+  }
+  try{ doc.destroy(); }catch(e){}
+  return pages;
+}
+let SCI=null;     // import in corso
+function scoutScegli(d){
+  const t=S.activeTeam;
+  if(!t||t==="all"||t==="none"){ toast("Scegli prima la squadra"); return; }
+  const inp=document.createElement("input"); inp.type="file"; inp.accept="application/pdf,.pdf";
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) scoutCarica(f,d); };
+  inp.click();
+}
+async function scoutCarica(f,d){
+  if(!/\.pdf$/i.test(f.name||"") && f.type!=="application/pdf"){ toast("Serve il PDF dello scout"); return; }
+  if(f.size>20*1024*1024){ toast("PDF troppo grande"); return; }
+  toast("Leggo il PDF…");
+  let pages;
+  try{ pages=await scoutPdfTesto(f); }
+  catch(e){ toast("Non riesco a leggere questo PDF"); return; }
+  scoutPrepara(scoutLeggi(pages), f.name, d);
+}
+// la nostra squadra è quella con i nomi: l'avversaria nel PDF è tutta «o»
+function scoutNostre(R){
+  return Object.keys(R.squadre||{}).filter(k=>Object.keys(R.squadre[k].gioc).some(n=>!/^o$/i.test(String(R.squadre[k].gioc[n].nome).trim())));
+}
+function scoutPrepara(R, nome, d){
+  const sq=scoutNostre(R);
+  SCI={R:R, file:String(nome||"").slice(0,80), d:d||null, sq:sq[0]||null, abb:{}};
+  if(SCI.sq) scoutAbbinaAuto();
+  openScoutAnteprima();
+}
+function scoutGiocatrici(){
+  const R=SCI.R, s=R.squadre[SCI.sq]; if(!s) return [];
+  const l=Object.keys(s.gioc).map(n=>{ const g=s.gioc[n];
+    return {num:g.num, nome:g.nome, set:g.set.slice(), sest:g.sestetto.slice(), v:g.v||null, muri:g.muriToccati||0}; });
+  Object.keys(R.soloSestetto||{}).forEach(k=>{ const i=k.indexOf("|"), num=k.slice(0,i), nome=k.slice(i+1);
+    if(!l.some(x=>x.num===num)) l.push({num:num, nome:nome, set:R.soloSestetto[k].slice(), sest:R.soloSestetto[k].slice(), v:null, muri:0, solo:true}); });
+  return l.sort((a,b)=>Number(a.num)-Number(b.num));
+}
+function scoutAbbinaAuto(){
+  const ath=teamAthletes();
+  scoutGiocatrici().forEach(g=>{
+    let a=ath.find(x=>String((x.profile||{}).maglia||"")===g.num && String(x.name||"").split(/\s+/).some(w=>scoutStessoNome(w,g.nome)));
+    if(!a){ const c=ath.filter(x=>String(x.name||"").split(/\s+/).some(w=>scoutStessoNome(w,g.nome))); if(c.length===1) a=c[0]; }
+    if(!a){ const c=ath.filter(x=>String((x.profile||{}).maglia||"")===g.num); if(c.length===1) a=c[0]; }
+    SCI.abb[g.num]=a?a.id:"";
+  });
+}
+function scoutUnione(a,b){ const o={}; a.concat(b).forEach(n=>o[n]=1); return Object.keys(o).map(Number).sort((x,y)=>x-y); }
+function openScoutAnteprima(){
+  if(!SCI) return;
+  const R=SCI.R, ath=teamAthletes();
+  let h='<div class="mh"><div><div class="eyebrow">Scout · '+esc(SCI.file)+'</div><div class="mt">'+esc(R.titolo||"Partita")+'</div>'+
+    '<div class="ms">'+(R.data?fmtDate(R.data):'data non trovata')+(R.ora?' · '+esc(R.ora):'')+(R.risultato?' · '+esc(R.risultato):'')+'</div></div>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>';
+  const ferma=(m)=>{ modal(h+'<div class="alert danger"><span class="ai">⛔</span><span>'+m+'</span></div>'); };
+  if(R.errori.length){
+    ferma('<b>Non importo niente.</b> Il PDF non torna in questi punti:<br>'+R.errori.slice(0,6).map(esc).join("<br>")+
+      '<br><br>Un numero letto nella colonna sbagliata è peggio di nessun numero. Se il PDF è giusto, è cambiata la stampa del programma: mandamelo.');
+    return;
+  }
+  if(SCI.d && R.data!==SCI.d){ ferma('Il PDF è della partita del <b>'+fmtDate(R.data)+'</b>, questa scheda è del <b>'+fmtDate(SCI.d)+'</b>. Apri la gara giusta, oppure importa dalla pagina Gare.'); return; }
+  const sq=scoutNostre(R);
+  if(!sq.length){ ferma('Nel PDF non trovo una squadra con i nomi delle atlete.'); return; }
+  const g=garaDi(R.data);
+  h+='<div class="sc-set">'+R.set.map(s=>'<span>Set '+s.n+' · '+s.min+'′ · '+esc(s.punteggio)+'</span>').join("")+'</div>';
+  h+='<div class="sc-ok">'+R.controlli.map(c=>'✓ '+esc(c)).join("<br>")+'</div>';
+  if(sq.length>1) h+='<label class="fl">La tua squadra nel PDF</label><select onchange="SCI.sq=this.value;scoutAbbinaAuto();openScoutAnteprima()">'+
+    sq.map(k=>'<option'+(k===SCI.sq?' selected':'')+'>'+esc(k)+'</option>').join("")+'</select>';
+  const opt=(num)=>'<select onchange="SCI.abb[\''+num+'\']=this.value"><option value="">— non abbinare</option>'+
+    ath.map(a=>'<option value="'+a.id+'"'+(SCI.abb[num]===a.id?' selected':'')+'>'+esc(a.name)+'</option>').join("")+'</select>';
+  h+='<div class="fhint" style="margin-top:8px">Abbina ogni maglia a un\'atleta. Il numero resta nella sua scheda: la prossima volta l\'abbinamento è automatico.</div>';
+  h+='<div class="mjwrap"><table class="mjtab sc-tab"><thead><tr><th>N.</th><th>Scout</th><th>Set</th><th>Att</th><th>Muri</th><th>Batt</th><th>Atleta</th></tr></thead><tbody>';
+  scoutGiocatrici().forEach(x=>{
+    const set=scoutUnione(x.set,x.sest), v=x.v||{};
+    h+='<tr'+(x.solo?' class="sc-solo"':'')+'><td>'+esc(x.num)+'</td><td class="n">'+esc(x.nome)+
+      (x.solo?'<small>in campo nel set '+x.sest.join(", ")+', nessuna azione registrata</small>':'')+'</td>'+
+      '<td>'+set.length+'</td><td>'+(v.att_tot||0)+'</td><td>'+(x.muri||0)+'</td><td>'+(v.bat_tot||0)+'</td><td>'+opt(x.num)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div id="scErr" class="login-err"></div>'+
+    '<button class="btn primary" style="width:100%;margin-top:10px" onclick="scoutImporta()">'+
+    (g?'Importa nella gara del '+fmtDate(R.data):'Importa e aggiungi la gara del '+fmtDate(R.data))+'</button>';
+  modal(h);
+}
+function garaMinutiSet(g,set){
+  if(!g||!Array.isArray(g.setDur)||!set||!set.length) return null;
+  let m=0; for(const n of set){ const x=g.setDur[n-1]; if(!(x>0)) return null; m+=x; }
+  return m;
+}
+function scoutImporta(){
+  if(!SCI) return;
+  const R=SCI.R, t=S.activeTeam, d=SCI.d||R.data;
+  const err=(m)=>{ const el=document.getElementById("scErr"); if(el) el.textContent=m; else toast(m); };
+  if(!t||t==="all"||t==="none"){ err("Scegli prima la squadra"); return; }
+  if(!R.ok||!d){ err("Il PDF non è stato letto per intero"); return; }
+  if(SCI.d && R.data!==SCI.d){ err("Il PDF è di un'altra partita."); return; }
+  const scelte={};
+  for(const x of scoutGiocatrici()){ const aid=SCI.abb[x.num]; if(!aid) continue;
+    if(scelte[aid]){ const a=(S.athletes||[]).find(y=>y.id===aid); err((a?a.name:"Un'atleta")+" è abbinata a due maglie."); return; }
+    scelte[aid]=x; }
+  if(!Object.keys(scelte).length){ err("Nessuna atleta abbinata."); return; }
+  // la gara: durate e punteggi dei set, risultato
+  if(!S.gare) S.gare={};
+  const l=gareDi(t).slice(); let g=l.find(x=>x.d===d);
+  if(!g){
+    const avv=(R.titolo && R.titolo!==SCI.sq && !/^set\s/i.test(R.titolo)) ? R.titolo : "";
+    g={d:d, avv:String(avv).slice(0,60), casa: R.locali===SCI.sq ? true : R.ospiti===SCI.sq ? false : null};
+    l.push(g);
+  }
+  const durate=R.set.slice().sort((a,b)=>a.n-b.n).filter(s=>s.n>=1&&s.n<=5);
+  g.setDur=durate.map(s=>s.min); g.punti=durate.map(s=>String(s.punteggio||"").slice(0,9));
+  g.ris=String(R.risultato||"").slice(0,7); g.scoutAt=new Date().toISOString();
+  g.setTot=durate.length; g.durata=durate.reduce((a,s)=>a+s.min,0);
+  l.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0); S.gare[t]=l;
+  // lo scout di questa partita sostituisce quello di prima, anche per chi ora non è abbinata
+  if(!S.scout) S.scout={};
+  teamAthletes().forEach(a=>{
+    if(!scoutDi(a.id,d)) return;
+    if(!scelte[a.id]) tombSet("sc:"+a.id+":"+d+"|gara");
+    S.scout[a.id]=scoutArr(a.id).filter(e=>e.d!==d);
+    if(!S.scout[a.id].length) delete S.scout[a.id];
+  });
+  let n=0;
+  Object.keys(scelte).forEach(aid=>{
+    const x=scelte[aid], v=x.v||{};
+    const e={d:d, exercise:"gara", maglia:x.num, set:scoutUnione(x.set,x.sest), sest:x.sest.slice().sort((a,b)=>a-b), src:"pdf",
+      pt:v.pt||0, err:v.err||0, bat:v.bat_tot||0, bat_err:v.bat_err||0, bat_pt:v.bat_pt||0, ric:v.ric_tot||0, ric_err:v.ric_err||0,
+      att:v.att_tot||0, att_err:v.att_err||0, att_mur:v.att_mur||0, att_pt:v.att_pt||0, dif:v.dif_tot||0, dif_err:v.dif_err||0,
+      muri:x.muri||0, muro_err:v.muro_err||0, muro_pt:v.muro_pt||0};
+    if(x.solo) e.solo=1;
+    S.scout[aid]=scoutArr(aid).concat([e]).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+    if(S.tomb) delete S.tomb["sc:"+aid+":"+d+"|gara"];
+    const a=(S.athletes||[]).find(y=>y.id===aid); if(a){ if(!a.profile) a.profile={}; a.profile.maglia=x.num; }
+    // carico già segnato con gli stessi set: i minuti diventano quelli veri dei suoi set
+    const c=garaCarico(aid,d); if(c && c.set===e.set.length){ const m=garaMinutiSet(g,e.set); if(m!=null) c.min=m; }
+    n++;
+  });
+  SCI=null;
+  save(); closeM(); GV.d=d; S.view="gare"; render(); toast("Scout importato: "+n+" atlete");
+}
+
+/* ═══════════════ RAPPORTO DOPO-GARA ═══════════════════════════════════════
+   Incrocia quello che la partita ha chiesto (scout, set, salti dal video) con
+   quello che è costato (RPE, settimana) e con come stanno dopo (check-in e CMJ
+   nei giorni seguenti). Descrive: le proposte arriveranno con le regole che
+   approvi tu. In cima un riassunto che l'allenatore legge in un minuto. */
+function garaDopo(arr,d,gg){ return arr.filter(e=>e&&e.d>d && dayNum(e.d)-dayNum(d)<=gg).sort((a,b)=>a.d<b.d?-1:1)[0]||null; }
+function garaRighe(d){
+  const g=garaDi(d);
+  return teamAthletes().map(a=>{
+    const sc=scoutDi(a.id,d), c=garaCarico(a.id,d), sal=garaSaltiDi(a.id,d);
+    const video=sal.length?sal.reduce((t,e)=>t+(e.n||0),0):null;
+    const cs=caricoSett(a.id,d);
+    const rd=garaDopo((S.readiness||{})[a.id]||[],d,2);
+    const cmj=series(a.id,"cmj"), dopo=garaDopo(cmj,d,3), prima=cmj.filter(e=>e.d<=d).slice(-1)[0];
+    const dc=(dopo&&prima)?deltaInfo([prima,dopo],TMAP.cmj.dir,TMAP.cmj):null;
+    return {a, sc, c, video, cs, rd, rdEv: rd?readinessEval(a.id,rd):null, cmjDopo:dopo, dc,
+            set: sc ? sc.set.length : (c&&c.set!=null ? c.set : null), azioni: sc?scoutAzioni(sc):null};
+  }).filter(r=>r.sc||r.c||r.video!=null);
+}
+function garaRiassunto(d){
+  const g=garaDi(d), R=garaRighe(d), out=[];
+  if(g.ris||g.setDur) out.push('<b>'+(g.ris?esc(g.ris):'')+'</b>'+(g.punti&&g.punti.length?' ('+g.punti.map(esc).join(", ")+')':'')+
+    (g.setDur?' · '+g.setDur.reduce((a,b)=>a+b,0)+'′ di gioco':''));
+  const conSc=R.filter(r=>r.sc);
+  if(conSc.length){
+    const tutti=conSc.filter(r=>g.setTot && r.sc.set.length===g.setTot).map(r=>esc(r.a.name.split(" ")[0]));
+    if(tutti.length) out.push('In campo in tutti i set: '+tutti.join(", ")+'.');
+    const top=conSc.slice().sort((x,y)=>y.azioni-x.azioni).filter(r=>r.azioni>0).slice(0,3);
+    if(top.length) out.push('Più azioni in salto registrate: '+top.map(r=>esc(r.a.name.split(" ")[0])+' '+r.azioni+' ('+r.sc.att+' att, '+r.sc.muri+' muri)').join(" · ")+'.');
+    const solo=conSc.filter(r=>r.sc.solo);
+    if(solo.length) out.push('In campo senza nessuna azione registrata: '+solo.map(r=>esc(r.a.name.split(" ")[0])+' (set '+r.sc.sest.join(", ")+')').join(", ")+': per lo scout non ha giocato.');
+  }
+  const au=R.filter(r=>r.c&&r.c.rpe!=null).map(r=>({r, v:dayLoad(r.c)})).sort((x,y)=>y.v-x.v);
+  if(au.length) out.push('Carico di gara: mediana '+au[Math.floor(au.length/2)].v+' AU, il più alto '+esc(au[0].r.a.name.split(" ")[0])+' '+au[0].v+' AU.');
+  const picco=R.filter(r=>r.cs&&r.cs.stato==="picco");
+  if(picco.length) out.push('Settimana carica fino a questa partita (≥ '+fmtNum(S.cfg.caricoPicco||1.3)+'× la sua media): '+picco.map(r=>esc(r.a.name.split(" ")[0])).join(", ")+'.');
+  return out;
+}
+function garaBuchi(d){
+  const g=garaDi(d), R=garaRighe(d), ath=teamAthletes(), b=[];
+  if(!g.scoutAt) b.push("scout non importato");
+  else b.push("lo scout non distingue battuta in salto e flottante, non ha le alzate e vede i muri solo se toccati: le azioni in salto sono un minimo");
+  const senzaRpe=R.filter(r=>r.sc && r.sc.set.length && !(r.c&&r.c.rpe!=null)).length;
+  if(senzaRpe) b.push(senzaRpe+(senzaRpe===1?" atleta in campo senza RPE":" atlete in campo senza RPE"));
+  // set segnati a mano diversi da quelli dello scout: uno dei due è sbagliato, e i minuti con lui
+  const div=R.filter(r=>r.sc && !r.sc.solo && r.c && r.c.set!=null && r.c.set!==r.sc.set.length).map(r=>r.a.name.split(" ")[0]+" "+r.c.set+" invece di "+r.sc.set.length);
+  if(div.length) b.push("set segnati diversi dallo scout: "+div.join(", "));
+  if(!ath.some(a=>garaSaltiDi(a.id,d).length)) b.push("salti dal video non contati");
+  return b;
+}
+function garaRapportoHtml(d){
+  const R=garaRighe(d); if(!R.length) return "";
+  let h='<div class="tsec">Rapporto dopo-gara</div><div class="gv-box gv-rap">'+
+    '<div class="gv-rt">Per l\'allenatore<button class="btn sm" onclick="garaStampa(\''+d+'\')">🖨 Stampa</button></div>'+
+    '<ul class="gv-ul">'+garaRiassunto(d).map(x=>'<li>'+x+'</li>').join("")+'</ul>'+
+    '<div class="gv-buchi">Mancano o sono incompleti: '+garaBuchi(d).map(esc).join(" · ")+'.</div></div>';
+  h+='<div class="gv-box gv-rap" style="margin-top:8px"><div class="gv-rt">Per te, atleta per atleta</div><div class="mjwrap"><table class="mjtab gv-tab"><thead><tr>'+
+    '<th>Atleta</th><th>Set</th><th>Att</th><th>Muri</th><th>Batt</th><th title="attacchi + muri toccati: un minimo">Azioni<br>salto</th><th>Video</th><th>Gara<br>AU</th><th>7 gg</th><th>Check-in<br>dopo</th><th>CMJ<br>dopo</th></tr></thead><tbody>';
+  R.slice().sort((x,y)=>(y.azioni||0)-(x.azioni||0)).forEach(r=>{
+    const cs=r.cs, sett = !cs ? '—' : cs.insufficient ? cs.sett+'<small>media?</small>' :
+      '<span class="'+(cs.stato==="picco"?"gv-hi":"")+'">'+cs.sett+'</span><small>×'+fmtNum(Math.round((cs.rapporto||0)*10)/10)+'</small>';
+    const rd = r.rd ? '<span class="rd-cmj '+r.rdEv.color+'">'+(r.rdEv.pc==null?'—':r.rdEv.pc)+'</span><small>+'+(dayNum(r.rd.d)-dayNum(d))+' gg</small>' : '—';
+    const cmj = r.cmjDopo ? fmtNum(r.cmjDopo.v)+(r.dc?'<small class="'+(r.dc.rumore?'':r.dc.cls)+'">'+(r.dc.rumore?'≈ nel rumore':r.dc.txt)+'</small>':'') : '—';
+    h+='<tr><td class="n">'+esc(r.a.name)+(r.sc&&r.sc.solo?'<small>senza azioni</small>':'')+'</td>'+
+      '<td>'+(r.set!=null?r.set:'—')+'</td><td>'+(r.sc?r.sc.att:'—')+'</td><td>'+(r.sc?r.sc.muri:'—')+'</td><td>'+(r.sc?r.sc.bat:'—')+'</td>'+
+      '<td><b>'+(r.azioni!=null?r.azioni:'—')+'</b></td><td>'+(r.video!=null?r.video:'—')+'</td>'+
+      '<td>'+(r.c&&r.c.rpe!=null?dayLoad(r.c)+'<small>RPE '+r.c.rpe+'</small>':'—')+'</td><td>'+sett+'</td><td>'+rd+'</td><td>'+cmj+'</td></tr>';
+  });
+  h+='</tbody></table></div>'+
+    '<div class="gv-buchi">«7 gg»: carico degli ultimi 7 giorni fino alla partita compresa, e quante volte la sua media delle 4 settimane prima. '+
+    '«Check-in dopo» e «CMJ dopo»: il primo nei 2 e 3 giorni seguenti.</div></div>';
+  h+='<div class="gv-box gv-prop"><b>Proposte per i giorni dopo:</b> arrivano con le regole che stai rileggendo nel doc «Regole pallavolo». '+
+    'Finché non le approvi, qui ci sono solo i numeri: nessuna proposta inventata.</div>';
+  return h;
+}
+/* La stampa per l'allenatore: niente check-in, niente CMJ, niente note
+   cliniche. Quello che la partita ha chiesto e quanto è costata. */
+function garaStampa(d){
+  const g=garaDi(d), tm=(S.teams||[]).find(x=>x.id===S.activeTeam), R=garaRighe(d);
+  let righe='';
+  R.slice().sort((x,y)=>(y.azioni||0)-(x.azioni||0)).forEach(r=>{
+    righe+='<tr><td class="n">'+esc(r.a.name)+'</td><td>'+(r.set!=null?r.set:'—')+'</td><td>'+(r.sc?r.sc.att:'—')+'</td><td>'+(r.sc?r.sc.muri:'—')+'</td>'+
+      '<td>'+(r.sc?r.sc.bat:'—')+'</td><td><b>'+(r.azioni!=null?r.azioni:'—')+'</b></td><td>'+(r.video!=null?r.video:'—')+'</td><td>'+(r.c&&r.c.rpe!=null?dayLoad(r.c):'—')+'</td></tr>';
+  });
+  const css='@page{size:A4;margin:12mm}body{font-family:Helvetica,Arial,sans-serif;color:#111;font-size:11px}'+
+    '.br{font-size:9px;letter-spacing:.2em;color:#c1121f;font-weight:700}h1{font-size:18px;margin:2px 0}.sub{color:#555;margin:0 0 10px}'+
+    'ul{margin:0 0 12px;padding-left:16px}li{margin:3px 0}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:5px;text-align:center}'+
+    'th{background:#f4f4f4;font-size:10px}td.n{text-align:left}.note{font-size:9.5px;color:#666;margin-top:10px}';
+  const doc='<!doctype html><html lang="it"><head><meta charset="utf-8"><title>'+esc("Gara "+fmtDate(d).replace(/\//g,"-")+(g.avv?" "+g.avv:""))+'</title><style>'+css+'</style></head><body>'+
+    '<div class="br">IRON PERFORMANCE</div><h1>'+(g.avv?'vs '+esc(g.avv):'Gara')+'</h1><p class="sub">'+esc((tm&&tm.name)||"")+' · '+fmtDate(d)+'</p>'+
+    '<ul>'+garaRiassunto(d).map(x=>'<li>'+x+'</li>').join("")+'</ul>'+
+    '<table><thead><tr><th>Atleta</th><th>Set</th><th>Attacchi</th><th>Muri</th><th>Battute</th><th>Azioni in salto</th><th>Salti video</th><th>Carico gara (AU)</th></tr></thead><tbody>'+righe+'</tbody></table>'+
+    '<p class="note">Azioni in salto = attacchi + muri toccati, dallo scout: è un minimo. Lo scout non distingue battuta in salto e flottante, non ha le alzate e non vede chi è in campo senza toccare palla. '+
+    'Carico gara = RPE × minuti dei set giocati.</p></body></html>';
+  const win=window.open("", "_blank");
+  if(!win){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
+  win.document.write(doc); win.document.close();
+  setTimeout(()=>{ try{ win.focus(); win.print(); }catch(e){} }, 400);
 }
 
 /* ═══════════════ PDF DELLA TABELLA ═══════════════════════════════════════════
@@ -11227,7 +11706,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},piani:{},salti:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},piani:{},salti:{},scout:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -11428,6 +11907,10 @@ function sanitizeImport(o){
         const r={d:g.d, avv:avv, casa:(g.casa===true||g.casa===false)?g.casa:null};
         const du=num(g.durata); if(du!=null && du>0 && du<=300) r.durata=Math.round(du);
         const st=num(g.setTot); if(st!=null && st>=1 && st<=5) r.setTot=Math.round(st);
+        if(Array.isArray(g.setDur)){ const sd=g.setDur.slice(0,5).map(Number); if(sd.length && sd.every(x=>Number.isInteger(x)&&x>0&&x<=90)) r.setDur=sd; }
+        if(Array.isArray(g.punti)){ const pu=g.punti.slice(0,5).map(x=>str(x,9)).filter(x=>/^\d{1,2}-\d{1,2}$/.test(x)); if(pu.length) r.punti=pu; }
+        if(/^\d-\d$/.test(String(g.ris||""))) r.ris=String(g.ris);
+        if(typeof g.scoutAt==="string" && !isNaN(Date.parse(g.scoutAt))) r.scoutAt=g.scoutAt.slice(0,30);
         l.push(r);
       });
       if(l.length){ l.sort((a,b)=>a.d<b.d?-1:1); out.gare[k]=l; }
@@ -11470,6 +11953,25 @@ function sanitizeImport(o){
         l.push(r);
       });
       if(l.length){ l.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0); out.salti[aid]=l; }
+    });
+  }
+  /* Lo scout delle gare: interi sensati, set da 1 a 5, una voce per partita. */
+  if(o.scout&&typeof o.scout==="object"&&!Array.isArray(o.scout)){
+    const intero=(v,max)=>{ const n=Number(v); return (Number.isInteger(n)&&n>=0&&n<=max)?n:null; };
+    const setL=v=>{ const m={}; (Array.isArray(v)?v:[]).forEach(x=>{ const n=Number(x); if(Number.isInteger(n)&&n>=1&&n<=5) m[n]=1; });
+      return Object.keys(m).map(Number).sort((a,b)=>a-b); };
+    Object.keys(o.scout).forEach(aid=>{
+      if(!live[aid]||!Array.isArray(o.scout[aid])) return;
+      const l=[], visti={};
+      o.scout[aid].slice(0,500).forEach(e=>{
+        if(!e||!isDate(e.d)||e.exercise!=="gara"||visti[e.d]) return; visti[e.d]=1;
+        const r={d:e.d, exercise:"gara", set:setL(e.set), sest:setL(e.sest), src:"pdf"};
+        if(/^\d{1,3}$/.test(String(e.maglia==null?"":e.maglia))) r.maglia=String(e.maglia);
+        SCOUT_F.forEach(k=>{ const v=intero(e[k],500); r[k]=v==null?0:v; });
+        if(e.solo) r.solo=1;
+        l.push(r);
+      });
+      if(l.length){ l.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0); out.scout[aid]=l; }
     });
   }
   /* I blocchi del piano: per squadra, solo esercizi noti, RPE solo di atlete
@@ -12364,7 +12866,7 @@ function loadDemo(){
     if(!S.tomb) S.tomb={};
     S.athletes.forEach(a=>{
       S.tomb["ath:"+a.id]=ora;
-      ["data","readiness","load","screen","lv","pres","mjl","salti"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
+      ["data","readiness","load","screen","lv","pres","mjl","salti","scout"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
       gruppiTogli(a.id);
       pianiTogli(a.id);
     });

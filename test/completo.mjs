@@ -84,7 +84,8 @@ const PIENO = `{
   mjl:{a1:[{d:"2026-10-01",exercise:"CMJ#1",tipo:"CMJ",m:{h:32,Prel:26.8,x_altro:3}}]},
   gruppi:{"rmSquat@t1":{d:"2026-10-01",g:[["a1","a2"]],x:[{kg:50,pct:75,nota:"occhio",nome:"Rientri",pg:70,sr:"3×8",ind:{a1:{kg:40,pct:70,nota:"schiena"}}}]}},
   sedute:{t1:{ex:[{t:"rmSquat",pct:75,sr:"4×5",mode:"min"}],rif:"rmSquat",size:3,altro:"Affondi — 3×8"}},
-  gare:{t1:[{d:"2026-11-02",avv:"Rossi",casa:true}]},
+  gare:{t1:[{d:"2026-11-02",avv:"Rossi",casa:true},{d:"2026-10-25",avv:"Verdi",casa:false,durata:119,setTot:5,setDur:[31,24,23,26,15],punti:["22-25","25-14","25-16","16-25","15-9"],ris:"3-2",scoutAt:"2026-10-27T10:00:00.000Z"}]},
+  scout:{a1:[{d:"2026-10-25",exercise:"gara",maglia:"8",set:[1,2,3,4,5],sest:[1,2],src:"pdf",pt:20,err:15,bat:18,bat_err:1,bat_pt:3,ric:29,ric_err:5,att:39,att_err:1,att_mur:0,att_pt:17,dif:6,dif_err:6,muri:2,muro_err:2,muro_pt:0,solo:1}]},
   piani:{t1:[{id:"b1",nome:"Forza",da:"2026-10-05",a:"2026-11-15",rif:"rmSquat",size:3,
     sedute:[{id:"sA",nome:"A",acc:"core",ex:[{t:"rmSquat",mode:"min"},{t:"xAff1",nome:"Affondi",libero:true}]}],
     sett:[{fase:"accumulo",p:{"sA:rmSquat":{pct:72.5,sr:"4×6",rir:3},"sA:xAff1":{sr:"3×8",rir:2,kg:12}}}],
@@ -115,7 +116,9 @@ const CHIAVI = {
   gruppi:  o => { const x=o.gruppi["rmSquat@t1"].x[0]; return x.nota === "occhio" && x.kg === 50 && x.nome === "Rientri" &&
                   x.pg === 70 && x.sr === "3×8" && x.ind.a1.kg === 40 && x.ind.a1.nota === "schiena"; },
   sedute:  o => o.sedute.t1.ex[0].mode === "min" && o.sedute.t1.rif === "rmSquat" && o.sedute.t1.altro === "Affondi — 3×8",
-  gare:    o => o.gare.t1[0].avv === "Rossi" && o.gare.t1[0].casa === true,
+  gare:    o => { const g=o.gare.t1.find(x=>x.d==="2026-10-25"); return o.gare.t1.find(x=>x.d==="2026-11-02").avv === "Rossi" &&
+                  g.setDur.length === 5 && g.setDur[0] === 31 && g.punti[4] === "15-9" && g.ris === "3-2" && g.durata === 119 && g.setTot === 5 && !!g.scoutAt; },
+  scout:   o => { const e=o.scout.a1[0]; return e.att === 39 && e.muri === 2 && e.set.length === 5 && e.sest[1] === 2 && e.maglia === "8" && e.solo === 1 && e.bat_pt === 3; },
   piani:   o => { const b=o.piani.t1[0]; return b.nome === "Forza" && b.sedute[0].acc === "core" && b.sedute[0].ex[0].mode === "min" &&
                   b.sett[0].fase === "accumulo" && b.sett[0].p["sA:rmSquat"].pct === 72.5 && b.rpe["0:sA:rmSquat"].a1 === 8 &&
                   b.kg["0:sA:rmSquat"].a1 === 57.5 && b.sedute[0].ex[1].nome === "Affondi" && b.sett[0].p["sA:xAff1"].kg === 12; },

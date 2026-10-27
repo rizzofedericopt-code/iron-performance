@@ -566,6 +566,20 @@ ul.kb li b{color:#fff;font-weight:600}
 .gv-prop{margin-top:8px;font-size:12.5px;color:var(--muted);line-height:1.5}.gv-prop b{color:var(--text)}
 .sc-set{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}.sc-set span{font-size:12px;border:1px solid var(--line2);border-radius:6px;padding:2px 7px;font-family:var(--mono)}
 .sc-ok{font-size:12.5px;color:var(--up);line-height:1.5}
+.gv-link{display:flex;gap:8px}.gv-link input{flex:1;min-width:0}
+.gv-2b{display:flex;gap:8px;margin-top:8px}.gv-2b .btn{flex:1}
+.cnt-top{display:flex;gap:8px;margin:8px 0}.cnt-top .btn{flex:1}
+.cnt-head,.cnt-row{display:grid;grid-template-columns:minmax(0,1fr) repeat(5,42px) 32px;gap:5px;align-items:center}
+.cnt-head{font-size:11px;color:var(--muted);text-align:center;padding:4px 0}
+.cnt-row button small{display:block;font-family:var(--sans);font-size:9.5px;font-weight:600;color:var(--muted);line-height:1;margin-bottom:2px}
+.cnt-row button:active small{color:#fff}
+.cnt-row{padding:5px 0;border-bottom:1px solid var(--line)}
+.cnt-row.fuori{opacity:.55}
+.cnt-n{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cnt-row button{height:44px;border-radius:9px;border:1px solid var(--line2);background:var(--surface2);color:var(--text);
+  font-family:var(--mono);font-size:15px;font-weight:700;cursor:pointer;padding:0;touch-action:manipulation}
+.cnt-row button:active{background:var(--accent);border-color:var(--accent);color:#fff}
+.cnt-row b{text-align:center;font-family:var(--mono);font-size:15px}
 .sc-tab select{min-width:130px;padding:6px 8px;font-size:13px}
 .sc-tab tr.sc-solo td{color:#FFB340}.sc-tab td small{display:block;font-size:11px}
 /* ruoli */
@@ -10037,7 +10051,7 @@ function garaMinuti(g,set,aid){
 }
 function garaStato(g){
   const ath=teamAthletes();
-  const car=ath.filter(a=>garaCarico(a.id,g.d)).length;
+  const car=ath.filter(a=>{ const c=garaCarico(a.id,g.d); return c && c.rpe!=null; }).length;
   const sal=ath.reduce((t,a)=>t+garaSaltiDi(a.id,g.d).reduce((x,e)=>x+(e.n||0),0),0);
   return {car:car, tot:ath.length, salti:sal};
 }
@@ -10091,7 +10105,7 @@ function renderGara(d){
     grid.innerHTML=h; return;
   }
   const st=garaStato(g);
-  const au=ath.map(a=>garaCarico(a.id,d)).filter(Boolean).map(dayLoad);
+  const au=ath.map(a=>garaCarico(a.id,d)).filter(c=>c&&c.rpe!=null).map(dayLoad);
   const med=au.length ? au.slice().sort((x,y)=>x-y)[Math.floor(au.length/2)] : null;
   h+='<div class="tstats">'+tstat(g.ris||"—","Risultato")+tstat(st.car+"/"+st.tot,"Carico segnato",st.car?"up":"amber")+tstat(med!=null?med:"—","AU mediana")+
      tstat(st.salti||"—","Salti video")+'</div>';
@@ -10104,7 +10118,7 @@ function renderGara(d){
     '<div class="fhint" style="margin-top:6px">RPE chiesto circa 30 minuti dopo la fine (Foster). '+
     (g.setDur?'Con lo scout i minuti sono quelli veri dei set in cui era in campo ('+g.setDur.map(m=>m+'′').join(" · ")+'); i set sono già compilati, correggili se lo scout non vede qualcuna. '
              :'I minuti di ciascuna sono stimati dai set: durata × set giocati ÷ set della partita. ')+
-    'Chi non ha giocato e non ha risposto resta vuota.</div>'+
+    'L\'RPE è facoltativo: senza, i set restano ma il carico di quella partita non entra nella settimana, che risulta incompleta. Chi non ha giocato resta vuota.</div>'+
     '<div class="ci-head"><span class="ci-n"></span><span>Set</span><span>RPE</span><span class="gv-au">AU</span></div>';
   ath.forEach(a=>{
     const c=garaCarico(a.id,d)||{}, sc=scoutDi(a.id,d);
@@ -10114,7 +10128,7 @@ function renderGara(d){
        '<span class="gv-au">'+(c.rpe!=null?dayLoad(c):"")+'</span></div>';
   });
   h+='<div id="gvErr" class="login-err"></div>'+
-     '<button class="btn primary" style="width:100%;margin-top:10px" onclick="garaSalva(\''+d+'\')">Salva il carico della gara</button></div>';
+     '<button class="btn primary" style="width:100%;margin-top:10px" onclick="garaSalva(\''+d+'\')">Salva</button></div>';
 
   // ── salti ──
   h+='<div class="tsec">Salti</div><div class="gv-box">';
@@ -10129,7 +10143,14 @@ function renderGara(d){
   } else {
     h+='<div class="fhint">Nessun salto contato per questa partita.</div>';
   }
-  h+='<button class="btn sm" style="width:100%;margin-top:10px" onclick="garaVideo(\''+d+'\')">🎥 Conta i salti dal video di questa partita</button></div>';
+  // il video può stare sul computer (con l'AI) o in cloud (link + conteggio a mano)
+  h+='<label class="fl" style="margin-top:12px">Link del video (YouTube, Drive…)</label>'+
+     '<div class="gv-link"><input id="gvLink" type="url" inputmode="url" placeholder="https://…" value="'+escAttr(g.video||"")+'" onchange="garaLinkSet(\''+d+'\',this.value)">'+
+     (g.video?'<button class="btn sm" onclick="garaLinkApri(\''+d+'\')">▶ Apri</button>':'')+'</div>'+
+     '<div class="gv-2b"><button class="btn sm" onclick="openContatore(\''+d+'\')">✋ Conta a mano</button>'+
+     '<button class="btn sm" onclick="garaVideo(\''+d+'\')">🎥 Video dal computer</button></div>'+
+     '<div class="fhint" style="margin-top:6px">Col link il video si apre in un\'altra scheda e conti qui con +1: l\'AI non può leggere un video che sta su un altro sito. '+
+     'Dal computer il file non va da nessuna parte e c\'è anche l\'AI.</div></div>';
 
   // ── scout ──
   h+='<div class="tsec">Scout</div><div class="gv-box gv-scout">'+
@@ -10139,27 +10160,122 @@ function renderGara(d){
      '</div></div>';
   grid.innerHTML=h;
 }
+/* ── Link al video in cloud ──
+   Si accetta solo https: un link «javascript:» in un pulsante è un modo di
+   far eseguire codice a chi lo tocca. Si apre in una scheda nuova, senza
+   passare l'indirizzo dell'app (noopener, noreferrer). */
+function garaLinkOk(u){
+  u=String(u||"").trim();
+  if(!u) return "";
+  if(u.length>500 || !/^https:\/\/[^\s"'<>`]+$/i.test(u)) return null;
+  try{ const x=new URL(u); return x.protocol==="https:" ? x.href : null; }catch(e){ return null; }
+}
+function garaLinkSet(d,v){
+  const t=S.activeTeam, g=garaDi(d); if(!g) return;
+  const u=garaLinkOk(v);
+  if(u===null){ toast("Serve un link che inizia con https://"); render(); return; }
+  S.gare[t]=gareDi(t).map(x=>x===g ? Object.assign({}, x, {video:u||undefined}) : x);
+  S.gare[t].forEach(x=>{ if(x.video===undefined) delete x.video; });
+  save(); render(); toast(u?"Link salvato":"Link tolto");
+}
+function garaLinkApri(d){
+  const g=garaDi(d), u=g&&garaLinkOk(g.video);
+  if(!u){ toast("Nessun link valido"); return; }
+  const w=window.open(u, "_blank", "noopener,noreferrer");
+  if(!w) toast("Il browser ha bloccato la finestra: consenti i popup");
+}
+
+/* ── Contatore a mano: il video gira altrove, qui si tocca +1 ──
+   Niente minuti e niente AI: solo quanti salti, di che tipo, per atleta.
+   Ogni tocco va in una bozza sul dispositivo, così una pagina chiusa per
+   sbaglio a metà partita non perde il conteggio. Salvato, finisce nei salti
+   della gara come quello dal video, con una sua chiave: risalvare lo sostituisce. */
+let CNT=null;
+const CNT_L={att:"Att", muro:"Muro", batt:"Batt", alz:"Alz", alt:"Altro"};
+function cntSid(d){ return "vl"+String(d).replace(/-/g,""); }
+function cntChiave(d){ return "ip_contatore_"+(S.activeTeam||"")+"_"+d; }
+function cntBozzaSalva(){ try{ localStorage.setItem(cntChiave(CNT.d), JSON.stringify({per:CNT.per, storia:CNT.storia})); }catch(e){} }
+function cntBozzaVia(d){ try{ localStorage.removeItem(cntChiave(d)); }catch(e){} }
+function openContatore(d){
+  const g=garaDi(d); if(!g) return;
+  const sid=cntSid(d), ath=teamAthletes();
+  let per={}, storia=[], bozza=null;
+  try{ bozza=JSON.parse(localStorage.getItem(cntChiave(d))||"null"); }catch(e){}
+  if(bozza && bozza.per && typeof bozza.per==="object"){ per=bozza.per; storia=Array.isArray(bozza.storia)?bozza.storia:[]; }
+  else ath.forEach(a=>{ const e=saltiArr(a.id).find(x=>x.d===d && x.exercise===sid);
+    if(e) per[a.id]={att:e.att||0, muro:e.muro||0, batt:e.batt||0, alz:e.alz||0, alt:e.alt||0}; });
+  CNT={d:d, per:per, storia:storia, bozza:!!bozza};
+  renderContatore();
+}
+function cntInCampo(a,d){ const sc=scoutDi(a.id,d), c=garaCarico(a.id,d); return !!((sc&&sc.set.length&&!sc.solo)||(c&&c.set>0)); }
+function cntTot(o){ return o ? VID_TIPI.reduce((t,x)=>t+(o[x.k]||0),0) : 0; }
+function renderContatore(){
+  const d=CNT.d, g=garaDi(d), sid=cntSid(d);
+  const ath=teamAthletes().slice().sort((a,b)=>(cntInCampo(b,d)?1:0)-(cntInCampo(a,d)?1:0) || String(a.name).localeCompare(String(b.name),"it"));
+  const altri=ath.some(a=>garaSaltiDi(a.id,d).some(e=>e.exercise!==sid));
+  let h='<div class="mh"><div><div class="eyebrow">Conta a mano</div><div class="mt">'+(g.avv?'vs '+esc(g.avv):'Gara')+' · '+fmtDate(d)+'</div>'+
+    '<div class="ms">Un tocco = un salto. Chi è in campo è in alto.</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
+  if(altri) h+='<div class="alert warn"><span class="ai">⚠️</span><span>Per questa partita ci sono già salti contati dal video del computer. Se conti anche qui, <b>li sommi</b>.</span></div>';
+  if(CNT.bozza) h+='<div class="fhint">Ripreso un conteggio non ancora salvato.</div>';
+  h+='<div class="cnt-top">'+(g.video?'<button class="btn sm" onclick="garaLinkApri(\''+d+'\')">▶ Apri il video</button>':'')+
+     '<button class="btn sm" onclick="cntAnnulla()">↶ Annulla l\'ultimo</button></div>';
+  h+='<div class="cnt-head"><span></span>'+VID_TIPI.map(x=>'<span>'+CNT_L[x.k]+'</span>').join("")+'<span>Tot</span></div>';
+  ath.forEach(a=>{
+    const o=CNT.per[a.id]||{};
+    h+='<div class="cnt-row'+(cntInCampo(a,d)?'':' fuori')+'"><span class="cnt-n">'+esc(a.name)+'</span>'+
+      VID_TIPI.map(x=>'<button onclick="cntPiu(\''+a.id+'\',\''+x.k+'\')"><small>'+CNT_L[x.k]+'</small><span id="cnt_'+a.id+'_'+x.k+'">'+(o[x.k]||0)+'</span></button>').join("")+
+      '<b id="cnt_'+a.id+'_tot">'+cntTot(o)+'</b></div>';
+  });
+  h+='<button class="btn primary" style="width:100%;margin-top:12px" onclick="cntSalva()">Salva i salti della partita</button>';
+  modal(h);
+}
+function cntAgg(aid){
+  const o=CNT.per[aid]||{};
+  VID_TIPI.forEach(x=>{ const el=document.getElementById("cnt_"+aid+"_"+x.k); if(el) el.textContent=o[x.k]||0; });
+  const t=document.getElementById("cnt_"+aid+"_tot"); if(t) t.textContent=cntTot(o);
+}
+function cntPiu(aid,k){
+  if(!CNT || !VID_TIPI.some(x=>x.k===k)) return;
+  const o=CNT.per[aid]||(CNT.per[aid]={att:0,muro:0,batt:0,alz:0,alt:0});
+  o[k]=(o[k]||0)+1; CNT.storia.push([aid,k]);
+  cntBozzaSalva(); cntAgg(aid);
+  try{ if(navigator.vibrate) navigator.vibrate(15); }catch(e){}
+}
+function cntAnnulla(){
+  if(!CNT||!CNT.storia.length){ toast("Niente da annullare"); return; }
+  const [aid,k]=CNT.storia.pop(); const o=CNT.per[aid];
+  if(o && o[k]>0) o[k]--;
+  cntBozzaSalva(); cntAgg(aid);
+}
+function cntSalva(){
+  if(!CNT) return;
+  const d=CNT.d, g=garaDi(d), per={};
+  Object.keys(CNT.per).forEach(aid=>{ const o=CNT.per[aid], n=cntTot(o);
+    if(n>0) per[aid]={n:n, att:o.att||0, muro:o.muro||0, batt:o.batt||0, alz:o.alz||0, alt:o.alt||0}; });
+  const n=saltiSalva(cntSid(d), d, ("Partita"+(g&&g.avv?" vs "+g.avv:"")+" (a mano)").slice(0,60), "mano", per);
+  cntBozzaVia(d); CNT=null;
+  closeM(); render(); toast(n+" salti salvati");
+}
 function garaVideo(d){
   const g=garaDi(d);
   VID_PRESET={data:d, seduta:"Partita"+(g&&g.avv?" vs "+g.avv:"")};
   openVideo();
 }
-/* Stesse regole del check-in: una riga si salva solo se ha l'RPE; i set senza
-   RPE non bastano (si direbbe che ha giocato senza sapere quanto le è
-   costato); una riga svuotata del tutto toglie il carico di gara che c'era. */
+/* Una riga si salva se ha i set o l'RPE. Senza RPE restano i set e i minuti,
+   ma il carico di quella partita non c'è: caricoSett lo tratta come una
+   settimana incompleta, non come zero. Una riga svuotata del tutto toglie la
+   voce di gara che c'era. */
 function garaSalva(d){
   const t=S.activeTeam, g=garaDi(d); if(!g) return;
   const du=parseInt((document.getElementById("gvDur")||{}).value,10);
   const st=parseInt((document.getElementById("gvSet")||{}).value,10);
-  const righe=[], mezze=[];
+  const righe=[];
   document.querySelectorAll(".gv-ci").forEach(row=>{
     const aid=row.getAttribute("data-a"); const v={};
     row.querySelectorAll("select").forEach(x=>{ const n=parseInt(x.value,10); if(isFinite(n)) v[x.getAttribute("data-k")]=n; });
-    if(v.set!=null && v.rpe==null){ const a=(S.athletes||[]).find(x=>x.id===aid); mezze.push(a?a.name:aid); return; }
     righe.push({aid, set:v.set, rpe:v.rpe});
   });
   const err=document.getElementById("gvErr");
-  if(mezze.length){ if(err) err.textContent="Manca l'RPE per: "+mezze.join(", ")+". Senza RPE il carico non c'è."; return; }
   if(righe.some(r=>r.rpe!=null) && !(du>0 && du<=300)){ if(err) err.textContent="Scrivi la durata della partita in minuti."; return; }
   if(isFinite(st) && righe.some(r=>r.set!=null && r.set>st)){ if(err) err.textContent="Qualcuna ha più set di quelli giocati nella partita."; return; }
   // la gara ricorda durata e set
@@ -10172,18 +10288,21 @@ function garaSalva(d){
   righe.forEach(r=>{
     const arr=S.load[r.aid]||[];
     const i=arr.findIndex(x=>x.d===d && x.exercise==="gara");
-    if(r.rpe==null){
+    if(r.rpe==null && r.set==null){
       if(i>=0){ arr.splice(i,1); tombSet("l:"+r.aid+":"+d+"|gara"); if(!arr.length) delete S.load[r.aid]; }
       return;
     }
     S.load[r.aid]=arr;
-    const e={d:d, exercise:"gara", rpe:r.rpe, min:garaMinuti(gg, r.set, r.aid)};
+    // senza RPE restano i set (e i minuti): il carico di quella partita non c'è, e la settimana lo sa
+    const e={d:d, exercise:"gara", min:garaMinuti(gg, r.set, r.aid)};
+    if(r.rpe!=null) e.rpe=r.rpe;
+    if(e.min==null) delete e.min;
     if(r.set!=null) e.set=r.set;
     if(i>=0) arr[i]=e; else arr.push(e);
     if(S.tomb) delete S.tomb["l:"+r.aid+":"+d+"|gara"];
     arr.sort((x,y)=>x.d<y.d?-1:x.d>y.d?1:0); n++;
   });
-  save(); render(); toast(n ? "Carico della gara salvato ("+n+")" : "Salvato");
+  save(); render(); toast(n ? "Gara salvata ("+n+")" : "Salvato");
 }
 
 /* ═══════════════ LETTURA DEL PDF DELLO SCOUT ═══════════════════════════════
@@ -10584,12 +10703,14 @@ function garaBuchi(d){
   const g=garaDi(d), R=garaRighe(d), ath=teamAthletes(), b=[];
   if(!g.scoutAt) b.push("scout non importato");
   else b.push("lo scout non distingue battuta in salto e flottante, non ha le alzate e vede i muri solo se toccati: le azioni in salto sono un minimo");
-  const senzaRpe=R.filter(r=>r.sc && r.sc.set.length && !(r.c&&r.c.rpe!=null)).length;
-  if(senzaRpe) b.push(senzaRpe+(senzaRpe===1?" atleta in campo senza RPE":" atlete in campo senza RPE"));
+  const senzaRpe=R.filter(r=>((r.sc && r.sc.set.length && !r.sc.solo) || (r.c && r.c.set>0)) && !(r.c&&r.c.rpe!=null)).length;
+  if(senzaRpe) b.push(senzaRpe+(senzaRpe===1?" atleta in campo senza RPE":" atlete in campo senza RPE")+": il carico di gara manca e la loro settimana è incompleta");
   // set segnati a mano diversi da quelli dello scout: uno dei due è sbagliato, e i minuti con lui
   const div=R.filter(r=>r.sc && !r.sc.solo && r.c && r.c.set!=null && r.c.set!==r.sc.set.length).map(r=>r.a.name.split(" ")[0]+" "+r.c.set+" invece di "+r.sc.set.length);
   if(div.length) b.push("set segnati diversi dallo scout: "+div.join(", "));
   if(!ath.some(a=>garaSaltiDi(a.id,d).length)) b.push("salti dal video non contati");
+  else { const sid=cntSid(d), due=ath.some(a=>garaSaltiDi(a.id,d).some(e=>e.exercise===sid)) && ath.some(a=>garaSaltiDi(a.id,d).some(e=>e.exercise!==sid));
+    if(due) b.push("salti contati sia a mano sia dal video del computer: nel totale sono sommati"); }
   return b;
 }
 function garaRapportoHtml(d){
@@ -10601,14 +10722,14 @@ function garaRapportoHtml(d){
   h+='<div class="gv-box gv-rap" style="margin-top:8px"><div class="gv-rt">Per te, atleta per atleta</div><div class="mjwrap"><table class="mjtab gv-tab"><thead><tr>'+
     '<th>Atleta</th><th>Set</th><th>Att</th><th>Muri</th><th>Batt</th><th title="attacchi + muri toccati: un minimo">Azioni<br>salto</th><th>Video</th><th>Gara<br>AU</th><th>7 gg</th><th>Check-in<br>dopo</th><th>CMJ<br>dopo</th></tr></thead><tbody>';
   R.slice().sort((x,y)=>(y.azioni||0)-(x.azioni||0)).forEach(r=>{
-    const cs=r.cs, sett = !cs ? '—' : cs.insufficient ? cs.sett+'<small>media?</small>' :
-      '<span class="'+(cs.stato==="picco"?"gv-hi":"")+'">'+cs.sett+'</span><small>×'+fmtNum(Math.round((cs.rapporto||0)*10)/10)+'</small>';
+    const cs=r.cs, sett = !cs ? '—' : cs.insufficient ? (cs.senzaRpe?'≥ ':'')+cs.sett+'<small>media?</small>' :
+      '<span class="'+(cs.stato==="picco"?"gv-hi":"")+'">'+(cs.senzaRpe?'≥ ':'')+cs.sett+'</span><small>×'+fmtNum(Math.round((cs.rapporto||0)*10)/10)+(cs.senzaRpe?' · incompleta':'')+'</small>';
     const rd = r.rd ? '<span class="rd-cmj '+r.rdEv.color+'">'+(r.rdEv.pc==null?'—':r.rdEv.pc)+'</span><small>+'+(dayNum(r.rd.d)-dayNum(d))+' gg</small>' : '—';
     const cmj = r.cmjDopo ? fmtNum(r.cmjDopo.v)+(r.dc?'<small class="'+(r.dc.rumore?'':r.dc.cls)+'">'+(r.dc.rumore?'≈ nel rumore':r.dc.txt)+'</small>':'') : '—';
     h+='<tr><td class="n">'+esc(r.a.name)+(r.sc&&r.sc.solo?'<small>senza azioni</small>':'')+'</td>'+
       '<td>'+(r.set!=null?r.set:'—')+'</td><td>'+(r.sc?r.sc.att:'—')+'</td><td>'+(r.sc?r.sc.muri:'—')+'</td><td>'+(r.sc?r.sc.bat:'—')+'</td>'+
       '<td><b>'+(r.azioni!=null?r.azioni:'—')+'</b></td><td>'+(r.video!=null?r.video:'—')+'</td>'+
-      '<td>'+(r.c&&r.c.rpe!=null?dayLoad(r.c)+'<small>RPE '+r.c.rpe+'</small>':'—')+'</td><td>'+sett+'</td><td>'+rd+'</td><td>'+cmj+'</td></tr>';
+      '<td>'+(r.c&&r.c.rpe!=null?dayLoad(r.c)+'<small>RPE '+r.c.rpe+'</small>':(r.c?'—<small>senza RPE</small>':'—'))+'</td><td>'+sett+'</td><td>'+rd+'</td><td>'+cmj+'</td></tr>';
   });
   h+='</tbody></table></div>'+
     '<div class="gv-buchi">«7 gg»: carico degli ultimi 7 giorni fino alla partita compresa, e quante volte la sua media delle 4 settimane prima. '+
@@ -11064,7 +11185,7 @@ function openReadinessHistory(aid){
     const ord=larr.map((e,i)=>i).sort((x,y)=>larr[x].d<larr[y].d?1:larr[x].d>larr[y].d?-1:y-x).slice(0,8);
     for(const i of ord){ const e=larr[i];
       h+='<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span>'+
-         '<span class="hv">'+dayLoad(e)+' AU <span style="color:var(--muted2);font-size:11px;font-family:var(--mono)">'+(e.exercise==="gara"?'🏐 gara · ':'')+'RPE '+e.rpe+' × '+e.min+'′</span></span>'+
+         '<span class="hv">'+(e.rpe==null?'— ':dayLoad(e)+' AU ')+'<span style="color:var(--muted2);font-size:11px;font-family:var(--mono)">'+(e.exercise==="gara"?'🏐 gara · ':'')+(e.rpe==null?'senza RPE'+(e.set!=null?' · '+e.set+' set':''):'RPE '+e.rpe+' × '+e.min+'′')+'</span></span>'+
          '<span class="hdl" onclick="delLoad(\''+aid+'\','+i+')">🗑</span></div>';
     }
     h+='</div>';
@@ -11088,24 +11209,32 @@ function caricoSett(aid, oggi){
   const o=dayNum(oggi||todayISO()), arr=(S.load&&S.load[aid])||[];
   if(!arr.length) return null;
   const cfg=S.cfg||CFG_DEF;
-  let s7=0; const sett=[0,0,0,0], conDati=[0,0,0,0], sedute=[];
+  /* Una partita segnata senza RPE (i set ci sono, il carico no) rende la sua
+     settimana INCOMPLETA: contarla come zero abbasserebbe la media e farebbe
+     sembrare «carica» la settimana dopo. Una settimana di riferimento
+     incompleta non entra nella media; quella attuale incompleta può ancora
+     risultare carica (è un minimo), mai scarica. */
+  let s7=0, buchi7=0; const sett=[0,0,0,0], conDati=[0,0,0,0], incompl=[0,0,0,0], sedute=[];
   arr.forEach(e=>{
     const g=o-dayNum(e.d); if(!isFinite(g)||g<0||g>=35) return;
-    const L=dayLoad(e);
-    if(g<7) s7+=L; else { const w=Math.floor((g-7)/7); sett[w]+=L; conDati[w]=1; }
+    const senza=(e.rpe==null);
+    const L=senza?0:dayLoad(e);
+    if(g<7){ s7+=L; if(senza) buchi7++; }
+    else { const w=Math.floor((g-7)/7); sett[w]+=L; conDati[w]=1; if(senza) incompl[w]=1; }
     if(L>0) sedute.push(L);
   });
+  for(let w=0;w<4;w++) if(incompl[w]) conDati[w]=0;
   const nW=conDati.reduce((a,b)=>a+b,0);
   const need=Math.min(4,Math.max(2,Math.round(cfg.caricoSettMin||3)));
-  if(nW<need) return {sett:Math.round(s7), insufficient:true, have:nW, need:need};
+  if(nW<need) return {sett:Math.round(s7), insufficient:true, have:nW, need:need, senzaRpe:buchi7};
   const media=sett.reduce((a,b,i)=>a+(conDati[i]?b:0),0)/nW;
   sedute.sort((a,b)=>a-b);
   const tipica=sedute.length ? sedute[Math.floor(sedute.length/2)] : 0;
   const r=media>0 ? s7/media : null;
   let stato="ok";
   if(r!=null && r>=(cfg.caricoPicco||1.3) && s7-media>=tipica) stato="picco";
-  else if(r!=null && r<=(cfg.caricoCalo||0.5) && media-s7>=tipica) stato="calo";
-  return {sett:Math.round(s7), media:Math.round(media), rapporto:r, tipica:Math.round(tipica), stato:stato, settimane:nW,
+  else if(r!=null && !buchi7 && r<=(cfg.caricoCalo||0.5) && media-s7>=tipica) stato="calo";
+  return {sett:Math.round(s7), media:Math.round(media), rapporto:r, tipica:Math.round(tipica), stato:stato, settimane:nW, senzaRpe:buchi7,
           perSett:sett.map((v,i)=>conDati[i]?Math.round(v):null)};
 }
 function caricoChip(c){
@@ -11114,7 +11243,8 @@ function caricoChip(c){
   const x=c.rapporto!=null ? " ×"+fmtNum(Math.round(c.rapporto*10)/10) : "";
   const cls=c.stato==="picco"?"amber":"flat";
   return '<span class="rd-cmj '+cls+'" title="ultimi 7 giorni '+c.sett+' AU · media delle 4 settimane prima '+c.media+' AU · seduta tipica '+c.tipica+' AU">'+
-    (c.stato==="picco"?"settimana carica":c.stato==="calo"?"settimana scarica":"carico 7gg")+' '+c.sett+' AU'+x+'</span>';
+    (c.stato==="picco"?"settimana carica":c.stato==="calo"?"settimana scarica":"carico 7gg")+' '+(c.senzaRpe?'≥ ':'')+c.sett+' AU'+x+'</span>'+
+    (c.senzaRpe?'<span class="rd-pochi" title="una partita o una seduta senza RPE: il carico vero è più alto">'+c.senzaRpe+' senza RPE</span>':'');
 }
 /* Stesso difetto del check-in: ogni riga partiva con l'RPE dell'ultima volta
    (o 5) e «Salva» le registrava tutte. Chi era assente prendeva un carico
@@ -11911,6 +12041,7 @@ function sanitizeImport(o){
         if(Array.isArray(g.punti)){ const pu=g.punti.slice(0,5).map(x=>str(x,9)).filter(x=>/^\d{1,2}-\d{1,2}$/.test(x)); if(pu.length) r.punti=pu; }
         if(/^\d-\d$/.test(String(g.ris||""))) r.ris=String(g.ris);
         if(typeof g.scoutAt==="string" && !isNaN(Date.parse(g.scoutAt))) r.scoutAt=g.scoutAt.slice(0,30);
+        const vl=garaLinkOk(g.video); if(vl) r.video=vl;
         l.push(r);
       });
       if(l.length){ l.sort((a,b)=>a.d<b.d?-1:1); out.gare[k]=l; }

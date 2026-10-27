@@ -112,11 +112,40 @@ prova("i minuti di chi ha giocato meno sono in proporzione ai set", () => {
   assert.equal(j(`garaDi("${D}").setTot`), 3);
 });
 
-prova("i set senza RPE non si salvano, e lo dice", () => {
+prova("l'RPE è facoltativo: i set si salvano, il carico no", () => {
   squadra();
   salvaGara([{ aid: "a1", v: { set: 3 } }]);
-  assert.equal(j(`garaCarico("a1","${D}")`), null);
-  assert.match(run(`document.getElementById("gvErr").textContent`), /Manca l'RPE per: Sara/);
+  const c = j(`garaCarico("a1","${D}")`);
+  assert.equal(c.set, 3); assert.equal(c.rpe, undefined); assert.equal(c.min, 90);
+  assert.equal(run(`document.getElementById("gvErr").textContent`), "");
+  assert.equal(j(`garaStato(garaDi("${D}")).car`), 0, "«carico segnato» conta solo chi ha l'RPE");
+});
+
+prova("una partita senza RPE non fa sembrare carica la settimana dopo", () => {
+  // quattro settimane da 900 AU; due settimane fa una partita senza RPE
+  squadra();
+  const fa = (g) => run(`(function(){ const d=new Date(); d.setDate(d.getDate()-${g}); return d.toISOString().slice(0,10); })()`);
+  const l = [];
+  for (let w = 1; w <= 4; w++) for (const g of [1, 3, 5]) l.push({ d: fa(w * 7 + g), rpe: 5, min: 60 });
+  l.push({ d: fa(16), exercise: "gara", set: 3, min: 90 });
+  for (const g of [1, 3, 5]) l.push({ d: fa(g), rpe: 5, min: 60 });
+  run(`S.load={a1:${JSON.stringify(l)}}`);
+  const cs = j(`caricoSett("a1")`);
+  assert.equal(cs.settimane, 3, "la settimana con la partita senza RPE non entra nella media");
+  assert.equal(cs.media, 900); assert.equal(cs.stato, "ok");
+});
+
+prova("questa settimana senza un RPE: può essere carica, mai scarica, e lo dice", () => {
+  squadra();
+  const fa = (g) => run(`(function(){ const d=new Date(); d.setDate(d.getDate()-${g}); return d.toISOString().slice(0,10); })()`);
+  const l = [];
+  for (let w = 1; w <= 4; w++) for (const g of [1, 3, 5]) l.push({ d: fa(w * 7 + g), rpe: 5, min: 60 });
+  l.push({ d: fa(2), exercise: "gara", set: 3, min: 90 });
+  run(`S.load={a1:${JSON.stringify(l)}}`);
+  const cs = j(`caricoSett("a1")`);
+  assert.equal(cs.sett, 0); assert.equal(cs.senzaRpe, 1);
+  assert.notEqual(cs.stato, "calo", "zero perché manca l'RPE, non perché si è riposata");
+  assert.match(run(`caricoChip(caricoSett("a1"))`), /≥ 0 AU.*1 senza RPE/);
 });
 
 prova("senza la durata della partita il carico non si calcola", () => {
@@ -231,6 +260,60 @@ prova("«conta i salti» apre il video con la data e il nome della partita", () 
   const r = j(`vidNuovoRec({name:"x.mp4"})`);
   assert.equal(r.data, D); assert.equal(r.seduta, "Partita vs Volley Rossi");
   assert.equal(j(`vidNuovoRec({name:"y.mp4"})`).data, run(`todayISO()`), "il preset vale una volta sola");
+});
+
+console.log("\nLink al video e conteggio a mano");
+
+prova("il link si salva solo se è https: niente javascript:, niente indirizzi strani", () => {
+  squadra();
+  assert.equal(run(`garaLinkOk("javascript:alert(1)")`), null);
+  assert.equal(run(`garaLinkOk("http://youtube.com/x")`), null, "solo https");
+  assert.equal(run(`garaLinkOk('https://ok.it/a"><script>')`), null);
+  assert.equal(run(`garaLinkOk("")`), "");
+  run(`garaLinkSet("${D}","https://youtu.be/abc123")`);
+  assert.equal(j(`garaDi("${D}").video`), "https://youtu.be/abc123");
+  run(`garaLinkSet("${D}","javascript:alert(1)")`);
+  assert.equal(j(`garaDi("${D}").video`), "https://youtu.be/abc123", "un link non valido non sostituisce quello buono");
+  run(`garaLinkSet("${D}","")`);
+  assert.equal(j(`garaDi("${D}").video`), undefined);
+});
+
+prova("dall'import di un backup passa solo un link https", () => {
+  squadra();
+  const o = j(`sanitizeImport({athletes:[{id:"a1",name:"Sara",team:"t1"}], teams:[{id:"t1",name:"U18"}], data:{},
+    gare:{t1:[{d:"${D}",avv:"A",video:"javascript:alert(1)"},{d:"2026-10-31",avv:"B",video:"https://drive.google.com/x"}]}})`);
+  assert.equal(o.gare.t1.find((g) => g.d === D).video, undefined);
+  assert.equal(o.gare.t1.find((g) => g.d === "2026-10-31").video, "https://drive.google.com/x");
+});
+
+prova("contatore: +1, annulla, salva nei salti della partita", () => {
+  squadra(); mem.clear();
+  run(`openContatore("${D}"); cntPiu("a1","att"); cntPiu("a1","att"); cntPiu("a1","muro"); cntPiu("a2","batt"); cntAnnulla(); cntSalva();`);
+  const e = j(`garaSaltiDi("a1","${D}")`)[0];
+  assert.equal(e.n, 3); assert.equal(e.att, 2); assert.equal(e.muro, 1); assert.equal(e.exercise, "vl20261024"); assert.equal(e.src, "mano");
+  assert.equal(j(`garaSaltiDi("a2","${D}")`).length, 0, "l'ultimo tocco annullato non conta");
+  assert.equal(run(`localStorage.getItem(cntChiave("${D}"))`), null, "salvato: la bozza sparisce");
+});
+
+prova("contatore: una pagina chiusa a metà non perde il conteggio", () => {
+  squadra(); mem.clear();
+  run(`openContatore("${D}"); cntPiu("a3","att"); cntPiu("a3","att"); CNT=null;`);
+  run(`openContatore("${D}")`);
+  assert.equal(j(`CNT.per.a3.att`), 2); assert.equal(run(`CNT.bozza`), true);
+});
+
+prova("contatore: riaprirlo dopo il salvataggio riparte dai numeri salvati, e risalvare sostituisce", () => {
+  squadra(); mem.clear();
+  run(`openContatore("${D}"); cntPiu("a1","att"); cntSalva(); openContatore("${D}"); cntPiu("a1","att"); cntSalva();`);
+  const l = j(`garaSaltiDi("a1","${D}")`);
+  assert.equal(l.length, 1); assert.equal(l[0].att, 2);
+});
+
+prova("contati sia a mano sia dal video del computer: il rapporto avvisa che sono sommati", () => {
+  squadra(); mem.clear();
+  run(`S.salti={a1:[{d:"${D}",exercise:"vabc",nome:"Partita",n:30,att:10,muro:15,batt:5,alz:0,alt:0,src:"mano"}]};
+       openContatore("${D}"); cntPiu("a1","att"); cntSalva();`);
+  assert.match(j(`garaBuchi("${D}")`).join(" "), /sia a mano sia dal video/);
 });
 
 console.log(failed ? "\n" + failed + " falliti" : "\nTutti i test passati");

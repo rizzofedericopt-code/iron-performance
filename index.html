@@ -573,6 +573,17 @@ ul.kb li b{color:#fff;font-weight:600}
 .gv-prop{margin-top:8px;font-size:12.5px;color:var(--muted);line-height:1.5}.gv-prop b{color:var(--text)}
 .sc-set{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}.sc-set span{font-size:12px;border:1px solid var(--line2);border-radius:6px;padding:2px 7px;font-family:var(--mono)}
 .sc-ok{font-size:12.5px;color:var(--up);line-height:1.5}
+.sk-mod{display:flex;gap:8px;margin-top:10px}.sk-mod select{flex:1;min-width:0}
+.sk-ex{border:1px solid var(--line2);border-radius:12px;padding:10px;margin-top:10px;background:var(--surface2)}
+.sk-ex input,.sk-ex textarea,.sk-ex select{width:100%;margin-top:4px}
+.sk-exh{display:flex;align-items:center;gap:6px}.sk-exh b{flex:0 0 22px;text-align:center;color:var(--accent)}
+.sk-exh .sk-nome{flex:1;min-width:0;margin-top:0;font-weight:700}
+.sk-exh button{flex:0 0 34px;height:38px;border-radius:8px;border:1px solid var(--line2);background:var(--surface3);color:var(--text);cursor:pointer}
+.sk-3{display:grid;grid-template-columns:1fr 1fr 0.8fr;gap:6px;margin-top:6px}
+.sk-3 label span,.sk-rm span{font-size:11px;color:var(--muted)}
+.sk-rm{display:block;margin-top:6px}.sk-kg{display:block;color:var(--up);font-size:13px;margin-top:3px}
+.sk-2b{display:flex;gap:8px;margin-top:8px}.sk-2b .btn{flex:1}
+@media(max-width:420px){.sk-3{grid-template-columns:1fr 1fr}}
 .gv-link{display:flex;gap:8px}.gv-link input{flex:1;min-width:0}
 .gv-2b{display:flex;gap:8px;margin-top:8px}.gv-2b .btn{flex:1}
 .cnt-top{display:flex;gap:8px;margin:8px 0}.cnt-top .btn{flex:1}
@@ -1906,7 +1917,8 @@ function normalize(){
   if(!S.gare || typeof S.gare!=="object" || Array.isArray(S.gare)) S.gare={};             // calendario gare, per squadra
   if(!S.piani || typeof S.piani!=="object" || Array.isArray(S.piani)) S.piani={};         // blocchi fra due test, per squadra
   if(!S.salti || typeof S.salti!=="object" || Array.isArray(S.salti)) S.salti={};
-  if(!S.scout || typeof S.scout!=="object" || Array.isArray(S.scout)) S.scout={};         // scout delle partite, per atleta         // salti per atleta per seduta (dal video)
+  if(!S.scout || typeof S.scout!=="object" || Array.isArray(S.scout)) S.scout={};
+  if(!Array.isArray(S.modelli)) S.modelli=[];                                                // modelli di scheda esercizi         // scout delle partite, per atleta         // salti per atleta per seduta (dal video)
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
   if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
   applyCustom();
@@ -2328,7 +2340,7 @@ function syncRiprova(){ _retryMs=0; clearTimeout(_retryTimer); if(SYNC.motivo===
 function syncParti(){
   const nomi={data:"Test e misure", mjl:"Archivio My Jump", piani:"Piano", athletes:"Schede atlete (anamnesi)", screen:"Valutazioni posturali",
     lv:"Curve carico-velocità", readiness:"Check-in readiness", load:"Carichi (sRPE)", pres:"Presenze", gruppi:"Gruppi", tomb:"Cancellazioni (tracce)",
-    salti:"Salti dal video", scout:"Scout delle gare"};
+    salti:"Salti dal video", scout:"Scout delle gare", modelli:"Modelli di scheda"};
   const out=[]; let altro=0;
   Object.keys(S||{}).forEach(k=>{ if(k==="_dirty") return; let b=0; try{ b=syncByte(JSON.stringify(S[k])); }catch(e){}
     if(nomi[k]) out.push({k:k, n:nomi[k], b:b}); else altro+=b; });
@@ -2507,6 +2519,12 @@ function mergeState(server, local){
     const m={}; (server.custom||[]).forEach(c=>{ if(c&&c.id) m[c.id]=c; });
     (local.custom||[]).forEach(c=>{ if(c&&c.id) m[c.id]=c; });
     out.custom=Object.keys(m).map(k=>m[k]);
+  })();
+  // i modelli di scheda: si uniscono per id, vince questo dispositivo, quelli eliminati restano eliminati
+  (function(){
+    const m={}; (Array.isArray(server.modelli)?server.modelli:[]).forEach(x=>{ if(x&&x.id) m[x.id]=x; });
+    (Array.isArray(local.modelli)?local.modelli:[]).forEach(x=>{ if(x&&x.id) m[x.id]=x; });
+    out.modelli=Object.keys(m).filter(id=>!T["mod:"+id]).map(id=>m[id]).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),"it"));
   })();
   out.cvar=local.cvar||server.cvar;
   out.cfg=local.cfg||server.cfg; out.sport=local.sport||server.sport;
@@ -4831,7 +4849,8 @@ function openAthlete(id, isNew){
     '<div class="ms">'+esc(a.name)+(age!=null?' · '+age+' anni':'')+'</div></div>'+
     '<div style="display:flex;gap:6px;align-items:center">'+
     (isNew?'':'<button class="btn sm" onclick="openProfilo(\''+id+'\')" title="Solo prestazioni: da consegnare ad atleta, famiglia o società">📊 Profilo</button>'+
-      '<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Cartella completa con anamnesi: riservata">🖨 Cartella</button>')+
+      '<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Cartella completa con anamnesi: riservata">🖨 Cartella</button>'+
+      '<button class="btn sm" onclick="openScheda(\''+id+'\')" title="Esercizi da mandarle su WhatsApp">📄 Scheda</button>')+
     '<button class="mcl" onclick="closeM()">✕</button></div></div>';
   if(isNew) h+='<div class="alert info" style="margin-bottom:14px"><span class="ai">📋</span><span>'+
     '<b>'+esc(a.name)+'</b> è stato aggiunto. Compila ora l\'anamnesi: bastano i campi che conosci, potrai completarla in qualsiasi momento.</span></div>';
@@ -10937,6 +10956,293 @@ function regoleHtml(lista, titolo){
       '<small>Regola '+x.r+' · '+esc(REGOLE_INFO[x.r].t)+' · '+esc(REGOLE_INFO[x.r].f)+'</small></div></div>').join("")+'</div>';
 }
 
+/* ═══════════════ PDF IN CASA ══════════════════════════════════════════════
+   Per mandare un file su WhatsApp serve un PDF vero, non la finestra di
+   stampa. Una libreria intera (centinaia di KB) per scrivere testo, righe e
+   link era troppo: qui c'è il minimo, in chiaro e controllabile.
+   · font standard Helvetica / Helvetica-Bold, codifica WinAnsi: le lettere
+     accentate italiane ci sono; un carattere che non c'è diventa «?»;
+   · testo che va a capo da solo, più pagine se serve;
+   · link cliccabili (solo https). */
+const PDFW_W=595.28, PDFW_H=841.89;
+function pdfAnsi(s){
+  // da testo JS a byte WinAnsi (cp1252), uno per carattere
+  const extra={"€":128,"‚":130,"„":132,"…":133,"‘":145,"’":146,"“":147,"”":148,"•":149,"–":150,"—":151,"™":153};
+  let o="";
+  for(const ch of String(s==null?"":s).normalize("NFC")){
+    const c=ch.codePointAt(0);
+    if(c===9) o+=" ";
+    else if(c>=32 && c<=126) o+=ch;
+    else if(c>=160 && c<=255) o+=String.fromCharCode(c);
+    else if(extra[ch]) o+=String.fromCharCode(extra[ch]);
+    else if(ch==="×") o+=String.fromCharCode(215);
+    else o+="?";
+  }
+  return o;
+}
+function pdfStr(s){ return "("+pdfAnsi(s).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)")+")"; }
+let _pdfCtx=null;
+function pdfLargo(s, size, bold){
+  // larghezza in punti: nel browser con il canvas (Arial ha le stesse misure di Helvetica), altrove una stima
+  try{
+    if(!_pdfCtx && typeof document!=="undefined" && document.createElement){ const c=document.createElement("canvas"); _pdfCtx=c&&c.getContext?c.getContext("2d"):null; }
+    if(_pdfCtx && _pdfCtx.measureText){ _pdfCtx.font=(bold?"bold ":"")+size+"px Arial, Helvetica, sans-serif"; const w=_pdfCtx.measureText(String(s)).width; if(isFinite(w)&&w>0) return w; }
+  }catch(e){}
+  return String(s).length*size*(bold?0.56:0.52);
+}
+function pdfACapo(testo, size, larg, bold){
+  const righe=[];
+  String(testo==null?"":testo).split(/\r?\n/).forEach(par=>{
+    const parole=par.split(/\s+/).filter(Boolean); let r="";
+    if(!parole.length){ righe.push(""); return; }
+    parole.forEach(w=>{
+      const prova=r?r+" "+w:w;
+      if(pdfLargo(prova,size,bold)<=larg){ r=prova; return; }
+      if(r) righe.push(r);
+      // una parola più lunga della riga (un link): si spezza a forza
+      while(pdfLargo(w,size,bold)>larg && w.length>1){ let k=w.length; while(k>1 && pdfLargo(w.slice(0,k),size,bold)>larg) k--; righe.push(w.slice(0,k)); w=w.slice(k); }
+      r=w;
+    });
+    righe.push(r);
+  });
+  return righe;
+}
+/* Un documento: pagine con comandi di testo e grafica, più i link. */
+function pdfNuovo(){
+  const D={pagine:[], y:0, m:42};
+  D.pagina=()=>{ D.cur={ops:[], link:[]}; D.pagine.push(D.cur); D.y=PDFW_H-D.m; };
+  D.spazio=(h)=>{ if(D.y-h<D.m+18){ D.pagina(); return true; } return false; };
+  D.testo=(x,y,s,size,o)=>{ o=o||{}; const col=o.col||[0.07,0.07,0.08];
+    D.cur.ops.push(col.map(v=>v.toFixed(3)).join(" ")+" rg BT /"+(o.bold?"F2":"F1")+" "+size+" Tf "+x.toFixed(2)+" "+y.toFixed(2)+" Td "+pdfStr(s)+" Tj ET"); };
+  D.linea=(x1,y1,x2,y2,col,w)=>{ D.cur.ops.push((col||[0.8,0.8,0.82]).map(v=>v.toFixed(3)).join(" ")+" RG "+(w||0.6)+" w "+x1.toFixed(2)+" "+y1.toFixed(2)+" m "+x2.toFixed(2)+" "+y2.toFixed(2)+" l S"); };
+  D.rett=(x,y,w,h,col)=>{ D.cur.ops.push(col.map(v=>v.toFixed(3)).join(" ")+" rg "+x.toFixed(2)+" "+y.toFixed(2)+" "+w.toFixed(2)+" "+h.toFixed(2)+" re f"); };
+  D.link=(x,y,w,h,url)=>{ D.cur.link.push({r:[x,y,x+w,y+h], url:url}); };
+  D.pagina();
+  return D;
+}
+function pdfFine(D, titolo){
+  const ogg=[]; const add=s=>{ ogg.push(s); return ogg.length; };
+  const cat=add(null), pag=add(null);
+  const f1=add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+  const f2=add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+  const kids=[];
+  D.pagine.forEach(p=>{
+    const st=p.ops.join("\n");
+    const c=add("<< /Length "+st.length+" >>\nstream\n"+st+"\nendstream");
+    const an=p.link.map(l=>add("<< /Type /Annot /Subtype /Link /Rect ["+l.r.map(v=>v.toFixed(2)).join(" ")+"] /Border [0 0 0] /A << /S /URI /URI "+pdfStr(l.url)+" >> >>"));
+    kids.push(add("<< /Type /Page /Parent "+pag+" 0 R /MediaBox [0 0 "+PDFW_W+" "+PDFW_H+"] /Resources << /Font << /F1 "+f1+" 0 R /F2 "+f2+" 0 R >> >> /Contents "+c+" 0 R"+
+      (an.length?" /Annots ["+an.map(i=>i+" 0 R").join(" ")+"]":"")+" >>"));
+  });
+  ogg[cat-1]="<< /Type /Catalog /Pages "+pag+" 0 R >>";
+  ogg[pag-1]="<< /Type /Pages /Kids ["+kids.map(i=>i+" 0 R").join(" ")+"] /Count "+kids.length+" >>";
+  const info=add("<< /Title "+pdfStr(titolo||"Scheda")+" /Producer (Iron Performance) >>");
+  let out="%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"; const off=[];
+  ogg.forEach((o,i)=>{ off.push(out.length); out+=(i+1)+" 0 obj\n"+o+"\nendobj\n"; });
+  const xr=out.length;
+  out+="xref\n0 "+(ogg.length+1)+"\n0000000000 65535 f \n"+off.map(n=>String(n).padStart(10,"0")+" 00000 n \n").join("");
+  out+="trailer\n<< /Size "+(ogg.length+1)+" /Root "+cat+" 0 R /Info "+info+" 0 R >>\nstartxref\n"+xr+"\n%%EOF\n";
+  const b=new Uint8Array(out.length); for(let i=0;i<out.length;i++) b[i]=out.charCodeAt(i)&255;
+  return b;
+}
+
+/* La scheda in PDF: intestazione, note, esercizi uno sotto l'altro. Pensata
+   per lo schermo del telefono più che per la carta: caratteri grandi, niente
+   tabelle strette, il link del video in un rigo suo da toccare col dito. */
+function schedaKg(aid, e){
+  if(!e || !e.rm || !aid) return null;
+  const m=String(e.carico||"").match(/(\d+(?:[.,]\d+)?)\s*%/); if(!m) return null;
+  const p=parseFloat(m[1].replace(",",".")); if(!(p>0 && p<=110)) return null;
+  const r=rm1RM(aid, e.rm); if(!r) return null;
+  return Math.round(r.kg*p/100*2)/2;
+}
+function schedaPdf(sk, nomeAtleta, aid, squadra){
+  const D=pdfNuovo(), L=D.m, R=PDFW_W-D.m, larg=R-L;
+  const ROSSO=[0.76,0.07,0.12], GRIGIO=[0.42,0.42,0.45], BLU=[0.05,0.33,0.75];
+  const testa=()=>{
+    D.testo(L, D.y, "IRON PERFORMANCE", 8.5, {bold:true, col:ROSSO});
+    if(sk.data){ const t=fmtDate(sk.data); D.testo(R-pdfLargo(t,9), D.y, t, 9, {col:GRIGIO}); }
+    D.y-=24;
+  };
+  testa();
+  pdfACapo(sk.titolo||"Scheda", 19, larg, true).forEach(r=>{ D.testo(L, D.y, r, 19, {bold:true}); D.y-=23; });
+  if(nomeAtleta){ D.testo(L, D.y, nomeAtleta, 13, {col:GRIGIO}); D.y-=10; }
+  D.linea(L, D.y, R, D.y, ROSSO, 1.4); D.y-=20;
+  if(sk.note){ pdfACapo(sk.note, 11, larg).forEach(r=>{ if(D.spazio(14)) testa(); D.testo(L, D.y, r, 11); D.y-=14.5; }); D.y-=8; }
+  (sk.ex||[]).forEach((e,i)=>{
+    const nome=pdfACapo((i+1)+".  "+(e.nome||"Esercizio"), 13.5, larg, true);
+    const kg=schedaKg(aid,e);
+    const dati=[];
+    if(e.sr) dati.push(["Serie", e.sr]);
+    if(e.carico) dati.push(["Carico", e.carico+(kg!=null?" · "+fmtNum(kg)+" kg":"")]);
+    if(e.rec) dati.push(["Recupero", e.rec]);
+    const note=e.note?pdfACapo(e.note, 10.5, larg):[];
+    const h=nome.length*17+(dati.length?18:0)+note.length*13.5+(e.link?16:0)+14;
+    if(D.spazio(Math.min(h, 200))) testa();
+    nome.forEach(r=>{ D.testo(L, D.y, r, 13.5, {bold:true}); D.y-=17; });
+    if(dati.length){
+      let x=L;
+      dati.forEach(([k,v])=>{
+        const kk=k+": "; if(x>L && x+pdfLargo(kk+v,11)>R){ D.y-=15; x=L; }
+        D.testo(x, D.y, kk, 11, {col:GRIGIO}); x+=pdfLargo(kk,11);
+        D.testo(x, D.y, v, 11, {bold:true}); x+=pdfLargo(v,11,true)+18;
+      });
+      D.y-=18;
+    }
+    note.forEach(r=>{ if(D.spazio(13.5)) testa(); D.testo(L, D.y, r, 10.5, {col:[0.2,0.2,0.22]}); D.y-=13.5; });
+    if(e.link){
+      if(D.spazio(16)) testa();
+      const t="Guarda il video", w=pdfLargo(t,11,true);
+      D.testo(L, D.y, t, 11, {bold:true, col:BLU}); D.linea(L, D.y-2, L+w, D.y-2, BLU, 0.7);
+      D.link(L-2, D.y-4, w+4, 15, e.link);
+      D.y-=16;
+    }
+    D.y-=4; D.linea(L, D.y, R, D.y); D.y-=16;
+  });
+  // piede: chi l'ha mandata e il numero di pagina
+  D.pagine.forEach((p,i)=>{ D.cur=p;
+    const t=(squadra?squadra+" · ":"")+"pagina "+(i+1)+" di "+D.pagine.length;
+    D.testo(L, 24, t, 8, {col:GRIGIO}); });
+  return pdfFine(D, (sk.titolo||"Scheda")+(nomeAtleta?" — "+nomeAtleta:""));
+}
+
+/* ═══════════════ SCHEDE ESERCIZI DA MANDARE ═══════════════════════════════
+   Una scheda per un'atleta, scritta tutta da te: esercizi liberi, non solo
+   quelli con un test. Si salva come modello e si riusa. Il PDF esce sul
+   dispositivo e si condivide (WhatsApp) dal menu del telefono: non passa dal
+   server. Se colleghi un esercizio a un massimale e scrivi una percentuale,
+   accanto compaiono i suoi chili. */
+const SK_EX_MAX=40, SK_MOD_MAX=100, SK_BOZZA="ip_scheda_bozza";
+const SK_CAMPI=["nome","sr","carico","rec","note","link","rm"];
+let SK=null;
+const skStr=(v,n)=>String(v==null?"":v).slice(0,n);
+function skRiga(){ return {nome:"", sr:"", carico:"", rec:"", note:"", link:"", rm:""}; }
+function skVuota(aid){ return {aid:aid||"", titolo:"", data:todayISO(), note:"", ex:[skRiga()], mod:""}; }
+function skBozzaSalva(){ try{ localStorage.setItem(SK_BOZZA, JSON.stringify(SK)); }catch(e){} }
+function skBozzaVia(){ try{ localStorage.removeItem(SK_BOZZA); }catch(e){} }
+function openScheda(aid){
+  let b=null; try{ b=JSON.parse(localStorage.getItem(SK_BOZZA)||"null"); }catch(e){}
+  if(b && Array.isArray(b.ex) && (!aid || !b.aid || b.aid===aid)){ SK=b; if(aid) SK.aid=aid; }
+  else SK=skVuota(aid);
+  renderScheda();
+}
+function skRmOpzioni(aid, sel){
+  const l=rmTestList().filter(x=>TMAP[x.test] && (!aid || rm1RM(aid,x.test)));
+  return '<option value="">— nessun massimale</option>'+l.map(x=>{ const r=aid?rm1RM(aid,x.test):null;
+    return '<option value="'+x.test+'"'+(sel===x.test?' selected':'')+'>'+esc(x.n)+(r?' ('+fmtNum(r.kg)+' kg)':'')+'</option>'; }).join("");
+}
+function renderScheda(){
+  const ath=teamAthletes(), mod=(S.modelli||[]);
+  const a=(S.athletes||[]).find(x=>x.id===SK.aid);
+  const inp=(i,k,ph,ex)=>'<input value="'+escAttr(SK.ex[i][k]||"")+'" placeholder="'+escAttr(ph)+'" oninput="skSet('+i+',\''+k+'\',this.value)"'+(ex||'')+'>';
+  let h='<div class="mh"><div><div class="eyebrow">Da mandare su WhatsApp</div><div class="mt">Scheda esercizi</div>'+
+    '<div class="ms">'+(a?esc(a.name):'Nessuna atleta scelta')+'</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="row2"><div><label class="fl">Atleta</label><select onchange="SK.aid=this.value;skBozzaSalva();renderScheda()"><option value="">— nessuna (scheda generica)</option>'+
+     ath.map(x=>'<option value="'+x.id+'"'+(x.id===SK.aid?' selected':'')+'>'+esc(x.name)+'</option>').join("")+'</select></div>'+
+     '<div><label class="fl">Data</label><input type="date" value="'+escAttr(SK.data||"")+'" onchange="SK.data=this.value;skBozzaSalva()"></div></div>';
+  h+='<label class="fl">Titolo</label><input value="'+escAttr(SK.titolo||"")+'" maxlength="120" placeholder="es. Lavoro a casa — settimana 45" oninput="SK.titolo=this.value;skBozzaSalva()">';
+  h+='<div class="sk-mod"><select onchange="if(this.value)skCaricaModello(this.value)"><option value="">📂 Parti da un modello…</option>'+
+     mod.map(m=>'<option value="'+m.id+'">'+esc(m.nome)+' ('+(m.ex||[]).length+')</option>').join("")+'</select>'+
+     '<button class="btn sm" onclick="skSalvaModello()">💾 Salva come modello</button></div>';
+  h+='<label class="fl">Note per lei</label><textarea rows="2" maxlength="1500" placeholder="quando farla, come scaldarsi, cosa scriverti…" oninput="SK.note=this.value;skBozzaSalva()">'+esc(SK.note||"")+'</textarea>';
+  SK.ex.forEach((e,i)=>{
+    const kg=schedaKg(SK.aid,e);
+    h+='<div class="sk-ex"><div class="sk-exh"><b>'+(i+1)+'</b>'+inp(i,"nome","Esercizio",' class="sk-nome" maxlength="80"')+
+       '<button onclick="skSposta('+i+',-1)" aria-label="Su">↑</button><button onclick="skSposta('+i+',1)" aria-label="Giù">↓</button><button onclick="skTogli('+i+')" aria-label="Togli">✕</button></div>'+
+       '<div class="sk-3"><label><span>Serie × rip / tempo</span>'+inp(i,"sr","4×5 · 3×30s",' maxlength="30"')+'</label>'+
+       '<label><span>Carico</span>'+inp(i,"carico","60 kg · 75% · RIR 2",' maxlength="40"')+'</label>'+
+       '<label><span>Recupero</span>'+inp(i,"rec","90\" · 2\'",' maxlength="20"')+'</label></div>'+
+       '<label class="sk-rm"><span>Kg dal massimale (se il carico è in %)</span><select onchange="skSet('+i+',\'rm\',this.value)">'+skRmOpzioni(SK.aid,e.rm)+'</select>'+
+       '<b class="sk-kg" id="skkg_'+i+'">'+(kg!=null?'= '+fmtNum(kg)+' kg':'')+'</b></label>'+
+       '<textarea rows="2" maxlength="600" placeholder="Note tecniche" oninput="skSet('+i+',\'note\',this.value)">'+esc(e.note||"")+'</textarea>'+
+       inp(i,"link","Link al video (https://…)",' type="url" inputmode="url" maxlength="500"')+'</div>';
+  });
+  h+=(SK.ex.length<SK_EX_MAX?'<button class="btn sm" style="width:100%;margin-top:8px" onclick="skAggiungi()">+ Esercizio</button>':'')+
+     '<div id="skErr" class="login-err"></div>'+
+     '<button class="btn primary" style="width:100%;margin-top:12px" onclick="skCondividi()">📤 Condividi il PDF (WhatsApp)</button>'+
+     '<div class="sk-2b"><button class="btn sm" onclick="skAnteprima()">👁 Anteprima</button><button class="btn sm" onclick="skScarica()">⬇️ Scarica</button>'+
+     '<button class="btn sm" onclick="if(confirm(\'Svuotare la scheda?\')){SK=skVuota(SK.aid);skBozzaSalva();renderScheda();}">🗑 Svuota</button></div>';
+  modal(h);
+}
+function skSet(i,k,v){ if(!SK||!SK.ex[i]||SK_CAMPI.indexOf(k)<0) return; SK.ex[i][k]=String(v==null?"":v); skBozzaSalva();
+  // i chili si aggiornano mentre scrivi, senza ridisegnare (e senza perdere il cursore)
+  if(k==="carico"||k==="rm"){ const el=document.getElementById("skkg_"+i); const kg=schedaKg(SK.aid,SK.ex[i]); if(el) el.textContent=kg!=null?"= "+fmtNum(kg)+" kg":""; } }
+function skAggiungi(){ if(SK.ex.length>=SK_EX_MAX) return; SK.ex.push(skRiga()); skBozzaSalva(); renderScheda(); }
+function skTogli(i){ SK.ex.splice(i,1); if(!SK.ex.length) SK.ex.push(skRiga()); skBozzaSalva(); renderScheda(); }
+function skSposta(i,d){ const j=i+d; if(j<0||j>=SK.ex.length) return; const t=SK.ex[i]; SK.ex[i]=SK.ex[j]; SK.ex[j]=t; skBozzaSalva(); renderScheda(); }
+function skPulito(x){
+  // dalla scheda al modello e viceversa: solo i campi che conosciamo, link solo https
+  x=x||{};
+  const o={nome:skStr(x.nome,80), sr:skStr(x.sr,30), carico:skStr(x.carico,40), rec:skStr(x.rec,20), note:skStr(x.note,600), link:"", rm:""};
+  const l=garaLinkOk(x.link); if(l) o.link=l;
+  if(idOk(x.rm) && TMAP[x.rm]) o.rm=x.rm;
+  return o;
+}
+function skSalvaModello(){
+  const usati=SK.ex.filter(e=>String(e.nome||"").trim());
+  if(!usati.length){ toast("Scrivi almeno un esercizio"); return; }
+  const nome=String(prompt("Nome del modello", SK.titolo||"")||"").trim().slice(0,60);
+  if(!nome) return;
+  if(!Array.isArray(S.modelli)) S.modelli=[];
+  const c=S.modelli.find(m=>m.nome.toLowerCase()===nome.toLowerCase());
+  if(c && !confirm("Esiste già un modello «"+c.nome+"». Sostituirlo?")) return;
+  if(!c && S.modelli.length>=SK_MOD_MAX){ toast("Troppi modelli: eliminane qualcuno"); return; }
+  const m={id:c?c.id:"m"+uid(), nome:nome, titolo:skStr(SK.titolo,120), note:skStr(SK.note,1500), ex:usati.slice(0,SK_EX_MAX).map(skPulito), at:new Date().toISOString()};
+  S.modelli=S.modelli.filter(x=>x.id!==m.id).concat([m]).sort((a,b)=>a.nome.localeCompare(b.nome,"it"));
+  if(S.tomb) delete S.tomb["mod:"+m.id];
+  SK.mod=m.id; skBozzaSalva(); save(); renderScheda(); toast("Modello salvato");
+}
+function skCaricaModello(id){
+  const m=(S.modelli||[]).find(x=>x.id===id); if(!m) return;
+  const piena=SK.ex.some(e=>String(e.nome||"").trim());
+  if(piena && !confirm("Sostituire gli esercizi scritti con quelli del modello «"+m.nome+"»?")) { renderScheda(); return; }
+  SK.titolo=m.titolo||SK.titolo; SK.note=m.note||""; SK.ex=(m.ex||[]).map(e=>Object.assign(skRiga(), e)); SK.mod=m.id;
+  if(!SK.ex.length) SK.ex=[skRiga()];
+  skBozzaSalva(); renderScheda();
+}
+function skEliminaModello(id){
+  const m=(S.modelli||[]).find(x=>x.id===id); if(!m) return;
+  if(!confirm("Eliminare il modello «"+m.nome+"»?")) return;
+  S.modelli=S.modelli.filter(x=>x.id!==id); tombSet("mod:"+id); save(); openModelli();
+}
+function openModelli(){
+  const l=S.modelli||[];
+  let h='<div class="mh"><div><div class="mt">Modelli di scheda</div><div class="ms">'+l.length+' salvati</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<button class="btn primary" style="width:100%;margin-bottom:10px" onclick="openScheda(null)">+ Nuova scheda</button>';
+  if(!l.length) h+='<div class="fhint">Nessun modello. Scrivi una scheda e premi «Salva come modello».</div>';
+  else h+='<div class="set-group">'+l.map(m=>'<div class="set-row" style="cursor:default"><span class="sl">'+esc(m.nome)+'<small>'+(m.ex||[]).length+' esercizi</small></span>'+
+    '<button class="btn sm" onclick="SK=skVuota(\'\');skCaricaModello(\''+m.id+'\')">Usa</button><button class="lgx" onclick="skEliminaModello(\''+m.id+'\')">🗑</button></div>').join("")+'</div>';
+  modal(h);
+}
+/* Il PDF: prima i controlli (un link scritto male non deve finire nel file) */
+function skFile(){
+  const err=(m)=>{ const el=document.getElementById("skErr"); if(el) el.textContent=m; else toast(m); return null; };
+  const ex=SK.ex.filter(e=>String(e.nome||"").trim());
+  if(!ex.length) return err("Scrivi almeno un esercizio.");
+  for(let i=0;i<ex.length;i++){ if(String(ex[i].link||"").trim() && !garaLinkOk(ex[i].link)) return err("Il link di «"+ex[i].nome+"» non va: deve iniziare con https://"); }
+  const a=(S.athletes||[]).find(x=>x.id===SK.aid), tm=(S.teams||[]).find(x=>x.id===S.activeTeam);
+  const b=schedaPdf({titolo:SK.titolo, data:SK.data, note:SK.note, ex:ex.map(skPulito)}, a?a.name:"", a?a.id:"", tm?tm.name:"");
+  const pulito=s=>String(s||"").replace(/[\\/:*?"<>|]+/g," ").replace(/\s+/g," ").trim().slice(0,60);
+  const nome=["Scheda", a?a.name:"", SK.data?fmtDate(SK.data).replace(/\//g,"-"):""].filter(Boolean).map(pulito).join(" - ")+".pdf";
+  return {byte:b, nome:nome};
+}
+async function skCondividi(){
+  const f=skFile(); if(!f) return;
+  try{
+    const file=new File([f.byte], f.nome, {type:"application/pdf"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:f.nome}); return; }
+  }catch(e){ if(e && e.name==="AbortError") return; }
+  dl(f.nome, f.byte, "application/pdf");
+  toast("Qui non si può condividere direttamente: il PDF è nei download, allegalo su WhatsApp");
+}
+function skScarica(){ const f=skFile(); if(!f) return; dl(f.nome, f.byte, "application/pdf"); toast("PDF scaricato"); }
+function skAnteprima(){
+  const f=skFile(); if(!f) return;
+  const u=URL.createObjectURL(new Blob([f.byte], {type:"application/pdf"}));
+  const w=window.open(u, "_blank");
+  if(!w){ dl(f.nome, f.byte, "application/pdf"); toast("Finestra bloccata: il PDF è nei download"); }
+  setTimeout(()=>{ try{ URL.revokeObjectURL(u); }catch(e){} }, 60000);
+}
+
 /* ═══════════════ PDF DELLA TABELLA ═══════════════════════════════════════════
    Il foglio da far vedere alle ragazze o da mandare. Esce dalla stampa del
    browser («Salva come PDF»): niente librerie, niente file sul server.
@@ -11921,6 +12227,7 @@ function openSettings(){
   h+='<div class="set-sec">Atlete</div><div class="set-group">'+
     row("🔗","Manda il modulo alla squadra","Un link solo: anamnesi e consenso le compilano loro","closeM();openTeamFormPicker()")+
     row("➕","Aggiungi un'atleta a mano","","closeM();addAthlete()")+
+    row("📄","Schede esercizi","PDF da mandare su WhatsApp · modelli salvati","openModelli()", (S.modelli||[]).length||"")+
     '</div>';
 
   const pol=S.policy||{}, polOk=policyReady(pol)&&Number(pol.version);
@@ -12010,7 +12317,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},piani:{},salti:{},scout:{},policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},piani:{},salti:{},scout:{},modelli:[],policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -12258,6 +12565,18 @@ function sanitizeImport(o){
         l.push(r);
       });
       if(l.length){ l.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0); out.salti[aid]=l; }
+    });
+  }
+  /* I modelli di scheda: testo limitato, link solo https, massimali che esistono. */
+  if(Array.isArray(o.modelli)){
+    const visti={};
+    o.modelli.slice(0,100).forEach(x=>{
+      if(!x||!idOk(x.id)||visti[x.id]) return; visti[x.id]=1;
+      const nome=str(x.nome,60).trim(); if(!nome) return;
+      const m={id:x.id, nome:nome, titolo:str(x.titolo,120), note:str(x.note,1500),
+        ex:(Array.isArray(x.ex)?x.ex:[]).slice(0,40).map(e=>skPulito(e)).filter(e=>e.nome.trim())};
+      if(typeof x.at==="string" && !isNaN(Date.parse(x.at))) m.at=x.at.slice(0,30);
+      out.modelli.push(m);
     });
   }
   /* Lo scout delle gare: interi sensati, set da 1 a 5, una voce per partita. */

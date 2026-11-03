@@ -92,6 +92,8 @@ const PIENO = `{
     rpe:{"0:sA:rmSquat":{a1:8,a2:7}}, kg:{"0:sA:rmSquat":{a1:57.5,a2:50}}}]},
   salti:{a1:[{d:"2026-10-20",exercise:"vabc",nome:"Partita",n:40,att:20,muro:10,batt:5,alz:0,alt:5,src:"misto"}], a2:[{d:"2026-10-20",exercise:"vabc",n:12,att:2,muro:8,batt:2,alz:0,alt:0,src:"mano"}]},
   custom:[{id:"cx1",name:"Leg press",unit:"kg",base:"pred"}],
+  modelli:[{id:"m1",nome:"Casa 1",titolo:"Lavoro a casa",note:"due volte",at:"2026-11-03T10:00:00.000Z",
+    ex:[{nome:"Squat bulgaro",sr:"3×8",carico:"75%",rec:"90 s",note:"lento",link:"https://youtu.be/x",rm:"rmSquat"}]}],
   te:{cmj:3.1, stat:0.3},
   cfg:{deltaNoise:5, rmBar:20},
   policy:{version:2, text:"informativa"},
@@ -124,6 +126,8 @@ const CHIAVI = {
                   b.kg["0:sA:rmSquat"].a1 === 57.5 && b.sedute[0].ex[1].nome === "Affondi" && b.sett[0].p["sA:xAff1"].kg === 12; },
   salti:   o => o.salti.a1[0].n === 40 && o.salti.a1[0].src === "misto" && o.salti.a1[0].muro === 10 && o.salti.a1[0].nome === "Partita",
   custom:  o => o.custom[0].name === "Leg press",
+  modelli: o => { const m=o.modelli[0], e=m.ex[0]; return m.nome === "Casa 1" && m.note === "due volte" && e.sr === "3×8" && e.carico === "75%" &&
+                  e.rec === "90 s" && e.note === "lento" && e.link === "https://youtu.be/x" && e.rm === "rmSquat"; },
   te:      o => o.te.cmj === 3.1 && o.te.stat === 0.3,
   cfg:     o => o.cfg.deltaNoise === 5,
   policy:  o => o.policy.version === 2,

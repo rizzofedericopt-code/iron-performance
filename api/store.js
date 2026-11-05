@@ -72,6 +72,18 @@ const FORM_BAD_PER_HOUR = 20;      // token sbagliati tollerati per IP, in un'or
 const FORM_TOK_OVERHEAD = 30;      // richieste tollerate su un link, oltre agli invii previsti
 const FORM_TOK_PER_USE = 6;        // ...e quante per ogni invio previsto (apre, ricarica, sbaglia, reinvia)
 const FORM_PROFILE_MAX_BYTES = 20000;
+const WEEKLY_DAYS = 200;           // link settimanale: una stagione
+const WEEKLY_MAX_BYTES = 8000;     // un questionario e qualche seduta, non di più
+
+/* ─────────────── Questionario settimanale sulla salute (OSTRC-H2) ───────────
+   Elenchi chiusi, come FORM_ALLOWED_KEYS: il server accetta solo questi codici.
+   Le etichette in italiano stanno in index.html (OST_ZONE, OST_SINT): il test
+   test/settimana.mjs confronta i codici delle due parti. */
+const OST_ZONE = ["testa", "collo", "spalla", "braccio", "gomito", "avambraccio", "polso", "mano",
+  "torace", "dorso", "lombare", "addome", "anca", "coscia", "ginocchio", "gamba", "caviglia", "piede"];
+const OST_SINT = ["febbre", "stanchezza", "linfonodi", "gola", "naso", "tosse", "respiro", "testa",
+  "nausea", "vomito", "diarrea", "stitichezza", "svenimento", "pelle", "battito", "petto", "pancia",
+  "dolore", "formicolio", "ansia", "umore", "irritabilita", "altro"];
 
 /* ─────────────── Campi che il modulo anamnesi può scrivere ───────────────
    Elenco chiuso: tutto ciò che non è qui dentro viene scartato, anche se
@@ -282,7 +294,7 @@ async function ensureLinkSchema() {
    link. Così una squadra intera dietro un solo IP non si autoblocca, e chi tira
    a indovinare token si blocca comunque dopo pochi tentativi.
    Restituisce { link } oppure { status, error }. */
-async function loadFormLink(token, ip) {
+async function loadFormLink(token, ip, tipi) {
   await ensureLinkSchema();
   const kI = "form:ip:" + ip;
   if (!(await underLimit(kI, FORM_BAD_PER_HOUR))) {
@@ -296,6 +308,14 @@ async function loadFormLink(token, ip) {
     FROM form_links WHERE token_hash = ${sha256(token)}`;
   const link = rows[0];
   if (!link || new Date(link.expires_at) <= now()) {
+    await noteFail(kI);
+    return { status: 401, error: "Il link è scaduto o non è più valido." };
+  }
+  // Un link settimanale NON apre il modulo anamnesi, e viceversa: ogni link
+  // fa solo la cosa per cui è stato dato. Senza questo controllo il link che
+  // una ragazza tiene sul telefono per tutta la stagione riscriveva la sua
+  // anamnesi e il consenso.
+  if (tipi && tipi.indexOf(String(link.kind || "athlete")) < 0) {
     await noteFail(kI);
     return { status: 401, error: "Il link è scaduto o non è più valido." };
   }
@@ -348,6 +368,87 @@ async function underLimit(key, max) {
   if (!rows.length) return true;
   const fresh = new Date(rows[0].first_fail) > new Date(now().getTime() - 3600000);
   return !fresh || rows[0].fails < max;
+}
+
+
+/* ─────────────── Settimana dell'atleta ───────────────
+   Il link settimanale è personale e dura una stagione: la ragazza lo tiene sul
+   telefono e una volta a settimana risponde al questionario sulla salute
+   (OSTRC-H2) e segna le sedute fatte delle schede che le hai mandato.
+   Può SOLO aggiungere le sue risposte: non legge niente di sé oltre al nome,
+   alle schede aperte e alla data dell'ultima risposta. */
+function oggiRoma(d) {
+  // la data «di oggi» è quella italiana, non quella del server (UTC)
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(d || now());
+}
+function giorniFra(a, b) {
+  const x = Date.parse(String(a) + "T12:00:00Z"), y = Date.parse(String(b) + "T12:00:00Z");
+  return (isFinite(x) && isFinite(y)) ? Math.round((y - x) / 864e5) : NaN;
+}
+const isISO = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || "")) && isFinite(Date.parse(String(d) + "T12:00:00Z"));
+const intFra = (v, a, b) => Number.isInteger(v) && v >= a && v <= b;
+
+/* Una risposta al questionario. p vuoto = «ho partecipato a tutto, senza
+   problemi di salute». Ogni problema: infortunio (zona, lato) o malattia
+   (sintomi), le quattro domande, i giorni persi. */
+function ostPulisci(raw) {
+  const no = { err: "Questionario non valido" };
+  if (!raw || typeof raw !== "object" || Array.isArray(raw) || !Array.isArray(raw.p) || raw.p.length > 3) return no;
+  const out = [];
+  for (const x of raw.p) {
+    if (!x || typeof x !== "object" || Array.isArray(x)) return no;
+    const r = {};
+    if (x.t === "inf") {
+      if (OST_ZONE.indexOf(x.z) < 0) return { err: "Indica dove hai il problema" };
+      r.t = "inf"; r.z = x.z;
+      if (x.l === "sx" || x.l === "dx" || x.l === "due") r.l = x.l;
+    } else if (x.t === "mal") {
+      if (!Array.isArray(x.s) || !x.s.length || x.s.length > 12) return { err: "Indica almeno un sintomo" };
+      const s = [];
+      for (const v of x.s) { if (OST_SINT.indexOf(v) < 0 || s.indexOf(v) >= 0) return no; s.push(v); }
+      r.t = "mal"; r.s = s;
+    } else return no;
+    if (!intFra(x.q1, 1, 3)) return no;
+    r.q1 = x.q1;
+    // «non ho potuto partecipare»: le altre tre domande non servono (gravità 100)
+    if (x.q1 < 3) {
+      for (const k of ["q2", "q3", "q4"]) { if (!intFra(x[k], 0, 3)) return no; r[k] = x[k]; }
+    }
+    if (!intFra(x.gg, 0, 7)) return no;
+    r.gg = x.gg;
+    r.nuovo = x.nuovo === true;
+    out.push(r);
+  }
+  return { val: { p: out } };
+}
+
+// Le schede ancora aperte: dalla data della scheda fino alla fine delle settimane previste (+3 giorni)
+function skAperte(store, aid, oggi) {
+  const l = ((store && store.skin) || {})[aid];
+  return (Array.isArray(l) ? l : []).filter((e) => {
+    if (!e || !isISO(e.d) || !e.id) return false;
+    const g = giorniFra(e.d, oggi), sett = intFra(e.sett, 1, 12) ? e.sett : 2;
+    return g >= -1 && g <= sett * 7 + 3;
+  });
+}
+
+function sedPulisci(raw, ids, oggi) {
+  if (raw == null) return { val: [] };
+  if (!Array.isArray(raw) || raw.length > 14) return { err: "Sedute non valide" };
+  const m = {};
+  for (const x of raw) {
+    if (!x || typeof x !== "object") return { err: "Sedute non valide" };
+    if (ids.indexOf(String(x.sk)) < 0) return { err: "Questa scheda non è più aperta" };
+    if (!isISO(x.d)) return { err: "Data non valida" };
+    const g = giorniFra(x.d, oggi);
+    if (!(g >= 0 && g <= 7)) return { err: "Si possono segnare solo le sedute degli ultimi 7 giorni" };
+    if (x.esito !== "tutta" && x.esito !== "parte") return { err: "Sedute non valide" };
+    if (!intFra(x.rpe, 1, 10)) return { err: "Indica quanto è stata dura (1-10)" };
+    if (!intFra(x.min, 5, 240)) return { err: "Indica quanti minuti (5-240)" };
+    m[x.d + "|" + x.sk] = { d: x.d, exercise: "f:" + String(x.sk), sk: String(x.sk), esito: x.esito, rpe: x.rpe, min: x.min };
+  }
+  return { val: Object.keys(m).map((k) => m[k]) };
 }
 
 /* ─────────────── Email (Resend) ─────────────── */
@@ -457,7 +558,7 @@ function pruneOccasionally() {
       await sql`DELETE FROM sessions        WHERE expires_at < now()`;
       await sql`DELETE FROM password_resets WHERE expires_at < now()`;
       await sql`DELETE FROM form_links      WHERE expires_at < now() - interval '30 days'
-                                               OR (used_at IS NOT NULL AND used_at < now() - interval '30 days')`;
+                                               OR (used_at IS NOT NULL AND used_at < now() - interval '30 days' AND kind <> 'weekly')`;
       await sql`DELETE FROM login_attempts  WHERE first_fail < now() - interval '1 day'
                                               AND (locked_until IS NULL OR locked_until < now())`;
       await sql`DELETE FROM audit_log       WHERE at < now() - interval '1 month' * ${AUDIT_KEEP_MONTHS}`;
@@ -753,7 +854,7 @@ export default async function handler(req, res) {
 
     /* ── formInfo: cosa mostrare a chi apre il link (pubblico, no login) ── */
     if (action === "formInfo") {
-      const g = await loadFormLink(String(body.token || ""), ip);
+      const g = await loadFormLink(String(body.token || ""), ip, ["athlete", "team"]);
       if (g.error) return res.status(g.status).json({ error: g.error });
       const link = g.link;
 
@@ -788,7 +889,7 @@ export default async function handler(req, res) {
 
     if (action === "formSubmit") {
       const token = String(body.token || "");
-      const g0 = await loadFormLink(token, ip);
+      const g0 = await loadFormLink(token, ip, ["athlete", "team"]);
       if (g0.error) return res.status(g0.status).json({ error: g0.error });
       const kind = g0.link.kind;
 
@@ -890,6 +991,10 @@ export default async function handler(req, res) {
           return res.status(401).json({ error: "Il link è scaduto o non è più valido." });
         }
         const diSquadra = link.kind === "team";
+        if (!diSquadra && String(link.kind || "athlete") !== "athlete") {
+          await client.query("ROLLBACK");
+          return res.status(401).json({ error: "Il link è scaduto o non è più valido." });
+        }
         if (diSquadra) {
           // Riletto DENTRO la transazione e con FOR UPDATE: il tetto va contato
           // qui, non sulla copia letta prima, altrimenti due invii simultanei
@@ -1044,6 +1149,117 @@ export default async function handler(req, res) {
       // Fuori dalla transazione e fuori dal try: una chiamata di rete lenta a
       // Resend non deve tenere aperta una riga bloccata dal FOR UPDATE.
       if (avviso) await sendNewSheetEmail(avviso.to, avviso.name, avviso.team, avviso.aggiornata);
+      return res.status(200).json({ ok: true });
+    }
+
+    /* ── weeklyInfo / weeklySubmit: il link settimanale dell'atleta (pubblico) ── */
+    if (action === "weeklyInfo") {
+      const g = await loadFormLink(String(body.token || ""), ip, ["weekly"]);
+      if (g.error) return res.status(g.status).json({ error: g.error });
+      const link = g.link;
+      if (link.closed_at) return res.status(410).json({ error: "Questo link è stato chiuso dal preparatore. Chiedigliene uno nuovo." });
+      const q = await sql`SELECT payload FROM payloads WHERE email = ${link.coach_email}`;
+      const store = q.rows[0]?.payload || {};
+      const ath = (store.athletes || []).find((a) => a && String(a.id) === String(link.athlete_id));
+      if (!ath) return res.status(404).json({ error: "Non trovo più la tua scheda. Avvisa il tuo preparatore." });
+      if (!(ath.profile || {}).consent) {
+        return res.status(409).json({ error: "Manca il consenso al trattamento dei dati: prima va compilata la scheda con il modulo del preparatore." });
+      }
+      const oggi = oggiRoma();
+      const ultima = ((store.ost || {})[ath.id] || [])
+        .filter((e) => e && isISO(e.d) && giorniFra(e.d, oggi) >= 0 && giorniFra(e.d, oggi) < 7)
+        .map((e) => e.d).sort().pop() || null;
+      const fatte = ((store.skf || {})[ath.id] || []).filter((e) => e && isISO(e.d) && giorniFra(e.d, oggi) >= 0 && giorniFra(e.d, oggi) < 7);
+      const team = (store.teams || []).find((t) => t && String(t.id) === String(ath.team));
+      return res.status(200).json({
+        nome: String(ath.name || "").split(" ")[0].slice(0, 40),
+        squadra: team ? String(team.name || "").slice(0, 80) : null,
+        oggi,
+        ostrcGia: ultima,
+        schede: skAperte(store, ath.id, oggi).map((e) => ({
+          id: String(e.id), titolo: String(e.titolo || "").slice(0, 120), d: e.d,
+          n: intFra(e.n, 0, 40) ? e.n : null, volte: intFra(e.volte, 1, 7) ? e.volte : null,
+          sett: intFra(e.sett, 1, 12) ? e.sett : null,
+          fatte7: fatte.filter((f) => f.sk === String(e.id)).length,
+        })),
+      });
+    }
+
+    if (action === "weeklySubmit") {
+      const token = String(body.token || "");
+      const g0 = await loadFormLink(token, ip, ["weekly"]);
+      if (g0.error) return res.status(g0.status).json({ error: g0.error });
+      if (Buffer.byteLength(JSON.stringify(body || {}), "utf8") > WEEKLY_MAX_BYTES) {
+        return res.status(413).json({ error: "Dati troppo grandi" });
+      }
+      let ost = null;
+      if (body.ostrc != null) {
+        const o = ostPulisci(body.ostrc);
+        if (o.err) return res.status(400).json({ error: o.err });
+        ost = o.val;
+      }
+      if (!ost && !(Array.isArray(body.sedute) && body.sedute.length)) {
+        return res.status(400).json({ error: "Non c'è niente da inviare." });
+      }
+      const client = await db.connect();
+      let esito = null;
+      try {
+        await client.query("BEGIN");
+        const lq = await client.query(
+          `SELECT coach_email, athlete_id, kind, closed_at, expires_at FROM form_links WHERE token_hash = $1 FOR UPDATE`, [sha256(token)]);
+        const link = lq.rows[0];
+        if (!link || link.kind !== "weekly" || new Date(link.expires_at) <= now()) {
+          await client.query("ROLLBACK");
+          return res.status(401).json({ error: "Il link è scaduto o non è più valido." });
+        }
+        if (link.closed_at) {
+          await client.query("ROLLBACK");
+          return res.status(410).json({ error: "Questo link è stato chiuso dal preparatore. Chiedigliene uno nuovo." });
+        }
+        const pq = await client.query(`SELECT payload, version FROM payloads WHERE email = $1 FOR UPDATE`, [link.coach_email]);
+        const prow = pq.rows[0];
+        const store = prow && prow.payload;
+        const ath = store && Array.isArray(store.athletes) && store.athletes.find((a) => a && String(a.id) === String(link.athlete_id));
+        if (!ath) { await client.query("ROLLBACK"); return res.status(404).json({ error: "Non trovo più la tua scheda. Avvisa il tuo preparatore." }); }
+        if (!(ath.profile || {}).consent) {
+          await client.query("ROLLBACK");
+          return res.status(409).json({ error: "Manca il consenso al trattamento dei dati: prima va compilata la scheda con il modulo del preparatore." });
+        }
+        const aid = String(ath.id), oggi = oggiRoma();
+        const sp = sedPulisci(body.sedute, skAperte(store, aid, oggi).map((e) => String(e.id)), oggi);
+        if (sp.err) { await client.query("ROLLBACK"); return res.status(400).json({ error: sp.err }); }
+        const at = now().toISOString();
+        const tomb = (store.tomb && typeof store.tomb === "object") ? store.tomb : (store.tomb = {});
+        const scrivi = (chiave, pref, rec) => {
+          if (!store[chiave] || typeof store[chiave] !== "object" || Array.isArray(store[chiave])) store[chiave] = {};
+          const l = (Array.isArray(store[chiave][aid]) ? store[chiave][aid] : [])
+            .filter((e) => !(e && e.d === rec.d && e.exercise === rec.exercise));
+          l.push(rec);
+          l.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0));
+          store[chiave][aid] = l.slice(-600);
+          delete tomb[pref + ":" + aid + ":" + rec.d + "|" + rec.exercise];   // una risposta nuova vale anche se la vecchia era stata tolta
+        };
+        if (ost) scrivi("ost", "o", { d: oggi, exercise: "ostrc", at, p: ost.p });
+        sp.val.forEach((x) => scrivi("skf", "kf", Object.assign(x, { at })));
+        const str = JSON.stringify(store);
+        if (Buffer.byteLength(str, "utf8") > MAX_PAYLOAD_BYTES) {
+          await client.query("ROLLBACK");
+          return res.status(413).json({ error: "L'archivio del preparatore è pieno. Avvisalo." });
+        }
+        await client.query(`UPDATE payloads SET payload=$1::jsonb, version=$2, updated_at=now(), bytes=$3 WHERE email=$4`,
+          [str, Number(prow.version || 0) + 1, Buffer.byteLength(str, "utf8"), link.coach_email]);
+        await client.query(`UPDATE form_links SET uses = uses + 1, used_at = now() WHERE token_hash = $1`, [sha256(token)]);
+        await client.query("COMMIT");
+        esito = { coach: link.coach_email, aid, ost: !!ost, n: sp.val.length };
+      } catch (e) {
+        try { await client.query("ROLLBACK"); } catch (e2) {}
+        throw e;
+      } finally {
+        client.release();
+      }
+      // nel registro solo CHE cosa è arrivato, mai il contenuto: è un dato sanitario
+      await audit(esito.coach, "weeklySubmit", "ok", ip,
+        "atleta " + esito.aid + " · questionario " + (esito.ost ? "sì" : "no") + " · sedute " + esito.n);
       return res.status(200).json({ ok: true });
     }
 
@@ -1291,6 +1507,41 @@ export default async function handler(req, res) {
                           WHERE coach_email = ${me.email} AND kind = 'team'
                             AND team_id = ${teamId} AND closed_at IS NULL`;
       await audit(me.email, "closeTeamLink", "ok", ip, "squadra " + teamId);
+      return res.status(200).json({ ok: true, closed: r.rowCount || 0 });
+    }
+
+    /* ── weeklyLink / weeklyLinks / closeWeeklyLink: i link settimanali ──────
+       Uno per atleta, personale, per tutta la stagione. Generarne uno nuovo
+       chiude il vecchio: se una ragazza lo perde o lo inoltra, lo rifai. */
+    if (action === "weeklyLink") {
+      await ensureLinkSchema();
+      const aid = String(body.athleteId || "");
+      if (!/^[A-Za-z0-9_-]{1,40}$/.test(aid)) return res.status(400).json({ error: "Atleta non valida" });
+      const aname = cleanName(body.athleteName).slice(0, 80);
+      await sql`UPDATE form_links SET closed_at = now()
+                WHERE coach_email = ${me.email} AND kind = 'weekly' AND athlete_id = ${aid} AND closed_at IS NULL`;
+      const token = crypto.randomBytes(24).toString("base64url");
+      await sql`INSERT INTO form_links (token_hash, coach_email, athlete_id, athlete_name, kind, expires_at)
+                VALUES (${sha256(token)}, ${me.email}, ${aid}, ${aname}, 'weekly',
+                        ${addDays(now(), WEEKLY_DAYS).toISOString()})`;
+      await audit(me.email, "weeklyLink", "ok", ip, "atleta " + aid);
+      return res.status(200).json({ token, days: WEEKLY_DAYS });
+    }
+    if (action === "weeklyLinks") {
+      await ensureLinkSchema();
+      const { rows } = await sql`
+        SELECT athlete_id, created_at, expires_at, uses, used_at FROM form_links
+        WHERE coach_email = ${me.email} AND kind = 'weekly' AND closed_at IS NULL AND expires_at > now()
+        ORDER BY created_at DESC`;
+      return res.status(200).json({ links: rows });
+    }
+    if (action === "closeWeeklyLink") {
+      await ensureLinkSchema();
+      const aid = String(body.athleteId || "");
+      const r = body.all === true
+        ? await sql`UPDATE form_links SET closed_at = now() WHERE coach_email = ${me.email} AND kind = 'weekly' AND closed_at IS NULL`
+        : await sql`UPDATE form_links SET closed_at = now() WHERE coach_email = ${me.email} AND kind = 'weekly' AND athlete_id = ${aid} AND closed_at IS NULL`;
+      await audit(me.email, "closeWeeklyLink", "ok", ip, body.all === true ? "tutti" : "atleta " + aid);
       return res.status(200).json({ ok: true, closed: r.rowCount || 0 });
     }
 

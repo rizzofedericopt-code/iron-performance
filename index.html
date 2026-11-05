@@ -732,6 +732,53 @@ tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
 .fot-punti span{font-size:13px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-family:var(--mono)}
 .fot-punti button{background:none;border:0;color:var(--muted);cursor:pointer;margin-left:4px}
 .fot-guida p{font-size:13.5px;line-height:1.5;margin:0 0 8px}
+/* salute, rientro, lavoro a casa */
+.sal-r{border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-top:8px;cursor:pointer}
+.sal-r>b{display:block;font-size:14px;margin-bottom:4px}
+.sal-p{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0;flex-wrap:wrap}
+.sal-p small{color:var(--muted);font-size:11px;border:1px solid var(--line);border-radius:5px;padding:0 4px;margin-left:4px}
+.sal-p.sost span:first-child{color:var(--down);font-weight:700}
+.sal-g{color:var(--muted);font-family:var(--mono);font-size:12px}
+.sal-sett{display:flex;gap:6px;align-items:flex-end;margin-top:8px}
+.sal-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.sal-bar{position:relative;width:100%;max-width:34px;height:70px;background:var(--surface2);border-radius:6px;overflow:hidden}
+.sal-bar i,.sal-bar b{position:absolute;left:0;right:0;bottom:0}
+.sal-bar i{background:color-mix(in srgb,var(--down) 30%,var(--surface2))}
+.sal-bar b{background:var(--down)}
+.sal-col small{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.sal-col .sal-d{font-size:10px}
+.sal-h .hrow .hv{font-family:inherit;font-weight:500;font-size:13px;line-height:1.45}
+.sal-h .hrow .hv small{color:var(--muted)}
+.sal-h .hrow .hv small.down{color:var(--down)}
+.sal-riga{margin:8px 0}
+.presriga b.down{color:var(--down)}.presriga b.amber{color:#FFB340}
+.ls-list{margin-top:10px;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.ls-r{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line)}
+.ls-r:last-child{border-bottom:none}
+.ls-r>div{flex:1;min-width:0}.ls-r b{display:block;font-size:14px}.ls-r small{display:block;color:var(--muted);font-size:12px}
+/* la pagina della settimana (atleta) */
+.st-q{color:var(--text);font-weight:600;margin-top:14px;line-height:1.4}
+.st-col{display:flex;flex-direction:column;gap:6px}
+.st-row{display:flex;gap:6px;flex-wrap:wrap}
+.st-row .st-b{flex:1 1 0}
+.st-n{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.st-n.st-n4{grid-template-columns:repeat(4,1fr)}
+.st-n .st-b{padding:10px 0}
+.st-prob .pf-l{margin-top:12px}
+.st-prob .st-row{margin-top:6px}
+.ath-act{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
+.st-wrap{display:flex;gap:6px;flex-wrap:wrap}
+.st-b{background:var(--bg);border:1px solid var(--line2);color:var(--text);border-radius:10px;padding:11px 12px;font-size:14px;text-align:left;cursor:pointer;font-family:inherit;min-height:44px}
+.st-row .st-b,.st-n .st-b{text-align:center}
+.st-b.sm{padding:8px 10px;font-size:13px;min-height:38px}
+.st-b.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.st-prob{border:1px solid var(--line2);border-radius:12px;padding:12px;margin-top:12px;background:var(--bg)}
+.st-prob select,.st-prob input{margin-bottom:8px}
+.st-ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.st-ph a{color:var(--muted2);font-size:13px}
+.st-add{width:100%;margin-top:12px;background:none;border:1px dashed var(--line2);color:var(--text);border-radius:10px;padding:12px;font-size:14px;cursor:pointer}
+.st-sk{padding:8px 0;border-bottom:1px solid var(--line)}
+.st-sk b{display:block;font-size:14px}.st-sk small{color:var(--muted2);font-size:12px}
 .vidlist{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:6px}
 .videv,.vidtr{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);font-size:13px}
 .videv:last-child,.vidtr:last-child{border-bottom:none}
@@ -1937,7 +1984,9 @@ function normalize(){
   if(!S.piani || typeof S.piani!=="object" || Array.isArray(S.piani)) S.piani={};         // blocchi fra due test, per squadra
   if(!S.salti || typeof S.salti!=="object" || Array.isArray(S.salti)) S.salti={};
   if(!S.scout || typeof S.scout!=="object" || Array.isArray(S.scout)) S.scout={};
-  if(!Array.isArray(S.modelli)) S.modelli=[];                                                // modelli di scheda esercizi         // scout delle partite, per atleta         // salti per atleta per seduta (dal video)
+  if(!Array.isArray(S.modelli)) S.modelli=[];
+  ["ost","skin","skf","disp"].forEach(k=>{ if(!S[k] || typeof S[k]!=="object" || Array.isArray(S[k])) S[k]={}; });   // salute, schede mandate, sedute a casa, rientro
+                                                // modelli di scheda esercizi         // scout delle partite, per atleta         // salti per atleta per seduta (dal video)
   if(!Array.isArray(S.custom)) S.custom=[];   // esercizi tuoi: una colonna ciascuno
   if(!S.te || typeof S.te!=="object") S.te={}; // errore tipico misurato, per test (%)
   applyCustom();
@@ -2121,7 +2170,7 @@ async function bkHandle(set){
 function bkConta(o){
   const atlete=(o&&Array.isArray(o.athletes))?o.athletes.length:0;
   let reg=0;
-  ["data","readiness","load","screen","lv","pres","mjl","salti","scout"].forEach(k=>{
+  ["data","readiness","load","screen","lv","pres","mjl","salti","scout","ost","skin","skf","disp"].forEach(k=>{
     const m=o&&o[k]; if(!m||typeof m!=="object") return;
     Object.keys(m).forEach(a=>{ const v=m[a];
       if(Array.isArray(v)) reg+=v.length;
@@ -2359,7 +2408,8 @@ function syncRiprova(){ _retryMs=0; clearTimeout(_retryTimer); if(SYNC.motivo===
 function syncParti(){
   const nomi={data:"Test e misure", mjl:"Archivio My Jump", piani:"Piano", athletes:"Schede atlete (anamnesi)", screen:"Valutazioni posturali",
     lv:"Curve carico-velocità", readiness:"Check-in readiness", load:"Carichi (sRPE)", pres:"Presenze", gruppi:"Gruppi", tomb:"Cancellazioni (tracce)",
-    salti:"Salti dal video", scout:"Scout delle gare", modelli:"Modelli di scheda"};
+    salti:"Salti dal video", scout:"Scout delle gare", modelli:"Modelli di scheda",
+    ost:"Questionari sulla salute", skin:"Schede mandate", skf:"Sedute fatte a casa", disp:"Rientro dagli infortuni"};
   const out=[]; let altro=0;
   Object.keys(S||{}).forEach(k=>{ if(k==="_dirty") return; let b=0; try{ b=syncByte(JSON.stringify(S[k])); }catch(e){}
     if(nomi[k]) out.push({k:k, n:nomi[k], b:b}); else altro+=b; });
@@ -2436,7 +2486,7 @@ function tombSet(key){
   if(!S.tomb) S.tomb={};
   S.tomb[key]=new Date().toISOString();
 }
-const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v", pres:"p", mjl:"j", salti:"salto", scout:"sc"};
+const TOMB_PREFIX={readiness:"r", load:"l", screen:"s", lv:"v", pres:"p", mjl:"j", salti:"salto", scout:"sc", ost:"o", skin:"ki", skf:"kf", disp:"dsp"};
 
 /* Le curve carico-velocità ammettono più esercizi nella stessa data: la chiave
    di merge non può essere la sola data, o il secondo esercizio sparisce. */
@@ -2495,7 +2545,7 @@ function mergeState(server, local){
   out.athletes=Object.keys(aid).filter(id=>!T["ath:"+id]).map(id=>mergeAthlete(sa[id], la[id]));
 
   const live={}; out.athletes.forEach(a=>live[a.id]=1);
-  ["data","readiness","load","screen","lv","pres","mjl","salti","scout"].forEach(k=>{ if(!out[k]) out[k]={}; });
+  ["data","readiness","load","screen","lv","pres","mjl","salti","scout","ost","skin","skf","disp"].forEach(k=>{ if(!out[k]) out[k]={}; });
 
   Object.keys(Object.assign({},server.data||{},local.data||{})).forEach(aid=>{
     if(!live[aid]){ delete out.data[aid]; return; }
@@ -2507,7 +2557,7 @@ function mergeState(server, local){
       if(arr.length) out.data[aid][t]=arr; // un test svuotato non resta come chiave vuota
     });
   });
-  ["readiness","load","screen","lv","pres","mjl","salti","scout"].forEach(k=>{
+  ["readiness","load","screen","lv","pres","mjl","salti","scout","ost","skin","skf","disp"].forEach(k=>{
     Object.keys(Object.assign({},server[k]||{},local[k]||{})).forEach(aid=>{
       if(!live[aid]){ delete out[k][aid]; return; }
       const arr=mergeByDate((server[k]||{})[aid],(local[k]||{})[aid],TOMB_PREFIX[k]+":"+aid+":",T);
@@ -3883,6 +3933,7 @@ function todayManageCount(){
       if(rl){ const ev=readinessEval(a.id,rl); if(ev.color==="down"||ev.color==="amber") flag=true; }
       const cs=caricoSett(a.id); if(cs && cs.stato==="picco") flag=true;
       const cf=cmjFatigue(a.id); if(cf&&cf.fatigued) flag=true;
+      if(saluteFlags(a.id, today).length) flag=true;
       if(flag) n++;
     });
     return n;
@@ -4868,11 +4919,13 @@ function openAthlete(id, isNew){
   const age=ageFrom(p.birth);
   let h='<div class="mh"><div><div class="mt">'+(isNew?"Anamnesi — nuovo atleta":"Scheda atleta")+'</div>'+
     '<div class="ms">'+esc(a.name)+(age!=null?' · '+age+' anni':'')+'</div></div>'+
-    '<div style="display:flex;gap:6px;align-items:center">'+
-    (isNew?'':'<button class="btn sm" onclick="openProfilo(\''+id+'\')" title="Solo prestazioni: da consegnare ad atleta, famiglia o società">📊 Profilo</button>'+
+    '<button class="mcl" onclick="closeM()">✕</button></div>'+
+    /* Quattro pulsanti accanto al titolo spingevano la ✕ fuori dallo schermo
+       del telefono: stanno su una riga loro, che va a capo se serve. */
+    (isNew?'':'<div class="ath-act"><button class="btn sm" onclick="openProfilo(\''+id+'\')" title="Solo prestazioni: da consegnare ad atleta, famiglia o società">📊 Profilo</button>'+
       '<button class="btn sm" onclick="printAthlete(\''+id+'\')" title="Cartella completa con anamnesi: riservata">🖨 Cartella</button>'+
-      '<button class="btn sm" onclick="openScheda(\''+id+'\')" title="Esercizi da mandarle su WhatsApp">📄 Scheda</button>')+
-    '<button class="mcl" onclick="closeM()">✕</button></div></div>';
+      '<button class="btn sm" onclick="openAllen(\''+id+'\')" title="Disponibilità, carico, partite e test: per chi allena">🧾 Allenatore</button>'+
+      '<button class="btn sm" onclick="openScheda(\''+id+'\')" title="Esercizi da mandarle su WhatsApp">📄 Scheda</button></div>');
   if(isNew) h+='<div class="alert info" style="margin-bottom:14px"><span class="ai">📋</span><span>'+
     '<b>'+esc(a.name)+'</b> è stato aggiunto. Compila ora l\'anamnesi: bastano i campi che conosci, potrai completarla in qualsiasi momento.</span></div>';
   h+='<label class="fl">Nome e cognome</label>'+
@@ -4888,7 +4941,7 @@ function openAthlete(id, isNew){
   const _flags=SCREEN_KEYS.filter(k=>p[k]).length;
   if(_flags) h+='<div class="alert danger" style="margin-top:10px"><span class="ai">⚠️</span><span>'+
     '<b>Screening: '+_flags+' voce/i positive.</b> Consigliata una verifica medica prima di proporre carichi intensi.</span></div>';
-  if(!isNew) h+=presRiga(id)+antroRiga(id);
+  if(!isNew) h+=saluteRiga(id)+presRiga(id)+antroRiga(id);
   // sezioni profilo (wrapper per aggiornare la guida dal vivo)
   h+='<div oninput="updateBrief(\''+id+'\')" onchange="updateBrief(\''+id+'\')">';
   /* Le otto sezioni erano tutte aperte insieme: 48 campi in una finestra sola,
@@ -11139,7 +11192,7 @@ const SK_CAMPI=["nome","sr","carico","rec","note","link","rm"];
 let SK=null;
 const skStr=(v,n)=>String(v==null?"":v).slice(0,n);
 function skRiga(){ return {nome:"", sr:"", carico:"", rec:"", note:"", link:"", rm:""}; }
-function skVuota(aid){ return {aid:aid||"", titolo:"", data:todayISO(), note:"", ex:[skRiga()], mod:""}; }
+function skVuota(aid){ return {aid:aid||"", titolo:"", data:todayISO(), note:"", ex:[skRiga()], mod:"", volte:2, sett:2, inv:""}; }
 function skBozzaSalva(){ try{ localStorage.setItem(SK_BOZZA, JSON.stringify(SK)); }catch(e){} }
 function skBozzaVia(){ try{ localStorage.removeItem(SK_BOZZA); }catch(e){} }
 function openScheda(aid){
@@ -11159,13 +11212,18 @@ function renderScheda(){
   const inp=(i,k,ph,ex)=>'<input value="'+escAttr(SK.ex[i][k]||"")+'" placeholder="'+escAttr(ph)+'" oninput="skSet('+i+',\''+k+'\',this.value)"'+(ex||'')+'>';
   let h='<div class="mh"><div><div class="eyebrow">Da mandare su WhatsApp</div><div class="mt">Scheda esercizi</div>'+
     '<div class="ms">'+(a?esc(a.name):'Nessuna atleta scelta')+'</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
-  h+='<div class="row2"><div><label class="fl">Atleta</label><select onchange="SK.aid=this.value;skBozzaSalva();renderScheda()"><option value="">— nessuna (scheda generica)</option>'+
+  h+='<div class="row2"><div><label class="fl">Atleta</label><select onchange="SK.aid=this.value;SK.inv=\'\';skBozzaSalva();renderScheda()"><option value="">— nessuna (scheda generica)</option>'+
      ath.map(x=>'<option value="'+x.id+'"'+(x.id===SK.aid?' selected':'')+'>'+esc(x.name)+'</option>').join("")+'</select></div>'+
      '<div><label class="fl">Data</label><input type="date" value="'+escAttr(SK.data||"")+'" onchange="SK.data=this.value;skBozzaSalva()"></div></div>';
   h+='<label class="fl">Titolo</label><input value="'+escAttr(SK.titolo||"")+'" maxlength="120" placeholder="es. Lavoro a casa — settimana 45" oninput="SK.titolo=this.value;skBozzaSalva()">';
   h+='<div class="sk-mod"><select onchange="if(this.value)skCaricaModello(this.value)"><option value="">📂 Parti da un modello…</option>'+
      mod.map(m=>'<option value="'+m.id+'">'+esc(m.nome)+' ('+(m.ex||[]).length+')</option>').join("")+'</select>'+
      '<button class="btn sm" onclick="skSalvaModello()">💾 Salva come modello</button></div>';
+  h+='<div class="row2"><div><label class="fl">Volte a settimana</label><select onchange="SK.volte=+this.value||null;skBozzaSalva()">'+
+     '<option value="">—</option>'+[1,2,3,4,5,6,7].map(n=>'<option'+((SK.volte||null)===n?' selected':'')+'>'+n+'</option>').join("")+'</select></div>'+
+     '<div><label class="fl">Per quante settimane</label><select onchange="SK.sett=+this.value||2;skBozzaSalva()">'+
+     [1,2,3,4,5,6,8,10,12].map(n=>'<option'+((SK.sett||2)===n?' selected':'')+'>'+n+'</option>').join("")+'</select></div></div>'+
+     (SK.aid?'<div class="fhint">Quando la condividi o la scarichi, resta nella sua scheda: lei segna le sedute fatte dal suo link settimanale.</div>':'');
   h+='<label class="fl">Note per lei</label><textarea rows="2" maxlength="1500" placeholder="quando farla, come scaldarsi, cosa scriverti…" oninput="SK.note=this.value;skBozzaSalva()">'+esc(SK.note||"")+'</textarea>';
   SK.ex.forEach((e,i)=>{
     const kg=schedaKg(SK.aid,e);
@@ -11243,13 +11301,17 @@ function skFile(){
   if(!ex.length) return err("Scrivi almeno un esercizio.");
   for(let i=0;i<ex.length;i++){ if(String(ex[i].link||"").trim() && !garaLinkOk(ex[i].link)) return err("Il link di «"+ex[i].nome+"» non va: deve iniziare con https://"); }
   const a=(S.athletes||[]).find(x=>x.id===SK.aid), tm=(S.teams||[]).find(x=>x.id===S.activeTeam);
-  const b=schedaPdf({titolo:SK.titolo, data:SK.data, note:SK.note, ex:ex.map(skPulito)}, a?a.name:"", a?a.id:"", tm?tm.name:"");
+  const quando=(SK.volte?"Da fare "+SK.volte+(SK.volte===1?" volta":" volte")+" a settimana per "+(SK.sett||2)+(SK.sett===1?" settimana":" settimane")+".":"")+
+    (a?" Dopo ogni seduta segnala com'è andata dal tuo link settimanale.":"");
+  const nota=[String(SK.note||"").trim(), quando.trim()].filter(Boolean).join("\n\n");
+  const b=schedaPdf({titolo:SK.titolo, data:SK.data, note:nota, ex:ex.map(skPulito)}, a?a.name:"", a?a.id:"", tm?tm.name:"");
   const pulito=s=>String(s||"").replace(/[\\/:*?"<>|]+/g," ").replace(/\s+/g," ").trim().slice(0,60);
   const nome=["Scheda", a?a.name:"", SK.data?fmtDate(SK.data).replace(/\//g,"-"):""].filter(Boolean).map(pulito).join(" - ")+".pdf";
   return {byte:b, nome:nome};
 }
 async function skCondividi(){
   const f=skFile(); if(!f) return;
+  skRegistra();
   try{
     const file=new File([f.byte], f.nome, {type:"application/pdf"});
     if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:f.nome}); return; }
@@ -11257,7 +11319,7 @@ async function skCondividi(){
   dl(f.nome, f.byte, "application/pdf");
   toast("Qui non si può condividere direttamente: il PDF è nei download, allegalo su WhatsApp");
 }
-function skScarica(){ const f=skFile(); if(!f) return; dl(f.nome, f.byte, "application/pdf"); toast("PDF scaricato"); }
+function skScarica(){ const f=skFile(); if(!f) return; skRegistra(); dl(f.nome, f.byte, "application/pdf"); toast("PDF scaricato"); }
 function skAnteprima(){
   const f=skFile(); if(!f) return;
   const u=URL.createObjectURL(new Blob([f.byte], {type:"application/pdf"}));
@@ -11508,6 +11570,628 @@ function fotApriCurva(){
   renderLVRows(); try{ previewLV(); }catch(e){}
 }
 
+/* ═══════════════ SALUTE, RIENTRO E LAVORO A CASA ═══════════════════════════
+   Tre cose che prima non avevano un posto:
+   · la salute della settimana, raccontata da lei: il questionario OSTRC-H2
+     (Clarsen e colleghi, 2020), quattro domande sugli ultimi 7 giorni. Coglie
+     anche i problemi che non fanno saltare allenamenti — il ginocchio che fa
+     male ma con cui gioca — e un registro dei giorni persi quelli non li vede;
+   · il rientro dopo un infortunio, a tappe: fuori, rientro alla
+     partecipazione, rientro allo sport, rientro alla prestazione (consenso di
+     Berna, Ardern e colleghi, 2016). Lo decidi tu, l'app conta i giorni;
+   · le schede mandate su WhatsApp che tornano indietro: lei segna le sedute
+     fatte, con RPE e minuti, dal suo link settimanale.
+   La gravità di un problema va da 0 a 100: «sostanziale» vuol dire che ha
+   ridotto molto allenamento o prestazione, o le ha impedito di partecipare.
+   Il testo italiano delle domande è una traduzione fedele dell'originale
+   inglese; esiste una versione italiana validata (Medicina, 2025) su adulti. */
+const OST_ZONE={testa:"Testa / viso", collo:"Collo", spalla:"Spalla", braccio:"Braccio", gomito:"Gomito", avambraccio:"Avambraccio",
+  polso:"Polso", mano:"Mano / dita", torace:"Torace / costole", dorso:"Schiena alta", lombare:"Schiena bassa (lombare)", addome:"Addome",
+  anca:"Anca / inguine", coscia:"Coscia", ginocchio:"Ginocchio", gamba:"Gamba (tibia, polpaccio)", caviglia:"Caviglia", piede:"Piede"};
+const OST_ARTO=["spalla","braccio","gomito","avambraccio","polso","mano","anca","coscia","ginocchio","gamba","caviglia","piede"];
+const OST_SINT={febbre:"Febbre", stanchezza:"Stanchezza, malessere", linfonodi:"Ghiandole gonfie", gola:"Mal di gola", naso:"Naso chiuso, raffreddore",
+  tosse:"Tosse", respiro:"Fatica a respirare", testa:"Mal di testa", nausea:"Nausea", vomito:"Vomito", diarrea:"Diarrea", stitichezza:"Stitichezza",
+  svenimento:"Svenimento", pelle:"Eruzione o prurito", battito:"Battito irregolare, palpitazioni", petto:"Dolore al petto", pancia:"Mal di pancia",
+  dolore:"Altri dolori", formicolio:"Formicolio", ansia:"Ansia", umore:"Umore giù", irritabilita:"Irritabilità", altro:"Altro"};
+// segnali che fermano l'allenamento finché non l'ha vista un medico
+const OST_ROSSI=["svenimento","petto","battito","respiro"];
+const OST_UMORE=["ansia","umore"];
+const OST_LATO={sx:"sinistra", dx:"destra", due:"entrambi i lati"};
+const OST_PUNTI=[0,8,17,25];
+const OST_GATE={t:"Negli ultimi 7 giorni hai avuto difficoltà a partecipare ad allenamenti e partite per un infortunio, una malattia o un altro problema di salute?",
+  o:["Ho partecipato a tutto, senza problemi di salute","Ho partecipato a tutto, ma con un problema di salute","Ho partecipato meno del solito per un problema di salute","Non ho potuto partecipare per un problema di salute"]};
+const OST_DOM={
+  q1:{t:"Per QUESTO problema, negli ultimi 7 giorni:", o:[null,"Ho partecipato a tutto, ma con questo problema","Ho partecipato meno del solito","Non ho potuto partecipare"]},
+  q2:{t:"Quanto hai dovuto cambiare allenamenti o partite per questo problema?", o:["Niente","Poco","Abbastanza","Molto"]},
+  q3:{t:"Quanto ha peggiorato la tua prestazione?", o:["Niente","Poco","Abbastanza","Molto"]},
+  q4:{t:"Quanto hai sentito i sintomi (dolore, fastidio, malessere)?", o:["Per niente","Poco","Abbastanza","Molto"]}
+};
+const _own=(o,k)=>Object.prototype.hasOwnProperty.call(o,String(k));
+function ostGrav(p){ if(!p) return 0; if(p.q1===3) return 100; return (OST_PUNTI[p.q1]||0)+(OST_PUNTI[p.q2]||0)+(OST_PUNTI[p.q3]||0)+(OST_PUNTI[p.q4]||0); }
+function ostSost(p){ return !!p && (p.q1===3 || p.q2>=2 || p.q3>=2); }
+function ostNome(p){
+  if(!p) return "";
+  if(p.t==="inf") return (OST_ZONE[p.z]||"Infortunio")+(p.l==="sx"?" sx":p.l==="dx"?" dx":p.l==="due"?" (entrambe)":"");
+  const s=(p.s||[]).map(x=>String(OST_SINT[x]||x).split(",")[0].toLowerCase());
+  return "Malattia"+(s.length?": "+s.slice(0,3).join(", ")+(s.length>3?"…":""):"");
+}
+function ostArr(aid){ const l=(S.ost||{})[aid]; return Array.isArray(l)?l:[]; }
+function ostLeggi(e){
+  const probs=((e&&Array.isArray(e.p))?e.p:[]).map(x=>{
+    const s=(x.t==="mal"&&Array.isArray(x.s))?x.s:[];
+    return Object.assign({}, x, {grav:ostGrav(x), sost:ostSost(x), nome:ostNome(x),
+      rossi:s.filter(v=>OST_ROSSI.indexOf(v)>=0), umore:s.filter(v=>OST_UMORE.indexOf(v)>=0)});
+  }).sort((a,b)=>b.grav-a.grav);
+  const uniq=a=>a.filter((v,i)=>a.indexOf(v)===i);
+  return {d:e?e.d:null, probs:probs, nessuno:!probs.length, sost:probs.some(x=>x.sost),
+    grav:probs.reduce((m,x)=>Math.max(m,x.grav),0), gg:probs.reduce((m,x)=>Math.max(m,x.gg||0),0),
+    rossi:uniq([].concat.apply([], probs.map(x=>x.rossi))), umore:uniq([].concat.apply([], probs.map(x=>x.umore)))};
+}
+// la risposta che vale per la settimana che finisce il giorno `fine` (7 giorni, fine compresa)
+function ostDellaSett(aid, fine){
+  const f=dayNum(fine||todayISO());
+  const l=ostArr(aid).filter(e=>{ const g=f-dayNum(e.d); return g>=0 && g<7; });
+  return l.length ? l[l.length-1] : null;
+}
+function ostSquadra(ath, oggi, w){
+  const fine=isoDaNum(dayNum(oggi||todayISO())-7*(w||0));
+  const r={fine:fine, risp:0, tot:ath.length, prob:0, sost:0, gg:0, chi:[], manca:[]};
+  ath.forEach(a=>{
+    const e=ostDellaSett(a.id, fine); if(!e){ r.manca.push(a); return; }
+    r.risp++; const x=ostLeggi(e);
+    if(!x.nessuno){ r.prob++; r.chi.push({a:a, x:x}); }
+    if(x.sost) r.sost++;
+    r.gg+=x.gg;
+  });
+  r.chi.sort((p,q)=>(q.x.rossi.length-p.x.rossi.length)||(q.x.grav-p.x.grav));
+  return r;
+}
+function isoDaNum(n){ const d=new Date(n*86400000); return d.toISOString().slice(0,10); }
+
+/* ── Rientro ── */
+const DISP={
+  fuori:{l:"Fuori", d:"Non si allena con la squadra", c:"down"},
+  part:{l:"Rientro: lavoro adattato", d:"Partecipa, con un lavoro modificato (rientro alla partecipazione)", c:"amber"},
+  sport:{l:"Rientro: lavoro pieno", d:"Si allena e gioca, non ancora al suo livello (rientro allo sport)", c:"amber"},
+  prest:{l:"Disponibile", d:"Di nuovo al suo livello (rientro alla prestazione)", c:"up"}
+};
+function dispArr(aid){ const l=(S.disp||{})[aid]; return Array.isArray(l)?l:[]; }
+function dispOggi(aid, oggi){
+  oggi=oggi||todayISO();
+  const l=dispArr(aid).filter(e=>e.d<=oggi && _own(DISP,e.stato));
+  const u=l[l.length-1];
+  return (u && u.stato!=="prest") ? u : null;
+}
+// giorni «fuori» fra `dal` e `oggi` (compresi): ogni tappa vale fino alla successiva
+function dispGiorniFuori(aid, oggi, dal){
+  oggi=oggi||todayISO(); dal=dal||isoDaNum(dayNum(oggi)-364);
+  const l=dispArr(aid).filter(e=>_own(DISP,e.stato)).slice().sort((a,b)=>a.d<b.d?-1:1);
+  let n=0; const fine=dayNum(oggi)+1, ini=dayNum(dal);
+  l.forEach((e,i)=>{
+    if(e.stato!=="fuori") return;
+    const a=Math.max(dayNum(e.d), ini), b=Math.min(i+1<l.length?dayNum(l[i+1].d):fine, fine);
+    if(b>a) n+=b-a;
+  });
+  return n;
+}
+function dispSalva(aid, stato, d, nota){
+  if(!idOk(aid) || !_own(DISP,stato) || !/^\d{4}-\d{2}-\d{2}$/.test(String(d||""))) return false;
+  if(!S.disp) S.disp={};
+  const l=dispArr(aid).filter(e=>e.d!==d);
+  const r={d:d, exercise:"disp", stato:stato}; const n=String(nota||"").trim().slice(0,200); if(n) r.nota=n;
+  l.push(r); l.sort((a,b)=>a.d<b.d?-1:1); S.disp[aid]=l;
+  if(S.tomb) delete S.tomb["dsp:"+aid+":"+d+"|disp"];
+  return true;
+}
+function dispTogli(aid, d){
+  S.disp[aid]=dispArr(aid).filter(e=>e.d!==d); if(!S.disp[aid].length) delete S.disp[aid];
+  tombSet("dsp:"+aid+":"+d+"|disp");
+}
+function ostTogli(aid, d){
+  S.ost[aid]=ostArr(aid).filter(e=>e.d!==d); if(!S.ost[aid].length) delete S.ost[aid];
+  tombSet("o:"+aid+":"+d+"|ostrc");
+}
+
+/* ── Lavoro a casa ── */
+function skinArr(aid){ const l=(S.skin||{})[aid]; return Array.isArray(l)?l:[]; }
+function skfArr(aid){ const l=(S.skf||{})[aid]; return Array.isArray(l)?l:[]; }
+/* Previste fino a oggi: volte a settimana per i giorni passati, per difetto.
+   Due volte a settimana, dopo tre giorni, ne è prevista 0, non 1: chi la fa
+   il quarto giorno non è in ritardo. */
+function skAderenza(aid, oggi){
+  const o=dayNum(oggi||todayISO());
+  return skinArr(aid).map(e=>{
+    const sett=e.sett||2, ini=dayNum(e.d), fine=ini+sett*7-1;
+    const trascorsi=Math.max(0, Math.min(o, fine)-ini+1);
+    const prev=e.volte ? Math.floor(e.volte*trascorsi/7) : null;
+    const f=skfArr(aid).filter(x=>x.sk===e.id);
+    const tutte=f.filter(x=>x.esito!=="parte").length, parte=f.length-tutte;
+    const rpe=f.length ? Math.round(f.reduce((s,x)=>s+(x.rpe||0),0)/f.length*10)/10 : null;
+    return {e:e, prev:prev, fatte:f.length, tutte:tutte, parte:parte, rpe:rpe, ultima:f.length?f[f.length-1].d:null,
+      finita:o>fine, futura:o<ini, pc:(prev?Math.round(f.length/prev*100):null)};
+  }).filter(x=>!x.futura || x.fatte).sort((a,b)=>a.e.d<b.e.d?1:-1);
+}
+// le sedute fatte a casa entrano nel carico settimanale come qualunque seduta
+function caricoVoci(aid){
+  const l=((S.load&&S.load[aid])||[]).slice();
+  skfArr(aid).forEach(x=>{ if(x.rpe>0 && x.min>0) l.push({d:x.d, rpe:x.rpe, min:x.min, casa:true}); });
+  return l;
+}
+
+/* ── Cosa vede il preparatore in Oggi e in Fatica ── */
+function saluteFlags(aid, oggi){
+  oggi=oggi||todayISO();
+  const out=[];
+  const dp=dispOggi(aid, oggi);
+  if(dp){
+    const D=DISP[dp.stato];
+    out.push({t:(dp.stato==="fuori"?"⛔ ":"↩ ")+D.l, c:D.c, sev:dp.stato==="fuori"?6:dp.stato==="part"?3:1, prio:dp.stato==="fuori",
+      sug: dp.stato==="fuori" ? "È fuori: segue il suo percorso, non la seduta di squadra."
+         : dp.stato==="part" ? "Lavoro adattato: niente esercizi di squadra non modificati sulla zona."
+         : "Si allena per intero ma non è ancora al suo livello: alza salti e minuti di gioco per gradi."});
+  }
+  const e=ostDellaSett(aid, oggi);
+  if(e){
+    const x=ostLeggi(e);
+    if(x.rossi.length) out.push({t:"🚨 "+x.rossi.map(s=>String(OST_SINT[s]).split(",")[0]).join(", "), c:"down", sev:8, prio:true,
+      sug:"Ha segnalato "+x.rossi.map(s=>String(OST_SINT[s]).split(",")[0].toLowerCase()).join(", ")+": prima di allenarla serve il parere di un medico."});
+    const ps=x.probs.filter(p=>p.sost);
+    if(ps.length){
+      const tl=x.gg>0||ps.some(p=>p.q1===3);
+      const cs=caricoSett(aid, oggi);
+      out.push({t:"🩹 "+ps.map(p=>p.nome).join(", ")+" · "+ps[0].grav+"/100", c:"down", sev:4,
+        sug:"Problema che le limita allenamento o prestazione"+(tl?" (ha perso giorni)":"")+": parlane con lei, adatta il lavoro sulla zona"+
+          (cs&&cs.stato==="picco"?" e non aggiungere carico: la sua settimana è già più carica del solito":"")+
+          ". Se non migliora in una settimana, medico o fisioterapista."});
+    }
+    if(x.umore.length) out.push({t:"💬 "+x.umore.map(s=>String(OST_SINT[s]).toLowerCase()).join(", "), c:"amber", sev:2,
+      sug:"Ha segnalato "+x.umore.map(s=>String(OST_SINT[s]).toLowerCase()).join(" e ")+": parlane con lei in privato e, se dura, con la famiglia. Non è una questione di carico."});
+  }
+  return out;
+}
+function ostChip(aid, oggi){
+  const e=ostDellaSett(aid, oggi);
+  if(!e) return "";
+  const x=ostLeggi(e);
+  if(x.nessuno) return "";
+  return '<span class="rd-cmj '+(x.sost||x.rossi.length?"down":"amber")+'" title="questionario del '+fmtDate(e.d)+' · gravità '+x.grav+'/100">'+
+    esc(x.probs[0].nome)+(x.probs.length>1?' +'+(x.probs.length-1):'')+(x.sost?' · sost.':'')+'</span>';
+}
+function dispChip(aid, oggi){
+  const dp=dispOggi(aid, oggi); if(!dp) return "";
+  return '<span class="rd-cmj '+DISP[dp.stato].c+'" title="dal '+fmtDate(dp.d)+'">'+esc(DISP[dp.stato].l)+'</span>';
+}
+
+/* ── Il riquadro in Fatica e la pagina «Salute della squadra» ── */
+function saluteRiquadro(ath, oggi){
+  const r=ostSquadra(ath, oggi, 0);
+  if(!r.risp && !ath.some(a=>ostArr(a.id).length)) {
+    return '<div class="rd-oggi" onclick="openSalute()"><b>Salute: questionario settimanale</b><span>nessuna risposta ancora · manda i link</span></div>';
+  }
+  return '<div class="rd-oggi'+(r.sost?'':' ok')+'" onclick="openSalute()"><b>Salute, ultimi 7 giorni: '+r.risp+'/'+r.tot+' risposte</b>'+
+    '<span>'+(r.prob?r.prob+' con un problema'+(r.sost?' · '+r.sost+' sostanzial'+(r.sost>1?'i':'e'):''):'nessun problema segnalato')+'</span></div>';
+}
+function openSalute(){
+  const ath=teamAthletes(), oggi=todayISO();
+  const r=ostSquadra(ath, oggi, 0);
+  let h='<div class="mh"><div><div class="eyebrow">Questionario settimanale (OSTRC-H2)</div><div class="mt">Salute della squadra</div>'+
+    '<div class="ms">ultimi 7 giorni, fino a oggi</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
+  h+='<div class="presriga"><div><span class="prl">Risposte</span><b>'+r.risp+'/'+r.tot+'</b><small>'+(r.manca.length?'manca'+(r.manca.length>1?'no':'')+' '+r.manca.length:'tutte')+'</small></div>'+
+    '<div><span class="prl">Con un problema</span><b>'+r.prob+'</b><small>'+(r.risp?Math.round(r.prob/r.risp*100)+'% di chi ha risposto':'—')+'</small></div>'+
+    '<div><span class="prl">Sostanziali</span><b>'+r.sost+'</b><small>limitano allenamento o prestazione</small></div></div>';
+  if(r.chi.length){
+    h+='<div class="psec" style="margin-top:14px">Chi ha un problema</div>';
+    r.chi.forEach(o=>{
+      h+='<div class="sal-r" onclick="openSaluteAtleta(\''+o.a.id+'\')"><b>'+esc(o.a.name)+'</b>'+
+        o.x.probs.map(p=>'<div class="sal-p'+(p.sost?' sost':'')+'"><span>'+esc(p.nome)+(p.nuovo?' <small>nuovo</small>':'')+'</span>'+
+          '<span class="sal-g">'+p.grav+'/100'+(p.gg?' · '+p.gg+' gg persi':'')+(p.sost?' · sostanziale':'')+'</span></div>').join("")+
+        (o.x.rossi.length?'<div class="alert danger" style="margin:6px 0 0"><span class="ai">🚨</span><span>'+esc(o.x.rossi.map(s=>OST_SINT[s]).join(", "))+': prima di allenarla, medico.</span></div>':'')+
+        '</div>';
+    });
+  }
+  if(r.manca.length) h+='<div class="gnote">Non hanno risposto: '+r.manca.map(a=>esc(a.name.split(" ")[0])).join(", ")+'.</div>';
+  // le ultime 8 settimane
+  const w=[]; for(let i=7;i>=0;i--) w.push(ostSquadra(ath, oggi, i));
+  if(w.some(x=>x.risp)){
+    h+='<div class="psec" style="margin-top:16px">Le ultime 8 settimane</div><div class="sal-sett">'+
+      w.map(x=>{ const pp=x.risp?Math.round(x.prob/x.risp*100):null, ps=x.risp?Math.round(x.sost/x.risp*100):null;
+        return '<div class="sal-col" title="settimana fino al '+fmtDate(x.fine)+': '+x.risp+' risposte">'+
+          '<div class="sal-bar"><i style="height:'+(pp||0)+'%"></i><b style="height:'+(ps||0)+'%"></b></div>'+
+          '<small>'+(pp==null?'—':pp+'%')+'</small><small class="sal-d">'+fmtDate(x.fine).slice(0,5)+'</small></div>'; }).join("")+'</div>'+
+      '<div class="gnote">Barra chiara: quante avevano un problema, fra chi ha risposto. Scura: problemi sostanziali. '+
+      'Una settimana con poche risposte dice poco: guarda il numero sopra la data.</div>';
+  }
+  h+='<button class="btn primary" style="width:100%;margin-top:12px" onclick="openLinkSett()">🔗 Link settimanali delle atlete</button>'+
+    '<details class="asec" style="margin-top:10px"><summary>Come si legge</summary><div class="as-b fot-guida">'+
+    '<p><b>Le domande.</b> Ogni settimana lei risponde pensando agli ultimi 7 giorni. Se ha partecipato a tutto senza problemi, finisce lì. '+
+    'Altrimenti, per ogni problema: che cos\'è, quanto le ha cambiato l\'allenamento, quanto la prestazione, quanto l\'ha sentito, e quanti giorni ha perso.</p>'+
+    '<p><b>Gravità 0-100.</b> Ogni risposta vale 0, 8, 17 o 25 punti; «non ho potuto partecipare» vale 100. '+
+    '<b>Sostanziale</b> vuol dire allenamento o prestazione ridotti abbastanza o molto, oppure non ha potuto partecipare.</p>'+
+    '<p><b>Perché così.</b> È il questionario OSTRC-H2 (Clarsen e colleghi, 2020), usato in molti sport di squadra anche giovanili. '+
+    'Coglie i problemi con cui si continua a giocare, che un registro dei giorni persi non vede. La traduzione italiana di queste domande è nostra, fedele all\'originale.</p>'+
+    '<p><b>Cosa non è.</b> Non è una diagnosi e non sostituisce il medico. Serve a sapere di chi occuparsi questa settimana.</p></div></details>';
+  modal(h);
+}
+
+/* ── La salute di un'atleta ── */
+function saluteRiga(aid){
+  const oggi=todayISO(), dp=dispOggi(aid, oggi), e=ostDellaSett(aid, oggi), ad=skAderenza(aid, oggi).filter(x=>!x.finita||daysAgo(x.e.d)<35);
+  const fuori=dispGiorniFuori(aid, oggi);
+  if(!dp && !e && !ostArr(aid).length && !dispArr(aid).length && !ad.length) {
+    return '<div class="sal-riga"><button class="btn sm" onclick="openSaluteAtleta(\''+aid+'\')">🩹 Salute e rientro</button></div>';
+  }
+  let h='<div class="presriga" onclick="openSaluteAtleta(\''+aid+'\')" style="cursor:pointer">';
+  h+='<div><span class="prl">Disponibilità</span><b class="'+(dp?DISP[dp.stato].c:'')+'">'+(dp?esc(DISP[dp.stato].l):'Piena')+'</b>'+
+     '<small>'+(dp?'dal '+fmtDate(dp.d):fuori?fuori+' gg fuori in 12 mesi':'')+'</small></div>';
+  if(e){ const x=ostLeggi(e);
+    h+='<div><span class="prl">Salute, 7 giorni</span><b>'+(x.nessuno?'Nessun problema':esc(x.probs[0].nome))+'</b>'+
+       '<small>'+(x.nessuno?fmtDate(e.d):x.grav+'/100'+(x.sost?' · sostanziale':''))+'</small></div>'; }
+  else h+='<div><span class="prl">Salute, 7 giorni</span><b>—</b><small>nessuna risposta</small></div>';
+  if(ad.length){ const a=ad[0];
+    h+='<div><span class="prl">Lavoro a casa</span><b>'+a.fatte+(a.prev!=null?'/'+a.prev:'')+'</b><small>'+esc(a.e.titolo||"scheda")+'</small></div>'; }
+  return h+'</div>';
+}
+function openSaluteAtleta(aid){
+  const a=(S.athletes||[]).find(x=>x.id===aid); if(!a) return;
+  const oggi=todayISO(), dp=dispOggi(aid, oggi);
+  let h='<div class="mh"><div><div class="eyebrow">Salute e rientro</div><div class="mt">'+esc(a.name)+'</div>'+
+    '<div class="ms">'+(dp?esc(DISP[dp.stato].l)+' dal '+fmtDate(dp.d):'Disponibile')+'</div></div><button class="mcl" onclick="closeM()">✕</button></div>';
+  // rientro
+  h+='<div class="psec">Disponibilità</div><div class="row2"><div><label class="fl">Da quando</label><input type="date" id="dspD" value="'+oggi+'"></div>'+
+    '<div><label class="fl">Stato</label><select id="dspS">'+Object.keys(DISP).map(k=>'<option value="'+k+'"'+((dp?dp.stato:"prest")===k?' selected':'')+'>'+esc(DISP[k].l)+'</option>').join("")+'</select></div></div>'+
+    '<input id="dspN" maxlength="200" placeholder="Nota (es. distorsione caviglia dx, indicazioni del fisioterapista)">'+
+    '<button class="btn sm primary" style="width:100%;margin-top:8px" onclick="dispDaForm(\''+aid+'\')">Salva la tappa</button>';
+  const dl_=dispArr(aid).slice().reverse();
+  if(dl_.length){
+    h+='<div class="hist sal-h">'+dl_.slice(0,12).map(e=>'<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span><span class="hv">'+esc((DISP[e.stato]||{}).l||e.stato)+
+      (e.nota?' <small>'+esc(e.nota)+'</small>':'')+'</span><button class="hdl" onclick="dispTogli(\''+aid+'\',\''+e.d+'\');save();openSaluteAtleta(\''+aid+'\')" aria-label="Togli">✕</button></div>').join("")+'</div>'+
+      '<div class="gnote">Giorni fuori negli ultimi 12 mesi: <b>'+dispGiorniFuori(aid, oggi)+'</b>. Le tappe sono quelle del consenso di Berna sul ritorno allo sport: '+
+      'partecipazione (lavoro adattato), sport (lavoro pieno), prestazione (di nuovo al suo livello). Quando passa da una all\'altra lo decidi tu, con chi la segue.</div>';
+  }
+  // questionari
+  const ol=ostArr(aid).slice().reverse();
+  h+='<div class="psec" style="margin-top:16px">Questionari settimanali</div>';
+  if(!ol.length) h+='<div class="gnote">Nessuna risposta. Le risponde lei, dal suo link settimanale.</div>';
+  else h+='<div class="hist sal-h">'+ol.slice(0,16).map(e=>{ const x=ostLeggi(e);
+    return '<div class="hrow"><span class="hd">'+fmtDate(e.d)+'</span><span class="hv">'+(x.nessuno?'Nessun problema':
+      x.probs.map(p=>esc(p.nome)+' <small>'+p.grav+'/100'+(p.sost?' · sost.':'')+(p.gg?' · '+p.gg+' gg persi':'')+'</small>').join('<br>'))+
+      (x.rossi.length?'<br><small class="down">🚨 '+esc(x.rossi.map(s=>OST_SINT[s]).join(", "))+'</small>':'')+'</span>'+
+      '<button class="hdl" onclick="if(confirm(\'Togliere questa risposta?\')){ostTogli(\''+aid+'\',\''+e.d+'\');save();openSaluteAtleta(\''+aid+'\')}" aria-label="Togli">✕</button></div>'; }).join("")+'</div>';
+  // lavoro a casa
+  const ad=skAderenza(aid, oggi);
+  h+='<div class="psec" style="margin-top:16px">Lavoro a casa</div>';
+  if(!ad.length) h+='<div class="gnote">Nessuna scheda mandata. Le schede entrano qui quando le condividi o le scarichi con un\'atleta scelta.</div>';
+  else h+='<div class="hist sal-h">'+ad.slice(0,10).map(x=>'<div class="hrow"><span class="hd">'+fmtDate(x.e.d)+'</span><span class="hv">'+esc(x.e.titolo||"Scheda")+
+    '<br><small>'+x.fatte+' sedute segnate'+(x.prev!=null?' su '+x.prev+' previste finora':'')+(x.parte?' ('+x.parte+' in parte)':'')+
+    (x.rpe!=null?' · RPE medio '+fmtNum(x.rpe):'')+(x.finita?' · conclusa':'')+'</small></span>'+
+    '<button class="hdl" onclick="if(confirm(\'Togliere questa scheda dall\\\'elenco? Le sedute segnate restano nel carico.\')){skinTogli(\''+aid+'\',\''+x.e.id+'\');save();openSaluteAtleta(\''+aid+'\')}" aria-label="Togli">✕</button></div>').join("")+'</div>'+
+    '<div class="gnote">Contano solo le sedute che lei segna: una seduta non segnata non vuol dire non fatta. Le sedute segnate entrano nel carico settimanale.</div>';
+  h+='<button class="btn sm" style="width:100%;margin-top:12px" onclick="openLinkSett(\''+aid+'\')">🔗 Il suo link settimanale</button>';
+  modal(h);
+}
+function dispDaForm(aid){
+  const d=(document.getElementById("dspD")||{}).value, s=(document.getElementById("dspS")||{}).value, n=(document.getElementById("dspN")||{}).value;
+  if(!dispSalva(aid, s, d, n)){ toast("Controlla data e stato"); return; }
+  save(); render(); openSaluteAtleta(aid); toast("Tappa salvata");
+}
+function skinTogli(aid, id){
+  const l=skinArr(aid); l.filter(e=>e.id===id).forEach(e=>tombSet("ki:"+aid+":"+e.d+"|"+e.exercise));
+  S.skin[aid]=l.filter(e=>e.id!==id); if(!S.skin[aid].length) delete S.skin[aid];
+}
+
+/* ── I link settimanali: uno per atleta, per tutta la stagione ── */
+let LS={stato:null, nuovi:{}};
+function lsLink(tok){ return location.origin+location.pathname+"?settimana="+encodeURIComponent(tok); }
+function openLinkSett(solo){
+  if(!AUTH||!AUTH.token){ toast("Serve l'accesso: i link li genera il server"); return; }
+  LS.solo=solo||null;
+  modal('<div class="mh"><div><div class="mt">Link settimanali</div></div><button class="mcl" onclick="closeM()">✕</button></div><div class="pf-gen">Controllo i link attivi…</div>');
+  apiCall("weeklyLinks",{}).then(j=>{ LS.stato={}; (j.links||[]).forEach(l=>{ if(!LS.stato[l.athlete_id]) LS.stato[l.athlete_id]=l; }); lsDraw(); })
+    .catch(e=>modal('<div class="mh"><div><div class="mt">Link settimanali</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+      '<div class="alert info"><span class="ai">⚠️</span><span>'+esc(e.message)+'</span></div>'));
+}
+function lsDraw(){
+  const ath=LS.solo ? (S.athletes||[]).filter(a=>a.id===LS.solo) : teamAthletes();
+  let h='<div class="mh"><div><div class="eyebrow">Salute e lavoro a casa</div><div class="mt">Link settimanali</div>'+
+    '<div class="ms">uno per atleta, valido tutta la stagione</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<div class="gnote" style="margin-top:0">Ogni ragazza riceve il <b>suo</b> link, su WhatsApp diretto e non nel gruppo, e lo tiene sul telefono. '+
+    'Una volta a settimana risponde al questionario sulla salute e segna le sedute fatte delle schede che le hai mandato. '+
+    'Il link non mostra niente di suo, oltre al nome e alle schede aperte; se lo perde o lo inoltra, lo rifai qui e il vecchio smette di funzionare.</div>';
+  h+=policyReady(S.policy)
+    ? '<div class="gnote">L\'informativa deve dire che raccogli ogni settimana i dati sulla salute e sul lavoro a casa: se non lo dice, aggiornala prima di mandarli.</div>'
+    : '<div class="alert warn"><span class="ai">⚠️</span><span>Prima di mandarli aggiorna l\'informativa: deve dire che raccogli ogni settimana i dati sulla salute e sul lavoro a casa.</span></div>';
+  h+='<div class="ls-list">'+ath.map(a=>{
+    const st=LS.stato&&LS.stato[a.id], tok=LS.nuovi[a.id], cons=!!(a.profile||{}).consent;
+    return '<div class="ls-r"><div><b>'+esc(a.name)+'</b><small>'+
+      (!cons?'manca il consenso: prima la scheda col modulo':
+       tok?'link nuovo: mandalo adesso, poi non lo rivedi più':
+       st?'attivo · '+(st.uses?st.uses+' invii, ultimo '+fmtDate(String(st.used_at||"").slice(0,10)):'mai usato'):'nessun link')+'</small></div>'+
+      (tok?'<button class="btn sm primary" onclick="lsManda(\''+a.id+'\')">↗ Manda</button><button class="btn sm" onclick="lsCopia(\''+a.id+'\')">📋</button>':
+       cons?'<button class="btn sm'+(st?'':' primary')+'" onclick="lsCrea(\''+a.id+'\')">'+(st?'Rifai':'Crea')+'</button>':'')+
+      (st&&!tok?'<button class="btn sm" onclick="lsChiudi(\''+a.id+'\')" title="Il link smette di funzionare">Chiudi</button>':'')+'</div>';
+  }).join("")+'</div>';
+  if(!LS.solo){
+    const mancanti=ath.filter(a=>(a.profile||{}).consent && !(LS.stato&&LS.stato[a.id]) && !LS.nuovi[a.id]);
+    if(mancanti.length) h+='<button class="btn primary" style="width:100%;margin-top:10px" onclick="lsCreaTutti()">Crea i '+mancanti.length+' link mancanti</button>';
+  }
+  modal(h);
+}
+function lsCrea(aid){
+  const a=(S.athletes||[]).find(x=>x.id===aid); if(!a) return;
+  if(LS.stato&&LS.stato[aid] && !confirm("Il link che ha adesso smetterà di funzionare. Rifarlo?")) return;
+  return apiCall("weeklyLink",{athleteId:aid, athleteName:a.name}).then(j=>{ LS.nuovi[aid]=j.token; if(LS.stato) LS.stato[aid]={uses:0}; lsDraw(); })
+    .catch(e=>toast(e.message));
+}
+async function lsCreaTutti(){
+  const ath=teamAthletes().filter(a=>(a.profile||{}).consent && !(LS.stato&&LS.stato[a.id]) && !LS.nuovi[a.id]);
+  for(const a of ath){ try{ const j=await apiCall("weeklyLink",{athleteId:a.id, athleteName:a.name}); LS.nuovi[a.id]=j.token; if(LS.stato) LS.stato[a.id]={uses:0}; }catch(e){ toast(e.message); break; } }
+  lsDraw();
+}
+function lsChiudi(aid){
+  if(!confirm("Chiudere il suo link? Non potrà più rispondere finché non gliene fai uno nuovo.")) return;
+  apiCall("closeWeeklyLink",{athleteId:aid}).then(()=>{ if(LS.stato) delete LS.stato[aid]; delete LS.nuovi[aid]; lsDraw(); toast("Link chiuso"); }).catch(e=>toast(e.message));
+}
+function lsTesto(aid){
+  const a=(S.athletes||[]).find(x=>x.id===aid)||{name:""};
+  return "Ciao "+String(a.name).split(" ")[0]+", questo è il tuo link personale per la preparazione: una volta a settimana rispondi a quattro domande sulla salute e segni le sedute fatte a casa. Tienilo per te. ";
+}
+function lsManda(aid){
+  const tok=LS.nuovi[aid]; if(!tok) return;
+  if(navigator.share) navigator.share({title:"Il tuo link settimanale", text:lsTesto(aid), url:lsLink(tok)}).catch(()=>{});
+  else lsCopia(aid);
+}
+function lsCopia(aid){
+  const tok=LS.nuovi[aid]; if(!tok) return;
+  const t=lsTesto(aid)+lsLink(tok);
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(()=>toast("Copiato: incollalo nella sua chat")).catch(()=>toast("Non riesco a copiare"));
+  else toast("Non riesco a copiare");
+}
+
+/* ═══════════════ LA PAGINA DELL'ATLETA: LA SUA SETTIMANA ════════════════════
+   Si apre dal link personale, senza login. Lei vede il suo nome, il
+   questionario e le schede aperte; nient'altro della sua scheda, niente delle
+   compagne. Le risposte vanno al server, che le aggiunge e basta. */
+function settToken(){ try{ return new URL(location.href).searchParams.get("settimana"); }catch(e){ return null; } }
+let SETT={token:"", info:null, gate:null, probs:[], sed:[], rifai:false, err:"", invio:false};
+const RPE_PAROLE=["","Molto, molto facile","Facile","Moderata","Abbastanza dura","Dura","Dura","Molto dura","Molto dura","Durissima","Massimale"];
+function bootSettimana(token){
+  try{ hideAllLoginCards(); }catch(e){}
+  const lg=document.getElementById("login"); if(lg) lg.style.display="none";
+  const wrap=document.querySelector(".wrap"); if(wrap) wrap.style.display="none";
+  let el=document.getElementById("pubform");
+  if(!el){ el=document.createElement("div"); el.id="pubform"; el.className="pubform"; document.body.appendChild(el); }
+  el.innerHTML='<div class="pf-box"><div class="pf-load">Carico…</div></div>';
+  SETT.token=token;
+  apiCall("weeklyInfo",{token}).then(j=>{ SETT.info=j; settDraw(); })
+    .catch(e=>{ el.innerHTML='<div class="pf-box"><div class="pf-err2">⚠️ '+esc(e.message)+'</div>'+
+      '<p class="pf-p">Se il link non funziona più, chiedine uno nuovo al tuo preparatore.</p></div>'; });
+}
+function settBtn(on, txt, fn, cls){ return '<button type="button" class="st-b'+(on?' on':'')+(cls?' '+cls:'')+'" onclick="'+fn+'">'+txt+'</button>'; }
+function settNuovoProb(q1){ return {t:"", z:"", l:"", s:[], q1:q1||null, q2:null, q3:null, q4:null, gg:null, nuovo:null}; }
+function settGate(v){
+  SETT.gate=v;
+  if(v===0) SETT.probs=[];
+  else if(!SETT.probs.length) SETT.probs=[settNuovoProb(v)];
+  else if(SETT.probs[0].q1==null || SETT.probs.length===1) SETT.probs[0].q1=v;
+  settDraw();
+}
+function settP(i,k,v){
+  const p=SETT.probs[i]; if(!p) return;
+  if(k==="s"){ const j=p.s.indexOf(v); if(j>=0) p.s.splice(j,1); else p.s.push(v); }
+  else p[k]=v;
+  if(k==="t"){ p.z=""; p.l=""; p.s=[]; }
+  if(k==="q1" && v===3){ p.q2=p.q3=p.q4=null; }
+  settDraw();
+}
+function settRispondeOst(){ return !SETT.info.ostrcGia || SETT.rifai; }
+function settOstErr(){
+  if(!settRispondeOst()) return null;
+  if(SETT.gate==null) return "Rispondi alla prima domanda sulla salute.";
+  if(SETT.gate===0) return null;
+  for(let i=0;i<SETT.probs.length;i++){
+    const p=SETT.probs[i], n=SETT.probs.length>1?" (problema "+(i+1)+")":"";
+    if(!p.t) return "Dimmi se è un infortunio o una malattia"+n+".";
+    if(p.t==="inf" && !p.z) return "Dimmi dove"+n+".";
+    if(p.t==="mal" && !p.s.length) return "Scegli almeno un sintomo"+n+".";
+    if(!p.q1) return "Rispondi a «per questo problema»"+n+".";
+    if(p.q1<3 && (p.q2==null||p.q3==null||p.q4==null)) return "Rispondi a tutte le domande"+n+".";
+    if(p.gg==null) return "Dimmi quanti giorni hai perso"+n+".";
+    if(p.nuovo==null) return "Dimmi se è un problema nuovo"+n+".";
+  }
+  return null;
+}
+function settGiorni(){
+  const o=dayNum(SETT.info.oggi), nomi=["dom","lun","mar","mer","gio","ven","sab"];
+  const out=[]; for(let g=0;g<=7;g++){ const iso=isoDaNum(o-g); const wd=new Date(iso+"T12:00:00Z").getUTCDay();
+    out.push({d:iso, l:g===0?"Oggi":g===1?"Ieri":nomi[wd]+" "+iso.slice(8,10)}); }
+  return out;
+}
+function settSedErr(){
+  for(const x of SETT.sed){
+    if(!x.sk) return "Scegli la scheda della seduta.";
+    if(!x.esito) return "Dimmi se l'hai fatta tutta o in parte.";
+    if(!x.rpe) return "Dimmi quanto è stata dura (1-10).";
+    if(!(x.min>=5 && x.min<=240)) return "Scrivi quanti minuti (fra 5 e 240).";
+  }
+  return null;
+}
+function settSed(i,k,v){ const x=SETT.sed[i]; if(!x) return; x[k]=v; settDraw(); }
+function settDraw(){
+  const el=document.getElementById("pubform"); if(!el) return;
+  const I=SETT.info;
+  let h='<div class="pf-box"><div class="pf-head"><div class="pf-brand">IRON PERFORMANCE</div><h1>Ciao '+esc(I.nome||"")+'</h1>'+
+    '<div class="pf-sub">'+(I.squadra?esc(I.squadra)+' · ':'')+'pensa agli <b>ultimi 7 giorni</b>. Ci vuole un minuto.</div></div>';
+  // ── salute
+  h+='<div class="pf-fields"><div class="pf-sec">La tua salute</div>';
+  if(!settRispondeOst()){
+    h+='<div class="pf-hint">✓ Hai già risposto '+(I.ostrcGia===I.oggi?'oggi':'il '+fmtDate(I.ostrcGia))+'. '+
+      '<a href="#" onclick="SETT.rifai=true;settDraw();return false">Vuoi correggere?</a></div>';
+  } else {
+    h+='<div class="pf-l st-q">'+OST_GATE.t+'</div><div class="st-col">'+OST_GATE.o.map((o,i)=>settBtn(SETT.gate===i, o, 'settGate('+i+')')).join("")+'</div>';
+    SETT.probs.forEach((p,i)=>{
+      h+='<div class="st-prob"><div class="st-ph"><b>'+(SETT.probs.length>1?'Problema '+(i+1):'Il problema')+'</b>'+
+        (i>0?'<a href="#" onclick="SETT.probs.splice('+i+',1);settDraw();return false">togli</a>':'')+'</div>';
+      h+='<div class="st-row">'+settBtn(p.t==="inf","Infortunio o dolore",'settP('+i+',\'t\',\'inf\')')+settBtn(p.t==="mal","Malattia",'settP('+i+',\'t\',\'mal\')')+'</div>';
+      if(p.t==="inf"){
+        h+='<label class="pf-l">Dove?</label><select onchange="settP('+i+',\'z\',this.value)"><option value="">—</option>'+
+          Object.keys(OST_ZONE).map(k=>'<option value="'+k+'"'+(p.z===k?' selected':'')+'>'+esc(OST_ZONE[k])+'</option>').join("")+'</select>';
+        if(OST_ARTO.indexOf(p.z)>=0) h+='<div class="st-row">'+Object.keys(OST_LATO).map(k=>settBtn(p.l===k, OST_LATO[k], 'settP('+i+',\'l\',\''+k+'\')')).join("")+'</div>';
+      } else if(p.t==="mal"){
+        h+='<label class="pf-l">Che sintomi? (anche più di uno)</label><div class="st-wrap">'+
+          Object.keys(OST_SINT).map(k=>settBtn(p.s.indexOf(k)>=0, OST_SINT[k], 'settP('+i+',\'s\',\''+k+'\')', 'sm')).join("")+'</div>';
+        const rossi=p.s.filter(k=>OST_ROSSI.indexOf(k)>=0);
+        if(rossi.length) h+='<div class="pf-hint pf-minor"><b>'+esc(rossi.map(k=>OST_SINT[k]).join(", "))+'</b>: dillo oggi stesso ai tuoi genitori e al preparatore. Prima di allenarti di nuovo serve il medico.</div>';
+      }
+      h+='<label class="pf-l st-q">'+OST_DOM.q1.t+'</label><div class="st-col">'+[1,2,3].map(v=>settBtn(p.q1===v, OST_DOM.q1.o[v], 'settP('+i+',\'q1\','+v+')')).join("")+'</div>';
+      if(p.q1 && p.q1<3) ["q2","q3","q4"].forEach(k=>{
+        h+='<label class="pf-l st-q">'+OST_DOM[k].t+'</label><div class="st-row">'+OST_DOM[k].o.map((o,v)=>settBtn(p[k]===v, o, 'settP('+i+',\''+k+'\','+v+')')).join("")+'</div>';
+      });
+      h+='<label class="pf-l st-q">Quanti giorni non hai potuto allenarti o giocare per questo, negli ultimi 7?</label><div class="st-row st-n st-n4">'+
+        [0,1,2,3,4,5,6,7].map(v=>settBtn(p.gg===v, String(v), 'settP('+i+',\'gg\','+v+')')).join("")+'</div>';
+      h+='<label class="pf-l st-q">È un problema nuovo?</label><div class="st-row">'+settBtn(p.nuovo===true,"Sì, nuovo",'settP('+i+',\'nuovo\',true)')+
+        settBtn(p.nuovo===false,"No, l\'avevo già",'settP('+i+',\'nuovo\',false)')+'</div></div>';
+    });
+    if(SETT.gate>0 && SETT.probs.length<3) h+='<button type="button" class="st-add" onclick="SETT.probs.push(settNuovoProb(null));settDraw()">+ Ho anche un altro problema</button>';
+  }
+  h+='</div>';
+  // ── lavoro a casa
+  const sk=I.schede||[];
+  if(sk.length){
+    h+='<div class="pf-fields" style="margin-top:12px"><div class="pf-sec">Lavoro a casa</div>'+
+      sk.map(s=>'<div class="st-sk"><b>'+esc(s.titolo||"Scheda del "+fmtDate(s.d))+'</b><small>'+(s.volte?s.volte+' volte a settimana · ':'')+
+        'segnate negli ultimi 7 giorni: '+s.fatte7+'</small></div>').join("");
+    SETT.sed.forEach((x,i)=>{
+      h+='<div class="st-prob"><div class="st-ph"><b>Seduta</b><a href="#" onclick="SETT.sed.splice('+i+',1);settDraw();return false">togli</a></div>';
+      if(sk.length>1) h+='<select onchange="settSed('+i+',\'sk\',this.value)"><option value="">Quale scheda?</option>'+sk.map(s=>'<option value="'+escAttr(s.id)+'"'+(x.sk===s.id?' selected':'')+'>'+esc(s.titolo||"Scheda del "+fmtDate(s.d))+'</option>').join("")+'</select>';
+      h+='<label class="pf-l">Quando?</label><div class="st-wrap">'+settGiorni().map(g=>settBtn(x.d===g.d, g.l, 'settSed('+i+',\'d\',\''+g.d+'\')', 'sm')).join("")+'</div>';
+      h+='<div class="st-row">'+settBtn(x.esito==="tutta","Fatta tutta",'settSed('+i+',\'esito\',\'tutta\')')+settBtn(x.esito==="parte","Fatta in parte",'settSed('+i+',\'esito\',\'parte\')')+'</div>';
+      h+='<label class="pf-l">Quanto è stata dura? '+(x.rpe?'<b>'+x.rpe+' · '+RPE_PAROLE[x.rpe]+'</b>':'')+'</label><div class="st-row st-n">'+
+        [1,2,3,4,5,6,7,8,9,10].map(v=>settBtn(x.rpe===v, String(v), 'settSed('+i+',\'rpe\','+v+')')).join("")+'</div>';
+      h+='<label class="pf-l">Quanti minuti?</label><input type="number" inputmode="numeric" min="5" max="240" value="'+(x.min||"")+'" onchange="settSed('+i+',\'min\',parseInt(this.value,10)||null)">';
+      h+='</div>';
+    });
+    if(SETT.sed.length<7) h+='<button type="button" class="st-add" onclick="SETT.sed.push({sk:'+(sk.length===1?'\''+escAttr(sk[0].id)+'\'':'""')+', d:SETT.info.oggi, esito:null, rpe:null, min:null});settDraw()">+ Segna una seduta fatta</button>';
+    h+='</div>';
+  }
+  h+='<div class="pf-err" id="stErr">'+esc(SETT.err||"")+'</div>'+
+    '<button class="pf-btn" '+(SETT.invio?'disabled':'')+' onclick="settInvia()">'+(SETT.invio?'Invio…':'Invia')+'</button>'+
+    '<div class="pf-foot">Le tue risposte le legge il tuo preparatore. Se qualcosa peggiora, diglielo subito: non aspettare la settimana dopo.</div></div>';
+  el.innerHTML=h;
+}
+function settInvia(){
+  const eo=settOstErr(), es=settSedErr();
+  const manda={token:SETT.token};
+  if(settRispondeOst()){
+    if(eo){ SETT.err=eo; settDraw(); return; }
+    manda.ostrc={p:SETT.gate===0?[]:SETT.probs.map(p=>{
+      const r={t:p.t, q1:p.q1, gg:p.gg, nuovo:p.nuovo===true};
+      if(p.t==="inf"){ r.z=p.z; if(p.l) r.l=p.l; } else r.s=p.s.slice();
+      if(p.q1<3){ r.q2=p.q2; r.q3=p.q3; r.q4=p.q4; }
+      return r; })};
+  }
+  if(es){ SETT.err=es; settDraw(); return; }
+  if(SETT.sed.length) manda.sedute=SETT.sed.map(x=>({sk:x.sk, d:x.d, esito:x.esito, rpe:x.rpe, min:x.min}));
+  if(!manda.ostrc && !manda.sedute){ SETT.err="Non c'è niente da inviare: hai già risposto, e non hai segnato sedute."; settDraw(); return; }
+  SETT.err=""; SETT.invio=true; settDraw();
+  apiCall("weeklySubmit", manda).then(()=>{
+    const el=document.getElementById("pubform");
+    el.innerHTML='<div class="pf-box"><div class="pf-done"><div class="pf-ok">✓</div><h2>Grazie, '+esc(SETT.info.nome||"")+'!</h2>'+
+      '<p class="pf-p">Ricevuto. Ci vediamo in palestra.</p>'+
+      '<p class="pf-p">Tieni questo link: ti serve anche la settimana prossima.</p></div></div>';
+  }).catch(e=>{ SETT.invio=false; SETT.err=e.message; settDraw(); });
+}
+
+/* ═══════════════ LA PAGINA PER L'ALLENATORE ════════════════════════════════
+   Un foglio per atleta da dare a chi allena la squadra: è disponibile, quanto
+   ha lavorato, quanto ha giocato, cosa è cambiato nei test. La salute c'è
+   solo in forma di riassunto (nessuna anamnesi), e la puoi togliere. */
+let ALL={aid:null, salute:true, commento:""};
+function allenDati(aid, opz){
+  opz=opz||{};
+  const a=(S.athletes||[]).find(x=>x.id===aid); if(!a) return null;
+  const oggi=opz.oggi||todayISO();
+  const P=profiloDati(aid, {peso:false, squadra:false});
+  const gare=((S.load&&S.load[aid])||[]).filter(e=>e.exercise==="gara" && e.d<=oggi).slice(-5).reverse().map(e=>{
+    const g=gareDi(a.team).find(x=>x.d===e.d)||{};
+    const sc=((S.scout||{})[aid]||[]).find(x=>x.d===e.d);
+    return {d:e.d, avv:g.avv||"", set:e.set!=null?e.set:null, min:e.min||null, rpe:e.rpe!=null?e.rpe:null, pt:sc?sc.pt:null};
+  });
+  const sett=[]; for(let w=0;w<4;w++){ const fine=isoDaNum(dayNum(oggi)-7*w), e=ostDellaSett(aid, fine); sett.push({fine:fine, x:e?ostLeggi(e):null}); }
+  return {a:a, oggi:oggi, P:P, disp:dispOggi(aid, oggi), fuori:dispGiorniFuori(aid, oggi), carico:caricoSett(aid, oggi),
+    pres:presStats(aid, isoDaNum(dayNum(oggi)-27)), gare:gare, sett:sett, casa:skAderenza(aid, oggi).filter(x=>!x.finita||dayNum(oggi)-dayNum(x.e.d)<35)};
+}
+function allenHtml(aid, opz){
+  opz=opz||{};
+  const D=allenDati(aid, opz); if(!D) return "";
+  const a=D.a, tm=(S.teams||[]).find(t=>t.id===a.team), ruolo=ruoloDi(a);
+  let b='<div class="br">IRON PERFORMANCE · PER LO STAFF</div><h1>'+esc(a.name)+'</h1>'+
+    '<p class="sub">'+(tm?esc(tm.name):'Senza squadra')+(ruolo?' · '+esc(ruoloEtichetta(ruolo,a.sex)):'')+' · al '+fmtDate(D.oggi)+'</p>';
+  const box=[];
+  box.push('<div><span>Disponibilità</span><b>'+(D.disp?esc(DISP[D.disp.stato].l):'Piena')+'</b><small>'+(D.disp?'dal '+fmtDate(D.disp.d):'')+'</small></div>');
+  if(D.pres && D.pres.tot) box.push('<div><span>Presenze 4 sett.</span><b>'+D.pres.pc+'%</b><small>'+(D.pres.p+D.pres.r)+' su '+D.pres.tot+'</small></div>');
+  if(D.carico) box.push('<div><span>Carico 7 giorni</span><b>'+D.carico.sett+' AU</b><small>'+(D.carico.insufficient?'media non ancora calcolabile':'media '+D.carico.media+' · '+({ok:"nella norma",picco:"più carica del solito",calo:"più scarica del solito"}[D.carico.stato]))+'</small></div>');
+  if(D.casa.length){ const c=D.casa[0]; box.push('<div><span>Lavoro a casa</span><b>'+c.fatte+(c.prev!=null?'/'+c.prev:'')+'</b><small>sedute segnate</small></div>'); }
+  b+='<div class="box">'+box.join("")+'</div>';
+  if(opz.salute!==false){
+    b+='<h2>Salute (le sue risposte, ultime 4 settimane)</h2><table><tr><th>Settimana fino al</th><th>Problemi</th><th>Gravità</th><th>Giorni persi</th></tr>'+
+      D.sett.map(s=>'<tr><td>'+fmtDate(s.fine)+'</td><td>'+(!s.x?'<small>nessuna risposta</small>':s.x.nessuno?'nessuno':s.x.probs.map(p=>esc(p.nome)+(p.sost?' <b>(sostanziale)</b>':'')).join("<br>"))+'</td>'+
+        '<td>'+(s.x&&!s.x.nessuno?s.x.grav+'/100':'—')+'</td><td>'+(s.x&&s.x.gg?s.x.gg:'—')+'</td></tr>').join("")+'</table>'+
+      (D.fuori?'<p class="sub">Giorni fuori negli ultimi 12 mesi: <b>'+D.fuori+'</b></p>':'');
+  }
+  if(D.gare.length){
+    b+='<h2>Ultime partite</h2><table><tr><th>Data</th><th>Avversario</th><th>Set</th><th>Minuti</th><th>RPE</th><th>Punti</th></tr>'+
+      D.gare.map(g=>'<tr><td>'+fmtDate(g.d)+'</td><td>'+esc(g.avv||"—")+'</td><td>'+(g.set!=null?g.set:'—')+'</td><td>'+(g.min||'—')+'</td><td>'+(g.rpe!=null?g.rpe:'—')+'</td><td>'+(g.pt!=null?g.pt:'—')+'</td></tr>').join("")+'</table>';
+  }
+  const r=(D.P&&D.P.righe)||[];
+  if(r.length){
+    b+='<h2>Test</h2><table><tr><th>Test</th><th>Ultimo</th><th>Dalla volta prima</th></tr>'+
+      r.map(x=>{ const d=x.delta; return '<tr class="'+(d?d.verdetto:"")+'"><td class="n">'+esc(x.nome)+'</td><td><b>'+fmtNum(x.ultimo)+'</b> '+esc(x.unit)+' <small>'+fmtDate(x.d)+'</small></td>'+
+        '<td>'+(d?(d.raw>0?"+":"")+fmtNum(Math.round(d.raw*100)/100)+' '+esc(x.unit)+' <small class="v">'+PROF_VERD[d.verdetto]+'</small>':'<small>prima misura</small>')+'</td></tr>'; }).join("")+'</table>';
+  }
+  if(opz.commento) b+='<h2>Note del preparatore</h2><p class="com">'+esc(opz.commento).replace(/\n/g,"<br>")+'</p>';
+  b+='<p class="note">Il carico è RPE × minuti di ogni seduta, comprese partite e lavoro a casa segnato da lei. «Stabile» nei test vuol dire dentro l\'errore della misura. '+
+    (opz.salute!==false?'La salute è quella che dichiara lei ogni settimana (questionario OSTRC-H2): non è una diagnosi. Documento riservato allo staff.':'')+'</p>';
+  return b;
+}
+function openAllen(aid){
+  const a=(S.athletes||[]).find(x=>x.id===aid); if(!a) return;
+  ALL={aid:aid, salute:true, commento:""};
+  modal('<div class="mh"><div><div class="eyebrow">Per lo staff</div><div class="mt">🧾 Pagina per l\'allenatore</div>'+
+    '<div class="ms">'+esc(a.name)+' · disponibilità, carico, partite, test</div></div><button class="mcl" onclick="closeM()">✕</button></div>'+
+    '<label class="tchk"><input type="checkbox" checked onchange="ALL.salute=this.checked;allenDraw()"><span>Includi il riassunto della salute (dato sanitario: solo a chi ne ha bisogno)</span></label>'+
+    '<label class="fl">Note (vanno sul foglio)</label><textarea rows="3" maxlength="800" placeholder="Es. in campo solo seconda linea fino a venerdì" oninput="ALL.commento=this.value"></textarea>'+
+    '<button class="btn primary" style="width:100%;margin-top:10px" onclick="allenStampa()">🖨 Stampa / salva in PDF</button>'+
+    '<div class="profprev" id="allPrev"></div>');
+  allenDraw();
+}
+function allenDraw(){ const el=document.getElementById("allPrev"); if(el) el.innerHTML=allenHtml(ALL.aid, {salute:ALL.salute}); }
+function allenStampa(){
+  const a=(S.athletes||[]).find(x=>x.id===ALL.aid); if(!a) return;
+  const doc='<!doctype html><html lang="it"><head><meta charset="utf-8"><title>Per l\'allenatore — '+esc(a.name)+'</title><style>'+PROF_CSS+
+    '</style></head><body>'+allenHtml(ALL.aid, {salute:ALL.salute, commento:ALL.commento})+'</body></html>';
+  const w=window.open("", "_blank");
+  if(!w){ toast("Il browser ha bloccato la finestra: consenti i popup e riprova"); return; }
+  w.document.write(doc); w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} }, 400);
+}
+
+/* ── Le schede mandate: cosa resta per sapere se le fa ── */
+function skRegistra(){
+  if(!SK || !SK.aid || !idOk(SK.aid)) return;
+  const d=/^\d{4}-\d{2}-\d{2}$/.test(String(SK.data||""))?SK.data:todayISO();
+  if(!SK.inv) SK.inv=uid();
+  if(!S.skin) S.skin={};
+  const l=skinArr(SK.aid);
+  l.filter(e=>e.id===SK.inv && e.d!==d).forEach(e=>tombSet("ki:"+SK.aid+":"+e.d+"|"+e.exercise));
+  const nuovo=l.filter(e=>e.id!==SK.inv);
+  nuovo.push({d:d, exercise:"sk:"+SK.inv, id:SK.inv, titolo:String(SK.titolo||"").slice(0,120), n:SK.ex.filter(e=>String(e.nome||"").trim()).length,
+    volte:SK.volte||null, sett:SK.sett||2});
+  nuovo.sort((a,b)=>a.d<b.d?-1:1);
+  S.skin[SK.aid]=nuovo;
+  if(S.tomb) delete S.tomb["ki:"+SK.aid+":"+d+"|sk:"+SK.inv];
+  skBozzaSalva(); save();
+}
+
 /* ═══════════════ PDF DELLA TABELLA ═══════════════════════════════════════════
    Il foglio da far vedere alle ragazze o da mandare. Esce dalla stampa del
    browser («Salva come PDF»): niente librerie, niente file sul server.
@@ -11643,6 +12327,8 @@ function renderToday(){
     if(cs && cs.stato==="picco"){ flags.push({t:"📈 Settimana carica ×"+fmtNum(Math.round(cs.rapporto*10)/10),c:"amber"}); sev+=1; }
     const cf=cmjFatigue(a.id);
     if(cf&&cf.fatigued){ flags.push({t:"⬇️ CMJ "+fmtNum(Math.round(cf.pct*10)/10)+"%",c:"down"}); sev+=2; }
+    const sf=saluteFlags(a.id, today);
+    sf.forEach(f=>{ flags.push({t:f.t, c:f.c}); sev+=f.sev; });
     let sug=""; const rpc=(rEv&&rEv.pc!=null)?rEv.pc:null; const rCol=rEv?rEv.color:null;
     if(haInfortunio(p)) sug="Lavoro sotto soglia di dolore; valuta fisio/medico prima di caricare.";
     else if(!isNaN(pain) && pain>=S.cfg.painCut) sug="Dolore presente: resta sotto soglia, non peggiorare nelle 24h.";
@@ -11652,6 +12338,10 @@ function renderToday(){
     else if(rCol==="amber") sug="Modula il volume, evita massimali; cura il recupero.";
     else if(cs && cs.stato==="picco") sug="Ultimi 7 giorni "+cs.sett+" AU contro una media di "+cs.media+": se il picco non era nel programma, alleggerisci la prossima seduta.";
     else if(cf&&cf.fatigued) sug="Riduci pliometria/alta intensità; monitora il CMJ.";
+    // un segnale rosso dal questionario, o «fuori», vale più di ogni altro consiglio
+    const sfp=sf.filter(f=>f.prio);
+    if(sfp.length) sug=sfp[0].sug;
+    else if(sf.length) sug=sf[0].sug+(sug?" "+sug:"");
     return {a, flags, sev, rl, rToday, sug, doc};
   });
   const manage=items.filter(x=>x.flags.length).sort((x,y)=>y.sev-x.sev);
@@ -11804,6 +12494,7 @@ function renderReadiness(){
        ? '<span>manca'+(mancano.length>1?'no':'')+': '+mancano.slice(0,6).map(a=>esc(a.name.split(" ")[0])).join(", ")+
          (mancano.length>6?' e altre '+(mancano.length-6):'')+'</span>'
        : '<span>fatto da tutte</span>')+'</div>'+
+     saluteRiquadro(rows, oggi)+
      '<div class="rd-nota">In alto chi sta peggio rispetto alla sua media. Tocca una riga per lo storico.</div>';
 
   scored.forEach(function(o){ const a=o.a, last=o.last;
@@ -11830,7 +12521,7 @@ function renderReadiness(){
     const acHtml=caricoChip(caricoSett(a.id));
     const sr=saltiRiassunto(a.id); let saltiHtml="";
     if(sr) saltiHtml='<span class="rd-cmj flat" title="ultima seduta '+fmtDate(sr.ultima.d)+': '+sr.ultima.n+' salti · media settimanale delle 4 settimane prima: '+sr.media4+'">Salti 7gg '+sr.sett+(sr.media4?' · media '+sr.media4:'')+'</span>';
-    const extra=[cmjHtml,acHtml,saltiHtml].filter(Boolean).join("");
+    const extra=[dispChip(a.id, oggi),ostChip(a.id, oggi),cmjHtml,acHtml,saltiHtml].filter(Boolean).join("");
     h+='<div class="rd-row" onclick="openReadinessHistory(\''+a.id+'\')">'+scoreHtml+
        '<div class="rd-main"><div class="rd-name">'+flag+esc(a.name)+'</div>'+sub+
        (extra?'<div class="rd-sub rd-x">'+extra+'</div>':'')+'</div></div>';
@@ -11951,7 +12642,7 @@ function dayLoad(e){ return (e.rpe||0)*(e.min||0); }
    settimana vuota può essere riposo o app non usata, e non so quale delle
    due. Vedi il commento su CFG_DEF per perché non si chiama più ACWR. */
 function caricoSett(aid, oggi){
-  const o=dayNum(oggi||todayISO()), arr=(S.load&&S.load[aid])||[];
+  const o=dayNum(oggi||todayISO()), arr=caricoVoci(aid);
   if(!arr.length) return null;
   const cfg=S.cfg||CFG_DEF;
   /* Una partita segnata senza RPE (i set ci sono, il carico no) rende la sua
@@ -12493,6 +13184,8 @@ function openSettings(){
     row("🔗","Manda il modulo alla squadra","Un link solo: anamnesi e consenso le compilano loro","closeM();openTeamFormPicker()")+
     row("➕","Aggiungi un'atleta a mano","","closeM();addAthlete()")+
     row("📄","Schede esercizi","PDF da mandare su WhatsApp · modelli salvati","openModelli()", (S.modelli||[]).length||"")+
+    row("🗓","Link settimanali","Salute e lavoro a casa: rispondono loro, una volta a settimana","openLinkSett()")+
+    row("🩹","Salute della squadra","Questionario settimanale, ultime 8 settimane","openSalute()")+
     '</div>';
 
   const pol=S.policy||{}, polOk=policyReady(pol)&&Number(pol.version);
@@ -12583,7 +13276,7 @@ function sanitizeImport(o){
   // l'import li scartava in silenzio. Chi ripristinava un backup perdeva
   // TUTTE le valutazioni posturali e TUTTE le curve carico-velocità,
   // senza un errore e senza un avviso.
-  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},piani:{},salti:{},scout:{},modelli:[],policy:Object.assign({},POLICY_DEF)};
+  const out={athletes:[],data:{},teams:[],readiness:{},load:{},screen:{},lv:{},pres:{},gruppi:{},custom:[],te:{},tomb:{},sedute:{},gare:{},mjl:{},piani:{},salti:{},scout:{},modelli:[],ost:{},skin:{},skf:{},disp:{},policy:Object.assign({},POLICY_DEF)};
 
   (Array.isArray(o.teams)?o.teams:[]).slice(0,100).forEach(t=>{
     if(!t||!idOk(t.id)) return;
@@ -12863,6 +13556,60 @@ function sanitizeImport(o){
       });
       if(l.length){ l.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0); out.scout[aid]=l; }
     });
+  }
+  /* Salute (questionario OSTRC-H2), rientro, schede mandate e sedute a casa:
+     codici chiusi, numeri nei loro intervalli, solo atlete che esistono. Una
+     risposta con anche un solo problema non valido si scarta intera: metà
+     questionario darebbe una gravità sbagliata. */
+  {
+    const own=(m,k)=>Object.prototype.hasOwnProperty.call(m,String(k));
+    const intF=(v,a,b)=>Number.isInteger(v)&&v>=a&&v<=b;
+    const perAtleta=(k, fn, max)=>{
+      if(!o[k]||typeof o[k]!=="object"||Array.isArray(o[k])) return;
+      Object.keys(o[k]).forEach(aid=>{
+        if(!live[aid]||!Array.isArray(o[k][aid])) return;
+        const m={};
+        o[k][aid].slice(-(max||600)).forEach(e=>{ if(!e||!isDate(e.d)) return; const r=fn(e); if(r) m[r.d+"|"+r.exercise]=r; });
+        const l=Object.keys(m).sort().map(x=>m[x]);
+        if(l.length) out[k][aid]=l;
+      });
+    };
+    perAtleta("ost", e=>{
+      if(!Array.isArray(e.p)||e.p.length>3) return null;
+      const p=[];
+      for(const x of e.p){
+        if(!x||typeof x!=="object") return null;
+        const r={};
+        if(x.t==="inf"&&own(OST_ZONE,x.z)){ r.t="inf"; r.z=x.z; if(own(OST_LATO,x.l)) r.l=x.l; }
+        else if(x.t==="mal"&&Array.isArray(x.s)){ const s=x.s.filter((v,i,a)=>own(OST_SINT,v)&&a.indexOf(v)===i).slice(0,12); if(!s.length) return null; r.t="mal"; r.s=s; }
+        else return null;
+        if(!intF(x.q1,1,3)||!intF(x.gg,0,7)) return null;
+        r.q1=x.q1; r.gg=x.gg;
+        if(x.q1<3){ if(!["q2","q3","q4"].every(q=>intF(x[q],0,3))) return null; r.q2=x.q2; r.q3=x.q3; r.q4=x.q4; }
+        r.nuovo=x.nuovo===true; p.push(r);
+      }
+      const r={d:e.d, exercise:"ostrc", p:p}; if(typeof e.at==="string"&&!isNaN(Date.parse(e.at))) r.at=e.at.slice(0,30);
+      return r;
+    });
+    perAtleta("skin", e=>{
+      if(!/^[A-Za-z0-9_-]{1,40}$/.test(String(e.id||""))) return null;
+      const r={d:e.d, exercise:"sk:"+e.id, id:String(e.id), titolo:str(e.titolo,120), n:intF(e.n,0,40)?e.n:0, sett:intF(e.sett,1,12)?e.sett:2};
+      if(intF(e.volte,1,7)) r.volte=e.volte;
+      return r;
+    }, 300);
+    perAtleta("skf", e=>{
+      if(!/^[A-Za-z0-9_-]{1,40}$/.test(String(e.sk||""))) return null;
+      if(e.esito!=="tutta"&&e.esito!=="parte") return null;
+      if(!intF(e.rpe,1,10)||!intF(e.min,5,240)) return null;
+      const r={d:e.d, exercise:"f:"+e.sk, sk:String(e.sk), esito:e.esito, rpe:e.rpe, min:e.min};
+      if(typeof e.at==="string"&&!isNaN(Date.parse(e.at))) r.at=e.at.slice(0,30);
+      return r;
+    }, 1500);
+    perAtleta("disp", e=>{
+      if(!own(DISP,e.stato)) return null;
+      const r={d:e.d, exercise:"disp", stato:e.stato}; const n=str(e.nota,200).trim(); if(n) r.nota=n;
+      return r;
+    }, 300);
   }
   /* I blocchi del piano: per squadra, solo esercizi noti, RPE solo di atlete
      che esistono. */
@@ -13757,7 +14504,7 @@ function loadDemo(){
     if(!S.tomb) S.tomb={};
     S.athletes.forEach(a=>{
       S.tomb["ath:"+a.id]=ora;
-      ["data","readiness","load","screen","lv","pres","mjl","salti","scout"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
+      ["data","readiness","load","screen","lv","pres","mjl","salti","scout","ost","skin","skf","disp"].forEach(k=>{ if(S[k]) delete S[k][a.id]; });
       gruppiTogli(a.id);
       pianiTogli(a.id);
     });
@@ -15450,7 +16197,11 @@ function toast(m){ const e=document.getElementById("toast"); e.textContent=m; e.
 
 /* ═══════════════ INIT ═══════════════ */
 const _anamToken=anamToken();
-if(_anamToken){
+const _settToken=settToken();
+if(_settToken && !_anamToken){
+  // la pagina della settimana: come il modulo anamnesi, niente login e niente dati di altre
+  bootSettimana(_settToken);
+} else if(_anamToken){
   // Un atleta che apre il link non deve mai vedere login, dati di altri
   // atleti, o dover interagire in alcun modo con lo stato locale dell'app.
   bootAnamnesi(_anamToken);

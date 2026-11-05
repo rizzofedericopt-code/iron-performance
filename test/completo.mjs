@@ -94,6 +94,11 @@ const PIENO = `{
   custom:[{id:"cx1",name:"Leg press",unit:"kg",base:"pred"}],
   modelli:[{id:"m1",nome:"Casa 1",titolo:"Lavoro a casa",note:"due volte",at:"2026-11-03T10:00:00.000Z",
     ex:[{nome:"Squat bulgaro",sr:"3×8",carico:"75%",rec:"90 s",note:"lento",link:"https://youtu.be/x",rm:"rmSquat"}]}],
+  ost:{a1:[{d:"2026-10-26",exercise:"ostrc",at:"2026-10-26T18:00:00.000Z",p:[{t:"inf",z:"ginocchio",l:"dx",q1:2,q2:2,q3:1,q4:2,gg:1,nuovo:true},{t:"mal",s:["gola","febbre"],q1:3,gg:2,nuovo:false}]},
+            {d:"2026-11-02",exercise:"ostrc",p:[]}]},
+  skin:{a1:[{d:"2026-10-20",exercise:"sk:k1",id:"k1",titolo:"Casa sett. 43",n:4,volte:2,sett:3}]},
+  skf:{a1:[{d:"2026-10-22",exercise:"f:k1",sk:"k1",esito:"parte",rpe:5,min:35,at:"2026-10-22T19:00:00.000Z"}]},
+  disp:{a1:[{d:"2026-10-27",exercise:"disp",stato:"part",nota:"ginocchio dx"},{d:"2026-11-03",exercise:"disp",stato:"prest"}]},
   te:{cmj:3.1, stat:0.3},
   cfg:{deltaNoise:5, rmBar:20},
   policy:{version:2, text:"informativa"},
@@ -128,6 +133,11 @@ const CHIAVI = {
   custom:  o => o.custom[0].name === "Leg press",
   modelli: o => { const m=o.modelli[0], e=m.ex[0]; return m.nome === "Casa 1" && m.note === "due volte" && e.sr === "3×8" && e.carico === "75%" &&
                   e.rec === "90 s" && e.note === "lento" && e.link === "https://youtu.be/x" && e.rm === "rmSquat"; },
+  ost:     o => { const e=o.ost.a1[0], p=e.p[0], q=e.p[1]; return o.ost.a1.length === 2 && o.ost.a1[1].p.length === 0 && p.z === "ginocchio" && p.l === "dx" &&
+                  p.q2 === 2 && p.q4 === 2 && p.gg === 1 && p.nuovo === true && q.t === "mal" && q.s[1] === "febbre" && q.q1 === 3 && q.q2 === undefined && !!e.at; },
+  skin:    o => { const e=o.skin.a1[0]; return e.id === "k1" && e.titolo === "Casa sett. 43" && e.n === 4 && e.volte === 2 && e.sett === 3; },
+  skf:     o => { const e=o.skf.a1[0]; return e.sk === "k1" && e.esito === "parte" && e.rpe === 5 && e.min === 35; },
+  disp:    o => o.disp.a1.length === 2 && o.disp.a1[0].stato === "part" && o.disp.a1[0].nota === "ginocchio dx" && o.disp.a1[1].stato === "prest",
   te:      o => o.te.cmj === 3.1 && o.te.stat === 0.3,
   cfg:     o => o.cfg.deltaNoise === 5,
   policy:  o => o.policy.version === 2,
@@ -151,7 +161,7 @@ prova("sincronizzazione: un dispositivo vuoto non cancella niente", () => {
 
 prova("sincronizzazione al contrario: il server pieno, il telefono vuoto", () => {
   const o = j(`mergeState(${PIENO}, {athletes:[],data:{}})`);
-  const persi = ["data","pres","gruppi","sedute","gare","piani","salti","custom","te","mjl"].filter(k => { try { return !CHIAVI[k](o); } catch (e) { return true; } });
+  const persi = ["data","pres","gruppi","sedute","gare","piani","salti","custom","te","mjl","ost","skin","skf","disp"].filter(k => { try { return !CHIAVI[k](o); } catch (e) { return true; } });
   assert.deepEqual(persi, [], "PERSI: " + persi.join(", "));
 });
 

@@ -713,6 +713,25 @@ tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
 .vidtipi{padding:8px 0 0}.vidtipi .chip small{opacity:.6;margin-left:3px}
 .vidroster{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .vidath small{opacity:.55;font-family:var(--mono)}
+/* analisi a fotogrammi */
+.fot-ctl{display:flex;gap:6px;align-items:center;justify-content:center;margin:8px 0 4px}
+.fot-ctl button{min-width:48px;min-height:44px;font-size:15px;font-weight:700;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--text);cursor:pointer}
+.fot-ctl span{min-width:120px;text-align:center;font-size:13px;color:var(--muted)}
+.fot-segni{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.fot-segni button{flex:1 1 30%;min-height:52px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--text);font-weight:700;font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.fot-segni button small{font-weight:500;font-size:12px;color:var(--muted)}
+.fot-segni button.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface2))}
+.fot-segni button.fot-vai{flex:0 0 44px;min-height:52px}
+.fot-modo{display:flex;gap:6px;margin-bottom:8px}
+.fot-modo button{flex:1;min-height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--text);font-weight:700;cursor:pointer}
+.fot-modo button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.fot-num{display:flex;flex-direction:column;gap:2px;margin:12px 0 8px}
+.fot-num b{font-size:30px;font-weight:800;font-family:var(--mono)}
+.fot-num span{font-size:13px;color:var(--muted)}
+.fot-punti{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.fot-punti span{font-size:13px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-family:var(--mono)}
+.fot-punti button{background:none;border:0;color:var(--muted);cursor:pointer;margin-left:4px}
+.fot-guida p{font-size:13.5px;line-height:1.5;margin:0 0 8px}
 .vidlist{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:6px}
 .videv,.vidtr{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);font-size:13px}
 .videv:last-child,.vidtr:last-child{border-bottom:none}
@@ -3585,6 +3604,7 @@ function render(){
   if(S.view==="gare"){ renderGare(); return; }
   if(S.view==="piano"){ renderPiano(); return; }
   if(S.view==="video"){ renderVideo(); return; }
+  if(S.view==="fotogrammi"){ renderFotogrammi(); return; }
   renderMatrix();
 }
 
@@ -3715,6 +3735,7 @@ function openColMenu(tid){
      ((tid==="pred" || (t.custom && t.base==="pred")) ? riga("↪","Sposta in un massimale","Erano stime di squat, stacco…? Portale nella loro colonna",'openSposta(\''+tid+'\')') : "")+
      riga("ⓘ","Come si esegue","Protocollo, interpretazione, consigli",'openGuide(\''+tid+'\')')+
      (MJ_TIPI.some(x=>x.t===tid)?riga("📲","Archivio My Jump","Ogni salto, con forza, potenza e velocità",'closeM();MJV.tipo=\''+MJ_TIPI.find(x=>x.t===tid).k+'\';setView(\'mj\')'):"")+
+     (MJ_TIPI.some(x=>x.t===tid)?riga("📹","Misura dal video","Altezza dal tempo di volo, fotogramma per fotogramma",'openFotogrammi({modo:\'salto\',tipo:\''+MJ_TIPI.find(x=>x.t===tid).k+'\'})'):"")+
      '</div>';
   modal(h);
 }
@@ -5523,7 +5544,8 @@ function openLVEntry(aid){
     '<p><b>Stessa cosa ogni volta.</b> Stesso bilanciere, stessa profondità, stesso dispositivo e '+
     'stessa posizione del sensore. Un cambio di profondità nell\'accosciata sposta la curva più di '+
     'tre settimane di allenamento.</p>'+
-    '<p class="lvwarn">Serve un dispositivo che misuri la velocità. A occhio o col cronometro non si fa: '+
+    '<p class="lvwarn">Serve un dispositivo che misuri la velocità, oppure un video al rallentatore (240) analizzato a fotogrammi: '+
+    'dà la velocità media (MV), come My Lift. A occhio o col cronometro non si fa: '+
     'un errore di 0,05 m/s su un punto sposta l\'1RM di diversi chili.</p>'+
     '</div></details>'+
 
@@ -5531,6 +5553,7 @@ function openLVEntry(aid){
     '<label class="fl">Esercizio</label><select id="lvEx" onchange="lvExChange()">'+opt+'</select>'+
     '<input id="lvExAltro" type="text" placeholder="Nome dell\'esercizio" style="display:none;margin-top:8px">'+
 
+    '<button class="btn sm" style="width:100%;margin-top:10px" onclick="openFotogrammi({aid:\''+aid+'\',modo:\'vbt\',ex:(document.getElementById(\'lvEx\')||{}).value||\'\'})">📹 Nessun encoder? Misura la velocità dal video</button>'+
     '<label class="fl">Che velocità ti dà il dispositivo</label>'+
     '<select id="lvVType" onchange="lvExChange()">'+vopt+'</select>'+
     '<div class="gnote" id="lvVNote" style="margin-top:0"></div>'+
@@ -11243,6 +11266,248 @@ function skAnteprima(){
   setTimeout(()=>{ try{ URL.revokeObjectURL(u); }catch(e){} }, 60000);
 }
 
+/* ═══════════════ ANALISI A FOTOGRAMMI: SALTO E VBT ════════════════════════
+   Lo stesso metodo di My Jump e My Lift: niente AI, si segnano a mano due
+   fotogrammi e la misura è il tempo fra loro. Funziona perché a 240
+   fotogrammi al secondo un fotogramma è 4,2 ms.
+   · Salto: tempo di volo t → altezza h = g·t²/8 (stessa formula di My Jump).
+   · Drop jump: anche il tempo di contatto → RSI = h / tempo di contatto.
+   · VBT: dall'inizio alla fine della spinta → velocità media concentrica
+     (MV) = escursione del bilanciere / tempo. È MV, non MPV: la fase in cui
+     il bilanciere frena alla fine non si può togliere con due fotogrammi.
+   Il conto vero è: tempo = fotogrammi fra i due segni / fotogrammi al secondo
+   DELLA RIPRESA. Il file può essere a velocità reale (240 nel file) o già
+   rallentato dall'iPhone (30 nel file, ogni fotogramma ripreso a 240): in
+   entrambi i casi un fotogramma del file è un fotogramma ripreso. NON vale
+   per i tratti a velocità normale all'inizio e alla fine di un rallentatore:
+   lì l'iPhone ne butta 7 su 8. Per questo il rallentatore va steso su tutta
+   la clip, e lo dice la guida.
+   Il video resta sul dispositivo: nell'app vanno solo i numeri. */
+const FOT_G=9.81;
+let FOT={da:"today", file:null, url:null, fpsFile:null, fpsRip:240, f:0, modo:"salto", tipo:"CMJ", segni:{}, aid:"", data:"", ex:"", rom:"", kg:"", punti:[], colonna:true};
+function fotTempo(f1,f2,fps){ return (Number.isFinite(f1)&&Number.isFinite(f2)&&fps>0) ? (f2-f1)/fps : null; }
+function fotAltezza(tv){ return tv>0 ? FOT_G*tv*tv/8*100 : null; }                    // cm
+// quanto sposta l'altezza un fotogramma di errore su uno dei due segni
+function fotRisoluzione(tv,fps){ return (tv>0&&fps>0) ? FOT_G*tv/4*(1/fps)*100 : null; }  // cm
+function fotSalto(segni,fps,tipo){
+  const out={};
+  const tv=fotTempo(segni.stacco, segni.atterr, fps);
+  if(tv==null) return {err:"Segna stacco e atterraggio"};
+  if(!(tv>0)) return {err:"L'atterraggio deve venire dopo lo stacco"};
+  out.tv=tv; out.h=fotAltezza(tv); out.ris=fotRisoluzione(tv,fps);
+  if(tipo==="Drop Jump"){
+    const tc=fotTempo(segni.contatto, segni.stacco, fps);
+    if(tc==null) return {err:"Nel drop jump segna anche il primo contatto dopo la caduta"};
+    if(!(tc>0)) return {err:"Il contatto deve venire prima dello stacco"};
+    out.tc=tc; out.rsi=(out.h/100)/tc;
+  }
+  out.avvisi=[];
+  if(out.h>80) out.avvisi.push("Più di 80 cm: controlla i fotogrammi al secondo della ripresa");
+  if(out.h<5) out.avvisi.push("Meno di 5 cm: controlla i segni o i fotogrammi al secondo");
+  if(out.tc!=null && (out.tc<0.1 || out.tc>0.6)) out.avvisi.push("Tempo di contatto insolito: controlla il segno del contatto");
+  if(fps<100) out.avvisi.push("Ripresa a meno di 100 fotogrammi al secondo: ogni fotogramma sposta l'altezza di ±"+fmtNum(Math.round(out.ris*10)/10)+" cm. Usa il rallentatore");
+  return out;
+}
+function fotVbt(segni,fps,romCm){
+  const t=fotTempo(segni.inizio, segni.fine, fps);
+  if(t==null) return {err:"Segna inizio e fine della spinta"};
+  if(!(t>0)) return {err:"La fine deve venire dopo l'inizio"};
+  const rom=parseFloat(String(romCm||"").replace(",","."));
+  if(!(rom>=5 && rom<=150)) return {err:"Scrivi l'escursione del bilanciere in cm (fra 5 e 150)"};
+  const v=(rom/100)/t, out={t:t, v:v, rom:rom, avvisi:[]};
+  out.err1=v/(t*fps);                                  // un fotogramma di errore, in m/s
+  if(v>2.5) out.avvisi.push("Più di 2,5 m/s: controlla i segni e i fotogrammi al secondo");
+  if(v<0.1) out.avvisi.push("Meno di 0,1 m/s: controlla i segni");
+  return out;
+}
+// fotogrammi al secondo del file: dalle differenze fra i tempi dei fotogrammi mostrati
+/* Lo schermo mostra 60 (o 120) immagini al secondo: un file a 240 fatto
+   scorrere a velocità normale ne salta tre su quattro, e la differenza fra due
+   fotogrammi MOSTRATI sembra 1/60. Per questo si misura a velocità ridotta e
+   si prende il quantile basso delle differenze, non la mediana. */
+function fotFpsDaTempi(tempi){
+  const d=[]; for(let i=1;i<tempi.length;i++){ const x=tempi[i]-tempi[i-1]; if(x>0.0005 && x<0.2) d.push(x); }
+  if(d.length<5) return null;
+  d.sort((a,b)=>a-b); const m=d[Math.floor(d.length*0.2)];
+  const f=1/m, std=[24,25,30,50,60,120,240];
+  const vic=std.reduce((b,x)=>Math.abs(x-f)<Math.abs(b-f)?x:b, std[0]);
+  return Math.abs(vic-f)/vic<0.06 ? vic : Math.round(f);
+}
+function fotEl(){ return document.getElementById("fotEl"); }
+function fotVai(f){
+  const v=fotEl(); if(!v||!FOT.url||!FOT.fpsFile) return;
+  const max=Math.max(0, Math.floor((v.duration||0)*FOT.fpsFile)-1);
+  FOT.f=Math.max(0, Math.min(max, Math.round(f)));
+  v.pause(); v.currentTime=(FOT.f+0.5)/FOT.fpsFile;           // centro del fotogramma: niente arrotondamenti al confine
+  fotInfo();
+}
+function fotPasso(n){ fotVai(FOT.f+n); }
+function fotDaVideo(){ const v=fotEl(); if(v&&FOT.fpsFile) FOT.f=Math.floor(v.currentTime*FOT.fpsFile+1e-6); fotInfo(); }
+async function fotApri(f){
+  if(!f) return;
+  if(FOT.url) try{ URL.revokeObjectURL(FOT.url); }catch(e){}
+  FOT.file=f; FOT.url=URL.createObjectURL(f); FOT.segni={}; FOT.f=0; FOT.fpsFile=null; FOT.fpsLetto=null;
+  const v=fotEl(); if(!v) return;
+  v.src=FOT.url; v.muted=true;
+  await new Promise(r=>{ v.onloadedmetadata=r; setTimeout(r,4000); });
+  FOT.fpsFile=await fotMisuraFps(v) || null; FOT.fpsLetto=FOT.fpsFile;
+  // un file a 120 o 240 è a velocità reale: la ripresa è quella
+  if(FOT.fpsFile>=100) FOT.fpsRip=[240,120].reduce((b,x)=>Math.abs(x-FOT.fpsFile)<Math.abs(b-FOT.fpsFile)?x:b, 240);
+  if(!FOT.fpsFile) toast("Non riesco a leggere i fotogrammi al secondo del file: sceglili a mano");
+  fotPannelli(); fotVai(0);
+}
+async function fotMisuraFps(v){
+  if(!v || typeof v.requestVideoFrameCallback!=="function") return null;
+  const tempi=[];
+  return await new Promise(ok=>{
+    let fine=false;
+    const stop=()=>{ if(fine) return; fine=true; try{ v.pause(); v.playbackRate=1; }catch(e){} ok(fotFpsDaTempi(tempi)); };
+    const cb=(now,meta)=>{ tempi.push(meta.mediaTime); if(tempi.length>=40) stop(); else v.requestVideoFrameCallback(cb); };
+    v.requestVideoFrameCallback(cb);
+    try{ v.playbackRate=0.25; }catch(e){}
+    v.currentTime=0;
+    const p=v.play(); if(p&&p.catch) p.catch(()=>stop());
+    setTimeout(stop, 4000);
+  });
+}
+function fotSegna(k){ if(!FOT.url||!FOT.fpsFile){ toast("Apri prima il video"); return; } FOT.segni[k]=FOT.f; fotInfo(); }
+function fotSegniDi(){
+  return FOT.modo==="vbt" ? [["inizio","Inizio spinta"],["fine","Fine spinta"]]
+    : FOT.tipo==="Drop Jump" ? [["contatto","Contatto"],["stacco","Stacco"],["atterr","Atterraggio"]]
+    : [["stacco","Stacco"],["atterr","Atterraggio"]];
+}
+function openFotogrammi(opz){
+  opz=opz||{};
+  if(opz.aid) FOT.aid=opz.aid;
+  if(opz.modo) FOT.modo=opz.modo;
+  if(opz.tipo) FOT.tipo=opz.tipo;
+  if(opz.ex) FOT.ex=opz.ex;
+  if(!FOT.data) FOT.data=todayISO();
+  if(S.view!=="fotogrammi") FOT.da=S.view||"today";
+  closeM(); S.view="fotogrammi"; render();
+}
+function renderFotogrammi(){
+  const grid=document.getElementById("grid");
+  const r=document.getElementById("fotRoot");
+  if(r && r.isConnected){ fotPannelli(); return; }
+  grid.innerHTML='<div id="fotRoot" class="vidv">'+
+    '<div class="vidtop"><button class="btn sm" onclick="setView(FOT.da&&FOT.da!==\'fotogrammi\'?FOT.da:\'today\')">← Indietro</button>'+
+    '<div class="vidtit">📹 Analisi a fotogrammi</div>'+
+    '<label class="btn sm primary vidfile">Apri il video<input type="file" accept="video/*" onchange="fotApri(this.files&&this.files[0])"></label></div>'+
+    '<div class="gnote" style="margin-top:6px">Il video resta su questo dispositivo: nell\'app vanno solo i numeri.</div>'+
+    '<div class="vidgrid"><div class="vidcol">'+
+      '<div class="vidwrap"><video id="fotEl" playsinline muted preload="auto"></video></div>'+
+      '<div class="fot-ctl"><button onclick="fotPasso(-10)">−10</button><button onclick="fotPasso(-1)">−1</button>'+
+      '<span id="fotF" class="mono">—</span><button onclick="fotPasso(1)">+1</button><button onclick="fotPasso(10)">+10</button></div>'+
+      '<input id="fotSl" type="range" min="0" max="1000" value="0" oninput="fotScorri(this.value)" style="width:100%">'+
+      '<div id="fotSegni" class="fot-segni"></div>'+
+    '</div><div class="vidcol"><div id="fotSet"></div><div id="fotRis"></div><div id="fotGuida"></div></div></div></div>';
+  const v=fotEl();
+  if(v){ v.addEventListener("seeked", ()=>fotInfo()); if(FOT.url){ v.src=FOT.url; v.addEventListener("loadedmetadata", ()=>fotVai(FOT.f), {once:true}); } }
+  fotPannelli();
+}
+function fotScorri(x){ const v=fotEl(); if(!v||!v.duration||!FOT.fpsFile) return; fotVai(x/1000*v.duration*FOT.fpsFile); }
+function fotPannelli(){
+  const set=document.getElementById("fotSet"); if(!set) return;
+  const ath=teamAthletes();
+  let h='<div class="fot-modo"><button class="'+(FOT.modo==="salto"?"on":"")+'" onclick="FOT.modo=\'salto\';FOT.segni={};fotPannelli()">Salto</button>'+
+    '<button class="'+(FOT.modo==="vbt"?"on":"")+'" onclick="FOT.modo=\'vbt\';FOT.segni={};fotPannelli()">VBT</button></div>';
+  h+='<div class="row2"><div><label class="fl">Atleta</label><select onchange="FOT.aid=this.value;fotPannelli()"><option value="">—</option>'+
+     ath.map(a=>'<option value="'+a.id+'"'+(a.id===FOT.aid?' selected':'')+'>'+esc(a.name)+'</option>').join("")+'</select></div>'+
+     '<div><label class="fl">Data</label><input type="date" value="'+escAttr(FOT.data||todayISO())+'" onchange="FOT.data=this.value"></div></div>';
+  h+='<div class="row2"><div><label class="fl">Girato a (fot./s)</label><select onchange="FOT.fpsRip=+this.value;fotInfo()">'+
+     [240,120,60,30].map(n=>'<option'+(FOT.fpsRip===n?' selected':'')+'>'+n+'</option>').join("")+'</select></div>'+
+     '<div><label class="fl">Nel file (fot./s)</label><select onchange="FOT.fpsFile=+this.value||null;fotVai(0)"><option value="">?</option>'+
+     [24,25,30,60,120,240].map(n=>'<option'+(FOT.fpsFile===n?' selected':'')+'>'+n+'</option>').join("")+'</select></div></div>';
+  if(FOT.url && FOT.fpsLetto) h+='<div class="fhint" style="margin-top:6px">Nel file ho letto '+FOT.fpsLetto+' fotogrammi al secondo.</div>';
+  if(FOT.fpsFile && FOT.fpsFile<FOT.fpsRip) h+='<div class="alert warn"><span class="ai">⚠️</span><span>Il file scorre a '+FOT.fpsFile+' ma «Girato a» dice '+FOT.fpsRip+
+    ': vuol dire un rallentatore '+(FOT.fpsRip/FOT.fpsFile)+'× già applicato. Va bene solo se il rallentatore copre tutta la clip. Se è un video normale, metti «Girato a» '+FOT.fpsFile+'.</span></div>';
+  if(FOT.fpsFile && FOT.fpsFile>FOT.fpsRip) h+='<div class="alert warn"><span class="ai">⚠️</span><span>Il file ha più fotogrammi al secondo di quelli della ripresa: controlla «Girato a».</span></div>';
+  if(FOT.modo==="salto"){
+    h+='<label class="fl">Salto</label><select onchange="FOT.tipo=this.value;FOT.segni={};fotPannelli()">'+MJ_TIPI.map(x=>'<option'+(x.k===FOT.tipo?' selected':'')+'>'+esc(x.k)+'</option>').join("")+'</select>';
+  } else {
+    const a=(S.athletes||[]).find(x=>x.id===FOT.aid), rk="rom_"+String(FOT.ex||"").replace(/[^A-Za-z0-9]/g,"").slice(0,24);
+    if(!FOT.rom && a && a.profile && a.profile[rk]) FOT.rom=a.profile[rk];
+    h+='<label class="fl">Esercizio</label><select onchange="FOT.ex=this.value;FOT.rom=\'\';fotPannelli()"><option value="">—</option>'+LV_EX.map(e=>'<option'+(e.n===FOT.ex?' selected':'')+'>'+esc(e.n)+'</option>').join("")+'</select>'+
+      '<div class="row2"><div><label class="fl">Carico (kg)</label><input type="number" inputmode="decimal" value="'+escAttr(FOT.kg)+'" oninput="FOT.kg=this.value;fotInfo()"></div>'+
+      '<div><label class="fl">Escursione bilanciere (cm)</label><input type="number" inputmode="decimal" value="'+escAttr(FOT.rom)+'" oninput="FOT.rom=this.value;fotInfo()"></div></div>'+
+      '<div class="fhint">L\'escursione si misura una volta per atleta e per esercizio, col metro: altezza del bilanciere in alto meno in basso. La ricordo io.</div>'+
+      (FOT.ex==="Trazioni"?'<div class="fhint"><b>Trazioni:</b> come carico scrivi la massa totale mossa, peso corporeo più zavorra.</div>':'');
+  }
+  set.innerHTML=h;
+  const g=document.getElementById("fotGuida");
+  if(g) g.innerHTML='<details class="asec"><summary>Come filmare e come segnare</summary><div class="as-b fot-guida">'+
+    '<p><b>Ripresa.</b> iPhone sul cavalletto, fermo, di lato, a 2-3 metri, piedi (o bilanciere) ben visibili. <b>Rallentatore a 240</b>.</p>'+
+    '<p><b>Prima di aprirlo qui.</b> Nell\'app Foto: Modifica → trascina i due cursori bianchi del rallentatore fino ai bordi, così è lento <b>tutto</b>. Nei tratti a velocità normale i fotogrammi mancano e la misura viene sbagliata.</p>'+
+    (FOT.modo==="vbt"
+      ? '<p><b>Segni.</b> Inizio spinta: il primo fotogramma in cui il bilanciere riparte verso l\'alto. Fine spinta: il fotogramma in cui si ferma in alto. Ogni serie: la ripetizione più veloce.</p>'
+      : '<p><b>Segni.</b> Stacco: il primo fotogramma in cui <b>entrambi</b> i piedi sono staccati. Atterraggio: il primo in cui un piede tocca. Nel drop jump anche il contatto: il primo fotogramma in cui tocca dopo la caduta.</p>')+
+    '<p><b>Prima di fidarti.</b> Misura 20 salti sia qui sia con My Jump, sullo stesso video. Se le differenze superano 1-2 cm, scrivimi.</p></div></details>';
+  fotInfo();
+}
+function fotInfo(){
+  const fEl=document.getElementById("fotF"), v=fotEl();
+  if(fEl) fEl.textContent = FOT.url&&FOT.fpsFile ? "fot. "+FOT.f+" · "+fmtNum(Math.round(FOT.f/FOT.fpsRip*1000))+" ms" : "—";
+  const sl=document.getElementById("fotSl"); if(sl&&v&&v.duration&&FOT.fpsFile) sl.value=Math.round(FOT.f/FOT.fpsFile/v.duration*1000);
+  const sg=document.getElementById("fotSegni");
+  if(sg) sg.innerHTML=fotSegniDi().map(([k,l])=>'<button class="'+(FOT.segni[k]!=null?"on":"")+'" onclick="fotSegna(\''+k+'\')">'+l+
+    '<small>'+(FOT.segni[k]!=null?'fot. '+FOT.segni[k]:'segna qui')+'</small></button>'+
+    (FOT.segni[k]!=null?'<button class="fot-vai" onclick="fotVai('+FOT.segni[k]+')" title="Torna a quel fotogramma">↩</button>':'')).join("");
+  const ris=document.getElementById("fotRis"); if(!ris) return;
+  let h="";
+  if(FOT.modo==="salto"){
+    const r=fotSalto(FOT.segni, FOT.fpsRip, FOT.tipo);
+    if(r.err) h='<div class="fhint">'+esc(r.err)+'.</div>';
+    else {
+      h='<div class="fot-num"><b>'+fmtNum(Math.round(r.h*10)/10)+' cm</b><span>volo '+Math.round(r.tv*1000)+' ms · ±'+fmtNum(Math.round(r.ris*10)/10)+' cm per fotogramma</span>'+
+        (r.rsi!=null?'<span>contatto '+Math.round(r.tc*1000)+' ms · RSI '+fmtNum(Math.round(r.rsi*100)/100)+'</span>':'')+'</div>'+
+        r.avvisi.map(x=>'<div class="alert warn"><span class="ai">⚠️</span><span>'+esc(x)+'</span></div>').join("")+
+        '<label class="tchk"><input type="checkbox"'+(FOT.colonna?' checked':'')+' onchange="FOT.colonna=this.checked"><span>Metti il migliore del giorno anche nella colonna del test</span></label>'+
+        '<button class="btn primary" style="width:100%" onclick="fotSalvaSalto()">Salva il salto</button>';
+    }
+  } else {
+    const r=fotVbt(FOT.segni, FOT.fpsRip, FOT.rom);
+    if(r.err) h='<div class="fhint">'+esc(r.err)+'.</div>';
+    else h='<div class="fot-num"><b>'+fmtNum(Math.round(r.v*100)/100)+' m/s</b><span>MV, velocità media concentrica · spinta '+Math.round(r.t*1000)+' ms · ±'+(Math.round(r.err1*1000)/1000).toFixed(3)+' m/s per fotogramma</span></div>'+
+      r.avvisi.map(x=>'<div class="alert warn"><span class="ai">⚠️</span><span>'+esc(x)+'</span></div>').join("")+
+      '<button class="btn primary" style="width:100%" onclick="fotAggiungiPunto()">+ Aggiungi alla curva ('+(FOT.kg?esc(FOT.kg)+' kg':'scrivi il carico')+')</button>';
+    if(FOT.punti.length) h+='<div class="fot-punti">'+FOT.punti.map((p,i)=>'<span>'+fmtNum(p.load)+' kg · '+fmtNum(p.v)+' m/s <button onclick="FOT.punti.splice('+i+',1);fotInfo()">✕</button></span>').join("")+'</div>'+
+      '<button class="btn sm" style="width:100%;margin-top:6px" onclick="fotApriCurva()">Apri la curva carico-velocità con questi '+FOT.punti.length+' punti</button>';
+  }
+  ris.innerHTML=h;
+}
+function fotSalvaSalto(){
+  if(!FOT.aid){ toast("Scegli l'atleta"); return; }
+  const r=fotSalto(FOT.segni, FOT.fpsRip, FOT.tipo); if(r.err){ toast(r.err); return; }
+  const m={h:Math.round(r.h*10)/10, tv:Math.round(r.tv*1000)};
+  if(r.rsi!=null){ m.tc=Math.round(r.tc*1000); m.rsi=Math.round(r.rsi*100)/100; }
+  const x=mjSalva(FOT.aid, FOT.data||todayISO(), FOT.tipo, m, {colonna:FOT.colonna, fonte:"video"});
+  if(!x.ok){ toast(x.msg); return; }
+  save(); FOT.segni={}; fotInfo(); toast(x.doppio?"Questo salto c'era già":"Salto salvato: "+fmtNum(m.h)+" cm");
+}
+function fotAggiungiPunto(){
+  const r=fotVbt(FOT.segni, FOT.fpsRip, FOT.rom); if(r.err){ toast(r.err); return; }
+  const kg=parseFloat(String(FOT.kg||"").replace(",","."));
+  if(!(kg>=0 && kg<=500)){ toast("Scrivi il carico in kg"); return; }
+  FOT.punti.push({load:kg, v:Math.round(r.v*100)/100});
+  // l'escursione resta nella scheda dell'atleta, per esercizio
+  const a=(S.athletes||[]).find(x=>x.id===FOT.aid);
+  if(a && FOT.ex){ if(!a.profile) a.profile={}; a.profile["rom_"+String(FOT.ex).replace(/[^A-Za-z0-9]/g,"").slice(0,24)]=String(r.rom); save(); }
+  FOT.segni={}; FOT.kg=""; fotPannelli();
+}
+function fotApriCurva(){
+  if(!FOT.aid){ toast("Scegli l'atleta"); return; }
+  const punti=FOT.punti.slice();
+  openLVEntry(FOT.aid);
+  LV_ROWS=punti.map(p=>({load:String(p.load), v:String(p.v)}));
+  while(LV_ROWS.length<3) LV_ROWS.push({load:"",v:""});
+  const vt=document.getElementById("lvVType"); if(vt) vt.value="MV";          // dal video esce MV, non MPV
+  const ex=document.getElementById("lvEx"); if(ex && FOT.ex && LV_EX.some(e=>e.n===FOT.ex)) ex.value=FOT.ex;
+  const dd=document.getElementById("lvD"); if(dd && FOT.data) dd.value=FOT.data;
+  try{ lvExChange(); }catch(e){}
+  renderLVRows(); try{ previewLV(); }catch(e){}
+}
+
 /* ═══════════════ PDF DELLA TABELLA ═══════════════════════════════════════════
    Il foglio da far vedere alle ragazze o da mandare. Esce dalla stampa del
    browser («Salva come PDF»): niente librerie, niente file sul server.
@@ -12247,6 +12512,7 @@ function openSettings(){
     row("🎚","Batteria della squadra", team?("Test monitorati da "+esc(team.name)):"Seleziona prima una squadra","chooseTests()", nTests?nTests:"auto")+
     row("🧰","Esercizi tuoi","Colonne che hai aggiunto tu (leg press, affondi…)","openCustom()", (S.custom||[]).length||"")+
     row("📲","Archivio My Jump","Ogni salto con tutti i suoi numeri","closeM();setView(\'mj\')")+
+    row("📹","Analisi a fotogrammi","Salto e velocità del bilanciere da un video al rallentatore","openFotogrammi({})")+
     row("📏","Quanto balla la tua misura","Sotto quale variazione non è successo niente","openTE()", Object.keys(S.te||{}).length||"")+
     '</div>';
 
@@ -12297,7 +12563,7 @@ function exportCSV(){
       rows.push([tm?tm.name:"—",a.name,a.sex||"M",t.full,t.unit,e.d,fmtNum(e.v),
                  e.fonte==="lv"?"stima da curva carico-velocità"
                  :e.fonte==="reps"?"stima da serie a ripetizioni"
-                 :e.fonte==="mjl"?"importato da My Jump Lab":"misurato"]);
+                 :e.fonte==="mjl"?"importato da My Jump Lab o misurato dal video":"misurato"]);
     })); });
   const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
   dl("iron-performance-"+todayISO()+".csv", csv, "text/csv"); toast("CSV esportato");
@@ -12501,7 +12767,7 @@ function sanitizeImport(o){
         if(e.m&&typeof e.m==="object") Object.keys(e.m).slice(0,40).forEach(k=>{
           if(!/^[A-Za-z0-9_]{1,34}$/.test(k)) return; const v=num(e.m[k]); if(v!=null) m[k]=v; });
         if(!Object.keys(m).length) return;
-        const r={d:e.d, exercise:ex, tipo:tipo, m:m}; if(e.fonte==="csv") r.fonte="csv";
+        const r={d:e.d, exercise:ex, tipo:tipo, m:m}; if(e.fonte==="csv"||e.fonte==="video") r.fonte=e.fonte;
         l.push(r);
       });
       if(l.length){ l.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:(a.exercise<b.exercise?-1:1)); out.mjl[aid]=l; }
@@ -12635,7 +12901,7 @@ function sanitizeImport(o){
   out.sport=str(o.sport,40)||"pallavolo";
   // "fatigue" era il vecchio nome della vista, rinominata "readiness" e mai
   // aggiornata qui: chi importava un backup stando in Fatica finiva in Matrice.
-  out.view=["matrix","today","trend","readiness","mj","piano","video","gare"].indexOf(o.view)>=0?o.view:"today";
+  out.view=["matrix","today","trend","readiness","mj","piano","video","gare","fotogrammi"].indexOf(o.view)>=0?o.view:"today";
   out.activeTeam=idOk(o.activeTeam)?o.activeTeam:"all";
   return out;
 }
@@ -13096,6 +13362,7 @@ function renderMJ(){
   const M=mjMet(MJV.k);
   let h='<div class="mjtop"><button class="btn primary sm" onclick="openMJSalto()">+ Salto</button>'+
     '<button class="btn sm" onclick="importMJL()">📲 Importa CSV</button>'+
+    '<button class="btn sm" onclick="openFotogrammi({modo:\'salto\',tipo:MJV.tipo||\'CMJ\'})">📹 Dal video</button>'+
     '<button class="btn sm" onclick="mjEsporta()">⬇️ Esporta CSV</button></div>';
   h+='<div class="chips">'+tipi.map(t=>'<button class="chip'+(t===MJV.tipo?" on":"")+'" onclick="MJV.tipo=\''+escAttr(t)+'\';render()">'+esc(t)+'</button>').join("")+'</div>';
   h+='<div class="chips mjmet">'+met.map(k=>{ const x=mjMet(k); return '<button class="chip'+(k===MJV.k?" on":"")+'" onclick="MJV.k=\''+escAttr(k)+'\';render()">'+esc(x.l)+'</button>'; }).join("")+'</div>';

@@ -432,6 +432,47 @@ prova("si apre dal suo link senza login e senza toccare lo stato dell'app", () =
   assert.ok(/if\(_settToken && !_anamToken\)\{[\s\S]{0,200}bootSettimana\(_settToken\);[\s\S]{0,40}\} else if\(_anamToken\)/.test(boot));
 });
 
+sezione("\nLa pagina Oggi: ferme, da adattare, da tenere d'occhio, pronte");
+const oggiHtml = () => { run(`renderToday()`); return j(`document.getElementById("grid").innerHTML`); };
+const blocco = (h, id) => { const i = h.indexOf('id="' + id + '"'); if (i < 0) return ""; const k = h.indexOf('class="og-sec', i + 10); return h.slice(i, k < 0 ? undefined : k); };
+prova("ognuna nel suo gruppo; il numerino conta solo ferme e da adattare", () => {
+  squadra();
+  run(`S.athletes.push({id:"a4",name:"Elena Neri",team:"t1",sex:"F",profile:{consent:true}},{id:"a5",name:"Chiara Blu",team:"t1",sex:"F",profile:{consent:true}});
+       S.athletes[0].profile.medical="Non idoneo";
+       dispSalva("a2","part","${meno(2)}");
+       S.readiness.a3=[{d:"${T}",sl:4,so:2,fa:2,st:2}];`);
+  const h = oggiHtml();
+  assert.ok(/Anna Bianchi/.test(blocco(h, "og-occhio")), "readiness in attenzione: da tenere d'occhio");
+  assert.ok(/Sara Rossi/.test(blocco(h, "og-ferma")), "non idonea: ferma");
+  assert.ok(/Giulia Verdi/.test(blocco(h, "og-adatta")), "in rientro: da adattare");
+  assert.ok(/Elena Neri/.test(blocco(h, "og-pronta")) && /Chiara Blu/.test(blocco(h, "og-pronta")));
+  assert.equal(j(`todayManageCount()`), 2);
+});
+prova("un segnale giallo non accende la linguetta e non diventa una scheda intera", () => {
+  squadra();
+  run(`S.ost.a1=[{d:"${T}",exercise:"ostrc",p:[{t:"mal",s:["umore"],q1:1,q2:0,q3:1,q4:1,gg:0}]}]`);
+  const h = oggiHtml();
+  assert.ok(/Sara Rossi/.test(blocco(h, "og-occhio")));
+  assert.ok(!/og-card og-occhio/.test(blocco(h, "og-occhio")) || /og-gruppo/.test(blocco(h, "og-occhio")));
+  assert.equal(j(`todayManageCount()`), 0);
+});
+prova("stesso segnale e stesso consiglio: un gruppo con i nomi, non tre schede uguali", () => {
+  squadra();
+  run(`S.athletes.push({id:"a4",name:"Elena Neri",team:"t1",sex:"F",profile:{consent:true}});
+       ["a1","a2","a4"].forEach(id=>{ dispSalva(id,"sport","${meno(3)}"); });`);
+  const b = blocco(oggiHtml(), "og-adatta");
+  assert.equal((b.match(/og-gruppo/g) || []).length, 1);
+  assert.equal((b.match(/class="og-nome"/g) || []).length, 3);
+  assert.equal((b.match(/💡/g) || []).length, 1, "il consiglio una volta sola");
+});
+prova("chi è assente esce dai gruppi e va in fondo, col suo segnale", () => {
+  squadra();
+  run(`dispSalva("a1","fuori","${meno(1)}"); S.pres={a1:[{d:"${T}",s:"a"}]};`);
+  const h = oggiHtml();
+  assert.equal(blocco(h, "og-ferma"), "");
+  assert.ok(/Assenti oggi[\s\S]*Sara Rossi/.test(h));
+});
+
 sezione("\nLa pagina per l'allenatore");
 prova("disponibilità, carico, partite, test; la salute solo se la lasci", () => {
   squadra();

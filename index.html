@@ -732,6 +732,60 @@ tr.rsep td small{font-weight:400;color:var(--muted2);margin-left:4px}
 .fot-punti span{font-size:13px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-family:var(--mono)}
 .fot-punti button{background:none;border:0;color:var(--muted);cursor:pointer;margin-left:4px}
 .fot-guida p{font-size:13.5px;line-height:1.5;margin:0 0 8px}
+/* Oggi: chi è ferma, chi va adattata, chi si guarda, chi è pronta */
+.og-head{background:linear-gradient(160deg,var(--surface2),var(--surface));border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.og-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.og-day{font-size:12.5px;color:var(--muted);letter-spacing:.2px}
+.og-tit{font-size:22px;font-weight:800;letter-spacing:-.3px;margin-top:2px}
+.og-gara{display:flex;flex-direction:column;align-items:flex-end;gap:2px;background:none;border:1px solid var(--line2);border-radius:12px;padding:7px 10px;color:var(--text);cursor:pointer;font-family:inherit;flex:0 0 auto}
+.og-gara b{background:#FFB340;color:#1a1200;border-radius:6px;padding:1px 7px;font-size:12.5px}
+.og-gara span{font-size:12px;color:var(--muted)}
+.og-bar{display:flex;gap:3px;height:10px;margin:14px 0 10px}
+.og-bar i{display:block;border-radius:5px;min-width:6px}
+.og-bar i.og-down{background:var(--down)}.og-bar i.og-amber{background:#FF9F0A}.og-bar i.og-warn{background:#E8C547}.og-bar i.og-up{background:var(--up)}
+.og-leg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.og-l{background:none;border:0;padding:4px 2px;text-align:left;cursor:pointer;font-family:inherit;color:var(--text);border-radius:8px}
+.og-l b{display:block;font-size:24px;font-weight:800;line-height:1.1;font-family:var(--mono)}
+.og-l span{display:block;font-size:12px;color:var(--muted);line-height:1.25}
+.og-l.og-down b{color:var(--down)}.og-l.og-amber b{color:#FF9F0A}.og-l.og-warn b{color:#E8C547}.og-l.og-up b{color:var(--up)}
+.og-l.zero{opacity:.4;cursor:default}
+.og-act{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.og-a{display:flex;flex-direction:column;gap:2px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:8px 10px;color:var(--text);cursor:pointer;font-family:inherit;min-height:48px;text-align:left}
+.og-a span{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.og-a b{font-size:14px;font-weight:700;white-space:nowrap}
+.og-a.da{border-color:rgba(255,159,10,.5)}.og-a.da b{color:#FFB340}
+.og-a:active,.og-l:active{background:var(--surface3)}
+.og-pill{display:flex;align-items:center;gap:6px;font-size:13px;color:#ff7a82;background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.3);border-radius:10px;padding:8px 12px;margin-bottom:10px;cursor:pointer}
+.og-pill i{margin-left:auto;font-style:normal}
+.og-sec{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:20px 0 9px;scroll-margin-top:70px}
+.og-sec b{font-size:15px}
+.og-dot{width:9px;height:9px;border-radius:50%}
+.og-sec.og-down .og-dot{background:var(--down)}.og-sec.og-amber .og-dot{background:#FF9F0A}.og-sec.og-warn .og-dot{background:#E8C547}.og-sec.og-up .og-dot{background:var(--up)}
+.og-n{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line2);border-radius:8px;padding:0 6px}
+.og-sec small{flex-basis:100%;font-size:12.5px;color:var(--muted);padding-left:17px}
+.og-grid{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:900px){ .og-grid{grid-template-columns:repeat(2,minmax(0,1fr))} .og-sec small{flex-basis:auto;padding-left:4px} .og-sec small:before{content:"· "} }
+.og-grid .tcard{margin-bottom:0}
+.og-card.og-ferma{border-left-color:var(--down);background:linear-gradient(90deg,rgba(255,69,58,.07),var(--surface2) 40%)}
+.og-card.og-adatta{border-left-color:#FF9F0A}
+.og-ch{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+.og-ruolo{font-size:12px;color:var(--muted)}
+.og-ch .prtag{margin-left:0}
+.og-righe{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.og-riga{padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.og-riga:last-child{border-bottom:none}
+.og-riga:active{background:var(--surface2)}
+.og-rn{display:flex;align-items:baseline;gap:6px}
+.og-sug{font-size:12.5px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.og-via{opacity:.55}
+.og-gruppo .og-ch{align-items:center}
+.og-card.og-occhio{border-left-color:#E8C547}
+.og-nomi{display:flex;flex-wrap:wrap;gap:6px}
+.og-nome{background:var(--surface);border:1px solid var(--line2);border-radius:14px;padding:6px 11px;color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;min-height:34px}
+.og-nome b{font-family:var(--mono);margin-left:3px;color:var(--muted)}
+.og-nome small{color:var(--muted);margin-left:4px}
+.og-sec.og-flat .og-dot{background:var(--flat)}
+@media (max-width:899px){ .og-sec{scroll-margin-top:130px} }
 /* salute, rientro, lavoro a casa */
 .sal-r{border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-top:8px;cursor:pointer}
 .sal-r>b{display:block;font-size:14px;margin-bottom:4px}
@@ -3930,10 +3984,12 @@ function todayManageCount(){
       if(SCREEN_KEYS.filter(k=>p[k]).length) flag=true;
       const med=medicalState(p); if(med && med.c==="down") flag=true;
       const rarr=(S.readiness&&S.readiness[a.id])||[]; const rl=rarr[rarr.length-1];
-      if(rl){ const ev=readinessEval(a.id,rl); if(ev.color==="down"||ev.color==="amber") flag=true; }
-      const cs=caricoSett(a.id); if(cs && cs.stato==="picco") flag=true;
+      /* Il numerino dice quante sono FERME o DA ADATTARE: i segnali gialli
+         (readiness in attenzione, settimana carica) restano nella pagina, ma
+         non accendono la linguetta — se si accende per tutte, non dice niente. */
+      if(rl){ const ev=readinessEval(a.id,rl); if(ev.color==="down") flag=true; }
       const cf=cmjFatigue(a.id); if(cf&&cf.fatigued) flag=true;
-      if(saluteFlags(a.id, today).length) flag=true;
+      if(saluteFlags(a.id, today).some(f=>f.c==="down"||f.prio) || dispOggi(a.id, today)) flag=true;
       if(flag) n++;
     });
     return n;
@@ -12342,44 +12398,57 @@ function renderToday(){
     const sfp=sf.filter(f=>f.prio);
     if(sfp.length) sug=sfp[0].sug;
     else if(sf.length) sug=sf[0].sug+(sug?" "+sug:"");
-    return {a, flags, sev, rl, rToday, sug, doc};
+    const liv=oggiLivello(flags, (med&&med.c==="down") || sfp.length>0, !!dispOggi(a.id, today));
+    return {a, flags, sev, rl, rToday, sug, doc, liv};
   });
-  const manage=items.filter(x=>x.flags.length).sort((x,y)=>y.sev-x.sev);
-  const ready=items.filter(x=>!x.flags.length);
+  /* ── La struttura di Oggi ──────────────────────────────────────────────
+     Era una lista di schede tutte uguali, una per ogni segnale: con la
+     readiness in ambra a mezza squadra, «Da gestire» diceva 12 e «Pronti» 0,
+     e la ragazza da fermare stava in mezzo alle altre. Ora la pagina risponde,
+     nell'ordine, alle domande che ti fai entrando in palestra:
+       chi NON si allena (o non senza medico) · chi va adattata · chi tengo
+       d'occhio · chi è pronta.
+     Le prime due sono schede intere; le altre una riga o un nome. */
+  const LIV=[
+    {k:"ferma", t:"Ferme", d:"non si allenano con la squadra, o non senza un medico", c:"down"},
+    {k:"adatta", t:"Da adattare", d:"si allenano, con un lavoro diverso", c:"amber"},
+    {k:"occhio", t:"Da tenere d'occhio", d:"si allenano normalmente: un segnale da guardare", c:"warn"},
+    {k:"pronta", t:"Pronte", d:"nessun segnale", c:"up"}];
   const checkinToday=items.filter(x=>x.rToday).length;
   const _gaps=consentGaps();
-  /* «Da gestire» e «Pronti» parlano di chi e' in palestra. Un'assente con la
-     readiness bassa di ieri non e' un problema di oggi: resta nella sua
-     sezione, ma con l'etichetta, cosi' non ti metti a cercarla. */
   const _pc=presConta(today);
   const _ass={}; ath.forEach(a=>{ if(presGet(a.id,today)==="a") _ass[a.id]=1; });
   const _rid={}; ath.forEach(a=>{ if(presGet(a.id,today)==="r") _rid[a.id]=1; });
+  /* Chi è segnata assente non è «in palestra»: esce dai quattro gruppi e va
+     in una riga sua in fondo, col suo segnale principale. */
+  const assenti=items.filter(x=>_ass[x.a.id]);
+  const per={}; LIV.forEach(L=>per[L.k]=items.filter(x=>x.liv===L.k && !_ass[x.a.id]));
+  const ordina=l=>l.sort((x,y)=>y.sev-x.sev || x.a.name.localeCompare(y.a.name,"it"));
+  LIV.forEach(L=>ordina(per[L.k]));
   const presTag=id=> _ass[id] ? '<span class="prtag down">assente</span>'
                     : _rid[id] ? '<span class="prtag amber">ridotto</span>' : '';
-  let h='<div class="today">'+
-     (_gaps.length?'<div class="alert danger" style="margin-bottom:12px"><span class="ai">🛡</span><span><b>'+_gaps.length+
-       (_gaps.length===1?' atleta ha':' atleti hanno')+' dati clinici senza consenso tracciato.</b> <span onclick="openPrivacy()" style="text-decoration:underline;cursor:pointer">Verifica</span></span></div>':'')+
-     /* Le quattro caselle erano solo numeri, e i pulsanti per cambiarli
-        stavano in fondo alla pagina, sotto l'elenco: sul telefono andavi a
-        cercarli scorrendo. Ora la casella È il pulsante. */
-     '<div class="tstats">'+
-     tstat(_pc.segnato ? _pc.in+"/"+_pc.tot : "—", _pc.segnato ? "In palestra" : "Appello", _pc.segnato?"":"amber", "openPres()")+
-     tstat(checkinToday+"/"+ath.length,"Check-in", checkinToday<ath.length?"":"up", "openCheckin()")+
-     tstat(manage.length,"Da gestire", manage.length?"down":"up", manage.length?"oggiVai('tg-gestire')":"")+
-     tstat(ready.length,"Pronti","up")+'</div>'+
-     '<div class="tactions tsu"><button class="btn sm" onclick="openSeduta()">🏋️ Scheda di seduta</button>'+
-     '<button class="btn sm" onclick="openLoad()">+ Carico seduta</button></div>'+
-     garaBanner()+pianoBanner()+oggiProposte();
-  /* ── Schede nuove ───────────────────────────────────────────────────────
-     La scritta «nuova» si spegneva solo aprendo l'anamnesi. Qui la scheda si
-     legge per intero senza entrare da nessuna parte, e la notifica si toglie
-     da sé — ma SOLO se non c'è niente di rosso dentro.
-
-     Le schede con uno screening spuntato, un infortunio in corso o il
-     consenso mancante restano finché non premi «Visto». Non è pigrizia
-     dell'app: aprire l'applicazione non è la stessa cosa che aver letto, e una
-     bandierina cardiaca che sparisce da sola perché sei passato di qui è
-     esattamente il modo in cui una cosa del genere non viene vista. */
+  const ruolo=a=>{ const r=ruoloDi(a); return r?'<span class="og-ruolo">'+esc(ruoloEtichetta(r,a.sex))+'</span>':''; };
+  // intestazione: il giorno, la gara, la squadra divisa in quattro
+  const gNome=(x=>x.charAt(0).toUpperCase()+x.slice(1))(new Date(today+"T12:00:00").toLocaleDateString("it-IT",{weekday:"long", day:"numeric", month:"long"}));
+  const g=(S.activeTeam && S.activeTeam!=="all" && S.activeTeam!=="none") ? prossimaGara(S.activeTeam) : null;
+  let h='<div class="today"><div class="og-head">'+
+    '<div class="og-top"><div><div class="og-day">'+esc(gNome)+'</div><div class="og-tit">Oggi in palestra</div></div>'+
+    (g && g.gg<=GARA_BANNER_GG
+      ? '<button class="og-gara" onclick="garaApri(null)"><b>'+mdLabel(g.gg)+'</b><span>'+(g.avv?'vs '+esc(g.avv):'gara')+(g.casa===false?' · trasferta':g.casa?' · in casa':'')+'</span></button>'
+      : '')+'</div>'+
+    '<div class="og-bar" role="img" aria-label="'+LIV.map(L=>per[L.k].length+' '+L.t).join(", ")+'">'+
+      LIV.filter(L=>per[L.k].length).map(L=>'<i class="og-'+L.c+'" style="flex:'+per[L.k].length+'"></i>').join("")+'</div>'+
+    '<div class="og-leg">'+LIV.map(L=>'<button class="og-l og-'+L.c+(per[L.k].length?'':' zero')+'"'+(per[L.k].length?' onclick="oggiVai(\'og-'+L.k+'\')"':'')+'>'+
+      '<b>'+per[L.k].length+'</b><span>'+L.t+'</span></button>').join("")+'</div>'+
+    '<div class="og-act">'+
+      '<button class="og-a'+(_pc.segnato?'':' da')+'" onclick="openPres()"><span>Appello</span><b>'+(_pc.segnato?_pc.in+'/'+_pc.tot:'da fare')+'</b></button>'+
+      '<button class="og-a'+(checkinToday<ath.length?' da':'')+'" onclick="openCheckin()"><span>Check-in</span><b>'+checkinToday+'/'+ath.length+'</b></button>'+
+      '<button class="og-a" onclick="openSeduta()"><span>Seduta</span><b>🏋️ scheda</b></button>'+
+      '<button class="og-a" onclick="openLoad()"><span>Carico</span><b>+ RPE</b></button>'+
+    '</div></div>'+
+    (_gaps.length?'<div class="og-pill" onclick="openPrivacy()">🛡 <b>'+_gaps.length+'</b> '+(_gaps.length===1?'atleta ha':'atlete hanno')+' dati clinici senza consenso tracciato <i>›</i></div>':'');
+  // la squadra: piano e proposte delle regole, prima dei casi singoli
+  h+=pianoBanner()+oggiProposte();
   const nuove=items.filter(x=>(x.a.profile||{}).formNew);
   const giaMostrate={};
   if(nuove.length){
@@ -12414,33 +12483,54 @@ function renderToday(){
     }
   }
 
-  h+='<div class="tsec" id="tg-gestire">Da gestire'+(manage.length?' ('+manage.length+')':'')+'</div>';
-  if(manage.length){
-    manage.forEach(x=>{
-      // se e' gia' comparsa fra le schede nuove, poche righe sopra, ripetere lo
-      // stesso riassunto qui sotto e' rumore: restano i flag e il consiglio
-      const d = giaMostrate[x.a.id] ? null : schedaDigest(x.a);
-      const carte=r=>/^🩺|^🛡|^✍️/.test(r.t);   // già nei chip o in «Documenti»
-      const righe = d
-        ? d.righe.filter(r=>/^🚩|^⚠|^Dolore/.test(r.t))
-            .concat(d.righe.filter(r=>r.c!=="mute" && !carte(r) && !/^🚩|^⚠|^Dolore/.test(r.t)))
-        : [];
-      h+='<div class="tcard" onclick="openAthlete(\''+x.a.id+'\')">'+
-         '<div class="tname">'+esc(x.a.name)+'<span class="sx">'+(x.a.sex||"M")+'</span>'+presTag(x.a.id)+'</div>'+
-         '<div class="tflags">'+x.flags.map(f=>'<span class="tflag '+f.c+'">'+f.t+'</span>').join("")+'</div>'+
-         (righe.length?'<div class="tdig">'+righe.map(r=>'<div class="tdrow '+r.c+'">'+esc(r.t)+'</div>').join("")+'</div>':'')+
-         (x.sug?'<div class="tsugg">💡 '+x.sug+'</div>':'')+'</div>';
-    });
-  } else {
-    h+='<div class="tempty">Nessun segnale critico. Squadra pronta ✅</div>';
+
+  const scheda=(x,cls)=>{
+    const d = giaMostrate[x.a.id] ? null : schedaDigest(x.a);
+    const carte=r=>/^🩺|^🛡|^✍️/.test(r.t);   // già nei chip o in «Documenti»
+    const righe = d ? d.righe.filter(r=>/^🚩|^⚠|^Dolore/.test(r.t)).concat(d.righe.filter(r=>r.c!=="mute" && !carte(r) && !/^🚩|^⚠|^Dolore/.test(r.t))) : [];
+    return '<div class="tcard og-card '+cls+(_ass[x.a.id]?' og-via':'')+'" onclick="openAthlete(\''+x.a.id+'\')">'+
+      '<div class="og-ch"><span class="tname">'+esc(x.a.name)+'</span>'+ruolo(x.a)+presTag(x.a.id)+'</div>'+
+      '<div class="tflags">'+x.flags.map(f=>'<span class="tflag '+f.c+'">'+f.t+'</span>').join("")+'</div>'+
+      (righe.length?'<div class="tdig">'+righe.map(r=>'<div class="tdrow '+r.c+'">'+esc(r.t)+'</div>').join("")+'</div>':'')+
+      (x.sug?'<div class="tsugg">💡 '+x.sug+'</div>':'')+'</div>';
+  };
+  /* Sei schede identiche «Readiness bassa — riduci volume» sono una decisione
+     sola: le atlete con UN solo segnale dello stesso tipo e lo stesso
+     consiglio diventano un gruppo, coi nomi e il loro valore. */
+  const tipo=f=>String(f.t).replace(/[-+×]?\d+([.,]\d+)?%?/g,"").replace(/\s*·\s*$/,"").trim();
+  const raggruppa=l=>{
+    const m={}, soli=[];
+    l.forEach(x=>{ const solo=x.flags.length===1 && x.sug && !giaMostrate[x.a.id] && !schedaDigest(x.a).righe.some(r=>/^🚩|^⚠|^Dolore/.test(r.t));
+      if(!solo){ soli.push(x); return; }
+      const k=tipo(x.flags[0])+"|"+x.flags[0].c+"|"+x.sug; (m[k]=m[k]||[]).push(x); });
+    const gruppi=[];
+    Object.keys(m).forEach(k=>{ if(m[k].length>=2) gruppi.push(m[k]); else soli.push(m[k][0]); });
+    ordina(soli);
+    return {soli:soli, gruppi:gruppi.sort((a,b)=>b.length-a.length)};
+  };
+  const gruppo=(l,cls)=>'<div class="tcard og-card og-gruppo '+cls+'"><div class="og-ch"><span class="tflag '+l[0].flags[0].c+'">'+esc(tipo(l[0].flags[0]))+'</span>'+
+    '<span class="og-n">'+l.length+'</span></div><div class="og-nomi">'+l.map(x=>{ const v=(String(x.flags[0].t).match(/[-+×]?\d+([.,]\d+)?%?/)||[""])[0];
+      return '<button class="og-nome" onclick="openAthlete(\''+x.a.id+'\')">'+esc(x.a.name)+(v?' <b>'+esc(v)+'</b>':'')+'</button>'; }).join("")+'</div>'+
+    '<div class="tsugg">💡 '+l[0].sug+'</div></div>';
+  const sez=(L,corpo)=>'<div class="og-sec og-'+L.c+'" id="og-'+L.k+'"><span class="og-dot"></span><b>'+L.t+'</b><span class="og-n">'+per[L.k].length+'</span>'+
+    '<small>'+L.d+'</small></div>'+corpo;
+  if(per.ferma.length) h+=sez(LIV[0], '<div class="og-grid">'+per.ferma.map(x=>scheda(x,"og-ferma")).join("")+'</div>');
+  if(per.adatta.length){ const g=raggruppa(per.adatta);
+    h+=sez(LIV[1], '<div class="og-grid">'+g.soli.map(x=>scheda(x,"og-adatta")).join("")+g.gruppi.map(l=>gruppo(l,"og-adatta")).join("")+'</div>'); }
+  if(!per.ferma.length && !per.adatta.length) h+='<div class="tempty">Nessuna da fermare o da adattare ✅</div>';
+  if(per.occhio.length){ const g=raggruppa(per.occhio);
+    h+=sez(LIV[2], (g.gruppi.length?'<div class="og-grid" style="margin-bottom:8px">'+g.gruppi.map(l=>gruppo(l,"og-occhio")).join("")+'</div>':'')+
+    (g.soli.length?'<div class="og-righe">'+g.soli.map(x=>
+    '<div class="og-riga'+(_ass[x.a.id]?' og-via':'')+'" onclick="openAthlete(\''+x.a.id+'\')"><div class="og-rn"><span class="tname">'+esc(x.a.name)+'</span>'+presTag(x.a.id)+'</div>'+
+      '<div class="tflags">'+x.flags.map(f=>'<span class="tflag '+f.c+'">'+f.t+'</span>').join("")+'</div>'+
+      (x.sug?'<small class="og-sug">'+x.sug+'</small>':'')+'</div>').join("")+'</div>':'')); }
+  if(per.pronta.length){
+    h+=sez(LIV[3], '<div class="treadywrap">'+per.pronta.map(x=>{ const pc=x.rl?readinessScore(x.rl):null;
+      return '<span class="tready'+(_ass[x.a.id]?' tass':'')+'" onclick="openAthlete(\''+x.a.id+'\')">'+esc(x.a.name)+(pc!=null?' <b>'+pc+'</b>':'')+'</span>'; }).join("")+'</div>');
   }
-  if(ready.length){
-    h+='<div class="tsec">Pronti ('+ready.length+')</div><div class="treadywrap">';
-    ready.forEach(x=>{ const pc=x.rl?readinessScore(x.rl):null;
-      /* punteggio grezzo: qui serve solo come etichetta */
-      h+='<span class="tready'+(_ass[x.a.id]?' tass':'')+'" onclick="openAthlete(\''+x.a.id+'\')">'+esc(x.a.name)+(pc!=null?' <b>'+pc+'</b>':'')+'</span>'; });
-    h+='</div>';
-  }
+  if(assenti.length) h+='<div class="og-sec og-flat"><span class="og-dot"></span><b>Assenti oggi</b><span class="og-n">'+assenti.length+'</span></div>'+
+    '<div class="og-nomi">'+assenti.map(x=>'<button class="og-nome og-via" onclick="openAthlete(\''+x.a.id+'\')">'+esc(x.a.name)+
+      (x.flags.length?' <small>'+esc(tipo(x.flags[0]))+'</small>':'')+'</button>').join("")+'</div>';
   h+=promHtml();
   const carte=items.filter(x=>x.doc.length);
   if(carte.length){
@@ -12453,6 +12543,14 @@ function renderToday(){
   }
   h+='</div>';
   grid.innerHTML=h;
+}
+/* Il livello di un'atleta oggi. «Ferma» la decide un fatto (idoneità, fuori,
+   sintomo che chiede il medico), non la somma di tanti segnali piccoli. */
+function oggiLivello(flags, ferma, inRientro){
+  if(ferma) return "ferma";
+  if(inRientro || flags.some(f=>f.c==="down")) return "adatta";
+  if(flags.length) return "occhio";
+  return "pronta";
 }
 /* ═══════════ FATICA ═══════════
    La riga diceva «😴 3 💪 3 🔋 4 🧠 3». La batteria a 4 si legge «carica»,
